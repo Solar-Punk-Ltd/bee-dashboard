@@ -94,13 +94,15 @@ interface ManageModalProps {
 const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement => {
   const classes = useStyles()
   const [newVolumeModalDisplay, setNewVolumeModalDisplay] = useState(false)
+  const { usableStamps } = useContext(StampContext)
   const [activeVolume, setActiveVolume] = useState({
     volumeModalDisplay: false,
-    label: '',
-    size: 0,
+    volume: usableStamps[0],
+    // label: '',
+    // size: 0,
     validity: 0,
+    // remainingSize: 0,
   })
-  const { usableStamps } = useContext(StampContext)
 
   return (
     <div className={classes.modal}>
@@ -119,9 +121,11 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
               onClick={() =>
                 setActiveVolume({
                   volumeModalDisplay: true,
-                  label: stamp.label,
-                  size: stamp.depth,
+                  volume: stamp,
+                  // label: stamp.label,
+                  // size: stamp.size,
                   validity: stamp.duration.toEndDate(new Date()).getTime(),
+                  // remainingSize: stamp.remainingSize,
                 })
               }
             >

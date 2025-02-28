@@ -1,15 +1,11 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
-import DestroyIcon from '../icons/DestroyIcon'
-import DownloadIcon from '../icons/DownloadIcon'
 import { SwarmTextInput } from '../SwarmTextInput'
-import { ActiveVolume } from './VolumeModal'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { bytesConversion, getHumanReadableFileSize } from '../../utils/file'
-import { Bee, BZZ } from '@upcoming/bee-js'
-// import { getStorageCost } from '@upcoming/bee-js'
+import { bytesConversion } from '../../utils/file'
+import { Bee, Duration } from '@upcoming/bee-js'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -69,27 +65,10 @@ const useStyles = makeStyles(() =>
         color: '#FFFFFF',
       },
     },
-    buttonElementUpdate: {
-      backgroundColor: '#DE7700',
-      color: '#FFFFFF',
-      width: '256px',
-      height: '42px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
     buttonElementNotificationSign: {
       position: 'absolute',
       right: '-25px',
       top: '0',
-    },
-    buttonNewVolume: {
-      backgroundColor: '#DE7700',
-      color: '#FFFFFF',
     },
     buttonContainer: {
       display: 'flex',
@@ -166,21 +145,7 @@ const useStyles = makeStyles(() =>
       padding: '5px 15px',
       fontSize: '14x',
     },
-    downloadButtonContainer: {
-      display: 'flex',
-      padding: '40px 60px',
-      flexDirection: 'column',
-      width: '113px !important',
-      height: '64px',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
+
     copyIconContainer: {
       display: 'flex',
       justifyContent: 'center',
@@ -227,59 +192,70 @@ const useStyles = makeStyles(() =>
       alignItems: 'center',
       marginRight: '10px',
     },
+    createButtonEnabled: {
+      backgroundColor: '#DE7700',
+      color: '#FFFFFF',
+      width: '256px',
+      height: '42px',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      '&:hover': {
+        backgroundColor: '#DE7700',
+        color: '#FFFFFF',
+      },
+    },
+    createButtonDisabled: {
+      backgroundColor: '#878787',
+      color: '#FFFFFF',
+      cursor: 'not-allowed',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   }),
 )
 
 interface VolumePropertiesModalProps {
   newVolume: boolean
   modalDisplay: (value: boolean) => void
-  activeVolume: ActiveVolume
 }
 
-const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: VolumePropertiesModalProps): ReactElement => {
+const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesModalProps): ReactElement => {
   const classes = useStyles()
-  const [isHoveredDestroy, setIsHoveredDestroy] = useState(false)
-  const [isHoveredDownload, setIsHoveredDownload] = useState(false)
-  const [size, setSize] = useState(bytesConversion(activeVolume.volume.size, 'GB'))
-  const [validity, setValidity] = useState(0)
+  const [size, setSize] = useState(bytesConversion(0, 'GB'))
+  const [validity, setValidity] = useState(new Date())
   const [cost, setCost] = useState('')
+  const [label, setLabel] = useState('')
+  const [isCreateEnabled, setIsCreateEnabled] = useState(false)
 
   const bee = new Bee('http://localhost:1633')
 
+  const createPostageStamp = async () => {
+    if (size > 0 && validity.getTime() > new Date().getTime()) {
+      await bee.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+      modalDisplay(false)
+    }
+  }
+
   useEffect(() => {
     const fetchCost = async () => {
-      if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-        const cost = await bee.getSizeExtensionCost(activeVolume.volume.batchID, size)
-        setCost(cost.toSignificantDigits(5))
+      if (size > bytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
+        const cost = await bee.getStorageCost(size, Duration.fromEndDate(validity))
+        setCost(cost.toSignificantDigits(2))
       } else {
         setCost('0')
       }
     }
 
     fetchCost()
-  }, [activeVolume, size])
 
-  const handleMouseEnterDestroy = () => {
-    setIsHoveredDestroy(true)
-  }
-
-  const handleMouseLeaveDestroy = () => {
-    setIsHoveredDestroy(false)
-  }
-
-  const handleMouseEnterDownload = () => {
-    setIsHoveredDownload(true)
-  }
-
-  const handleMouseLeaveDownload = () => {
-    setIsHoveredDownload(false)
-  }
-
-  const updateVolume = async () => {
-    if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-      await bee.extendStorageSize(activeVolume.volume.batchID, 8)
+    if (size > 0 && validity.getTime() > new Date().getTime()) {
+      setIsCreateEnabled(true)
+    } else {
+      setIsCreateEnabled(false)
     }
-  }
+  }, [size, validity])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: '1' }}>
@@ -294,62 +270,19 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
       >
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: '20px' }}>
-            {!newVolume ? (
-              <div className={classes.infoContainer}>
-                <div style={{ fontSize: '10px' }}>Volume</div>
-                <div>{activeVolume?.volume.label}</div>
-              </div>
-            ) : (
-              <div style={{}}>
-                <SwarmTextInput name="name" label="Volume name (max. 6 char)" required={false} />
-              </div>
-            )}
-          </div>
-          {!newVolume ? (
-            <div
-              style={{
-                display: 'flex',
-                gap: '20px',
-                backgroundColor: '#CFCDCD',
-                padding: '20px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div
-                className={classes.downloadButtonContainer}
-                onMouseEnter={handleMouseEnterDestroy}
-                onMouseLeave={handleMouseLeaveDestroy}
-              >
-                <DestroyIcon color={isHoveredDestroy ? '#FFFFFF' : '#333333'} />
-                <div style={{ textAlign: 'center' }}>Destroy volume</div>
-              </div>
-              <div
-                className={classes.downloadButtonContainer}
-                onMouseEnter={handleMouseEnterDownload}
-                onMouseLeave={handleMouseLeaveDownload}
-              >
-                <DownloadIcon color={isHoveredDownload ? '#FFFFFF' : '#333333'} />
-                <div style={{ textAlign: 'center' }}>Download now</div>
-              </div>
+            <div style={{}}>
+              <SwarmTextInput name="name" label="label" required={false} onChange={e => setLabel(e.target.value)} />
             </div>
-          ) : null}
+          </div>
         </div>
         <div className={classes.volumeSliders}>
-          <SizeSlider
-            onChange={value => setSize(bytesConversion(value, 'GB'))}
-            exactValue={activeVolume?.volume.size ?? 0}
-            lowerLabel={`Current/used: ${getHumanReadableFileSize(
-              activeVolume?.volume.size ?? 0,
-            )}/${getHumanReadableFileSize(activeVolume?.volume.remainingSize ?? 0)}`}
-          />
+          <SizeSlider onChange={value => setSize(bytesConversion(value, 'GB'))} exactValue={0} />
           <DateSlider
             type="date"
             upperLabel="Extend validity to:"
-            exactValue={activeVolume?.validity}
+            exactValue={new Date().getTime()}
             lowerLabel="Current:"
-            onDateChange={date => {
-              setValidity(validity)
-            }}
+            onDateChange={value => setValidity(new Date(value))}
           />
         </div>
         <div className={classes.costContainer}>
@@ -360,13 +293,18 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
           <div className={classes.buttonElementCancel} style={{ width: '160px' }} onClick={() => modalDisplay(false)}>
             Cancel
           </div>
-          <div className={classes.buttonElementUpdate} style={{ width: '160px' }} onClick={() => updateVolume()}>
-            {newVolume ? 'Create' : 'Update'}
-          </div>
+          <div
+            className={isCreateEnabled ? classes.createButtonEnabled : classes.createButtonDisabled}
+            style={{ width: '160px' }}
+            onClick={createPostageStamp}
+          >
+            Create
+          </div>{' '}
+          :
         </div>
       </div>
     </div>
   )
 }
 
-export default VolumePropertiesModal
+export default NewVolumePropertiesModal

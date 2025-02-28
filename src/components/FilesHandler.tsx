@@ -5,7 +5,6 @@ import FileUpload from './FileUpload/FileUpload'
 import VolumeManage from './VolumeManage/VolumeManage'
 import { Context as StampContext } from '../providers/Stamps'
 import Volume from './VolumeManage/Volume'
-import { Bee } from '@upcoming/bee-js'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -30,11 +29,7 @@ const useStyles = makeStyles(() =>
 
 const FilesHandler = (): ReactElement => {
   const classes = useStyles()
-  // const bee = new Bee('http://localhost:1633')
   const { usableStamps } = useContext(StampContext)
-
-  // eslint-disable-next-line no-alert
-  alert(usableStamps[0].duration.toEndDate(new Date()))
 
   return (
     <div className={classes.container}>

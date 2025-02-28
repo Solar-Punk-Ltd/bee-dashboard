@@ -130,3 +130,25 @@ export function getFileType(input: string): string {
 
   return index !== -1 ? input.substring(0, index) : input
 }
+
+export const bytesConversion = (size: number, metric: string) => {
+  switch (metric) {
+    case 'GB':
+      return size / 1024 / 1024 / 1024
+    case 'MB':
+      return size / 1024 / 1024
+    default:
+      return 0
+  }
+}
+
+export const sizeToBytes = (size: number, metric: string) => {
+  switch (metric) {
+    case 'GB':
+      return size * 1024 * 1024 * 1024
+    case 'MB':
+      return size * 1024 * 1024
+    default:
+      return 0
+  }
+}
