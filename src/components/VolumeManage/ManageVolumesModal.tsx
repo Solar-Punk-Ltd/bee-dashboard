@@ -98,10 +98,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   const [activeVolume, setActiveVolume] = useState({
     volumeModalDisplay: false,
     volume: usableStamps[0],
-    // label: '',
-    // size: 0,
     validity: 0,
-    // remainingSize: 0,
   })
 
   return (
@@ -122,10 +119,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
                 setActiveVolume({
                   volumeModalDisplay: true,
                   volume: stamp,
-                  // label: stamp.label,
-                  // size: stamp.size,
                   validity: stamp.duration.toEndDate(new Date()).getTime(),
-                  // remainingSize: stamp.remainingSize,
                 })
               }
             >

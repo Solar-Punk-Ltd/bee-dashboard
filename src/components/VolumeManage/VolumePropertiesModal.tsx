@@ -8,8 +8,7 @@ import { ActiveVolume } from './VolumeModal'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
 import { bytesConversion, getHumanReadableFileSize } from '../../utils/file'
-import { Bee, BZZ } from '@upcoming/bee-js'
-// import { getStorageCost } from '@upcoming/bee-js'
+import { Bee } from '@upcoming/bee-js'
 
 const useStyles = makeStyles(() =>
   createStyles({

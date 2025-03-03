@@ -56,10 +56,7 @@ const useStyles = makeStyles(() =>
 export interface ActiveVolume {
   volumeModalDisplay: boolean
   volume: PostageBatch
-  // label: string
-  // size: number
   validity: number
-  // remainingSize: number
 }
 
 interface VolumeModalProps {

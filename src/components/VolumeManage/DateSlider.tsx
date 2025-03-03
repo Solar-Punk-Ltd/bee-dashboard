@@ -104,22 +104,21 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
     setIsOverMaxIconVisible(false)
     switch (newValue) {
       case 1:
-        newDate.setDate(newDate.getDate() + 7) // 1 hét
+        newDate.setDate(newDate.getDate() + 7) // 1 week
         break
       case 2:
-        newDate.setMonth(newDate.getMonth() + 1) // 1 hónap
+        newDate.setMonth(newDate.getMonth() + 1) // 1 month
         break
       case 3:
-        newDate.setMonth(newDate.getMonth() + 3) // 3 hónap
+        newDate.setMonth(newDate.getMonth() + 3) // 3 months
         break
       case 4:
-        newDate.setMonth(newDate.getMonth() + 6) // 6 hónap
+        newDate.setMonth(newDate.getMonth() + 6) // 6 months
         break
       case 5:
-        newDate.setFullYear(newDate.getFullYear() + 1) // 1 év
+        newDate.setFullYear(newDate.getFullYear() + 1) // 1 year
         break
       default:
-      // newDate.setDate(newDate.getDate())
     }
     setDateValue(newDate)
     setSliderValue(newValue as number)

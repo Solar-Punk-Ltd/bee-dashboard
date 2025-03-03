@@ -100,7 +100,6 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
   const [metric, setMetric] = useState('GB')
   const [isCustomValueSelected, setIsCustomValueSelected] = useState(false)
   const [isOverMaxIconVisible, setIsOverMaxIconVisible] = useState(false)
-  const [isInvalidValueModalVisible, setIsInvalidValueModalVisible] = useState(false)
 
   const sizeMarks = [
     {
@@ -129,7 +128,6 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
     setValue(newValue as number)
     setSelectedSize((exactValue ?? 0) + sizes[newValue as number])
 
-    // if ((newValue as number) > 0) {
     onChange((exactValue ?? 0) + sizes[newValue as number])
 
     setMetric('GB')
