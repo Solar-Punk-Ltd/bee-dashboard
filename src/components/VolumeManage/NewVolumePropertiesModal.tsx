@@ -4,9 +4,9 @@ import { useContext, useEffect, useState } from 'react'
 import { SwarmTextInput } from '../SwarmTextInput'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { bytesConversion } from '../../utils/file'
+import { fromBytesConversion } from '../../utils/file'
 import { Duration } from '@upcoming/bee-js'
-import { Context as BeeContext } from '../../providers/Bee'
+import { Context as SettingsContext } from '../../providers/Settings'
 import ErrorModal from './ErrorModal'
 
 const useStyles = makeStyles(() =>
@@ -225,18 +225,18 @@ interface VolumePropertiesModalProps {
 
 const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesModalProps): ReactElement => {
   const classes = useStyles()
-  const [size, setSize] = useState(bytesConversion(0, 'GB'))
+  const [size, setSize] = useState(fromBytesConversion(0, 'GB'))
   const [validity, setValidity] = useState(new Date())
   const [cost, setCost] = useState('')
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
-  const { bee } = useContext(BeeContext)
+  const { beeApi } = useContext(SettingsContext)
   const [showErrorModal, setShowErrorModal] = useState(false)
 
   const createPostageStamp = async () => {
     try {
       if (size > 0 && validity.getTime() > new Date().getTime()) {
-        await bee.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+        await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
         modalDisplay(false)
       }
     } catch (e) {
@@ -247,9 +247,9 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   useEffect(() => {
     const fetchCost = async () => {
       try {
-        if (size > bytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
-          const cost = await bee.getStorageCost(size, Duration.fromEndDate(validity))
-          setCost(cost.toSignificantDigits(2))
+        if (size > fromBytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
+          const cost = await beeApi?.getStorageCost(size, Duration.fromEndDate(validity))
+          setCost(cost ? cost.toSignificantDigits(2) : '0')
         } else {
           setCost('0')
         }
@@ -285,7 +285,7 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           </div>
         </div>
         <div className={classes.volumeSliders}>
-          <SizeSlider onChange={value => setSize(bytesConversion(value, 'GB'))} exactValue={0} />
+          <SizeSlider onChange={value => setSize(fromBytesConversion(value, 'GB'))} exactValue={0} />
           <DateSlider
             type="date"
             upperLabel="Extend validity to:"

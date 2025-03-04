@@ -1,7 +1,6 @@
 import { Bee, PostageBatch } from '@upcoming/bee-js'
 import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
 import { Context as SettingsContext } from './Settings'
-import { Context as BeeContext } from './Bee'
 
 export interface EnrichedPostageBatch extends PostageBatch {
   usage: number
@@ -59,8 +58,6 @@ export function Provider({ children }: Props): ReactElement {
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(3000)
 
-  const { bee } = useContext(BeeContext)
-
   async function getUsableStamps(bee: Bee): Promise<PostageBatch[]> {
     try {
       return (await bee.getAllPostageBatch())
@@ -81,7 +78,7 @@ export function Provider({ children }: Props): ReactElement {
     }
 
     try {
-      const uStamps = await getUsableStamps(bee)
+      const uStamps = await getUsableStamps(beeApi)
 
       setUsableStamps(uStamps)
 

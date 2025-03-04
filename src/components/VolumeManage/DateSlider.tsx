@@ -102,10 +102,11 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
   const classes = useStyles()
   const [dateValue, setDateValue] = useState<Date>(new Date(exactValue ?? 0))
   const [sliderValue, setSliderValue] = useState<number>(0)
-  const [isThumbVisible, setIsThumbVisible] = useState(false)
+  const [isThumbVisible, setIsThumbVisible] = useState(true)
   const [isOverMaxIconVisible, setIsOverMaxIconVisible] = useState(false)
 
   const timeUnitActions = [
+    (date: Date) => date,
     (date: Date) => date.setDate(date.getDate() + 7),
     (date: Date) => date.setMonth(date.getMonth() + 1),
     (date: Date) => date.setMonth(date.getMonth() + 3),
@@ -124,33 +125,17 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
       action(newDate)
     }
 
-    switch (newValue) {
-      case 1:
-        newDate.setDate(newDate.getDate() + TimeUnit.WEEK)
-        break
-      case 2:
-        newDate.setMonth(newDate.getMonth() + 1)
-        break
-      case 3:
-        newDate.setMonth(newDate.getMonth() + 3)
-        break
-      case 4:
-        newDate.setMonth(newDate.getMonth() + 6)
-        break
-      case 5:
-        newDate.setFullYear(newDate.getFullYear() + 1)
-        break
-      default:
-    }
     setDateValue(newDate)
     setSliderValue(newValue as number)
     onDateChange(newDate)
   }
 
   const handleDatePickerChange = (event: any) => {
-    setDateValue(new Date(event.target.value))
+    const newDate = new Date(event.target.value)
+    const exactValueDate = new Date(exactValue ?? 0)
+    setDateValue(newDate)
 
-    if (new Date(event.target.value).getTime() > (exactValue ?? 0)) {
+    if (newDate.getTime() > exactValueDate.setFullYear(exactValueDate.getFullYear() + 1)) {
       setIsOverMaxIconVisible(true)
     } else {
       setIsOverMaxIconVisible(false)
@@ -193,7 +178,6 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
           step={1}
           min={sliderMin}
           max={sliderMax}
-          defaultValue={exactValue}
           value={sliderValue}
           marks={dateSliderMarks}
           valueLabelDisplay="off"

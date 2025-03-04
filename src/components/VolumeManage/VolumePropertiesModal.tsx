@@ -7,9 +7,10 @@ import { SwarmTextInput } from '../SwarmTextInput'
 import { ActiveVolume } from './VolumeModal'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { bytesConversion, getHumanReadableFileSize } from '../../utils/file'
-import { Context as BeeContext } from '../../providers/Bee'
+import { fromBytesConversion, getHumanReadableFileSize } from '../../utils/file'
+import { Context as SettingsContext } from '../../providers/Settings'
 import ErrorModal from './ErrorModal'
+import { Duration } from '@upcoming/bee-js'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -240,38 +241,33 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   const classes = useStyles()
   const [isHoveredDestroy, setIsHoveredDestroy] = useState(false)
   const [isHoveredDownload, setIsHoveredDownload] = useState(false)
-  const [size, setSize] = useState(bytesConversion(activeVolume.volume.size, 'GB'))
-  const [validity, setValidity] = useState(0)
+  const [size, setSize] = useState(fromBytesConversion(activeVolume.volume.size, 'GB'))
+  const [validity, setValidity] = useState(new Date(activeVolume.validity))
   const [cost, setCost] = useState('')
   const [showErrorModal, setShowErrorModal] = useState(false)
 
-  const { bee } = useContext(BeeContext)
+  const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
     const fetchCost = async () => {
-      // eslint-disable-next-line no-console
-      console.log(bytesConversion(activeVolume.volume.size, 'GB'))
-      // eslint-disable-next-line no-console
-      console.log('COMPARISON')
-      // eslint-disable-next-line no-console
-      console.log(Math.floor(size))
-      // try {
-
-      if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-        // eslint-disable-next-line no-alert
-        // alert(size)
-        const cost = await bee.getSizeExtensionCost(activeVolume.volume.batchID, Math.floor(size))
-        setCost(cost.toSignificantDigits(5))
-      } else {
-        setCost('0')
+      try {
+        if (size > fromBytesConversion(activeVolume.volume.size, 'GB') || validity.getTime() > activeVolume.validity) {
+          const cost = await beeApi?.getExtensionCost(
+            activeVolume.volume.batchID,
+            Math.floor(size),
+            Duration.fromEndDate(validity),
+          )
+          setCost(cost ? cost.toSignificantDigits(5) : '0')
+        } else {
+          setCost('0')
+        }
+      } catch (e) {
+        setShowErrorModal(true)
       }
-      // } catch (e) {
-      // setShowErrorModal(true)
-      // }
     }
 
     fetchCost()
-  }, [activeVolume, size])
+  }, [activeVolume, size, validity])
 
   const handleMouseEnterDestroy = () => {
     setIsHoveredDestroy(true)
@@ -291,8 +287,8 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
 
   const updateVolume = async () => {
     try {
-      if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-        await bee.extendStorageSize(activeVolume.volume.batchID, 8)
+      if (size > fromBytesConversion(activeVolume.volume.size, 'GB')) {
+        await beeApi?.extendStorageSize(activeVolume.volume.batchID, 8)
       }
     } catch (e) {
       setShowErrorModal(true)
@@ -354,7 +350,7 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
         </div>
         <div className={classes.volumeSliders}>
           <SizeSlider
-            onChange={value => setSize(bytesConversion(value, 'GB'))}
+            onChange={value => setSize(fromBytesConversion(value, 'GB'))}
             exactValue={activeVolume?.volume.size ?? 0}
             lowerLabel={`Current/used: ${getHumanReadableFileSize(
               activeVolume?.volume.size ?? 0,
@@ -366,7 +362,7 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
             exactValue={activeVolume?.validity}
             lowerLabel="Current:"
             onDateChange={date => {
-              setValidity(validity)
+              setValidity(date)
             }}
           />
         </div>

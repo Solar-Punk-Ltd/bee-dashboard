@@ -2,7 +2,7 @@ import { createStyles, makeStyles, Slider } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import VolumeSliderCustomInput from './VolumeSliderCustomInput'
-import { bytesConversion, sizeToBytes } from '../../utils/file'
+import { fromBytesConversion, sizeToBytes } from '../../utils/file'
 import OverMaxRangeIcon from '../icons/OverMaxRangeIcon'
 
 const useStyles = makeStyles(() =>
@@ -171,13 +171,13 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
       <div>
         {showCustomSize ? (
           <VolumeSliderCustomInput
-            defaultSize={Number(bytesConversion(selectedSize, metric).toFixed(0))}
+            defaultSize={Number(fromBytesConversion(selectedSize, metric).toFixed(0))}
             handleCustomChange={(value: number, metric: string) => handleCustomChange(value, metric)}
             metric={metric}
           />
         ) : null}
         <div className={classes.upperBoldSliderLabel} onClick={handleShowCustomSize}>
-          {bytesConversion(selectedSize, metric).toFixed(2)} {metric}
+          {fromBytesConversion(selectedSize, metric).toFixed(2)} {metric}
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'center' }} onClick={handleSliderClick}>

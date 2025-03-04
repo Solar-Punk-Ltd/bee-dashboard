@@ -1,6 +1,5 @@
 import {
   AllSettlements,
-  Bee,
   BeeModes,
   BZZ,
   ChainState,
@@ -44,7 +43,6 @@ interface Status {
 }
 
 interface ContextInterface {
-  bee: Bee
   beeVersion: string | null
   status: Status
   error: Error | null
@@ -70,7 +68,6 @@ interface ContextInterface {
 }
 
 const initialValues: ContextInterface = {
-  bee: new Bee(process.env.BEEURL || 'http://localhost:1633'),
   beeVersion: null,
   status: {
     all: CheckState.ERROR,
@@ -170,7 +167,6 @@ interface Props {
 }
 
 export function Provider({ children }: Props): ReactElement {
-  const bee = new Bee(process.env.BEEURL || 'http://localhost:1633')
   const { beeApi } = useContext(SettingsContext)
   const [beeVersion, setBeeVersion] = useState<string | null>(null)
   const [apiHealth, setApiHealth] = useState<boolean>(false)
@@ -360,7 +356,6 @@ export function Provider({ children }: Props): ReactElement {
   return (
     <Context.Provider
       value={{
-        bee,
         beeVersion,
         status,
         error,
