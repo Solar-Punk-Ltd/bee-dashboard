@@ -97,7 +97,6 @@ const VolumeModal = ({ modalDisplay, newVolume, activeVolume }: VolumeModalProps
             modalDisplay={modalDisplay}
             newVolume={newVolume ? newVolume : false}
             activeVolume={activeVolume}
-            // validity={activeVolume?.validity}
           />
         ) : null}
         {activeTab === 'Sharing' ? (

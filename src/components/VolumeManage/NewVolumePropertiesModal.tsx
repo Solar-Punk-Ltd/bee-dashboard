@@ -1,11 +1,13 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { SwarmTextInput } from '../SwarmTextInput'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
 import { bytesConversion } from '../../utils/file'
-import { Bee, Duration } from '@upcoming/bee-js'
+import { Duration } from '@upcoming/bee-js'
+import { Context as BeeContext } from '../../providers/Bee'
+import ErrorModal from './ErrorModal'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -228,26 +230,33 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   const [cost, setCost] = useState('')
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
-
-  const bee = new Bee('http://localhost:1633')
+  const { bee } = useContext(BeeContext)
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
   const createPostageStamp = async () => {
-    if (size > 0 && validity.getTime() > new Date().getTime()) {
-      await bee.buyStorage(size, Duration.fromEndDate(validity), { label: label })
-      modalDisplay(false)
+    try {
+      if (size > 0 && validity.getTime() > new Date().getTime()) {
+        await bee.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+        modalDisplay(false)
+      }
+    } catch (e) {
+      setShowErrorModal(true)
     }
   }
 
   useEffect(() => {
     const fetchCost = async () => {
-      if (size > bytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
-        const cost = await bee.getStorageCost(size, Duration.fromEndDate(validity))
-        setCost(cost.toSignificantDigits(2))
-      } else {
-        setCost('0')
+      try {
+        if (size > bytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
+          const cost = await bee.getStorageCost(size, Duration.fromEndDate(validity))
+          setCost(cost.toSignificantDigits(2))
+        } else {
+          setCost('0')
+        }
+      } catch (e) {
+        setShowErrorModal(true)
       }
     }
-
     fetchCost()
 
     if (size > 0 && validity.getTime() > new Date().getTime()) {
@@ -303,6 +312,7 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           :
         </div>
       </div>
+      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}
     </div>
   )
 }

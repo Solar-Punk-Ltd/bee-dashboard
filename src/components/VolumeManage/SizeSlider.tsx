@@ -124,6 +124,9 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
     },
   ]
 
+  const sliderMin = sizeMarks[0].value
+  const sliderMax = sizeMarks[sizeMarks.length - 1].value
+
   const handleChange = (event: any, newValue: number | number[]) => {
     setValue(newValue as number)
     setSelectedSize((exactValue ?? 0) + sizes[newValue as number])
@@ -181,8 +184,8 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
         <Slider
           step={step}
           marks={sizeMarks}
-          min={0}
-          max={4}
+          min={sliderMin}
+          max={sliderMax}
           value={value}
           valueLabelDisplay="off"
           onChange={handleChange}

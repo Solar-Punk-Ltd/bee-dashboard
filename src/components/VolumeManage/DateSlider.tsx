@@ -3,6 +3,14 @@ import type { ReactElement } from 'react'
 import { useState } from 'react'
 import OverMaxRangeIcon from '../icons/OverMaxRangeIcon'
 
+enum TimeUnit {
+  WEEK = 1,
+  MONTH = 2,
+  QUARTER = 3,
+  HALF_YEAR = 4,
+  YEAR = 5,
+}
+
 const useStyles = makeStyles(() =>
   createStyles({
     container: {
@@ -96,27 +104,41 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
   const [sliderValue, setSliderValue] = useState<number>(0)
   const [isThumbVisible, setIsThumbVisible] = useState(false)
   const [isOverMaxIconVisible, setIsOverMaxIconVisible] = useState(false)
-  //   const dateInputRef = useRef<HTMLInputElement>(null)
+
+  const timeUnitActions = [
+    (date: Date) => date.setDate(date.getDate() + 7),
+    (date: Date) => date.setMonth(date.getMonth() + 1),
+    (date: Date) => date.setMonth(date.getMonth() + 3),
+    (date: Date) => date.setMonth(date.getMonth() + 6),
+    (date: Date) => date.setFullYear(date.getFullYear() + 1),
+  ]
 
   const handleChange = (event: any, newValue: number | number[]) => {
     const newDate = new Date(exactValue ?? 0)
     setIsThumbVisible(true)
     setIsOverMaxIconVisible(false)
+
+    const action = timeUnitActions[newValue as number]
+
+    if (action) {
+      action(newDate)
+    }
+
     switch (newValue) {
       case 1:
-        newDate.setDate(newDate.getDate() + 7) // 1 week
+        newDate.setDate(newDate.getDate() + TimeUnit.WEEK)
         break
       case 2:
-        newDate.setMonth(newDate.getMonth() + 1) // 1 month
+        newDate.setMonth(newDate.getMonth() + 1)
         break
       case 3:
-        newDate.setMonth(newDate.getMonth() + 3) // 3 months
+        newDate.setMonth(newDate.getMonth() + 3)
         break
       case 4:
-        newDate.setMonth(newDate.getMonth() + 6) // 6 months
+        newDate.setMonth(newDate.getMonth() + 6)
         break
       case 5:
-        newDate.setFullYear(newDate.getFullYear() + 1) // 1 year
+        newDate.setFullYear(newDate.getFullYear() + 1)
         break
       default:
     }
@@ -145,6 +167,9 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
     { value: 5, label: 'By 1 year' },
   ]
 
+  const sliderMin = dateSliderMarks[0].value
+  const sliderMax = dateSliderMarks[dateSliderMarks.length - 1].value
+
   return (
     <div className={classes.container}>
       <div>
@@ -166,8 +191,8 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange }: Props): ReactEleme
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Slider
           step={1}
-          min={0}
-          max={5}
+          min={sliderMin}
+          max={sliderMax}
           defaultValue={exactValue}
           value={sliderValue}
           marks={dateSliderMarks}

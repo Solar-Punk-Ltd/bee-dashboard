@@ -1,6 +1,6 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import DestroyIcon from '../icons/DestroyIcon'
 import DownloadIcon from '../icons/DownloadIcon'
 import { SwarmTextInput } from '../SwarmTextInput'
@@ -8,7 +8,8 @@ import { ActiveVolume } from './VolumeModal'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
 import { bytesConversion, getHumanReadableFileSize } from '../../utils/file'
-import { Bee } from '@upcoming/bee-js'
+import { Context as BeeContext } from '../../providers/Bee'
+import ErrorModal from './ErrorModal'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -242,17 +243,31 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   const [size, setSize] = useState(bytesConversion(activeVolume.volume.size, 'GB'))
   const [validity, setValidity] = useState(0)
   const [cost, setCost] = useState('')
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
-  const bee = new Bee('http://localhost:1633')
+  const { bee } = useContext(BeeContext)
 
   useEffect(() => {
     const fetchCost = async () => {
+      // eslint-disable-next-line no-console
+      console.log(bytesConversion(activeVolume.volume.size, 'GB'))
+      // eslint-disable-next-line no-console
+      console.log('COMPARISON')
+      // eslint-disable-next-line no-console
+      console.log(Math.floor(size))
+      // try {
+
       if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-        const cost = await bee.getSizeExtensionCost(activeVolume.volume.batchID, size)
+        // eslint-disable-next-line no-alert
+        // alert(size)
+        const cost = await bee.getSizeExtensionCost(activeVolume.volume.batchID, Math.floor(size))
         setCost(cost.toSignificantDigits(5))
       } else {
         setCost('0')
       }
+      // } catch (e) {
+      // setShowErrorModal(true)
+      // }
     }
 
     fetchCost()
@@ -275,8 +290,12 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   }
 
   const updateVolume = async () => {
-    if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
-      await bee.extendStorageSize(activeVolume.volume.batchID, 8)
+    try {
+      if (size > bytesConversion(activeVolume.volume.size, 'GB')) {
+        await bee.extendStorageSize(activeVolume.volume.batchID, 8)
+      }
+    } catch (e) {
+      setShowErrorModal(true)
     }
   }
 
@@ -364,6 +383,7 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
           </div>
         </div>
       </div>
+      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}
     </div>
   )
 }

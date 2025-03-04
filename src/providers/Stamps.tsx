@@ -1,6 +1,7 @@
 import { Bee, PostageBatch } from '@upcoming/bee-js'
 import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
 import { Context as SettingsContext } from './Settings'
+import { Context as BeeContext } from './Bee'
 
 export interface EnrichedPostageBatch extends PostageBatch {
   usage: number
@@ -58,13 +59,10 @@ export function Provider({ children }: Props): ReactElement {
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(3000)
 
-  const bee = new Bee('http://localhost:1633')
+  const { bee } = useContext(BeeContext)
 
   async function getUsableStamps(bee: Bee): Promise<PostageBatch[]> {
     try {
-      // eslint-disable-next-line no-alert
-      // alert('fsdfs')
-
       return (await bee.getAllPostageBatch())
         .filter(s => s.usable)
         .sort((a, b) => (a.label || '').localeCompare(b.label || ''))
