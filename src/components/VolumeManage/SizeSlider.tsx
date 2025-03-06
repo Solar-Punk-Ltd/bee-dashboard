@@ -1,9 +1,8 @@
 import { createStyles, makeStyles, Slider } from '@material-ui/core'
 import type { ReactElement } from 'react'
-import { useState } from 'react'
-import VolumeSliderCustomInput from './VolumeSliderCustomInput'
-import { fromBytesConversion, sizeToBytes } from '../../utils/file'
-import OverMaxRangeIcon from '../icons/OverMaxRangeIcon'
+import { useEffect, useState } from 'react'
+import { fromBytesConversion } from '../../utils/file'
+import { Size, Utils } from '@upcoming/bee-js'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -85,102 +84,64 @@ const useStyles = makeStyles(() =>
 )
 
 interface Props {
-  onChange: (value: number) => void
+  onChange: (value: Size) => void
   lowerLabel?: string
   step?: number
   sliderValue?: number
-  exactValue: number
+  exactValue: Size
+  newVolume?: boolean
 }
 
-const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactElement => {
+const SizeSlider = ({ onChange, lowerLabel, step, exactValue, newVolume }: Props): ReactElement => {
+  const sizesMap = Utils.getStampEffectiveBytesBreakpoints()
+  const sizes = Array.from(sizesMap.values())
   const classes = useStyles()
   const [value, setValue] = useState<number>(0)
-  const [selectedSize, setSelectedSize] = useState<number>(exactValue ?? 0)
-  const [showCustomSize, setShowCustomSize] = useState(false)
-  const [metric, setMetric] = useState('GB')
-  const [isCustomValueSelected, setIsCustomValueSelected] = useState(false)
-  const [isOverMaxIconVisible, setIsOverMaxIconVisible] = useState(false)
+  const [selectedSize, setSelectedSize] = useState(exactValue)
+  const metric = 'GB'
 
-  const sizeMarks = [
-    {
-      value: 0,
-      label: 'by 0GB',
-    },
-    {
-      value: 1,
-      label: 'by 4GB',
-    },
-    {
-      value: 2,
-      label: 'by 16GB',
-    },
-    {
-      value: 3,
-      label: 'by 128GB',
-    },
-    {
-      value: 4,
-      label: 'by 512GB',
-    },
-  ]
+  useEffect(() => {
+    if (newVolume) {
+      handleChange(null, 0)
+    }
+  }, [])
+
+  const handleChange = (event: any, newValue: number | number[]) => {
+    setValue(newValue as number)
+    setSelectedSize(Size.fromBytes(realSizes[newValue as number]))
+
+    onChange(Size.fromBytes(realSizes[newValue as number]))
+  }
+
+  if (newVolume) {
+    sizes.unshift(0)
+  }
+
+  const firstIndex = newVolume
+    ? sizes.findIndex(size => size > exactValue.toBytes())
+    : sizes.findIndex(size => size >= exactValue.toBytes())
+  const lastIndex = sizes.findIndex(size => size === 1001435190579)
+  const realSizes = sizes.slice(firstIndex, lastIndex)
+
+  const sizeMarks = realSizes.map((size, index) => ({
+    value: index,
+    label: index === 0 && !newVolume ? 'Current' : `to ${fromBytesConversion(size, 'GB').toFixed(0)}GB`,
+  }))
 
   const sliderMin = sizeMarks[0].value
   const sliderMax = sizeMarks[sizeMarks.length - 1].value
 
-  const handleChange = (event: any, newValue: number | number[]) => {
-    setValue(newValue as number)
-    setSelectedSize((exactValue ?? 0) + sizes[newValue as number])
-
-    onChange((exactValue ?? 0) + sizes[newValue as number])
-
-    setMetric('GB')
-  }
-
-  const handleCustomChange = (size: number, metric: string) => {
-    if (sizeToBytes(size, metric) > exactValue) {
-      setSelectedSize(sizeToBytes(size, metric))
-      onChange((exactValue ?? 0) + sizeToBytes(size, metric))
-    }
-    setMetric(metric)
-  }
-
-  const handleShowCustomSize = () => {
-    setIsCustomValueSelected(true)
-
-    setShowCustomSize(!showCustomSize)
-
-    if (selectedSize > sizes[4]) {
-      setIsOverMaxIconVisible(true)
-    }
-    // TODO It need to be discussed
-    // if (selectedSize < exactValue) {
-    //   setIsInvalidValueModalVisible(true)
-    // }
-  }
-
-  const handleSliderClick = () => {
-    setIsCustomValueSelected(false)
-    setShowCustomSize(false)
-    setIsOverMaxIconVisible(false)
-  }
-
-  const sizes = [0, sizeToBytes(4, 'GB'), sizeToBytes(16, 'GB'), sizeToBytes(128, 'GB'), sizeToBytes(512, 'GB')]
-
   return (
     <div className={classes.container}>
       <div>
-        {showCustomSize ? (
-          <VolumeSliderCustomInput
-            defaultSize={Number(fromBytesConversion(selectedSize, metric).toFixed(0))}
-            handleCustomChange={(value: number, metric: string) => handleCustomChange(value, metric)}
-            metric={metric}
-          />
-        ) : null}
-        <div className={classes.upperBoldSliderLabel} onClick={handleShowCustomSize}>
-          {fromBytesConversion(selectedSize, metric).toFixed(2)} {metric}
+        <div>
+          Size:{' '}
+          <span className={classes.upperBoldSliderLabel}>
+            {selectedSize.toGigabytes().toFixed(2)} {metric}
+          </span>
         </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center' }} onClick={handleSliderClick}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Slider
           step={step}
           marks={sizeMarks}
@@ -192,13 +153,8 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
           classes={{
             mark: classes.mark,
             markLabel: classes.markLabel,
-            thumb: isCustomValueSelected ? classes.thumbInvisible : classes.thumbVisible,
           }}
         />
-
-        <div className={classes.rightRangeIcon}>
-          {isOverMaxIconVisible ? <OverMaxRangeIcon /> : <div className={classes.overMaxRangeIconPlaceholder}></div>}
-        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'right' }}>
@@ -206,10 +162,6 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue }: Props): ReactEle
           <div className={classes.lowerBoldSliderLabel}>{lowerLabel}</div>
         </div>
       </div>
-      {/* TODO It need to be discussed */}
-      {/* {isInvalidValueModalVisible ? (
-        <InvalidValueModal modalDisplay={() => setIsInvalidValueModalVisible(false)} />
-      ) : null} */}
     </div>
   )
 }

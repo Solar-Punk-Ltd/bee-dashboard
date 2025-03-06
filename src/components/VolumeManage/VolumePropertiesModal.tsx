@@ -7,7 +7,7 @@ import { SwarmTextInput } from '../SwarmTextInput'
 import { ActiveVolume } from './VolumeModal'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { fromBytesConversion, getHumanReadableFileSize } from '../../utils/file'
+import { getHumanReadableFileSize } from '../../utils/file'
 import { Context as SettingsContext } from '../../providers/Settings'
 import ErrorModal from './ErrorModal'
 import { Duration } from '@upcoming/bee-js'
@@ -70,7 +70,7 @@ const useStyles = makeStyles(() =>
         color: '#FFFFFF',
       },
     },
-    buttonElementUpdate: {
+    updateButtonEnabled: {
       backgroundColor: '#DE7700',
       color: '#FFFFFF',
       width: '256px',
@@ -82,6 +82,16 @@ const useStyles = makeStyles(() =>
         backgroundColor: '#DE7700',
         color: '#FFFFFF',
       },
+    },
+    updateButtonDisabled: {
+      backgroundColor: '#878787',
+      color: '#FFFFFF',
+      width: '256px',
+      height: '42px',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      cursor: 'not-allowed',
     },
     buttonElementNotificationSign: {
       position: 'absolute',
@@ -241,25 +251,28 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   const classes = useStyles()
   const [isHoveredDestroy, setIsHoveredDestroy] = useState(false)
   const [isHoveredDownload, setIsHoveredDownload] = useState(false)
-  const [size, setSize] = useState(fromBytesConversion(activeVolume.volume.size, 'GB'))
+  const [size, setSize] = useState(activeVolume.volume.size)
   const [validity, setValidity] = useState(new Date(activeVolume.validity))
   const [cost, setCost] = useState('')
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [isUploadButtonEnabled, setIsUploadButtonEnabled] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
     const fetchCost = async () => {
       try {
-        if (size > fromBytesConversion(activeVolume.volume.size, 'GB') || validity.getTime() > activeVolume.validity) {
-          const cost = await beeApi?.getExtensionCost(
-            activeVolume.volume.batchID,
-            Math.floor(size),
-            Duration.fromEndDate(validity),
-          )
-          setCost(cost ? cost.toSignificantDigits(5) : '0')
-        } else {
+        const cost = await beeApi?.getExtensionCost(activeVolume.volume.batchID, size, Duration.fromEndDate(validity))
+
+        if (
+          size.toGigabytes() === activeVolume.volume.size.toGigabytes() &&
+          validity.getTime() === activeVolume.validity
+        ) {
           setCost('0')
+          setIsUploadButtonEnabled(false)
+        } else {
+          setCost(cost ? cost.toSignificantDigits(2) : '0')
+          setIsUploadButtonEnabled(true)
         }
       } catch (e) {
         setShowErrorModal(true)
@@ -286,12 +299,14 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   }
 
   const updateVolume = async () => {
-    try {
-      if (size > fromBytesConversion(activeVolume.volume.size, 'GB')) {
-        await beeApi?.extendStorageSize(activeVolume.volume.batchID, 8)
+    if (isUploadButtonEnabled) {
+      try {
+        if (size > activeVolume.volume.size) {
+          await beeApi?.extendStorageSize(activeVolume.volume.batchID, size)
+        }
+      } catch (e) {
+        setShowErrorModal(true)
       }
-    } catch (e) {
-      setShowErrorModal(true)
     }
   }
 
@@ -350,20 +365,22 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
         </div>
         <div className={classes.volumeSliders}>
           <SizeSlider
-            onChange={value => setSize(fromBytesConversion(value, 'GB'))}
+            onChange={value => setSize(value)}
             exactValue={activeVolume?.volume.size ?? 0}
             lowerLabel={`Current/used: ${getHumanReadableFileSize(
-              activeVolume?.volume.size ?? 0,
-            )}/${getHumanReadableFileSize(activeVolume?.volume.remainingSize ?? 0)}`}
+              activeVolume?.volume.size.toBytes() ?? 0,
+            )}/${getHumanReadableFileSize(activeVolume?.volume.remainingSize.toBytes() ?? 0)}`}
+            newVolume={false}
           />
           <DateSlider
             type="date"
             upperLabel="Extend validity to:"
-            exactValue={activeVolume?.validity}
+            exactValue={new Date(activeVolume.validity)}
             lowerLabel="Current:"
             onDateChange={date => {
               setValidity(date)
             }}
+            newVolume={false}
           />
         </div>
         <div className={classes.costContainer}>
@@ -374,8 +391,12 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
           <div className={classes.buttonElementCancel} style={{ width: '160px' }} onClick={() => modalDisplay(false)}>
             Cancel
           </div>
-          <div className={classes.buttonElementUpdate} style={{ width: '160px' }} onClick={() => updateVolume()}>
-            {newVolume ? 'Create' : 'Update'}
+          <div
+            className={isUploadButtonEnabled ? classes.updateButtonEnabled : classes.updateButtonDisabled}
+            style={{ width: '160px' }}
+            onClick={() => updateVolume()}
+          >
+            Update
           </div>
         </div>
       </div>

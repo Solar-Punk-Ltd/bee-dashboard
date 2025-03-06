@@ -1,11 +1,10 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { SwarmTextInput } from '../SwarmTextInput'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { fromBytesConversion } from '../../utils/file'
-import { Duration } from '@upcoming/bee-js'
+import { BZZ, Duration, Size } from '@upcoming/bee-js'
 import { Context as SettingsContext } from '../../providers/Settings'
 import ErrorModal from './ErrorModal'
 
@@ -225,17 +224,18 @@ interface VolumePropertiesModalProps {
 
 const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesModalProps): ReactElement => {
   const classes = useStyles()
-  const [size, setSize] = useState(fromBytesConversion(0, 'GB'))
+  const [size, setSize] = useState(Size.fromBytes(0))
   const [validity, setValidity] = useState(new Date())
   const [cost, setCost] = useState('')
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const { beeApi } = useContext(SettingsContext)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const currentFetch = useRef<Promise<void> | null>(null)
 
   const createPostageStamp = async () => {
     try {
-      if (size > 0 && validity.getTime() > new Date().getTime()) {
+      if (isCreateEnabled) {
         await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
         modalDisplay(false)
       }
@@ -245,25 +245,32 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   }
 
   useEffect(() => {
+    label ? setIsCreateEnabled(true) : setIsCreateEnabled(false)
+  }, [label])
+
+  useEffect(() => {
     const fetchCost = async () => {
-      try {
-        if (size > fromBytesConversion(0, 'GB') && validity.getTime() > new Date().getTime()) {
-          const cost = await beeApi?.getStorageCost(size, Duration.fromEndDate(validity))
-          setCost(cost ? cost.toSignificantDigits(2) : '0')
-        } else {
-          setCost('0')
-        }
-      } catch (e) {
-        setShowErrorModal(true)
+      if (currentFetch.current) {
+        await currentFetch.current
       }
+      const fetchPromise = (async () => {
+        let cost: BZZ | undefined = undefined
+        try {
+          if (size.toGigabytes() >= 0 && validity.getTime() >= new Date().getTime()) {
+            cost = await beeApi?.getStorageCost(size, Duration.fromEndDate(validity))
+            setCost(cost ? cost.toSignificantDigits(2) : '0')
+          } else {
+            setCost('0')
+          }
+        } catch (e) {
+          setShowErrorModal(true)
+        }
+      })()
+      currentFetch.current = fetchPromise
+      await fetchPromise
+      currentFetch.current = null
     }
     fetchCost()
-
-    if (size > 0 && validity.getTime() > new Date().getTime()) {
-      setIsCreateEnabled(true)
-    } else {
-      setIsCreateEnabled(false)
-    }
   }, [size, validity])
 
   return (
@@ -280,18 +287,19 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: '20px' }}>
             <div style={{}}>
-              <SwarmTextInput name="name" label="label" required={false} onChange={e => setLabel(e.target.value)} />
+              <SwarmTextInput name="name" label="label" required={true} onChange={e => setLabel(e.target.value)} />
             </div>
           </div>
         </div>
         <div className={classes.volumeSliders}>
-          <SizeSlider onChange={value => setSize(fromBytesConversion(value, 'GB'))} exactValue={0} />
+          <SizeSlider onChange={value => setSize(value)} exactValue={Size.fromBytes(0)} newVolume={true} />
           <DateSlider
             type="date"
-            upperLabel="Extend validity to:"
-            exactValue={new Date().getTime()}
+            upperLabel="Validity:"
+            exactValue={new Date()}
             lowerLabel="Current:"
             onDateChange={value => setValidity(new Date(value))}
+            newVolume={true}
           />
         </div>
         <div className={classes.costContainer}>
