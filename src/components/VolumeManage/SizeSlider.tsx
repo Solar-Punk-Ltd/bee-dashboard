@@ -125,7 +125,7 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue, newVolume }: Props
 
   const sizeMarks = realSizes.map((size, index) => ({
     value: index,
-    label: index === 0 && !newVolume ? 'Current' : `to ${fromBytesConversion(size, 'GB').toFixed(0)}GB`,
+    label: index === 0 && !newVolume ? 'Current' : `to ${fromBytesConversion(size, metric).toFixed(0)}GB`,
   }))
 
   const sliderMin = sizeMarks[0].value

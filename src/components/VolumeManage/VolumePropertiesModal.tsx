@@ -265,8 +265,8 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
         const cost = await beeApi?.getExtensionCost(activeVolume.volume.batchID, size, Duration.fromEndDate(validity))
 
         if (
-          size.toGigabytes() === activeVolume.volume.size.toGigabytes() &&
-          validity.getTime() === activeVolume.validity
+          size.toGigabytes() <= activeVolume.volume.size.toGigabytes() &&
+          validity.getTime() <= activeVolume.validity
         ) {
           setCost('0')
           setIsUploadButtonEnabled(false)
@@ -303,6 +303,12 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
       try {
         if (size > activeVolume.volume.size) {
           await beeApi?.extendStorageSize(activeVolume.volume.batchID, size)
+          modalDisplay(false)
+        }
+
+        if (validity.getTime() > activeVolume.validity) {
+          await beeApi?.extendStorageDuration(activeVolume.volume.batchID, Duration.fromEndDate(validity))
+          modalDisplay(false)
         }
       } catch (e) {
         setShowErrorModal(true)
