@@ -42,7 +42,7 @@ export default function FM(): ReactElement {
       return
     }
 
-    const files = filemanager.getFileInfoList()
+    const files = filemanager.fileInfoList
     setFileList(files)
   }, [filemanager, initialized])
 

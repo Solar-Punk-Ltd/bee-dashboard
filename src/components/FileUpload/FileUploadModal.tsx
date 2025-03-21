@@ -90,7 +90,7 @@ const UploadModal = ({ modalDisplay, file }: UploadModalProps): ReactElement => 
   const handleUpload = () => {
     if (filemanager && initialized) {
       filemanager.upload({
-        batchId: new BatchId('58ae77f6de3acea8ec0e4ff91dbc6f203984af9011a8be4ee94de6eedf005b41'),
+        batchId: new BatchId('b6af9424d5177113f364759cadedce3a0d50681607ed900178553be8a7496771'),
         files: [file],
         name: file.name,
         customMetadata: {
