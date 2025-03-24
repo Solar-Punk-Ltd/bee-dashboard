@@ -1,4 +1,5 @@
 import { createStyles, makeStyles } from '@material-ui/core'
+import { UploadProgress } from '@solarpunkltd/file-manager-lib'
 import type { ReactElement } from 'react'
 import { useContext, useState } from 'react'
 import { SwarmTextInput } from '../SwarmTextInput'
@@ -69,11 +70,6 @@ const useStyles = makeStyles(() =>
     },
   }),
 )
-
-interface UploadProgress {
-  total: number
-  processed: number
-}
 
 interface UploadModalProps {
   modalDisplay: (value: boolean) => void

@@ -45,7 +45,7 @@ export function Provider({ children }: Props): ReactElement {
       const signer = getSigner()
 
       if (signer) {
-        // TOOD: use Bee instead of BeeDev
+        // TODO: use Bee instead of BeeDev
         const bee = new BeeDev(apiUrl, { signer })
         const fm = new FileManagerBase(bee)
         fm.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, (e: boolean) => {
