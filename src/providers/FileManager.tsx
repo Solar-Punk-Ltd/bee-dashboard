@@ -5,12 +5,10 @@ import { Context as SettingsContext } from '../providers/Settings'
 
 interface ContextInterface {
   filemanager: FileManager | null
-  initialized: boolean
 }
 
 const initialValues: ContextInterface = {
   filemanager: null,
-  initialized: false,
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -23,7 +21,6 @@ interface Props {
 export function Provider({ children }: Props): ReactElement {
   const { apiUrl } = useContext(SettingsContext)
   const [filemanager, setFilemanager] = useState<FileManager | null>(null)
-  const [initialized, setInitialized] = useState<boolean>(false)
 
   const getSigner = (): PrivateKey | undefined => {
     const pkItem = localStorage.getItem('fmPrivateKey')
@@ -49,15 +46,14 @@ export function Provider({ children }: Props): ReactElement {
         const bee = new BeeDev(apiUrl, { signer })
         const fm = new FileManagerBase(bee)
         fm.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, (e: boolean) => {
-          setInitialized(e)
+          setFilemanager(fm)
         })
         await fm.initialize()
-        setFilemanager(fm)
       }
     }
 
     init()
   }, [apiUrl])
 
-  return <Context.Provider value={{ filemanager: filemanager, initialized }}>{children}</Context.Provider>
+  return <Context.Provider value={{ filemanager: filemanager }}>{children}</Context.Provider>
 }

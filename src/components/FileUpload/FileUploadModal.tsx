@@ -81,10 +81,10 @@ const UploadModal = ({ modalDisplay, file }: UploadModalProps): ReactElement => 
   const classes = useStyles()
   const [description, setDescription] = useState('')
   const [label, setLabel] = useState('')
-  const { filemanager, initialized } = useContext(FileManagerContext)
+  const { filemanager } = useContext(FileManagerContext)
 
   const handleUpload = () => {
-    if (filemanager && initialized) {
+    if (filemanager) {
       filemanager.upload({
         batchId: new BatchId('b6af9424d5177113f364759cadedce3a0d50681607ed900178553be8a7496771'),
         files: [file],

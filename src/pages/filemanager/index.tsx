@@ -1,10 +1,9 @@
 import { ReactElement, useContext, useEffect, useState } from 'react'
-import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { createStyles, makeStyles } from '@material-ui/core'
 import FileItem from '../../components/FileItem'
 import FilesHandler from '../../components/FilesHandler'
 import { Context as FileManagerContext } from '../../providers/FileManager'
-import { FileManagerEvents } from '@solarpunkltd/file-manager-lib'
+import { FileInfo, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -33,18 +32,18 @@ const useStyles = makeStyles(() =>
   }),
 )
 export default function FM(): ReactElement {
-  const { filemanager, initialized } = useContext(FileManagerContext)
+  const { filemanager } = useContext(FileManagerContext)
   const classes = useStyles()
   const [fileList, setFileList] = useState<FileInfo[]>([])
 
   useEffect(() => {
-    if (!filemanager || !initialized) {
+    if (!filemanager) {
       return
     }
 
     const files = filemanager.fileInfoList
     setFileList(files)
-  }, [filemanager, initialized])
+  }, [filemanager])
 
   useEffect(() => {
     if (!filemanager) {
@@ -83,7 +82,7 @@ export default function FM(): ReactElement {
                     : 'other'
                 }
                 size={file.customMetadata?.size ? file.customMetadata.size : ''}
-                hash={'bagoy'}
+                hash={file.file.reference.toString()}
                 expires={file.customMetadata?.valid ? file.customMetadata.valid : ''}
                 preview={file.customMetadata?.preview ? file.customMetadata.preview : ''}
                 description={file.customMetadata?.description === 'true'}
