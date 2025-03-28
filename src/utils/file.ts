@@ -223,7 +223,7 @@ async function downloadFile(
   mimeType = 'application/octet-stream',
 ): Promise<void> {
   try {
-    const handle = await window.showSaveFilePicker({
+    const handle = await (window as any).showSaveFilePicker({
       suggestedName: fileName,
       types: [
         {
