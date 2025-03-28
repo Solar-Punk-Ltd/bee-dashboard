@@ -79,7 +79,7 @@ const FileList = (): ReactElement => {
   const classes = useStyles()
   const { filemanager, selectedBatchIds, isGroupingOn, isNewVolumeCreated } = useContext(FileManagerContext)
   const [fileList, setFileList] = useState<FileInfo[]>([])
-  const [usableStamps, setUStamps] = useState<PostageBatch[]>([])
+  const [usableStamps, setUsableStampsStamps] = useState<PostageBatch[]>([])
   const { fileOrder } = useContext(FileManagerContext)
   const { beeApi } = useContext(SettingsContext)
   const filesUnderVolumes = (allFiles: FileInfo[], selectedBatchIds: BatchId[]) => {
@@ -96,11 +96,6 @@ const FileList = (): ReactElement => {
   useEffect(() => {
     if (filemanager) {
       const allFiles = filemanager.fileInfoList
-      for (const file of allFiles) {
-        // eslint-disable-next-line no-console
-        console.log('File', file.name)
-      }
-
       filesUnderVolumes(allFiles, selectedBatchIds)
     }
   }, [filemanager, selectedBatchIds])
@@ -120,11 +115,11 @@ const FileList = (): ReactElement => {
   }, [filemanager, selectedBatchIds])
 
   useEffect(() => {
-    const getUStamps = async () => {
+    const getStamps = async () => {
       const usableStamps = await getUsableStamps(beeApi)
-      setUStamps([...usableStamps])
+      setUsableStampsStamps([...usableStamps])
     }
-    getUStamps()
+    getStamps()
   }, [beeApi, isNewVolumeCreated])
 
   return (
@@ -141,11 +136,6 @@ const FileList = (): ReactElement => {
                   {fileList
                     .sort((a, b) => sortFiles(a, b, fileOrder))
                     .map((file, index) => {
-                      // eslint-disable-next-line no-console
-                      console.log('bagoy file.owner: ', file.owner.toString())
-                      // eslint-disable-next-line no-console
-                      console.log('bagoy file.actPublisher: ', file.actPublisher.toString())
-
                       if (file.batchId.toString() === batchId.toString()) {
                         return (
                           <div key={index}>
@@ -190,48 +180,41 @@ const FileList = (): ReactElement => {
               ))
             : fileList
                 .sort((a, b) => sortFiles(a, b, fileOrder))
-                .map((file, index) => {
-                  // eslint-disable-next-line no-console
-                  console.log('bagoy file.owner: ', file.owner.toString())
-
-                  return (
-                    <div key={index}>
-                      <FileItem
-                        batchId={file.batchId.toString()}
-                        owner={file.owner.toString()}
-                        actPublisher={file.actPublisher.toString()}
-                        historyHash={file.file.historyRef.toString()}
-                        volumeName={
-                          usableStamps.find(item => item.batchID.toString() === file.batchId.toString())?.label ||
-                          'No volume name'
-                        }
-                        volumeValidity={
-                          usableStamps
-                            .find(item => item.batchID.toString() === file.batchId.toString())
-                            ?.duration.toEndDate() || new Date(0)
-                        }
-                        name={file.name}
-                        type={file.customMetadata?.type ? file.customMetadata.type : 'other'}
-                        size={getHumanReadableFileSize(
-                          Number(file.customMetadata?.size ? file.customMetadata.size : ''),
-                        )}
-                        hash={file.file?.reference ? file.file.reference.toString() : ''}
-                        expires={file.customMetadata?.valid ? file.customMetadata.valid : ''}
-                        preview={file.customMetadata?.preview ? file.customMetadata.preview : ''}
-                        description={file.customMetadata?.description === 'true'}
-                        label={file.customMetadata?.label}
-                        details={file.customMetadata?.details}
-                        shared={
-                          file.customMetadata?.shared === 'me' || file.customMetadata?.shared === 'others'
-                            ? file.customMetadata.shared
-                            : undefined
-                        }
-                        warning={file.customMetadata?.warning === 'true'}
-                        addedToQueue={file.customMetadata?.addedToQueue === 'true'}
-                      ></FileItem>
-                    </div>
-                  )
-                })}
+                .map((file, index) => (
+                  <div key={index}>
+                    <FileItem
+                      batchId={file.batchId.toString()}
+                      owner={file.owner.toString()}
+                      actPublisher={file.actPublisher.toString()}
+                      historyHash={file.file.historyRef.toString()}
+                      volumeName={
+                        usableStamps.find(item => item.batchID.toString() === file.batchId.toString())?.label ||
+                        'No volume name'
+                      }
+                      volumeValidity={
+                        usableStamps
+                          .find(item => item.batchID.toString() === file.batchId.toString())
+                          ?.duration.toEndDate() || new Date(0)
+                      }
+                      name={file.name}
+                      type={file.customMetadata?.type ? file.customMetadata.type : 'other'}
+                      size={getHumanReadableFileSize(Number(file.customMetadata?.size ? file.customMetadata.size : ''))}
+                      hash={file.file?.reference ? file.file.reference.toString() : ''}
+                      expires={file.customMetadata?.valid ? file.customMetadata.valid : ''}
+                      preview={file.customMetadata?.preview ? file.customMetadata.preview : ''}
+                      description={file.customMetadata?.description === 'true'}
+                      label={file.customMetadata?.label}
+                      details={file.customMetadata?.details}
+                      shared={
+                        file.customMetadata?.shared === 'me' || file.customMetadata?.shared === 'others'
+                          ? file.customMetadata.shared
+                          : undefined
+                      }
+                      warning={file.customMetadata?.warning === 'true'}
+                      addedToQueue={file.customMetadata?.addedToQueue === 'true'}
+                    ></FileItem>
+                  </div>
+                ))}
         </div>
       ) : (
         <div className={classes.noFilesText}>There’re no items!</div>

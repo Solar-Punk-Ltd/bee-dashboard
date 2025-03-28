@@ -195,9 +195,7 @@ export const startDownloadingQueue = async (
           data.push(result.value)
 
           const fileInfo = downloadTasks[index].fileInfo
-          // eslint-disable-next-line no-console
-          console.log('Processing download result for:', fileInfo.name, fileInfo.customMetadata)
-
+          
           downloadFile(
             new Blob([result.value[0]], { type: fileInfo.customMetadata?.type || 'application/octet-stream' }),
             fileInfo.name,

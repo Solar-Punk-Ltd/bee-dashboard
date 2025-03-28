@@ -316,7 +316,7 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           <div
             className={isCreateEnabled ? classes.createButtonEnabled : classes.createButtonDisabled}
             style={{ width: '160px' }}
-            onClick={createPostageStamp}
+            onClick={async () => await createPostageStamp()}
           >
             Create
           </div>{' '}
