@@ -148,8 +148,6 @@ const FileItem = ({
             <div
               onClick={e => {
                 e.stopPropagation()
-                // eslint-disable-next-line no-console
-                console.log('Added to queue')
                 setAdded(!added)
 
                 if (!added) {

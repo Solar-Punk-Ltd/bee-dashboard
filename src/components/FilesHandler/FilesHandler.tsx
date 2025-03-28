@@ -40,30 +40,16 @@ const useStyles = makeStyles(() =>
 
 const FilesHandler = (): ReactElement => {
   const classes = useStyles()
-  const [uStamps, setUStamps] = useState<PostageBatch[]>([])
+  const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const { selectedBatchIds, setSelectedBatchIds, isNewVolumeCreated } = useContext(FileManagerContext)
   const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
-    if (selectedBatchIds.length === 0) {
-      const newBatchIds: BatchId[] = []
-      uStamps?.forEach(stamp => {
-        newBatchIds.push(stamp.batchID)
-      })
-      setSelectedBatchIds(newBatchIds)
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      setUsableStamps([...stamps])
     }
-  })
-
-  useEffect(() => {
-    const getUStamps = async () => {
-      const usableStamps = await getUsableStamps(beeApi)
-      setUStamps([...usableStamps])
-      for (const stamp of usableStamps) {
-        // eslint-disable-next-line no-console
-        console.log('STAMP', stamp.label)
-      }
-    }
-    getUStamps()
+    getStamps()
   }, [beeApi, isNewVolumeCreated])
 
   const handlerSelectedBatchIds = (batchId: BatchId, isSelected: boolean) => {
@@ -80,7 +66,7 @@ const FilesHandler = (): ReactElement => {
       newSelectedBatchIds.splice(ix, 1)
 
       if (newSelectedBatchIds.length === 0) {
-        uStamps?.forEach(stamp => {
+        usableStamps.forEach(stamp => {
           newSelectedBatchIds.push(stamp.batchID)
         })
       }
@@ -93,7 +79,7 @@ const FilesHandler = (): ReactElement => {
     <div className={classes.container}>
       <div className={`${classes.flex} ${classes.leftContainer}`}>
         <Grouping />
-        {uStamps?.map((stamp, index) => (
+        {usableStamps?.map((stamp, index) => (
           <div key={index} className={classes.flex}>
             <Volume
               label={stamp.label}
@@ -108,7 +94,7 @@ const FilesHandler = (): ReactElement => {
       </div>
       <div className={classes.flex}>
         <Download />
-        <FileUpload usableStamps={uStamps} />
+        <FileUpload usableStamps={usableStamps} />
         <Order />
       </div>
     </div>

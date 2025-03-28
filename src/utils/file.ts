@@ -184,8 +184,6 @@ export const startDownloadingQueue = async (
           actHistoryAddress: infoItem.file.historyRef.toString(),
         }),
       )
-      // eslint-disable-next-line no-console
-      console.log('Downloading file item: ', JSON.stringify(infoItem))
     }
 
     const data: string[][] = []
@@ -193,9 +191,6 @@ export const startDownloadingQueue = async (
       results.forEach(result => {
         if (result.status === 'fulfilled') {
           data.push(result.value)
-
-          // eslint-disable-next-line no-console
-          console.log('bagoy result.value: ', result.value)
         } else {
           // eslint-disable-next-line no-console
           console.error('Failed dowload file: ', result.reason)

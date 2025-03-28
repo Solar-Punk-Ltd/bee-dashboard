@@ -113,33 +113,33 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   const classes = useStyles()
   const [newVolumeModalDisplay, setNewVolumeModalDisplay] = useState(false)
   const { beeApi } = useContext(SettingsContext)
-  const [uStamps, setUStamps] = useState<PostageBatch[]>([])
+  const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [activeVolume, setActiveVolume] = useState<ActiveVolume>({} as ActiveVolume)
   const { isNewVolumeCreated, setIsNewVolumeCreated } = useContext(FileManagerContext)
   const notificationThresholdDate = new Date()
   notificationThresholdDate.setDate(new Date().getDate() + 7)
 
   const handlerCreateNewVolume = (value: boolean) => {
-    if (uStamps && uStamps.length < 5) {
+    if (usableStamps && usableStamps.length < 5) {
       setNewVolumeModalDisplay(value)
     }
   }
 
   useEffect(() => {
     if (isNewVolumeCreated) {
-      const getUStamps = async () => {
-        const usableStamps = await getUsableStamps(beeApi)
-        setUStamps([...usableStamps])
+      const getStamps = async () => {
+        const stamps = await getUsableStamps(beeApi)
+        setUsableStamps([...stamps])
         setActiveVolume({
           volumeModalDisplay: false,
-          volume: usableStamps[0],
+          volume: stamps[0],
           validity: 0,
         })
       }
-      getUStamps()
+      getStamps()
       setIsNewVolumeCreated(false)
     }
-  }, [beeApi, isNewVolumeCreated])
+  }, [beeApi, isNewVolumeCreated, setIsNewVolumeCreated])
 
   return (
     <div className={classes.modal}>
@@ -151,7 +151,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
           }
         </div>
         <div className={classes.flexCenter}>
-          {uStamps.map((stamp, index) => (
+          {usableStamps.map((stamp, index) => (
             <div
               key={index}
               className={classes.volumenButtonContainer}
@@ -174,7 +174,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
         <div className={classes.newButtonContainer}>
           <div
             className={`${classes.buttonElement} ${
-              uStamps.length < 5 ? classes.buttonNewVolume : classes.buttonNewVolumeDisabled
+              usableStamps.length < 5 ? classes.buttonNewVolume : classes.buttonNewVolumeDisabled
             }`}
             onClick={() => handlerCreateNewVolume(true)}
           >
