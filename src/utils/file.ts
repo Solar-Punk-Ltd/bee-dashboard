@@ -11,6 +11,13 @@ interface DetectedIndex {
   commonPrefix?: string
 }
 
+interface FilePath extends Omit<File, 'bytes'> {
+  bytes?: Uint8Array
+  path?: string
+  fullPath?: string
+  webkitRelativePath: string
+}
+
 export function detectIndexHtml(files: FilePath[]): DetectedIndex | false {
   const paths = files.map(getPath)
 
@@ -214,11 +221,11 @@ async function downloadToDisk(data: Bytes, fileName: string, mimeType = 'applica
       return
     }
     // Fallback for browsers that do not support the File System Access API
-    downloadToDiskFallback(blob, fileName, mimeType)
+    downloadFileFallback(blob, fileName, mimeType)
   }
 }
 
-function downloadToDiskFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
+function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
