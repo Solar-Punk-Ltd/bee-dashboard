@@ -62,6 +62,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
       '&:hover': {
         backgroundColor: '#DE7700',
         color: '#FFFFFF',
@@ -202,6 +203,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
       '&:hover': {
         backgroundColor: '#DE7700',
         color: '#FFFFFF',
@@ -320,7 +322,6 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           >
             Create
           </div>{' '}
-          :
         </div>
       </div>
       {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}

@@ -57,6 +57,7 @@ const useStyles = makeStyles(() =>
     },
     volumenButtonContainer: {
       position: 'relative',
+      cursor: 'pointer',
     },
     buttonElement: {
       backgroundColor: '#FFFFFF',
@@ -91,10 +92,12 @@ const useStyles = makeStyles(() =>
     newButtonContainer: {
       display: 'flex',
       justifyContent: 'center',
+      cursor: 'pointer',
     },
     cancelButtonContainer: {
       display: 'flex',
       justifyContent: 'right',
+      cursor: 'pointer',
     },
   }),
 )

@@ -66,6 +66,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
       '&:hover': {
         backgroundColor: '#DE7700',
         color: '#FFFFFF',
@@ -79,6 +80,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
       '&:hover': {
         backgroundColor: '#DE7700',
         color: '#FFFFFF',
@@ -386,9 +388,10 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
           <SizeSlider
             onChange={value => setSize(value)}
             exactValue={activeVolume?.volume.size ?? 0}
-            lowerLabel={`Current/used: ${getHumanReadableFileSize(
-              activeVolume?.volume.size.toBytes() ?? 0,
-            )}/${getHumanReadableFileSize(activeVolume?.volume.remainingSize.toBytes() ?? 0)}`}
+            lowerLabel={`${getHumanReadableFileSize(activeVolume?.volume.size.toBytes() ?? 0).replace(
+              /\s+/g,
+              '',
+            )}/${getHumanReadableFileSize(activeVolume?.volume.remainingSize.toBytes() ?? 0).replace(/\s+/g, '')}`}
             newVolume={false}
           />
           <DateSlider

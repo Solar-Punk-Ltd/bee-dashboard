@@ -42,7 +42,6 @@ const useStyles = makeStyles(() =>
     },
     boldSliderLabel: {
       fontWeight: 'bold',
-      textDecoration: 'underline',
       textUnderlineOffset: '2px',
     },
     rightRangeIcon: {

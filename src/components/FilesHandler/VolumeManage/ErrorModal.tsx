@@ -58,6 +58,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
       '&:hover': {
         backgroundColor: '#DE7700',
         color: '#FFFFFF',

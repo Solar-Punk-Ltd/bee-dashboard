@@ -45,7 +45,6 @@ const useStyles = makeStyles(() =>
       textUnderlineOffset: '2px',
     },
     upperBoldSliderLabel: {
-      cursor: 'pointer',
       display: 'inline-box',
       fontWeight: 'bold',
       textDecoration: 'underline',
@@ -53,9 +52,6 @@ const useStyles = makeStyles(() =>
     },
     lowerBoldSliderLabel: {
       width: '100%',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      textDecoration: 'underline',
       textUnderlineOffset: '2px',
     },
     thumbVisible: {
@@ -157,9 +153,11 @@ const SizeSlider = ({ onChange, lowerLabel, step, exactValue, newVolume }: Props
         />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'right' }}>
+      <div style={{ display: 'flex', justifyContent: 'right', position: 'relative', right: '-2px' }}>
         <div style={{ display: 'flex', justifyContent: 'right' }}>
-          <div className={classes.lowerBoldSliderLabel}>{lowerLabel}</div>
+          <div className={classes.lowerBoldSliderLabel}>
+            (Current/used: <span style={{ fontWeight: 'bold' }}>{lowerLabel})</span>
+          </div>
         </div>
       </div>
     </div>

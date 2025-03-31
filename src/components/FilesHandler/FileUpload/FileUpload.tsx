@@ -22,7 +22,6 @@ const useStyles = makeStyles(() =>
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      cursor: 'pointer',
       color: '#FCFCFC',
       '&:hover': {
         backgroundColor: '#DE7700',

@@ -25,6 +25,7 @@ const useStyles = makeStyles(() =>
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      cursor: 'pointer',
     },
     cancelButtonElement: {
       backgroundColor: '#FFFFFF',
