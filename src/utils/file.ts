@@ -174,12 +174,7 @@ export const formatDate = (date: Date): string => {
 
 export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
   try {
-    const dataPromises: Promise<string[]>[] = []
-    // eslint-disable-next-line no-console
-    console.log('fileInfoList', fileInfoList)
     filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: any }) => {
-      // eslint-disable-next-line no-console
-      console.log('File downloaded:', receivedFile.name, receivedFile.files)
       downloadFile(receivedFile.files, receivedFile.name, undefined)
     })
 
@@ -189,38 +184,6 @@ export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: Fi
         actHistoryAddress: infoItem.file.historyRef.toString(),
       })
     }
-
-    const data: Bytes[] = []
-    // await Promise.allSettled(downloadTasks.map(task => task.promise)).then(results => {
-    //   results.forEach((result, index) => {
-    //     if (result.status === 'fulfilled') {
-    //       // eslint-disable-next-line no-console
-    //       console.log('result', result)
-
-    //       if (Array.isArray(result.value)) {
-    //         data.push(result.value[0].toUint8Array())
-    //         // eslint-disable-next-line no-console
-    //         console.log('result.value[0]', result.value[0])
-    //       } else {
-    //         // eslint-disable-next-line no-console
-    //         console.error('Unexpected result value type:', typeof result.value)
-    //       }
-
-    //       const fileInfo = downloadTasks[index].fileInfo
-    //       // eslint-disable-next-line no-console
-    //       console.log('fileInfo', fileInfo)
-    //       downloadFile(data[index], fileInfo.name, fileInfo.customMetadata?.mimeType || 'application/octet-stream')
-    //     } else {
-    //       // eslint-disable-next-line no-console
-    //       console.error('Failed to download file:', {
-    //         fileName: downloadTasks[index].fileInfo.name,
-    //         error: result.reason,
-    //       })
-    //     }
-    //   })
-    // })
-
-    // return data.map(byteArray => [Array.from(byteArray).join(',')])
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error downloading file with: ', error)
@@ -230,9 +193,6 @@ export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: Fi
 async function downloadFile(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
   const uint8Array = data.toUint8Array()
   const blob = new Blob([uint8Array], { type: mimeType })
-
-  // eslint-disable-next-line no-console
-  console.log('Downloading file:', fileName, 'with type:', mimeType)
 
   try {
     const handle = await (window as any).showSaveFilePicker({
@@ -250,15 +210,23 @@ async function downloadFile(data: Bytes, fileName: string, mimeType = 'applicati
     await writable.write(blob)
     await writable.close()
   } catch (error) {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+    if (error instanceof Error && error.name === 'AbortError') {
+      return
+    }
+    // Fallback for browsers that do not support the File System Access API
+    downloadFileFallback(blob, fileName, mimeType)
   }
+}
+
+function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
 }
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
