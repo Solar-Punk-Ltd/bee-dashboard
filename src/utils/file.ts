@@ -1,9 +1,8 @@
-import { Bee, PostageBatch, Reference } from '@ethersphere/bee-js'
+import { Bee, Bytes, PostageBatch, Reference } from '@ethersphere/bee-js'
 import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
-import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
+import { FileInfo, FileManager, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { FileTypes } from '../constants'
-import { Bytes } from 'ethers'
 
 const indexHtmls = ['index.html', 'index.htm']
 
@@ -173,47 +172,55 @@ export const formatDate = (date: Date): string => {
   return `${day}/${month}/${year}`
 }
 
-export const startDownloadingQueue = async (
-  filemanager: FileManager,
-  fileInfoList: FileInfo[],
-): Promise<string[][] | undefined> => {
+export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
   try {
     const dataPromises: Promise<string[]>[] = []
     // eslint-disable-next-line no-console
     console.log('fileInfoList', fileInfoList)
-    const downloadTasks = fileInfoList.map(infoItem => ({
-      promise: filemanager.download(new Reference(infoItem.file.reference), {
-        actPublisher: infoItem.actPublisher.toString(),
-        actHistoryAddress: infoItem.file.historyRef.toString(),
-      }),
-      fileInfo: infoItem,
-    }))
-
-    const data: Bytes[] = []
-    await Promise.allSettled(downloadTasks.map(task => task.promise)).then(results => {
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          if (Array.isArray(result.value)) {
-            data.push(result.value[0].toUint8Array())
-          } else {
-            // eslint-disable-next-line no-console
-            console.error('Unexpected result value type:', typeof result.value)
-          }
-
-          const fileInfo = downloadTasks[index].fileInfo
-
-          downloadFile(data[index], fileInfo.name, fileInfo.customMetadata?.mimeType || 'application/octet-stream')
-        } else {
-          // eslint-disable-next-line no-console
-          console.error('Failed to download file:', {
-            fileName: downloadTasks[index].fileInfo.name,
-            error: result.reason,
-          })
-        }
-      })
+    filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: any }) => {
+      // eslint-disable-next-line no-console
+      console.log('File downloaded:', receivedFile.name, receivedFile.files)
+      downloadFile(receivedFile.files, receivedFile.name, undefined)
     })
 
-    return data.map(byteArray => [Array.from(byteArray).join(',')])
+    for (const infoItem of fileInfoList) {
+      filemanager.download(infoItem, {
+        actPublisher: infoItem.actPublisher.toString(),
+        actHistoryAddress: infoItem.file.historyRef.toString(),
+      })
+    }
+
+    const data: Bytes[] = []
+    // await Promise.allSettled(downloadTasks.map(task => task.promise)).then(results => {
+    //   results.forEach((result, index) => {
+    //     if (result.status === 'fulfilled') {
+    //       // eslint-disable-next-line no-console
+    //       console.log('result', result)
+
+    //       if (Array.isArray(result.value)) {
+    //         data.push(result.value[0].toUint8Array())
+    //         // eslint-disable-next-line no-console
+    //         console.log('result.value[0]', result.value[0])
+    //       } else {
+    //         // eslint-disable-next-line no-console
+    //         console.error('Unexpected result value type:', typeof result.value)
+    //       }
+
+    //       const fileInfo = downloadTasks[index].fileInfo
+    //       // eslint-disable-next-line no-console
+    //       console.log('fileInfo', fileInfo)
+    //       downloadFile(data[index], fileInfo.name, fileInfo.customMetadata?.mimeType || 'application/octet-stream')
+    //     } else {
+    //       // eslint-disable-next-line no-console
+    //       console.error('Failed to download file:', {
+    //         fileName: downloadTasks[index].fileInfo.name,
+    //         error: result.reason,
+    //       })
+    //     }
+    //   })
+    // })
+
+    // return data.map(byteArray => [Array.from(byteArray).join(',')])
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error downloading file with: ', error)
@@ -221,7 +228,7 @@ export const startDownloadingQueue = async (
 }
 
 async function downloadFile(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
-  const uint8Array = data instanceof Uint8Array ? data : Uint8Array.from(data)
+  const uint8Array = data.toUint8Array()
   const blob = new Blob([uint8Array], { type: mimeType })
 
   // eslint-disable-next-line no-console
