@@ -175,7 +175,7 @@ export const formatDate = (date: Date): string => {
 export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
   try {
     filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: any }) => {
-      downloadFile(receivedFile.files, receivedFile.name, undefined)
+      downloadToDisk(receivedFile.files, receivedFile.name, undefined)
     })
 
     for (const infoItem of fileInfoList) {
@@ -190,7 +190,7 @@ export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: Fi
   }
 }
 
-async function downloadFile(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
+async function downloadToDisk(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
   const uint8Array = data.toUint8Array()
   const blob = new Blob([uint8Array], { type: mimeType })
 
@@ -214,11 +214,11 @@ async function downloadFile(data: Bytes, fileName: string, mimeType = 'applicati
       return
     }
     // Fallback for browsers that do not support the File System Access API
-    downloadFileFallback(blob, fileName, mimeType)
+    downloadToDiskFallback(blob, fileName, mimeType)
   }
 }
 
-function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
+function downloadToDiskFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
