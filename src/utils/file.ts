@@ -3,6 +3,7 @@ import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { FileTypes } from '../constants'
+import { Bytes } from 'ethers'
 
 const indexHtmls = ['index.html', 'index.htm']
 
@@ -188,18 +189,24 @@ export const startDownloadingQueue = async (
       fileInfo: infoItem,
     }))
 
-    const data: string[][] = []
+    const data: Bytes[] = []
     await Promise.allSettled(downloadTasks.map(task => task.promise)).then(results => {
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
-          data.push(result.value)
+          if (Array.isArray(result.value)) {
+            data.push(result.value[0].toUint8Array())
+            // eslint-disable-next-line no-console
+            console.log('result.value', result.value)
+          } else {
+            // eslint-disable-next-line no-console
+            console.error('Unexpected result value type:', typeof result.value)
+            // eslint-disable-next-line no-console
+            console.error('result.value', result.value)
+          }
 
           const fileInfo = downloadTasks[index].fileInfo
-          
-          downloadFile(
-            new Blob([result.value[0]], { type: fileInfo.customMetadata?.type || 'application/octet-stream' }),
-            fileInfo.name,
-          )
+
+          downloadFile(data[index], fileInfo.customMetadata?.type || 'application/octet-stream', fileInfo.name)
         } else {
           // eslint-disable-next-line no-console
           console.error('Failed to download file:', {
@@ -210,18 +217,37 @@ export const startDownloadingQueue = async (
       })
     })
 
-    return data
+    return data.map(byteArray => [Array.from(byteArray).join(',')])
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error downloading file with: ', error)
   }
 }
 
-async function downloadFile(
-  data: Blob | string,
-  fileName: string,
-  mimeType = 'application/octet-stream',
-): Promise<void> {
+async function downloadFile(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
+  // Convert Bytes to appropriate BlobPart
+  // eslint-disable-next-line no-console
+  console.log('data', data)
+  const blobData = (() => {
+    if (data instanceof Blob) return data
+
+    if (data instanceof Uint8Array) return data
+
+    if (data instanceof ArrayBuffer) return new Uint8Array(data)
+
+    if (typeof data === 'string') return new TextEncoder().encode(data)
+
+    // For other cases, try to get array buffer
+    if ('arrayBuffer' in data && typeof data.arrayBuffer === 'function') {
+      return new Uint8Array(data)
+    }
+    // Last resort - try to convert to string then to Uint8Array
+
+    return new TextEncoder().encode(String(data))
+  })()
+
+  const blob = blobData instanceof Blob ? blobData : new Blob([blobData], { type: mimeType })
+
   try {
     const handle = await (window as any).showSaveFilePicker({
       suggestedName: fileName,
@@ -235,10 +261,10 @@ async function downloadFile(
       ],
     })
     const writable = await handle.createWritable()
-    await writable.write(data)
+    await writable.write(blob)
     await writable.close()
   } catch (error) {
-    const blob = new Blob([data], { type: mimeType })
+    //const blob = new Blob([blob], { type: mimeType })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
