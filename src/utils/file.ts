@@ -195,13 +195,9 @@ export const startDownloadingQueue = async (
         if (result.status === 'fulfilled') {
           if (Array.isArray(result.value)) {
             data.push(result.value[0].toUint8Array())
-            // eslint-disable-next-line no-console
-            console.log('result.value', result.value)
           } else {
             // eslint-disable-next-line no-console
             console.error('Unexpected result value type:', typeof result.value)
-            // eslint-disable-next-line no-console
-            console.error('result.value', result.value)
           }
 
           const fileInfo = downloadTasks[index].fileInfo
@@ -225,28 +221,8 @@ export const startDownloadingQueue = async (
 }
 
 async function downloadFile(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
-  // Convert Bytes to appropriate BlobPart
-  // eslint-disable-next-line no-console
-  console.log('data', data)
-  const blobData = (() => {
-    if (data instanceof Blob) return data
-
-    if (data instanceof Uint8Array) return data
-
-    if (data instanceof ArrayBuffer) return new Uint8Array(data)
-
-    if (typeof data === 'string') return new TextEncoder().encode(data)
-
-    // For other cases, try to get array buffer
-    if ('arrayBuffer' in data && typeof data.arrayBuffer === 'function') {
-      return new Uint8Array(data)
-    }
-    // Last resort - try to convert to string then to Uint8Array
-
-    return new TextEncoder().encode(String(data))
-  })()
-
-  const blob = blobData instanceof Blob ? blobData : new Blob([blobData], { type: mimeType })
+  const uint8Array = data instanceof Uint8Array ? data : Uint8Array.from(data)
+  const blob = new Blob([uint8Array], { type: mimeType })
 
   try {
     const handle = await (window as any).showSaveFilePicker({
