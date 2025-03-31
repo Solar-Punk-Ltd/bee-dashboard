@@ -202,7 +202,7 @@ export const startDownloadingQueue = async (
 
           const fileInfo = downloadTasks[index].fileInfo
 
-          downloadFile(data[index], fileInfo.customMetadata?.type || 'application/octet-stream', fileInfo.name)
+          downloadFile(data[index], fileInfo.name, fileInfo.customMetadata?.mimeType || 'application/octet-stream')
         } else {
           // eslint-disable-next-line no-console
           console.error('Failed to download file:', {
@@ -224,6 +224,9 @@ async function downloadFile(data: Bytes, fileName: string, mimeType = 'applicati
   const uint8Array = data instanceof Uint8Array ? data : Uint8Array.from(data)
   const blob = new Blob([uint8Array], { type: mimeType })
 
+  // eslint-disable-next-line no-console
+  console.log('Downloading file:', fileName, 'with type:', mimeType)
+
   try {
     const handle = await (window as any).showSaveFilePicker({
       suggestedName: fileName,
@@ -240,7 +243,6 @@ async function downloadFile(data: Bytes, fileName: string, mimeType = 'applicati
     await writable.write(blob)
     await writable.close()
   } catch (error) {
-    //const blob = new Blob([blob], { type: mimeType })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
