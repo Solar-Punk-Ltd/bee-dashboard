@@ -181,7 +181,7 @@ export const formatDate = (date: Date): string => {
 
 export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
   try {
-    filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: any }) => {
+    filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: Bytes }) => {
       downloadToDisk(receivedFile.files, receivedFile.name, undefined)
     })
 
