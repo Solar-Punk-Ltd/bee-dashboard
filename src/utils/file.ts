@@ -1,8 +1,9 @@
-import { Bee, Bytes, PostageBatch, Reference } from '@ethersphere/bee-js'
+import { Bee, Bytes, PostageBatch, PublicKey, Reference } from '@ethersphere/bee-js'
 import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
 import { FileInfo, FileManager, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { FileTypes } from '../constants'
+import { URL } from 'url'
 
 const indexHtmls = ['index.html', 'index.htm']
 
@@ -181,27 +182,57 @@ export const formatDate = (date: Date): string => {
 
 export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
   try {
-    filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: Bytes }) => {
-      downloadToDisk(receivedFile.files, receivedFile.name, undefined)
-    })
-
     for (const infoItem of fileInfoList) {
-      filemanager.download(infoItem, {
-        actPublisher: infoItem.actPublisher.toString(),
-        actHistoryAddress: infoItem.file.historyRef.toString(),
-      })
+      const contentAddress = infoItem.file.reference
+      downloadToDisk(
+        contentAddress,
+        infoItem.name,
+        infoItem.file.historyRef,
+        infoItem.actPublisher,
+        infoItem.timestamp,
+        infoItem.customMetadata?.type,
+      )
     }
+
+    // filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: Bytes }) => {
+    //   downloadToDisk(receivedFile.files, receivedFile.name, undefined)
+    // })
+
+    // for (const infoItem of fileInfoList) {
+    //   filemanager.download(infoItem, {
+    //     actPublisher: infoItem.actPublisher.toString(),
+    //     actHistoryAddress: infoItem.file.historyRef.toString(),
+    //   })
+    // }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error downloading file with: ', error)
   }
 }
 
-async function downloadToDisk(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
-  const uint8Array = data.toUint8Array()
-  const blob = new Blob([uint8Array], { type: mimeType })
-
+async function downloadToDisk(
+  ref: string | Reference,
+  fileName: string,
+  historyRef: string | Reference,
+  actPublisher: string | PublicKey,
+  timestamp: number = Date.now(),
+  mimeType = 'application/octet-stream',
+): Promise<void> {
   try {
+    const options = {
+      headers: {
+        'swarm-act': 'true',
+        'swarm-act-history-address': historyRef.toString(),
+        'swarm-act-publisher': actPublisher.toString(),
+        'swarm-act-timestamp': timestamp.toString(),
+      },
+    }
+    const response = await fetch(`http://localhost:1633/bzz/${ref.toString()}`, options)
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+
+    if (!response.body) throw new Error('No response body')
+
     const handle = await (window as any).showSaveFilePicker({
       suggestedName: fileName,
       types: [
@@ -214,25 +245,23 @@ async function downloadToDisk(data: Bytes, fileName: string, mimeType = 'applica
       ],
     })
     const writable = await handle.createWritable()
-    await writable.write(blob)
+    await response.body.pipeTo(writable)
     await writable.close()
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       return
     }
     // Fallback for browsers that do not support the File System Access API
-    downloadFileFallback(blob, fileName, mimeType)
+    //downloadFileFallback(blob, fileName, mimeType)
   }
 }
 
-function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
-  const url = URL.createObjectURL(blob)
+function downloadFileFallback(ref: string | Reference, fileName: string, mimeType = 'application/octet-stream') {
   const a = document.createElement('a')
-  a.href = url
+  a.href = 'http://localhost:1633/bzz/' + ref
   a.download = fileName
   document.body.appendChild(a)
   a.click()
-  window.URL.revokeObjectURL(url)
   document.body.removeChild(a)
 }
 
