@@ -22,3 +22,5 @@ export enum FileTypes {
   Audio = 'audio',
   Application = 'application',
 }
+
+export const VOLUME_CHARACTER_NUMBER = 20

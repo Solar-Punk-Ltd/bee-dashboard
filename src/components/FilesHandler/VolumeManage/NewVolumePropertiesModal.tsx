@@ -8,6 +8,7 @@ import { BZZ, Duration, Size } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import ErrorModal from './ErrorModal'
+import { VOLUME_CHARACTER_NUMBER } from '../../../constants'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -249,6 +250,14 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
     }
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { value } = e.target
+
+    if (value.length <= VOLUME_CHARACTER_NUMBER) {
+      setLabel(value)
+    }
+  }
+
   useEffect(() => {
     label ? setIsCreateEnabled(true) : setIsCreateEnabled(false)
   }, [label])
@@ -292,7 +301,13 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: '20px' }}>
             <div style={{}}>
-              <SwarmTextInput name="name" label="label" required={true} onChange={e => setLabel(e.target.value)} />
+              <SwarmTextInput
+                name="name"
+                label="label"
+                required={true}
+                onChange={e => handleInputChange(e)}
+                defaultValue={label}
+              />
             </div>
           </div>
         </div>

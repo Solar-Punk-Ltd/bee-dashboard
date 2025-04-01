@@ -118,10 +118,10 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   const { beeApi } = useContext(SettingsContext)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [activeVolume, setActiveVolume] = useState<ActiveVolume>({} as ActiveVolume)
+  const [volumeCreation, setVolumeCreation] = useState(false)
   const { isNewVolumeCreated, setIsNewVolumeCreated } = useContext(FileManagerContext)
   const notificationThresholdDate = new Date()
   notificationThresholdDate.setDate(new Date().getDate() + 7)
-
   const handlerCreateNewVolume = (value: boolean) => {
     if (usableStamps && usableStamps.length < 5) {
       setNewVolumeModalDisplay(value)
@@ -129,7 +129,16 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   }
 
   useEffect(() => {
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      setUsableStamps([...stamps])
+    }
+    getStamps()
+  }, [beeApi])
+
+  useEffect(() => {
     if (isNewVolumeCreated) {
+      setVolumeCreation(true)
       const getStamps = async () => {
         const stamps = await getUsableStamps(beeApi)
         setUsableStamps([...stamps])
@@ -191,7 +200,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
             style={{ width: '160px', zIndex: '110' }}
             onClick={() => modalDisplay(false)}
           >
-            Cancel
+            {volumeCreation ? 'Ok' : 'Cancel'}
           </div>
         </div>
       </div>

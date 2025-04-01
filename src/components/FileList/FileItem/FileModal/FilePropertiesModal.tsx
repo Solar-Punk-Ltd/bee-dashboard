@@ -160,12 +160,6 @@ const FilePropertiesModal = ({
     }
   }
 
-  const alreadyAddedWithACT = [
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-  ]
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: '1' }}>
       <div
@@ -223,18 +217,20 @@ const FilePropertiesModal = ({
           name="Name"
           label="Name"
           required={true}
+          disabled={true}
           value={updatedFileName}
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
         <SwarmTextInput
           name="Name"
           label="Details"
           value={updatedFileDetails}
           required={false}
+          disabled={true}
           multiline={true}
           rows={6}
           placeholder="Lorem ipsum"
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
 
         <SwarmTextInput
@@ -242,10 +238,11 @@ const FilePropertiesModal = ({
           label="Labels"
           value={updatedFileLabels}
           required={false}
+          disabled={true}
           multiline={true}
           rows={6}
           placeholder="Lorem ipsum"
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
         <div className={classes.bottomButtonContainer}>
           <div
@@ -255,8 +252,8 @@ const FilePropertiesModal = ({
           >
             Cancel
           </div>
-
-          <div
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <div
             className={`${classes.buttonElementBase} ${
               isUpdateButtonDisabled ? classes.disabledUpdateButtonElement : classes.updateButtonElement
             }`}
@@ -264,7 +261,7 @@ const FilePropertiesModal = ({
             onClick={() => handlerUpdate()}
           >
             Update
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

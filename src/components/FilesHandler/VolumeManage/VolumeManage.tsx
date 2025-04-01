@@ -15,8 +15,8 @@ const useStyles = makeStyles(() =>
       width: '65px',
       height: '100%',
       flexDirection: 'column',
-      justifyContent: 'center',
       alignItems: 'center',
+      justifyContent: 'center',
       cursor: 'pointer',
       fontFamily: '"iAWriterMonoV", monospace',
       '&:hover': {

@@ -128,12 +128,6 @@ const FileModal = ({
   const classes = useStyles()
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Properties)
 
-  const alreadyAddedWithACT = [
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-  ]
-
   return (
     <div className={classes.modal}>
       <div className={classes.modalContainer}>
@@ -144,12 +138,13 @@ const FileModal = ({
           >
             Properties
           </div>
-          <div
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <div
             className={`${classes.tabPanelItem} ${activeTab === Tab.Sharing ? classes.tabPanelItemActive : null}`}
             onClick={() => setActiveTab(Tab.Sharing)}
           >
             Sharing
-          </div>
+          </div> */}
         </div>
         {activeTab === Tab.Properties ? (
           <FilePropertiesModal
@@ -166,9 +161,10 @@ const FileModal = ({
             histroyRef={histroyRef}
           />
         ) : null}
-        {activeTab === Tab.Sharing ? (
+        {/* This is commented out because this feature is not part of phase1 */}
+        {/* {activeTab === Tab.Sharing ? (
           <FileSharingModal textToBeDisabled={alreadyAddedWithACT} modalDisplay={value => modalDisplay(value)} />
-        ) : null}
+        ) : null} */}
       </div>
     </div>
   )

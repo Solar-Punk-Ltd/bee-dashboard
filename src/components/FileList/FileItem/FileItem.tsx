@@ -7,8 +7,9 @@ import DownloadQueueIcon from '../../icons/DownloadQueueIcon'
 import FileLabelIcon from '../../icons/FileLabelIcon'
 import NotificationSign from '../../NotificationSign'
 import FileDescriptionIcon from '../../icons/FileDescriptionIcon'
-import Preview from './FileItemPreview'
-import FileItemEdit from './FileItemEdit'
+// This is commented out because these are not part of phase1
+// import Preview from './FileItemPreview'
+// import FileItemEdit from './FileItemEdit'
 import FileModal from './FileModal/FileModal'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { Reference } from '@ethersphere/bee-js'
@@ -137,7 +138,8 @@ const FileItem = ({
     <div>
       <div className={classes.container} onClick={() => setShowFileModal(true)}>
         <div className={classes.leftSide}>
-          <Preview />
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <Preview /> */}
           <div className={classes.fileTypeIcon}>
             <FileTypeIcon type={type} />
           </div>
@@ -186,7 +188,8 @@ const FileItem = ({
             {shared ? <SharedIcon sharedBy={shared} /> : null}
             {warning ? <NotificationSign text="!" /> : null}
           </div>
-          <FileItemEdit />
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <FileItemEdit /> */}
         </div>
       </div>
       {showFileModal ? (
