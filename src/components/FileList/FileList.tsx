@@ -158,7 +158,7 @@ const FileList = (): ReactElement => {
                               size={getHumanReadableFileSize(
                                 Number(file.customMetadata?.size ? file.customMetadata.size : '0'),
                               )}
-                              hash={file.file.reference}
+                              hash={file.file.reference.toString()}
                               expires={file.customMetadata?.valid ? file.customMetadata.valid : ''}
                               preview={file.customMetadata?.preview ? file.customMetadata.preview : ''}
                               description={file.customMetadata?.description === 'true'}

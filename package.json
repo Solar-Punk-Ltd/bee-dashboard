@@ -35,7 +35,7 @@
     "@material-ui/lab": "4.0.0-alpha.57",
     "@mui/material": "6.4.7",
     "@mui/x-date-pickers": "7.27.1",
-    "@solarpunkltd/file-manager-lib": "^0.1.3",
+    "@solarpunkltd/file-manager-lib": "file:../file-manager-lib",
     "@types/lodash": "^4.17.16",
     "axios": "^0.28.1",
     "bignumber.js": "^9.1.2",

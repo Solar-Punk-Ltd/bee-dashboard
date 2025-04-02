@@ -154,7 +154,7 @@ const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: Uplo
           <div
             className={`${classesGlobal.buttonElementBase} ${classesGlobal.updateButtonElement}`}
             style={{ width: '160px', backgroundColor: '#DE7700', color: '#FFFFFF' }}
-            onClick={() => handleUpload()}
+            onClick={handleUpload}
           >
             Upload
           </div>
