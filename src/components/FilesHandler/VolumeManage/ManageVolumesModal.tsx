@@ -9,6 +9,7 @@ import VolumeModal from './VolumeModal'
 import { PostageBatch } from '@ethersphere/bee-js'
 import NotificationSign from '../../NotificationSign'
 import { getUsableStamps } from '../../../utils/file'
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -55,7 +56,7 @@ const useStyles = makeStyles(() =>
       alignItems: 'center',
       overflowY: 'scroll',
     },
-    volumenButtonContainer: {
+    volumeButtonContainer: {
       position: 'relative',
       cursor: 'pointer',
     },
@@ -94,11 +95,6 @@ const useStyles = makeStyles(() =>
       justifyContent: 'center',
       cursor: 'pointer',
     },
-    cancelButtonContainer: {
-      display: 'flex',
-      justifyContent: 'right',
-      cursor: 'pointer',
-    },
   }),
 )
 
@@ -114,6 +110,7 @@ interface ManageModalProps {
 
 const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement => {
   const classes = useStyles()
+  const classesGlobal = useFileManagerGlobalStyles()
   const [newVolumeModalDisplay, setNewVolumeModalDisplay] = useState(false)
   const { beeApi } = useContext(SettingsContext)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
@@ -154,9 +151,9 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   }, [beeApi, isNewVolumeCreated, setIsNewVolumeCreated])
 
   return (
-    <div className={classes.modal}>
-      <div className={classes.modalContainer}>
-        <div className={classes.modalHeader}>Manage volumes</div>
+    <div className={classesGlobal.modal}>
+      <div className={classesGlobal.modalContainer}>
+        <div className={classesGlobal.modalHeader}>Manage volumes</div>
         <div className={classes.modalContent}>
           {
             "Info, Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s..."
@@ -166,7 +163,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
           {usableStamps.map((stamp, index) => (
             <div
               key={index}
-              className={classes.volumenButtonContainer}
+              className={classes.volumeButtonContainer}
               onClick={() =>
                 setActiveVolume({
                   volumeModalDisplay: true,
@@ -194,9 +191,9 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
           </div>
         </div>
 
-        <div className={classes.cancelButtonContainer}>
+        <div className={classesGlobal.bottomButtonContainer}>
           <div
-            className={classes.buttonElement}
+            className={`${classesGlobal.buttonElementBase} ${classesGlobal.generalButtonElement}`}
             style={{ width: '160px', zIndex: '110' }}
             onClick={() => modalDisplay(false)}
           >

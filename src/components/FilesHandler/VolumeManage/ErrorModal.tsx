@@ -1,5 +1,6 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -47,23 +48,6 @@ const useStyles = makeStyles(() =>
       lineHeight: '18px',
       letterSpacing: '0%',
     },
-    buttonElementCancelContainer: {
-      display: 'flex',
-      justifyContent: 'right',
-    },
-    buttonElementCancel: {
-      backgroundColor: '#FFFFFF',
-      width: '256px',
-      height: '42px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
   }),
 )
 
@@ -73,14 +57,19 @@ interface InvalidValueModalProps {
 
 const ErrorModal = ({ modalDisplay }: InvalidValueModalProps): ReactElement => {
   const classes = useStyles()
+  const classesGlobal = useFileManagerGlobalStyles()
 
   return (
     <div className={classes.modalContainer}>
       <div className={classes.modalContent}>
-        <div className={classes.modalHeader}>Warning!</div>
+        <div className={classesGlobal.modalHeader}>Warning!</div>
         <div className={classes.modalContentText}>Uh oh, an error happened</div>
-        <div className={classes.buttonElementCancelContainer}>
-          <div className={classes.buttonElementCancel} style={{ width: '160px' }} onClick={() => modalDisplay(false)}>
+        <div className={classesGlobal.bottomButtonContainer}>
+          <div
+            className={`${classesGlobal.buttonElementBase} ${classesGlobal.generalButtonElement}`}
+            style={{ width: '160px' }}
+            onClick={() => modalDisplay(false)}
+          >
             Cancel
           </div>
         </div>

@@ -6,39 +6,10 @@ import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { SwarmTextInput } from '../../SwarmTextInput'
 import { UploadProgress } from '@solarpunkltd/file-manager-lib'
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
-    modal: {
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      backdropFilter: 'blur(5px)',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    modalContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      backgroundColor: '#EDEDED',
-      padding: '20px',
-      width: '552px',
-      height: '696px',
-      fontFamily: '"iAWriterMonoV", monospace',
-      color: '#333333',
-    },
-    modalHeader: {
-      fontFamily: '"iAWriterMonoV", monospace',
-      fontSize: '24px',
-      fontWeight: 400,
-      lineHeight: '32px',
-    },
     fileInfoContainer: {
       display: 'grid',
       gridTemplateColumns: 'repeat(2, 1fr)',
@@ -54,20 +25,6 @@ const useStyles = makeStyles(() =>
     itemValue: {
       fontWeight: 700,
     },
-    buttonElement: {
-      backgroundColor: '#FFFFFF',
-      width: '256px',
-      height: '42px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
   }),
 )
 
@@ -81,6 +38,7 @@ interface UploadModalProps {
 
 const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: UploadModalProps): ReactElement => {
   const classes = useStyles()
+  const classesGlobal = useFileManagerGlobalStyles()
   const [label, setLabel] = useState('')
   const [details, setDetails] = useState('')
   const { filemanager } = useContext(FileManagerContext)
@@ -124,11 +82,22 @@ const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: Uplo
     }
   }
 
+  const handleSetLabel = (value: string) => {
+    if (value.length <= 500) {
+      setLabel(value)
+    }
+  }
+  const handleSetDetails = (value: string) => {
+    if (value.length <= 500) {
+      setDetails(value)
+    }
+  }
+
   return (
-    <div className={classes.modal}>
-      <div className={classes.modalContainer}>
+    <div className={classesGlobal.modal}>
+      <div className={classesGlobal.modalContainer}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', justifyContent: 'space-between' }}>
-          <div className={classes.modalHeader}>Upload Confirmation</div>
+          <div className={classesGlobal.modalHeader}>Upload Confirmation</div>
           <div className={classes.fileInfoContainer}>
             <div className={classes.item}>
               <div>Target Volume:</div>
@@ -161,7 +130,8 @@ const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: Uplo
             multiline={true}
             rows={4}
             required={false}
-            onChange={e => setDetails(e.target.value)}
+            defaultValue={details}
+            onChange={e => handleSetDetails(e.target.value)}
           />
           <SwarmTextInput
             name="addLabels"
@@ -169,15 +139,20 @@ const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: Uplo
             multiline={true}
             rows={4}
             required={false}
-            onChange={e => setLabel(e.target.value)}
+            defaultValue={label}
+            onChange={e => handleSetLabel(e.target.value)}
           />
         </div>
         <div style={{ display: 'flex', gap: '25px', justifyContent: 'right' }}>
-          <div className={classes.buttonElement} style={{ width: '160px' }} onClick={() => modalDisplay(false)}>
+          <div
+            className={`${classesGlobal.buttonElementBase} ${classesGlobal.generalButtonElement}`}
+            style={{ width: '160px' }}
+            onClick={() => modalDisplay(false)}
+          >
             Cancel
           </div>
           <div
-            className={classes.buttonElement}
+            className={`${classesGlobal.buttonElementBase} ${classesGlobal.updateButtonElement}`}
             style={{ width: '160px', backgroundColor: '#DE7700', color: '#FFFFFF' }}
             onClick={() => handleUpload()}
           >

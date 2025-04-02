@@ -1,4 +1,3 @@
-import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import VolumePropertiesModal from './VolumePropertiesModal'
@@ -7,54 +6,7 @@ import VolumePropertiesModal from './VolumePropertiesModal'
 // import { PostageBatch } from '@ethersphere/bee-js'
 import { ActiveVolume } from './ManageVolumesModal'
 import { Tab } from '../../../constants'
-
-const useStyles = makeStyles(() =>
-  createStyles({
-    modal: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    modalContainer: {
-      display: 'flex',
-      gap: '20px',
-      flexDirection: 'column',
-      backgroundColor: '#EDEDED',
-      padding: '20px',
-      width: '552px',
-      height: '696px',
-    },
-    tabPanel: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      width: '100%',
-      backgroundColor: '#F7F7F7',
-      height: '42px',
-      fontFamily: '"iAWriterMonoV", monospace',
-    },
-    tabPanelItem: {
-      cursor: 'pointer',
-      display: 'flex',
-      width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    tabPanelItemActive: {
-      display: 'flex',
-      width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-      color: 'black',
-    },
-  }),
-)
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 interface VolumeModalProps {
   modalDisplay: (value: boolean) => void
@@ -63,7 +15,7 @@ interface VolumeModalProps {
 }
 
 const VolumeModal = ({ modalDisplay, newVolume, activeVolume }: VolumeModalProps): ReactElement => {
-  const classes = useStyles()
+  const classes = useFileManagerGlobalStyles()
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Properties)
 
   return (
