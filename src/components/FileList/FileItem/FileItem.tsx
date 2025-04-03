@@ -105,7 +105,7 @@ interface Props {
   description?: boolean
   label?: string
   details?: string
-  shared?: 'me' | 'others'
+  shared?: string
   warning?: boolean
   addedToQueue?: boolean
 }
