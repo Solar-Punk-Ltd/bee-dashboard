@@ -7,87 +7,9 @@ import { startDownloadingQueue } from '../../../../utils/file'
 import { Context as FileManagerContext } from '../../../../providers/FileManager'
 import { Reference } from '@ethersphere/bee-js'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { useFileManagerGlobalStyles } from '../../../../styles/globalFileManagerStyles'
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    modalContainer: {
-      display: 'flex',
-      gap: '20px',
-      flexDirection: 'column',
-      backgroundColor: '#EDEDED',
-      padding: '20px',
-      width: '552px',
-      height: '696px',
-    },
-    buttonElementBase: {
-      width: '256px',
-      height: '42px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    cancelButtonElement: {
-      backgroundColor: '#FFFFFF',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
-    updateButtonElement: {
-      backgroundColor: '#DE7700',
-      color: '#FFFFFF',
-    },
-    disabledUpdateButtonElement: {
-      backgroundColor: 'gray',
-      color: '#FFFFFF',
-      cursor: 'not-allowed',
-    },
-    tabPanel: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      width: '100%',
-      backgroundColor: '#F7F7F7',
-      height: '42px',
-      fontFamily: '"iAWriterMonoV", monospace',
-    },
-    tabPanelItem: {
-      cursor: 'pointer',
-      display: 'flex',
-      width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    bottomButtonContainer: {
-      display: 'flex',
-      justifyContent: 'right',
-      gap: '20px',
-    },
-    infoContainer: {
-      width: '129px',
-      height: '42px',
-      backgroundColor: '#F7F7F7',
-      color: '#878787',
-      padding: '5px 15px',
-      fontSize: '14x',
-    },
-    downloadButtonContainer: {
-      display: 'flex',
-      padding: '40px 60px',
-      flexDirection: 'column',
-      width: '113px !important',
-      height: '64px',
-      justifyContent: 'center',
-      alignItems: 'center',
-      border: '20px solid #CFCDCD',
-      backgroundColor: '#FFFFFF',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-        color: '#FFFFFF',
-      },
-    },
-  }),
-)
+const useStyles = makeStyles(() => createStyles({}))
 
 interface FilePropertiesModalProps {
   volumeName: string
@@ -116,7 +38,8 @@ const FilePropertiesModal = ({
   batchId,
   modalDisplay,
 }: FilePropertiesModalProps): ReactElement => {
-  const classes = useStyles()
+  const classes = useFileManagerGlobalStyles()
+  const classes2 = useStyles()
   const { filemanager } = useContext(FileManagerContext)
   const [isHovered, setIsHovered] = useState(false)
   const [isUpdateButtonDisabled, setIsUpdateButtonDisabled] = useState(false)
@@ -159,14 +82,8 @@ const FilePropertiesModal = ({
     }
   }
 
-  const alreadyAddedWithACT = [
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-    '0x9cbDe6569BA1220E46f256371368A05f480bb78C',
-  ]
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flexGrow: '1' }}>
+    <div className={classes.propertiesContainer}>
       <div
         id="PropertiesContainer"
         style={{
@@ -193,47 +110,51 @@ const FilePropertiesModal = ({
               </div>
             </div>
           </div>
-          <div
-            className={classes.downloadButtonContainer}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onClick={() => {
-              if (filemanager) {
-                startDownloadingQueue(filemanager, [
-                  {
-                    batchId,
-                    name: fileName,
-                    owner,
-                    actPublisher,
-                    file: {
-                      reference: fileRef,
-                      historyRef: histroyRef,
-                    },
-                  } as FileInfo,
-                ])
-              }
-            }}
-          >
-            <DownloadIcon color={isHovered ? '#FFFFFF' : '#333333'} />
-            <div style={{ textAlign: 'center' }}>Download now</div>
+          <div className={classes.actionButtonContainer}>
+            <div
+              className={classes.actionButton}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => {
+                if (filemanager) {
+                  startDownloadingQueue(filemanager, [
+                    {
+                      batchId,
+                      name: fileName,
+                      owner,
+                      actPublisher,
+                      file: {
+                        reference: fileRef,
+                        historyRef: histroyRef,
+                      },
+                    } as FileInfo,
+                  ])
+                }
+              }}
+            >
+              <DownloadIcon color={isHovered ? '#FFFFFF' : '#333333'} />
+              <div style={{ textAlign: 'center' }}>Download now</div>
+            </div>
           </div>
         </div>
         <SwarmTextInput
           name="Name"
           label="Name"
           required={true}
+          disabled={true}
           value={updatedFileName}
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
         <SwarmTextInput
           name="Name"
           label="Details"
           value={updatedFileDetails}
           required={false}
+          disabled={true}
           multiline={true}
           rows={6}
           placeholder="Lorem ipsum"
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
 
         <SwarmTextInput
@@ -241,21 +162,22 @@ const FilePropertiesModal = ({
           label="Labels"
           value={updatedFileLabels}
           required={false}
+          disabled={true}
           multiline={true}
           rows={6}
           placeholder="Lorem ipsum"
-          onChange={event => handlerTextChanges('name', event.target.value)}
+          // onChange={event => handlerTextChanges('name', event.target.value)}
         />
         <div className={classes.bottomButtonContainer}>
           <div
-            className={`${classes.buttonElementBase} ${classes.cancelButtonElement}`}
+            className={`${classes.buttonElementBase} ${classes.generalButtonElement}`}
             style={{ width: '160px' }}
             onClick={() => modalDisplay(false)}
           >
             Cancel
           </div>
-
-          <div
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <div
             className={`${classes.buttonElementBase} ${
               isUpdateButtonDisabled ? classes.disabledUpdateButtonElement : classes.updateButtonElement
             }`}
@@ -263,7 +185,7 @@ const FilePropertiesModal = ({
             onClick={() => handlerUpdate()}
           >
             Update
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

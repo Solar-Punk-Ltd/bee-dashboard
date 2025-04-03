@@ -5,58 +5,13 @@ import SwarmIcon from '../../../assets/images/swarmIcon.png'
 import FileUploadModal from './FileUploadModal'
 import { PostageBatch } from '@ethersphere/bee-js'
 import CircularProgressBar from './CircularProgressBar'
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 interface Props {
   usableStamps: PostageBatch[]
 }
 const useStyles = makeStyles(() =>
   createStyles({
-    container: {
-      position: 'relative',
-      backgroundColor: '#DE7700',
-      fontSize: '12px',
-      fontFamily: '"iAWriterMonoV", monospace',
-      width: '65px',
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      cursor: 'pointer',
-      color: '#FCFCFC',
-      '&:hover': {
-        backgroundColor: '#DE7700',
-      },
-      '&:hover $dropdown': {
-        display: 'flex',
-      },
-    },
-    dropdown: {
-      textAlign: 'center',
-      display: 'none',
-      backgroundColor: '#ffffff',
-      position: 'absolute',
-      top: '100%',
-      right: '0',
-      zIndex: 1,
-      width: '90px',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      boxSizing: 'border-box',
-      color: '#333333',
-      '& div': {
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '10px',
-      },
-      '& div:hover': {
-        backgroundColor: '#DE7700',
-        color: '#ffffff',
-      },
-    },
     circularProgressBar: {
       backgroundColor: '#ffffff4d',
       width: '12px',
@@ -72,6 +27,7 @@ const useStyles = makeStyles(() =>
 
 const Upload = ({ usableStamps }: Props): ReactElement => {
   const classes = useStyles()
+  const classesGlobal = useFileManagerGlobalStyles()
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedStamp, setSelectedStamp] = useState(usableStamps[0])
@@ -108,7 +64,7 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
   }
 
   return (
-    <div className={classes.container}>
+    <div className={classesGlobal.dropdownElementContainer} style={{ backgroundColor: '#DE7700', color: '#ffffff' }}>
       {isUploading ? (
         <div className={classes.circularProgressBar}>
           <CircularProgressBar value={uploadingProgress} size={12} customColor="white" thickness={22} />
@@ -117,7 +73,7 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
       <img src={SwarmIcon} alt="" height="16" />
       <div>Upload</div>
 
-      <div className={classes.dropdown}>
+      <div className={classesGlobal.dropdownContainer}>
         {usableStamps.map((stamp, index) => (
           <div onClick={() => handleUploadClick(stamp)} key={index}>
             {stamp.label}

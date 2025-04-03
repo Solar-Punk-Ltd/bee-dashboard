@@ -22,3 +22,7 @@ export enum FileTypes {
   Audio = 'audio',
   Application = 'application',
 }
+
+export const VOLUME_CHARACTER_NUMBER = 20
+// TODO: valid block time
+export const DUMMMY_BLOCK_TIME = 15 * 60 // 15 minutes

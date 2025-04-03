@@ -7,16 +7,18 @@ import DownloadQueueIcon from '../../icons/DownloadQueueIcon'
 import FileLabelIcon from '../../icons/FileLabelIcon'
 import NotificationSign from '../../NotificationSign'
 import FileDescriptionIcon from '../../icons/FileDescriptionIcon'
-import Preview from './FileItemPreview'
-import FileItemEdit from './FileItemEdit'
+// This is commented out because these are not part of phase1
+// import Preview from './FileItemPreview'
+// import FileItemEdit from './FileItemEdit'
 import FileModal from './FileModal/FileModal'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { Reference } from '@ethersphere/bee-js'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
-    container: {
+    fileItemContainer: {
       position: 'relative',
       backgroundColor: '#ffffff',
       fontSize: '12px',
@@ -44,8 +46,8 @@ const useStyles = makeStyles(() =>
     middleSide: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '20px',
       padding: '5px',
+      paddingBottom: '20px',
       justifyContent: '',
       flexGrow: 1,
     },
@@ -103,7 +105,7 @@ interface Props {
   description?: boolean
   label?: string
   details?: string
-  shared?: 'me' | 'others'
+  shared?: string
   warning?: boolean
   addedToQueue?: boolean
 }
@@ -128,6 +130,7 @@ const FileItem = ({
   warning,
   addedToQueue,
 }: Props): ReactElement => {
+  const classes2 = useFileManagerGlobalStyles()
   const classes = useStyles()
   const [showFileModal, setShowFileModal] = useState(false)
   const { fileDownLoadQueue, setFileDownLoadQueue } = useContext(FileManagerContext)
@@ -135,9 +138,10 @@ const FileItem = ({
 
   return (
     <div>
-      <div className={classes.container} onClick={() => setShowFileModal(true)}>
+      <div className={classes.fileItemContainer} onClick={() => setShowFileModal(true)}>
         <div className={classes.leftSide}>
-          <Preview />
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <Preview /> */}
           <div className={classes.fileTypeIcon}>
             <FileTypeIcon type={type} />
           </div>
@@ -173,11 +177,7 @@ const FileItem = ({
               <DownloadQueueIcon added={added} />
             </div>
           </div>
-          <div className={classes.flexDisplay}>
-            <div className={classes.fileDataText}>
-              {expires} - {size}
-            </div>
-          </div>
+          <div className={classes.fileDataText}>{size}</div>
         </div>
         <div className={classes.rightSide}>
           <div className={classes.icons}>
@@ -186,7 +186,8 @@ const FileItem = ({
             {shared ? <SharedIcon sharedBy={shared} /> : null}
             {warning ? <NotificationSign text="!" /> : null}
           </div>
-          <FileItemEdit />
+          {/* This is commented out because this feature is not part of phase1 */}
+          {/* <FileItemEdit /> */}
         </div>
       </div>
       {showFileModal ? (

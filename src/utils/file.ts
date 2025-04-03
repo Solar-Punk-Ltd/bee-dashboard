@@ -1,7 +1,7 @@
-import { Bee, Bytes, PostageBatch, Reference } from '@ethersphere/bee-js'
+import { Bee, Bytes, PostageBatch } from '@ethersphere/bee-js'
 import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
-import { FileInfo, FileManager, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
+import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { FileTypes } from '../constants'
 
 const indexHtmls = ['index.html', 'index.htm']
@@ -179,18 +179,30 @@ export const formatDate = (date: Date): string => {
   return `${day}/${month}/${year}`
 }
 
-export const startDownloadingQueue = (filemanager: FileManager, fileInfoList: FileInfo[]): void => {
+export const startDownloadingQueue = async (filemanager: FileManager, fileInfoList: FileInfo[]): Promise<void> => {
   try {
-    filemanager.emitter.on(FileManagerEvents.FILE_DOWNLOADED, (receivedFile: { name: string; files: Bytes }) => {
-      downloadToDisk(receivedFile.files, receivedFile.name, undefined)
-    })
-
+    const dataPromises: Promise<Bytes[]>[] = []
     for (const infoItem of fileInfoList) {
-      filemanager.download(infoItem, {
-        actPublisher: infoItem.actPublisher.toString(),
-        actHistoryAddress: infoItem.file.historyRef.toString(),
-      })
+      dataPromises.push(
+        filemanager.download(infoItem, undefined, {
+          actPublisher: infoItem.actPublisher.toString(),
+          actHistoryAddress: infoItem.file.historyRef.toString(),
+        }),
+      )
     }
+
+    await Promise.allSettled(dataPromises).then(results => {
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          if (result.value.length !== 0) {
+            downloadToDisk(result.value[0], 'todo_dummy_name', undefined)
+          }
+        } else {
+          // eslint-disable-next-line no-console
+          console.error('Failed to dowload file: ', result.reason)
+        }
+      })
+    })
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
     console.error('Error downloading file with: ', error)
