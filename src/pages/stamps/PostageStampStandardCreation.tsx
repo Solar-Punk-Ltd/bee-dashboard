@@ -11,7 +11,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { secondsToTimeString } from '../../utils'
-import { DUMMMY_BLOCK_TIME } from '../../constants'
+import { DUMMY_BLOCK_TIME } from '../../constants'
 
 interface Props {
   onFinished: () => void
@@ -49,7 +49,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
 
   const [depthInput, setDepthInput] = useState<number>(Utils.getDepthForSize(Size.fromGigabytes(4)))
   const [amountInput, setAmountInput] = useState<bigint>(
-    Utils.getAmountForDuration(Duration.fromDays(30), 26500, DUMMMY_BLOCK_TIME),
+    Utils.getAmountForDuration(Duration.fromDays(30), 26500, DUMMY_BLOCK_TIME),
   )
   const [labelInput, setLabelInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -59,7 +59,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     if (typeof newValue !== 'number') {
       return
     }
-    const amountValue = Utils.getAmountForDuration(Duration.fromDays(newValue), 26500, DUMMMY_BLOCK_TIME)
+    const amountValue = Utils.getAmountForDuration(Duration.fromDays(newValue), 26500, DUMMY_BLOCK_TIME)
     setAmountInput(amountValue)
   }
 
@@ -69,7 +69,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     const pricePerBlock = 24000
 
     return `${secondsToTimeString(
-      Utils.getStampDuration(amount, pricePerBlock, DUMMMY_BLOCK_TIME).toSeconds(),
+      Utils.getStampDuration(amount, pricePerBlock, DUMMY_BLOCK_TIME).toSeconds(),
     )} (with price of ${pricePerBlock} PLUR per block)`
   }
 

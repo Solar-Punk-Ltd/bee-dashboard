@@ -25,4 +25,4 @@ export enum FileTypes {
 
 export const VOLUME_CHARACTER_NUMBER = 20
 // TODO: valid block time
-export const DUMMMY_BLOCK_TIME = 15 * 60 // 15 minutes
+export const DUMMY_BLOCK_TIME = 15 * 60 // 15 minutes

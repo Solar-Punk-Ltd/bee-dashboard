@@ -1,4 +1,4 @@
-import { Bee, Bytes, PostageBatch } from '@ethersphere/bee-js'
+import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
@@ -179,65 +179,123 @@ export const formatDate = (date: Date): string => {
   return `${day}/${month}/${year}`
 }
 
+const processStream = async (stream: ReadableStream<Uint8Array>, fileHandle: FileSystemFileHandle): Promise<void> => {
+  const reader = stream.getReader()
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const writable = (await (fileHandle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
+
+    let done = false
+    while (!done) {
+      const { value, done: streamDone } = await reader.read()
+
+      if (value) {
+        await writable.write(value)
+      }
+      done = streamDone
+    }
+
+    await writable.close()
+  } catch (e: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to process stream: ', e)
+  } finally {
+    reader.releaseLock()
+  }
+}
+
 export const startDownloadingQueue = async (filemanager: FileManager, fileInfoList: FileInfo[]): Promise<void> => {
   try {
-    const dataPromises: Promise<Bytes[]>[] = []
     for (const infoItem of fileInfoList) {
-      dataPromises.push(
-        filemanager.download(infoItem, undefined, {
-          actPublisher: infoItem.actPublisher.toString(),
-          actHistoryAddress: infoItem.file.historyRef.toString(),
-        }),
-      )
+      const dataStreams = (await filemanager.download(infoItem, undefined, {
+        actPublisher: infoItem.actPublisher,
+        actHistoryAddress: infoItem.file.historyRef,
+      })) as ReadableStream<Uint8Array>[]
+      // TODO: parallelize this: filepicker dialog is blocking, only one is allowed at a time
+      await downloadToDisk(dataStreams, infoItem.name, infoItem.customMetadata?.type || 'application/octet-stream')
     }
-
-    await Promise.allSettled(dataPromises).then(results => {
-      results.forEach(result => {
-        if (result.status === 'fulfilled') {
-          if (result.value.length !== 0) {
-            downloadToDisk(result.value[0], 'todo_dummy_name', undefined)
-          }
-        } else {
-          // eslint-disable-next-line no-console
-          console.error('Failed to dowload file: ', result.reason)
-        }
-      })
-    })
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
-    console.error('Error downloading file with: ', error)
+    console.error('Error during downloading queue: ', error)
   }
 }
 
-async function downloadToDisk(data: Bytes, fileName: string, mimeType = 'application/octet-stream'): Promise<void> {
-  const uint8Array = data.toUint8Array()
-  const blob = new Blob([uint8Array], { type: mimeType })
+// TODO: mybe use a writer
+async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string): Promise<Blob> {
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
 
   try {
-    const handle = await (window as any).showSaveFilePicker({
-      suggestedName: fileName,
-      types: [
-        {
-          description: 'File',
-          accept: {
-            [mimeType]: [`.${fileName.split('.').pop()}`],
-          },
-        },
-      ],
-    })
-    const writable = await handle.createWritable()
-    await writable.write(blob)
-    await writable.close()
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return
+    let done = false
+    while (!done) {
+      const { value, done: streamDone } = await reader.read()
+
+      if (value) {
+        chunks.push(value)
+      }
+      done = streamDone
     }
-    // Fallback for browsers that do not support the File System Access API
-    downloadFileFallback(blob, fileName, mimeType)
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Error reading stream:', error)
+    throw error
+  } finally {
+    reader.releaseLock()
+  }
+
+  // Combine all chunks into a single Uint8Array
+  const combined = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    combined.set(chunk, offset)
+    offset += chunk.length
+  }
+
+  // Create and return a Blob
+  return new Blob([combined], { type: mimeType })
+}
+
+async function downloadToDisk(
+  streams: ReadableStream<Uint8Array>[],
+  fileName: string,
+  mimeType = 'application/octet-stream',
+): Promise<void> {
+  try {
+    for (const stream of streams) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fileHandle = (await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: 'File',
+            accept: {
+              [mimeType]: [`.${fileName.split('.').pop()}`],
+            },
+          },
+        ],
+      })) as FileSystemFileHandle
+
+      // Fallback for browsers that do not support the File System Access API
+      if (!fileHandle) {
+        const blob = await streamToBlob(stream, mimeType)
+
+        if (blob) {
+          downloadFileFallback(blob, fileName, mimeType)
+        }
+
+        return
+      }
+
+      await processStream(stream, fileHandle)
+    }
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Error during downloading to disk: ', error)
   }
 }
 
-function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream') {
+function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream'): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -252,6 +310,7 @@ export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> 
   if (!bee) {
     return []
   }
+
   try {
     return (await bee.getAllPostageBatch())
       .filter(s => s.usable)
