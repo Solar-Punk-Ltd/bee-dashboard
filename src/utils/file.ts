@@ -304,35 +304,21 @@ async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string
 
 async function downloadToDisk(
   streams: ReadableStream<Uint8Array>[],
-  fileName: string,
-  mimeType = 'application/octet-stream',
+  info: FileInfo,
+  fileHandle?: FileSystemFileHandle,
 ): Promise<void> {
   try {
     for (const stream of streams) {
-      const fileHandle = (await (window as any).showSaveFilePicker({
-        suggestedName: fileName,
-        types: [
-          {
-            description: 'File',
-            accept: {
-              [mimeType]: [`.${fileName.split('.').pop()}`],
-            },
-          },
-        ],
-      })) as FileSystemFileHandle
-
-      // Fallback for browsers that do not support the File System Access API
       if (!fileHandle) {
-        const blob = await streamToBlob(stream, mimeType)
+        // Fallback for browsers that do not support the File System Access API
+        const blob = await streamToBlob(stream, info.customMetadata?.type || 'application/octet-stream')
 
         if (blob) {
-          downloadFileFallback(blob, fileName, mimeType)
+          downloadFileFallback(blob, info.name)
         }
-
-        return
+      } else {
+        await processStream(stream, fileHandle)
       }
-
-      await processStream(stream, fileHandle)
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
@@ -340,7 +326,7 @@ async function downloadToDisk(
   }
 }
 
-function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream'): void {
+function downloadFileFallback(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
