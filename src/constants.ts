@@ -24,5 +24,5 @@ export enum FileTypes {
 }
 
 export const VOLUME_CHARACTER_NUMBER = 20
-// TODO: valid block time
-export const DUMMY_BLOCK_TIME = 15 * 60 // 15 minutes
+// 5 sec was read from gnosiscan
+export const DEFAULT_BLOCK_TIME = 5 // seconds

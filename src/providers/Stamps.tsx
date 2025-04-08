@@ -47,7 +47,6 @@ export function enrichStamp(postageBatch: PostageBatch): EnrichedPostageBatch {
   }
 }
 
-// TODO: remove stamps provider and only fetch usable stamps if a new volume is created, no need to refresh it because it keeps rerendering the FM
 export function Provider({ children }: Props): ReactElement {
   const { beeApi } = useContext(SettingsContext)
   const [stamps, setStamps] = useState<EnrichedPostageBatch[] | null>(initialValues.stamps)

@@ -207,7 +207,7 @@ const processStream = async (stream: ReadableStream<Uint8Array>, fileHandle: Fil
     }
   }
 }
-
+// TODO: maybe use a directory picker in case of multiple files ?
 export const startDownloadingQueue = async (filemanager: FileManager, fileInfoList: FileInfo[]): Promise<void> => {
   try {
     const fileHandles = await getFileHandles(fileInfoList)
@@ -239,7 +239,6 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const handle = (await (window as any).showSaveFilePicker({
-        //TODO: id: name ?,
         suggestedName: name,
         startIn: 'downloads',
         types: [
