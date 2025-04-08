@@ -14,7 +14,6 @@ import FileModal from './FileModal/FileModal'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { Reference } from '@ethersphere/bee-js'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
-import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -89,7 +88,7 @@ const useStyles = makeStyles(() =>
   }),
 )
 
-interface Props {
+export interface Props {
   batchId: string
   owner: string
   actPublisher: string
@@ -108,9 +107,10 @@ interface Props {
   shared?: string
   warning?: boolean
   addedToQueue?: boolean
+  customMetadata?: Record<string, string>
 }
 
-const FileItem = ({
+export const FileItem = ({
   batchId,
   owner,
   actPublisher,
@@ -128,8 +128,8 @@ const FileItem = ({
   details,
   shared,
   warning,
+  customMetadata,
 }: Props): ReactElement => {
-  const classes2 = useFileManagerGlobalStyles()
   const classes = useStyles()
   const [showFileModal, setShowFileModal] = useState(false)
   const { fileDownLoadQueue, setFileDownLoadQueue } = useContext(FileManagerContext)
@@ -165,6 +165,7 @@ const FileItem = ({
                         reference: hash,
                         historyRef: historyHash,
                       },
+                      customMetadata,
                     } as FileInfo,
                   ])
                 } else {
@@ -207,5 +208,3 @@ const FileItem = ({
     </div>
   )
 }
-
-export default FileItem

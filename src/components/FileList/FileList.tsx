@@ -8,6 +8,7 @@ import { FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { BatchId, PostageBatch } from '@ethersphere/bee-js'
 import GroupedFileList from './GroupedFileList'
 import FlatFileList from './FlatFileList'
+import { Props } from './FileItem/FileItem'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -59,7 +60,7 @@ export const sortFiles = (a: FileInfo, b: FileInfo, sortType: string): number =>
   }
 }
 
-export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[], queue: FileInfo[]) => {
+export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[], queue: FileInfo[]): Props => {
   const volumeInfo = usableStamps.find(item => item.batchID.toString() === file.batchId.toString())
 
   return {
@@ -87,6 +88,7 @@ export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[], q
 
     warning: file.customMetadata?.warning === 'true',
     addedToQueue: queue.includes(file),
+    customMetadata: file.customMetadata,
   }
 }
 
@@ -126,9 +128,6 @@ const FileList = (): ReactElement => {
       }
     }
   }, [filemanager, selectedBatchIds])
-
-  // eslint-disable-next-line no-console
-  console.log('fileDownLoadQueue', fileDownLoadQueue)
 
   return (
     <div className={classes.container}>

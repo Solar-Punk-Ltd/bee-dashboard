@@ -179,7 +179,11 @@ export const formatDate = (date: Date): string => {
   return `${day}/${month}/${year}`
 }
 
-const processStream = async (stream: ReadableStream<Uint8Array>, fileHandle: FileSystemFileHandle): Promise<void> => {
+const processStream = async (
+  stream: ReadableStream<Uint8Array>,
+  fileHandle: FileSystemFileHandle,
+  onDownloadProgress?: (progress: number) => void,
+): Promise<void> => {
   const reader = stream.getReader()
 
   let writable: WritableStreamDefaultWriter<Uint8Array> | undefined
@@ -193,7 +197,10 @@ const processStream = async (stream: ReadableStream<Uint8Array>, fileHandle: Fil
 
       if (value) {
         await writable.write(value)
+
+        if (onDownloadProgress) onDownloadProgress(value.length)
       }
+
       done = streamDone
     }
   } catch (e: unknown) {
@@ -268,7 +275,11 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
   return fileHandles
 }
 
-async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string): Promise<Blob | undefined> {
+async function streamToBlob(
+  stream: ReadableStream<Uint8Array>,
+  mimeType: string,
+  onDownloadProgress?: (progress: number) => void,
+): Promise<Blob | undefined> {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
 
@@ -279,6 +290,8 @@ async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string
 
       if (value) {
         chunks.push(value)
+
+        if (onDownloadProgress) onDownloadProgress(chunks.length)
       }
       done = streamDone
     }
@@ -306,17 +319,27 @@ async function downloadToDisk(
   info: FileInfo,
   fileHandle?: FileSystemFileHandle,
 ): Promise<void> {
+  // TODO: proper download progress handling
+  const onDownloadProgress = (progress: number): void => {
+    // eslint-disable-next-line no-console
+    console.log(`Download progress: ${progress}/${info.customMetadata?.size}`)
+  }
+
   try {
     for (const stream of streams) {
       if (!fileHandle) {
         // Fallback for browsers that do not support the File System Access API
-        const blob = await streamToBlob(stream, info.customMetadata?.type || 'application/octet-stream')
+        const blob = await streamToBlob(
+          stream,
+          info.customMetadata?.type || 'application/octet-stream',
+          onDownloadProgress,
+        )
 
         if (blob) {
           downloadFileFallback(blob, info.name)
         }
       } else {
-        await processStream(stream, fileHandle)
+        await processStream(stream, fileHandle, onDownloadProgress)
       }
     }
   } catch (error: unknown) {

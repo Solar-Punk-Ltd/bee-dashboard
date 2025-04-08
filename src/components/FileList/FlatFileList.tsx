@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { useContext, useEffect, useState } from 'react'
-import FileItem from './FileItem/FileItem'
+import { FileItem } from './FileItem/FileItem'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { getFileItemProps, sortFiles } from './FileList'
 import { PostageBatch } from '@ethersphere/bee-js'
