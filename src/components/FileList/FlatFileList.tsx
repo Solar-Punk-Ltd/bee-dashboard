@@ -22,9 +22,10 @@ const useStyles = makeStyles(() =>
 interface FlatFileListProps {
   fileList: FileInfo[]
   fileOrder: string
+  queue: FileInfo[]
 }
 
-const FlatFileList = ({ fileList, fileOrder }: FlatFileListProps): ReactElement => {
+const FlatFileList = ({ fileList, fileOrder, queue }: FlatFileListProps): ReactElement => {
   const classes = useStyles()
   const [usableStamps, setUsableStampsStamps] = useState<PostageBatch[]>([])
   const { beeApi } = useContext(SettingsContext)
@@ -44,7 +45,7 @@ const FlatFileList = ({ fileList, fileOrder }: FlatFileListProps): ReactElement 
         .sort((a, b) => sortFiles(a, b, fileOrder))
         .map((file, index) => (
           <div key={index}>
-            <FileItem {...getFileItemProps(file, usableStamps)}></FileItem>
+            <FileItem {...getFileItemProps(file, usableStamps, queue)}></FileItem>
           </div>
         ))}
     </div>

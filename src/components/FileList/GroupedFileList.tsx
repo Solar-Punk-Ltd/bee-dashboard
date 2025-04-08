@@ -28,9 +28,10 @@ const useStyles = makeStyles(() =>
 interface GroupedFileListProps {
   fileList: FileInfo[]
   fileOrder: string
+  queue: FileInfo[]
 }
 
-const GroupedFileList = ({ fileList, fileOrder }: GroupedFileListProps): ReactElement => {
+const GroupedFileList = ({ fileList, fileOrder, queue }: GroupedFileListProps): ReactElement => {
   const classes = useStyles()
   const [usableStamps, setUsableStampsStamps] = useState<PostageBatch[]>([])
   const { beeApi } = useContext(SettingsContext)
@@ -55,7 +56,7 @@ const GroupedFileList = ({ fileList, fileOrder }: GroupedFileListProps): ReactEl
               if (file.batchId.toString() === batchId.toString()) {
                 return (
                   <div key={index}>
-                    <FileItem {...getFileItemProps(file, usableStamps)}></FileItem>
+                    <FileItem {...getFileItemProps(file, usableStamps, queue)}></FileItem>
                   </div>
                 )
               }

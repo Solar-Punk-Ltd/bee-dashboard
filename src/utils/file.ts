@@ -269,30 +269,6 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
   return fileHandles
 }
 
-async function downloadToDisk(
-  streams: ReadableStream<Uint8Array>[],
-  info: FileInfo,
-  fileHandle?: FileSystemFileHandle,
-): Promise<void> {
-  try {
-    for (const stream of streams) {
-      if (!fileHandle) {
-        // Fallback for browsers that do not support the File System Access API
-        const blob = await streamToBlob(stream, info.customMetadata?.type || 'application/octet-stream')
-
-        if (blob) {
-          downloadFileFallback(blob, info.name)
-        }
-      } else {
-        await processStream(stream, fileHandle)
-      }
-    }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during downloading to disk: ', error)
-  }
-}
-
 async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string): Promise<Blob | undefined> {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
@@ -326,7 +302,45 @@ async function streamToBlob(stream: ReadableStream<Uint8Array>, mimeType: string
   return new Blob([combined], { type: mimeType })
 }
 
-function downloadFileFallback(blob: Blob, fileName: string): void {
+async function downloadToDisk(
+  streams: ReadableStream<Uint8Array>[],
+  fileName: string,
+  mimeType = 'application/octet-stream',
+): Promise<void> {
+  try {
+    for (const stream of streams) {
+      const fileHandle = (await (window as any).showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: 'File',
+            accept: {
+              [mimeType]: [`.${fileName.split('.').pop()}`],
+            },
+          },
+        ],
+      })) as FileSystemFileHandle
+
+      // Fallback for browsers that do not support the File System Access API
+      if (!fileHandle) {
+        const blob = await streamToBlob(stream, mimeType)
+
+        if (blob) {
+          downloadFileFallback(blob, fileName, mimeType)
+        }
+
+        return
+      }
+
+      await processStream(stream, fileHandle)
+    }
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Error during downloading to disk: ', error)
+  }
+}
+
+function downloadFileFallback(blob: Blob, fileName: string, mimeType = 'application/octet-stream'): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

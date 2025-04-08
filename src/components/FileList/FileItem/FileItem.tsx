@@ -128,13 +128,13 @@ const FileItem = ({
   details,
   shared,
   warning,
-  addedToQueue,
 }: Props): ReactElement => {
   const classes2 = useFileManagerGlobalStyles()
   const classes = useStyles()
   const [showFileModal, setShowFileModal] = useState(false)
   const { fileDownLoadQueue, setFileDownLoadQueue } = useContext(FileManagerContext)
-  const [added, setAdded] = useState<boolean>(addedToQueue ? addedToQueue : false)
+
+  const isInQueue = fileDownLoadQueue.some(item => item.file.reference.toString() === hash.toString())
 
   return (
     <div>
@@ -152,9 +152,8 @@ const FileItem = ({
             <div
               onClick={e => {
                 e.stopPropagation()
-                setAdded(!added)
 
-                if (!added) {
+                if (!isInQueue) {
                   setFileDownLoadQueue([
                     ...fileDownLoadQueue,
                     {
@@ -174,7 +173,7 @@ const FileItem = ({
               }}
               className={classes.downloadIconContainer}
             >
-              <DownloadQueueIcon added={added} />
+              <DownloadQueueIcon added={isInQueue} />
             </div>
           </div>
           <div className={classes.fileDataText}>{size}</div>

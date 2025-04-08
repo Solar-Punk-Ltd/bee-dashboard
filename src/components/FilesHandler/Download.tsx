@@ -24,7 +24,7 @@ interface Props {
 const Download = (props: Props): ReactElement => {
   const classes = useStyles()
   const classesGlobal = useFileManagerGlobalStyles()
-  const { fileDownLoadQueue, filemanager } = useContext(FileManagerContext)
+  const { fileDownLoadQueue, filemanager, setFileDownLoadQueue } = useContext(FileManagerContext)
 
   return (
     <div className={classesGlobal.dropdownElementContainer}>
@@ -46,7 +46,15 @@ const Download = (props: Props): ReactElement => {
         >
           Start downloading queue
         </div>
-        <div>Clear queue</div>
+        <div
+          onClick={() => {
+            if (setFileDownLoadQueue) {
+              setFileDownLoadQueue([])
+            }
+          }}
+        >
+          Clear queue
+        </div>
       </div>
     </div>
   )

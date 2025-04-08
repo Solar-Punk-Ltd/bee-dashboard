@@ -59,7 +59,7 @@ export const sortFiles = (a: FileInfo, b: FileInfo, sortType: string): number =>
   }
 }
 
-export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[]) => {
+export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[], queue: FileInfo[]) => {
   const volumeInfo = usableStamps.find(item => item.batchID.toString() === file.batchId.toString())
 
   return {
@@ -86,13 +86,13 @@ export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[]) =
         : undefined,
 
     warning: file.customMetadata?.warning === 'true',
-    addedToQueue: file.customMetadata?.addedToQueue === 'true',
+    addedToQueue: queue.includes(file),
   }
 }
 
 const FileList = (): ReactElement => {
   const classes = useStyles()
-  const { filemanager, selectedBatchIds, isGroupingOn } = useContext(FileManagerContext)
+  const { filemanager, selectedBatchIds, isGroupingOn, fileDownLoadQueue } = useContext(FileManagerContext)
   const [fileList, setFileList] = useState<FileInfo[]>([])
   const { fileOrder } = useContext(FileManagerContext)
   const filesUnderVolumes = (allFiles: FileInfo[], selectedBatchIds: BatchId[]) => {
@@ -127,14 +127,17 @@ const FileList = (): ReactElement => {
     }
   }, [filemanager, selectedBatchIds])
 
+  // eslint-disable-next-line no-console
+  console.log('fileDownLoadQueue', fileDownLoadQueue)
+
   return (
     <div className={classes.container}>
       {fileList.length > 0 ? (
         <div className={classes.fileListContainer}>
           {isGroupingOn ? (
-            <GroupedFileList fileList={fileList} fileOrder={fileOrder} />
+            <GroupedFileList fileList={fileList} fileOrder={fileOrder} queue={fileDownLoadQueue} />
           ) : (
-            <FlatFileList fileList={fileList} fileOrder={fileOrder} />
+            <FlatFileList fileList={fileList} fileOrder={fileOrder} queue={fileDownLoadQueue} />
           )}
         </div>
       ) : (
