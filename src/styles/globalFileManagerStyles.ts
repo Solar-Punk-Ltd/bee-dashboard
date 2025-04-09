@@ -33,10 +33,12 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
     },
     secondModalLittleDarker: {
       backgroundColor: 'rgba(0, 0, 0, 0.2) !important',
+      backdropFilter: 'none !important',
       zIndex: 1100,
     },
     secondModalNotDarker: {
-      backgroundColor: 'rgba(0, 0, 0, 0.0) !important',
+      backgroundColor: 'transparent !important',
+      backdropFilter: 'none !important',
       zIndex: 1100,
     },
     modalContainer: {
