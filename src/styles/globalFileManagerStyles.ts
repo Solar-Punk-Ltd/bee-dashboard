@@ -31,6 +31,14 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       alignItems: 'center',
       zIndex: 1000,
     },
+    secondModalLittleDarker: {
+      backgroundColor: 'rgba(0, 0, 0, 0.2) !important',
+      zIndex: 1100,
+    },
+    secondModalNotDarker: {
+      backgroundColor: 'rgba(0, 0, 0, 0.0) !important',
+      zIndex: 1100,
+    },
     modalContainer: {
       display: 'flex',
       gap: '20px',

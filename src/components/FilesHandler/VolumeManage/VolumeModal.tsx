@@ -19,7 +19,7 @@ const VolumeModal = ({ modalDisplay, newVolume, activeVolume }: VolumeModalProps
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Properties)
 
   return (
-    <div className={classes.modal}>
+    <div className={`${classes.modal} ${classes.secondModalLittleDarker}`}>
       <div className={classes.modalContainer}>
         <div className={classes.tabPanel}>
           <div

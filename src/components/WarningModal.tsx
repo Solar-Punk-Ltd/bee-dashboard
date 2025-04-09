@@ -12,7 +12,7 @@ const WarningModal = ({ modalDisplay, onConfirm, title, message }: WarningModalP
   const classes = useFileManagerGlobalStyles()
 
   return (
-    <div className={classes.modal}>
+    <div className={`${classes.modal} ${classes.secondModalLittleDarker}`}>
       <div className={classes.modalContainer} style={{ width: '400px', height: '200px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className={classes.modalHeader}>{title}</div>
