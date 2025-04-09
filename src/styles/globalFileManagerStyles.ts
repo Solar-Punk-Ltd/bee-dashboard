@@ -288,5 +288,10 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
         color: '#ffffff',
       },
     },
+    deleteButtonElement: {
+      '&:hover': {
+        backgroundColor: '#B62D00 !important',
+      },
+    },
   }),
 )
