@@ -58,7 +58,17 @@ const VolumeItem = ({ setActiveVolume, stamp, notificationThresholdDate }: Volum
       <div className={classes.buttonElement}>{stamp.label}</div>
       <div className={classes.buttonElementNotificationSign}>
         {stamp.duration.toEndDate() < notificationThresholdDate ? (
-          <Tooltip title={`Postage batch will expire at ${stamp.duration.toEndDate()}`} placement="right">
+          <Tooltip
+            title={`Postage batch will expire on ${stamp.duration.toEndDate().toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZoneName: 'short',
+            })}`}
+            placement="right"
+          >
             <div>
               <NotificationSign text="!" />
             </div>
