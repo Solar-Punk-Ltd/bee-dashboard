@@ -165,7 +165,7 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       display: 'flex',
       flexDirection: 'column',
       height: '16px',
-      fontSize: '10px',
+      fontSize: '13px',
       fontFamily: '"iAWriterMonoV", monospace',
     },
     mark: {
@@ -206,6 +206,7 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
     lowerBoldSliderLabel: {
       width: '100%',
       textUnderlineOffset: '2px',
+      fontSize: '13px',
     },
     thumbVisible: {
       display: 'block',
