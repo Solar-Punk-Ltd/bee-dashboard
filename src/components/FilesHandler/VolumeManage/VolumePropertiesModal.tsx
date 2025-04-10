@@ -12,6 +12,7 @@ import { Duration } from '@ethersphere/bee-js'
 import { ActiveVolume } from './ManageVolumesModal'
 import DownloadIcon from '../../icons/DownloadIcon'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
+import WarningModal from '../../WarningModal'
 
 interface VolumePropertiesModalProps {
   newVolume: boolean
@@ -29,6 +30,7 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
   const [cost, setCost] = useState('')
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [isUploadButtonEnabled, setIsUploadButtonEnabled] = useState(false)
+  const [showWarningModal, setShowWarningModal] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
   const { filemanager } = useContext(FileManagerContext)
@@ -111,7 +113,7 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
               onMouseEnter={handleMouseEnterDestroy}
               onMouseLeave={handleMouseLeaveDestroy}
               onClick={() => {
-                filemanager?.destroyVolume(activeVolume.volume.batchID)
+                setShowWarningModal(true)
               }}
             >
               <DestroyIcon color={isHoveredDestroy ? '#FFFFFF' : '#333333'} />
@@ -179,6 +181,20 @@ const VolumePropertiesModal = ({ newVolume, modalDisplay, activeVolume }: Volume
           Update
         </div>
       </div>
+
+      {showWarningModal ? (
+        <WarningModal
+          modalDisplay={(value: boolean) => setShowWarningModal(value)}
+          onConfirm={() => {
+            filemanager?.destroyVolume(activeVolume.volume.batchID)
+            setShowWarningModal(false)
+            modalDisplay(false)
+          }}
+          title="Destroy Volume"
+          message={`Are you sure you want to destroy volume "${activeVolume.volume.label}"? This action cannot be undone.`}
+        />
+      ) : null}
+
       {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}
     </div>
   )
