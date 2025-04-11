@@ -64,7 +64,7 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
   }
 
   return (
-    <div className={classesGlobal.dropdownElementContainer} style={{ backgroundColor: '#DE7700', color: '#ffffff' }}>
+    <div className={classesGlobal.dropdownElementContainer}>
       {isUploading ? (
         <div className={classes.circularProgressBar}>
           <CircularProgressBar value={uploadingProgress} size={12} customColor="white" thickness={22} />
