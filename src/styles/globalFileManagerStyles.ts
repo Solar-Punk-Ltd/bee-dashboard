@@ -268,7 +268,8 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       color: '#333333',
       fontFamily: '"iAWriterMonoV", monospace',
       '&:hover': {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#DE7700',
+        color: '#F2F2F2',
       },
       '&:hover $dropdownContainer': {
         display: 'flex',

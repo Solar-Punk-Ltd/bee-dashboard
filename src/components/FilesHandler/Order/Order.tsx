@@ -1,6 +1,6 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import OrderIcon from '../../icons/OrderIcon'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
@@ -16,11 +16,16 @@ const useStyles = makeStyles(() =>
 const Order = (): ReactElement => {
   const classes = useStyles()
   const classesGlobal = useFileManagerGlobalStyles()
+  const [isActive, setIsActive] = useState(false)
   const { fileOrder, setFileOrder } = useContext(FileManagerContext)
 
   return (
-    <div className={classesGlobal.dropdownElementContainer}>
-      <OrderIcon />
+    <div
+      className={classesGlobal.dropdownElementContainer}
+      onMouseEnter={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+    >
+      <OrderIcon color={isActive ? '#F2F2F2' : '#333333'} />
       <div>Order</div>
       <div className={classesGlobal.dropdownContainer}>
         <div onClick={() => setFileOrder('nameAsc')} className={fileOrder === 'nameAsc' ? classes.activeOrder : ''}>
