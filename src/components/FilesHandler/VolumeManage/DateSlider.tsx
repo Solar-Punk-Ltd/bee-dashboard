@@ -131,7 +131,7 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange, newVolume }: Props):
   return (
     <div className={classes.container}>
       <div>
-        <div style={{ display: 'flex' }} className={classes.upperLabelContainer}>
+        <div style={{ display: 'flex', fontSize: '13px' }} className={classes.upperLabelContainer}>
           {upperLabel}
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -140,12 +140,12 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange, newVolume }: Props):
               onChange={handleDatePickerChange}
               sx={{
                 '.MuiInputBase-root': {
-                  fontSize: '10px',
+                  fontSize: '13px',
                   fontWeight: 'bold',
                   fontFamily: '"iAWriterMonoV", monospace',
                   input: {
                     padding: '3px',
-                    width: '70px',
+                    width: '84px',
                   },
                   '.MuiInputAdornment-root': {
                     marginLeft: '0px',
@@ -203,7 +203,7 @@ const DateSlider = ({ upperLabel, exactValue, onDateChange, newVolume }: Props):
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'right' }}>
+      <div style={{ display: 'flex', justifyContent: 'right', fontSize: '13px' }}>
         {newVolume ? null : (
           <div className={classes.dateCurrentLabel}>
             (Current:{' '}

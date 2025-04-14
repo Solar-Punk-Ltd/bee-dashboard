@@ -31,6 +31,16 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       alignItems: 'center',
       zIndex: 1000,
     },
+    secondModalLittleDarker: {
+      backgroundColor: 'rgba(0, 0, 0, 0.2) !important',
+      backdropFilter: 'none !important',
+      zIndex: 1100,
+    },
+    secondModalNotDarker: {
+      backgroundColor: 'transparent !important',
+      backdropFilter: 'none !important',
+      zIndex: 1100,
+    },
     modalContainer: {
       display: 'flex',
       gap: '20px',
@@ -165,7 +175,7 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       display: 'flex',
       flexDirection: 'column',
       height: '16px',
-      fontSize: '10px',
+      fontSize: '13px',
       fontFamily: '"iAWriterMonoV", monospace',
     },
     mark: {
@@ -206,6 +216,7 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
     lowerBoldSliderLabel: {
       width: '100%',
       textUnderlineOffset: '2px',
+      fontSize: '13px',
     },
     thumbVisible: {
       display: 'block',
@@ -286,6 +297,11 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       '& div:hover': {
         backgroundColor: '#DE7700',
         color: '#ffffff',
+      },
+    },
+    deleteButtonElement: {
+      '&:hover': {
+        backgroundColor: '#B62D00 !important',
       },
     },
   }),
