@@ -1,11 +1,12 @@
 import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
-import SwarmIcon from '../../../assets/images/swarmIcon.png'
 import FileUploadModal from './FileUploadModal'
 import { PostageBatch } from '@ethersphere/bee-js'
 import CircularProgressBar from './CircularProgressBar'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
+import { SwarmIconOrange } from './SwarmIconOrange'
+import { SwarmIcon } from './SwarmIcon'
 
 interface Props {
   usableStamps: PostageBatch[]
@@ -30,6 +31,7 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
   const classesGlobal = useFileManagerGlobalStyles()
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isActive, setIsActive] = useState(false)
   const [selectedStamp, setSelectedStamp] = useState(usableStamps[0])
   const [uploadingProgress, setUploadingProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
@@ -64,13 +66,21 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
   }
 
   return (
-    <div className={classesGlobal.dropdownElementContainer}>
+    <div
+      className={classesGlobal.dropdownElementContainer}
+      onMouseEnter={() => {
+        setIsActive(true)
+      }}
+      onMouseLeave={() => {
+        setIsActive(false)
+      }}
+    >
       {isUploading ? (
         <div className={classes.circularProgressBar}>
           <CircularProgressBar value={uploadingProgress} size={12} customColor="white" thickness={22} />
         </div>
       ) : null}
-      <img src={SwarmIcon} alt="" height="16" />
+      {!isActive ? <SwarmIconOrange /> : <SwarmIcon />}
       <div>Upload</div>
 
       <div className={classesGlobal.dropdownContainer}>
