@@ -331,7 +331,7 @@ async function downloadToDisk(
   streams: ReadableStream<Uint8Array>[],
   info: FileInfo,
   fileHandle?: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number) => void,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
 ): Promise<void> {
   try {
     for (const stream of streams) {
