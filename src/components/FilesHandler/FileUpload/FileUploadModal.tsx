@@ -70,6 +70,7 @@ const UploadModal = ({ modalDisplay, files, actualPostageBatch, onUpload }: Uplo
             details,
             size: file.size.toString(),
             type: getFileType(file.type),
+            mimeType: file.type,
             date: actualPostageBatch.duration.toEndDate().getTime().toString(),
           },
           onUploadProgress: (p: UploadProgress) => {

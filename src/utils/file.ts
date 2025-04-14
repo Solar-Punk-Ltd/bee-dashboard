@@ -219,6 +219,10 @@ export const startDownloadingQueue = async (filemanager: FileManager, fileInfoLi
   try {
     const fileHandles = await getFileHandles(fileInfoList)
 
+    if (!fileHandles) {
+      return
+    }
+
     for (let i = 0; i < fileHandles.length; i++) {
       const info = fileHandles[i].info
       const dataStreams = (await filemanager.download(info)) as ReadableStream<Uint8Array>[]
@@ -236,40 +240,41 @@ interface FileInfoWithHandle {
   handle?: FileSystemFileHandle
 }
 
-async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[]> {
+async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> {
   const fileHandles: FileInfoWithHandle[] = []
 
   for (let i = 0; i < infoList.length; i++) {
     const name = infoList[i].name
-    const mimeType = infoList[i].customMetadata?.type || 'application/octet-stream'
+    const mimeType = infoList[i].customMetadata?.mimeType || 'application/octet-stream'
+    let handle: FileSystemFileHandle | undefined
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const handle = (await (window as any).showSaveFilePicker({
+      handle = (await (window as any).showSaveFilePicker({
         suggestedName: name,
         startIn: 'downloads',
         types: [
           {
-            description: 'file',
             accept: {
               [mimeType]: [`.${name.split('.').pop()}`],
             },
           },
         ],
       })) as FileSystemFileHandle
-
-      fileHandles.push({
-        info: infoList[i],
-        handle,
-      })
     } catch (error: unknown) {
+      // User canceled the file picker
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
+
       // eslint-disable-next-line no-console
       console.error(`Error getting file handle ${error}, using fallback download`)
-
-      fileHandles.push({
-        info: infoList[i],
-      })
     }
+
+    fileHandles.push({
+      info: infoList[i],
+      handle,
+    })
   }
 
   return fileHandles

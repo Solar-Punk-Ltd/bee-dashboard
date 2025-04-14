@@ -21,6 +21,8 @@ export enum FileTypes {
   Video = 'video',
   Audio = 'audio',
   Application = 'application',
+  Document = 'document',
+  Folder = 'folder',
 }
 
 export const VOLUME_CHARACTER_NUMBER = 20
