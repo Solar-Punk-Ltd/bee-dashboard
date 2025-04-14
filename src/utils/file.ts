@@ -182,7 +182,7 @@ export const formatDate = (date: Date): string => {
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
   fileHandle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number) => void,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
 ): Promise<void> => {
   const reader = stream.getReader()
 
@@ -192,16 +192,18 @@ const processStream = async (
     writable = (await (fileHandle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
 
     let done = false
+    let progress = 0
     while (!done) {
       const { value, done: streamDone } = await reader.read()
 
       if (value) {
         await writable.write(value)
-
-        if (onDownloadProgress) onDownloadProgress(value.length)
+        progress += value.length
       }
 
       done = streamDone
+
+      if (onDownloadProgress) onDownloadProgress(progress, !done)
     }
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
@@ -214,8 +216,53 @@ const processStream = async (
     }
   }
 }
+
+async function streamToBlob(
+  stream: ReadableStream<Uint8Array>,
+  mimeType: string,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+): Promise<Blob | undefined> {
+  const reader = stream.getReader()
+  const chunks: Uint8Array[] = []
+
+  try {
+    let done = false
+    let progress = 0
+    while (!done) {
+      const { value, done: streamDone } = await reader.read()
+
+      if (value) {
+        chunks.push(value)
+        progress += chunks.length
+      }
+      done = streamDone
+
+      if (onDownloadProgress) onDownloadProgress(progress, !done)
+    }
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Error during stream processing: ', error)
+
+    return
+  } finally {
+    reader.releaseLock()
+  }
+
+  const combined = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    combined.set(chunk, offset)
+    offset += chunk.length
+  }
+
+  return new Blob([combined], { type: mimeType })
+}
 // TODO: maybe use a directory picker in case of multiple files ?
-export const startDownloadingQueue = async (filemanager: FileManager, fileInfoList: FileInfo[]): Promise<void> => {
+export const startDownloadingQueue = async (
+  filemanager: FileManager,
+  fileInfoList: FileInfo[],
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+): Promise<void> => {
   try {
     const fileHandles = await getFileHandles(fileInfoList)
 
@@ -280,63 +327,19 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
   return fileHandles
 }
 
-async function streamToBlob(
-  stream: ReadableStream<Uint8Array>,
-  mimeType: string,
-  onDownloadProgress?: (progress: number) => void,
-): Promise<Blob | undefined> {
-  const reader = stream.getReader()
-  const chunks: Uint8Array[] = []
-
-  try {
-    let done = false
-    while (!done) {
-      const { value, done: streamDone } = await reader.read()
-
-      if (value) {
-        chunks.push(value)
-
-        if (onDownloadProgress) onDownloadProgress(chunks.length)
-      }
-      done = streamDone
-    }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during stream processing: ', error)
-
-    return
-  } finally {
-    reader.releaseLock()
-  }
-
-  const combined = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
-  let offset = 0
-  for (const chunk of chunks) {
-    combined.set(chunk, offset)
-    offset += chunk.length
-  }
-
-  return new Blob([combined], { type: mimeType })
-}
-
 async function downloadToDisk(
   streams: ReadableStream<Uint8Array>[],
   info: FileInfo,
   fileHandle?: FileSystemFileHandle,
+  onDownloadProgress?: (progress: number) => void,
 ): Promise<void> {
-  // TODO: proper download progress handling
-  const onDownloadProgress = (progress: number): void => {
-    // eslint-disable-next-line no-console
-    console.log(`Download progress: ${progress}/${info.customMetadata?.size}`)
-  }
-
   try {
     for (const stream of streams) {
       if (!fileHandle) {
         // Fallback for browsers that do not support the File System Access API
         const blob = await streamToBlob(
           stream,
-          info.customMetadata?.type || 'application/octet-stream',
+          info.customMetadata?.mimeType || 'application/octet-stream',
           onDownloadProgress,
         )
 
