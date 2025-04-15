@@ -182,7 +182,7 @@ export const formatDate = (date: Date): string => {
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
   fileHandle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number) => void,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
 ): Promise<void> => {
   const reader = stream.getReader()
 
@@ -192,16 +192,18 @@ const processStream = async (
     writable = (await (fileHandle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
 
     let done = false
+    let progress = 0
     while (!done) {
       const { value, done: streamDone } = await reader.read()
 
       if (value) {
         await writable.write(value)
-
-        if (onDownloadProgress) onDownloadProgress(value.length)
+        progress += value.length
       }
 
       done = streamDone
+
+      if (onDownloadProgress) onDownloadProgress(progress, !done)
     }
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
@@ -214,86 +216,28 @@ const processStream = async (
     }
   }
 }
-// TODO: maybe use a directory picker in case of multiple files ?
-export const startDownloadingQueue = async (filemanager: FileManager, fileInfoList: FileInfo[]): Promise<void> => {
-  try {
-    const fileHandles = await getFileHandles(fileInfoList)
-
-    for (let i = 0; i < fileHandles.length; i++) {
-      const info = fileHandles[i].info
-      const dataStreams = (await filemanager.download(info)) as ReadableStream<Uint8Array>[]
-
-      downloadToDisk(dataStreams, info, fileHandles[i].handle)
-    }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during downloading queue: ', error)
-  }
-}
-
-interface FileInfoWithHandle {
-  info: FileInfo
-  handle?: FileSystemFileHandle
-}
-
-async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[]> {
-  const fileHandles: FileInfoWithHandle[] = []
-
-  for (let i = 0; i < infoList.length; i++) {
-    const name = infoList[i].name
-    const mimeType = infoList[i].customMetadata?.type || 'application/octet-stream'
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const handle = (await (window as any).showSaveFilePicker({
-        suggestedName: name,
-        startIn: 'downloads',
-        types: [
-          {
-            description: 'file',
-            accept: {
-              [mimeType]: [`.${name.split('.').pop()}`],
-            },
-          },
-        ],
-      })) as FileSystemFileHandle
-
-      fileHandles.push({
-        info: infoList[i],
-        handle,
-      })
-    } catch (error: unknown) {
-      // eslint-disable-next-line no-console
-      console.error(`Error getting file handle ${error}, using fallback download`)
-
-      fileHandles.push({
-        info: infoList[i],
-      })
-    }
-  }
-
-  return fileHandles
-}
 
 async function streamToBlob(
   stream: ReadableStream<Uint8Array>,
   mimeType: string,
-  onDownloadProgress?: (progress: number) => void,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
 ): Promise<Blob | undefined> {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
 
   try {
     let done = false
+    let progress = 0
     while (!done) {
       const { value, done: streamDone } = await reader.read()
 
       if (value) {
         chunks.push(value)
-
-        if (onDownloadProgress) onDownloadProgress(chunks.length)
+        progress += value.length
       }
       done = streamDone
+
+      if (onDownloadProgress) onDownloadProgress(progress, !done)
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
@@ -313,25 +257,89 @@ async function streamToBlob(
 
   return new Blob([combined], { type: mimeType })
 }
+// TODO: maybe use a directory picker in case of multiple files ?
+export const startDownloadingQueue = async (
+  filemanager: FileManager,
+  fileInfoList: FileInfo[],
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+): Promise<void> => {
+  try {
+    const fileHandles = await getFileHandles(fileInfoList)
+
+    if (!fileHandles) {
+      return
+    }
+
+    for (let i = 0; i < fileHandles.length; i++) {
+      const info = fileHandles[i].info
+      const dataStreams = (await filemanager.download(info)) as ReadableStream<Uint8Array>[]
+
+      downloadToDisk(dataStreams, info, fileHandles[i].handle)
+    }
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Error during downloading queue: ', error)
+  }
+}
+
+interface FileInfoWithHandle {
+  info: FileInfo
+  handle?: FileSystemFileHandle
+}
+
+async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> {
+  const fileHandles: FileInfoWithHandle[] = []
+
+  for (let i = 0; i < infoList.length; i++) {
+    const name = infoList[i].name
+    const mimeType = infoList[i].customMetadata?.mimeType || 'application/octet-stream'
+    let handle: FileSystemFileHandle | undefined
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handle = (await (window as any).showSaveFilePicker({
+        suggestedName: name,
+        startIn: 'downloads',
+        types: [
+          {
+            accept: {
+              [mimeType]: [`.${name.split('.').pop()}`],
+            },
+          },
+        ],
+      })) as FileSystemFileHandle
+    } catch (error: unknown) {
+      // User canceled the file picker
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
+
+      // eslint-disable-next-line no-console
+      console.error(`Error getting file handle ${error}, using fallback download`)
+    }
+
+    fileHandles.push({
+      info: infoList[i],
+      handle,
+    })
+  }
+
+  return fileHandles
+}
 
 async function downloadToDisk(
   streams: ReadableStream<Uint8Array>[],
   info: FileInfo,
   fileHandle?: FileSystemFileHandle,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
 ): Promise<void> {
-  // TODO: proper download progress handling
-  const onDownloadProgress = (progress: number): void => {
-    // eslint-disable-next-line no-console
-    console.log(`Download progress: ${progress}/${info.customMetadata?.size}`)
-  }
-
   try {
     for (const stream of streams) {
       if (!fileHandle) {
         // Fallback for browsers that do not support the File System Access API
         const blob = await streamToBlob(
           stream,
-          info.customMetadata?.type || 'application/octet-stream',
+          info.customMetadata?.mimeType || 'application/octet-stream',
           onDownloadProgress,
         )
 

@@ -81,7 +81,9 @@ export function Provider({ children }: Props): ReactElement {
         const bee = new Bee(apiUrl, { signer })
         const fm = new FileManagerBase(bee)
         fm.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, (e: boolean) => {
-          setFilemanager(fm)
+          if (e) {
+            setFilemanager(fm)
+          }
         })
         await fm.initialize()
       }
