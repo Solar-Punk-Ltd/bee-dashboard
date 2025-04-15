@@ -233,7 +233,7 @@ async function streamToBlob(
 
       if (value) {
         chunks.push(value)
-        progress += chunks.length
+        progress += value.length
       }
       done = streamDone
 
