@@ -3,7 +3,7 @@ import type { ReactElement } from 'react'
 import NotificationSign from '../NotificationSign'
 import DownloadIcon from '../icons/DownloadIcon'
 import { Context as FileManagerContext } from '../../providers/FileManager'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { startDownloadingQueue } from '../../utils/file'
 import { useFileManagerGlobalStyles } from '../../styles/globalFileManagerStyles'
 
@@ -25,10 +25,15 @@ const Download = (props: Props): ReactElement => {
   const classes = useStyles()
   const classesGlobal = useFileManagerGlobalStyles()
   const { fileDownLoadQueue, filemanager, setFileDownLoadQueue } = useContext(FileManagerContext)
+  const [isActive, setIsActive] = useState(false)
 
   return (
-    <div className={classesGlobal.dropdownElementContainer}>
-      <DownloadIcon />
+    <div
+      className={classesGlobal.dropdownElementContainer}
+      onMouseEnter={() => setIsActive(true)}
+      onMouseLeave={() => setIsActive(false)}
+    >
+      <DownloadIcon color={isActive ? '#F2F2F2' : '#DE7700'} />
 
       <div>Download</div>
       {props.notificationText ? (

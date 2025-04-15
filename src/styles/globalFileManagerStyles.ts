@@ -7,7 +7,11 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       backgroundColor: '#ffffff',
       fontSize: '12px',
       display: 'flex',
-      width: '65px',
+      minWidth: '65px',
+      maxWidth: '90px',
+      overflowWrap: 'break-word',
+      marginLeft: '3px',
+      marginRight: '3px',
       height: '100%',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -268,7 +272,8 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       color: '#333333',
       fontFamily: '"iAWriterMonoV", monospace',
       '&:hover': {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#DE7700',
+        color: '#F2F2F2',
       },
       '&:hover $dropdownContainer': {
         display: 'flex',
