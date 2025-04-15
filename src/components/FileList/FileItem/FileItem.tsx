@@ -14,7 +14,6 @@ import FileModal from './FileModal/FileModal'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import { Reference } from '@ethersphere/bee-js'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
-import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -89,7 +88,7 @@ const useStyles = makeStyles(() =>
   }),
 )
 
-interface Props {
+export interface Props {
   batchId: string
   owner: string
   actPublisher: string
@@ -108,9 +107,10 @@ interface Props {
   shared?: string
   warning?: boolean
   addedToQueue?: boolean
+  customMetadata?: Record<string, string>
 }
 
-const FileItem = ({
+export const FileItem = ({
   batchId,
   owner,
   actPublisher,
@@ -128,13 +128,13 @@ const FileItem = ({
   details,
   shared,
   warning,
-  addedToQueue,
+  customMetadata,
 }: Props): ReactElement => {
-  const classes2 = useFileManagerGlobalStyles()
   const classes = useStyles()
   const [showFileModal, setShowFileModal] = useState(false)
   const { fileDownLoadQueue, setFileDownLoadQueue } = useContext(FileManagerContext)
-  const [added, setAdded] = useState<boolean>(addedToQueue ? addedToQueue : false)
+
+  const isInQueue = fileDownLoadQueue.some(item => item.file.reference.toString() === hash.toString())
 
   return (
     <div>
@@ -152,9 +152,8 @@ const FileItem = ({
             <div
               onClick={e => {
                 e.stopPropagation()
-                setAdded(!added)
 
-                if (!added) {
+                if (!isInQueue) {
                   setFileDownLoadQueue([
                     ...fileDownLoadQueue,
                     {
@@ -166,6 +165,7 @@ const FileItem = ({
                         reference: hash,
                         historyRef: historyHash,
                       },
+                      customMetadata,
                     } as FileInfo,
                   ])
                 } else {
@@ -174,7 +174,7 @@ const FileItem = ({
               }}
               className={classes.downloadIconContainer}
             >
-              <DownloadQueueIcon added={added} />
+              <DownloadQueueIcon added={isInQueue} />
             </div>
           </div>
           <div className={classes.fileDataText}>{size}</div>
@@ -208,5 +208,3 @@ const FileItem = ({
     </div>
   )
 }
-
-export default FileItem

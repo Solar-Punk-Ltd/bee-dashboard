@@ -1,4 +1,3 @@
-import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 // This is commented out because this feature is not part of phase1
@@ -7,8 +6,6 @@ import FilePropertiesModal from './FilePropertiesModal'
 import { Tab } from '../../../../constants'
 import { Reference } from '@ethersphere/bee-js'
 import { useFileManagerGlobalStyles } from '../../../../styles/globalFileManagerStyles'
-
-const useStyles = makeStyles(() => createStyles({}))
 
 interface FileModalProps {
   volumeName: string

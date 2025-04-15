@@ -2,13 +2,13 @@ import { createStyles, makeStyles } from '@material-ui/core'
 import type { ReactElement } from 'react'
 import { useContext, useEffect, useState } from 'react'
 import { Context as FileManagerContext } from '../../providers/FileManager'
-import { Context as SettingsContext } from '../../providers/Settings'
-import { getHumanReadableFileSize, getUsableStamps } from '../../utils/file'
+import { getHumanReadableFileSize } from '../../utils/file'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { BatchId, PostageBatch } from '@ethersphere/bee-js'
 import GroupedFileList from './GroupedFileList'
 import FlatFileList from './FlatFileList'
+import { Props } from './FileItem/FileItem'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -60,7 +60,7 @@ export const sortFiles = (a: FileInfo, b: FileInfo, sortType: string): number =>
   }
 }
 
-export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[]) => {
+export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[], queue: FileInfo[]): Props => {
   const volumeInfo = usableStamps.find(item => item.batchID.toString() === file.batchId.toString())
 
   return {
@@ -87,13 +87,14 @@ export const getFileItemProps = (file: FileInfo, usableStamps: PostageBatch[]) =
         : undefined,
 
     warning: file.customMetadata?.warning === 'true',
-    addedToQueue: file.customMetadata?.addedToQueue === 'true',
+    addedToQueue: queue.includes(file),
+    customMetadata: file.customMetadata,
   }
 }
 
 const FileList = (): ReactElement => {
   const classes = useStyles()
-  const { filemanager, selectedBatchIds, isGroupingOn } = useContext(FileManagerContext)
+  const { filemanager, selectedBatchIds, isGroupingOn, fileDownLoadQueue } = useContext(FileManagerContext)
   const [fileList, setFileList] = useState<FileInfo[]>([])
   const { fileOrder } = useContext(FileManagerContext)
   const filesUnderVolumes = (allFiles: FileInfo[], selectedBatchIds: BatchId[]) => {
@@ -133,9 +134,9 @@ const FileList = (): ReactElement => {
       {fileList.length > 0 ? (
         <div className={classes.fileListContainer}>
           {isGroupingOn ? (
-            <GroupedFileList fileList={fileList} fileOrder={fileOrder} />
+            <GroupedFileList fileList={fileList} fileOrder={fileOrder} queue={fileDownLoadQueue} />
           ) : (
-            <FlatFileList fileList={fileList} fileOrder={fileOrder} />
+            <FlatFileList fileList={fileList} fileOrder={fileOrder} queue={fileDownLoadQueue} />
           )}
         </div>
       ) : (
