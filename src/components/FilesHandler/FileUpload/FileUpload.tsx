@@ -69,7 +69,10 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
 
   return (
     <div
-      className={`${classesGlobal.dropdownElementContainer} ${isUploading ? classesGlobal.uploading : ''}`}
+      className={`
+        ${classesGlobal.dropdownElementContainer} 
+        ${isUploading ? classesGlobal.uploading : ''}
+      `}
       onMouseEnter={() => {
         setIsActive(true)
       }}
