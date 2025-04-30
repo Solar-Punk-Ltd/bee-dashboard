@@ -30,7 +30,9 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   const createPostageStamp = async () => {
     try {
       if (isCreateEnabled) {
-        await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+        const postageBuyResponse = await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+        // eslint-disable-next-line no-console
+        console.log('BatchID: ', postageBuyResponse?.toString())
         setIsNewVolumeCreated(true)
         modalDisplay(false)
       }

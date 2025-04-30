@@ -1,7 +1,7 @@
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
 import { CircularProgress, Typography } from '@material-ui/core'
-import { Bee, MantarayNode } from '@ethersphere/bee-js'
+import { Bee, BeeDev, MantarayNode } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useEffect, useState } from 'react'
 import ImportIcon from 'remixicon-react/AddBoxLineIcon'
@@ -14,7 +14,7 @@ import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 
 async function makeFdp(): Promise<FdpStorage | null> {
-  const bee = new Bee('http://localhost:1633')
+  const bee = new BeeDev('http://localhost:1633')
   const sepolia = localStorage.getItem('sepolia') ?? 'https://sepolia.drpc.org'
   const postageBatches = await bee.getAllPostageBatch()
   const usableBatches = postageBatches.filter(batch => batch.usable)
@@ -120,7 +120,7 @@ export default function FDP(): ReactElement {
       return
     }
     setCreatingPod(true)
-    const bee = new Bee('http://localhost:1633')
+    const bee = new BeeDev('http://localhost:1633')
     const manifest = await MantarayNode.unmarshal(bee, importHash)
     await manifest.loadRecursively(bee)
     const nodes = manifest.collect()
