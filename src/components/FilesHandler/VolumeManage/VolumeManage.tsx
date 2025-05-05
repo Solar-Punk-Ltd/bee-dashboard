@@ -1,20 +1,21 @@
 /* eslint-disable no-alert */
 import type { ReactElement } from 'react'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import MoreFillIcon from 'remixicon-react/MoreFillIcon'
 import ManageVolumesModal from './ManageVolumesModal'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 import { CircularProgress } from '@mui/material'
+import { Context as FileManagerContext } from '../../../providers/FileManager'
 
 const VolumeManage = (): ReactElement => {
   const classes = useFileManagerGlobalStyles()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isPending, setIsPending] = useState(false)
+  const { isVolumeCreationPending } = useContext(FileManagerContext)
 
   return (
     <div>
       <div className={classes.filesHandlerItemContainer} onClick={() => setIsModalOpen(true)}>
-        {isPending ? (
+        {isVolumeCreationPending ? (
           <CircularProgress
             size={16}
             sx={{
@@ -27,9 +28,7 @@ const VolumeManage = (): ReactElement => {
         )}
         <div>Manage</div>
       </div>
-      {isModalOpen && (
-        <ManageVolumesModal modalDisplay={(value: boolean) => setIsModalOpen(value)} setIsPending={setIsPending} />
-      )}
+      {isModalOpen && <ManageVolumesModal modalDisplay={(value: boolean) => setIsModalOpen(value)} />}
     </div>
   )
 }

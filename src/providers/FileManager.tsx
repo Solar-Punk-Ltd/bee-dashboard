@@ -17,6 +17,12 @@ interface ContextInterface {
   setFileDownLoadQueue: (queue: FileInfo[]) => void
   isNewVolumeCreated: boolean
   setIsNewVolumeCreated: (isNewVolumeCreated: boolean) => void
+  errorText: string
+  setErrorText: (errorText: string) => void
+  showErrorModal: boolean
+  setShowErrorModal: (showErrorModal: boolean) => void
+  isVolumeCreationPending: boolean
+  setIsVolumeCreationPending: (isVolumeCreationPending: boolean) => void
 }
 const initialValues: ContextInterface = {
   filemanager: null,
@@ -40,6 +46,18 @@ const initialValues: ContextInterface = {
   setIsNewVolumeCreated: (_: boolean): void => {
     return
   },
+  errorText: '',
+  setErrorText: (_: string): void => {
+    return
+  },
+  showErrorModal: false,
+  setShowErrorModal: (_: boolean): void => {
+    return
+  },
+  isVolumeCreationPending: false,
+  setIsVolumeCreationPending: (_: boolean): void => {
+    return
+  },
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -57,6 +75,9 @@ export function Provider({ children }: Props): ReactElement {
   const [fileOrder, setFileOrder] = useState<string>('nameAsc')
   const [fileDownLoadQueue, setFileDownLoadQueue] = useState<FileInfo[]>([])
   const [isNewVolumeCreated, setIsNewVolumeCreated] = useState<boolean>(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorText, setErrorText] = useState('')
+  const [isVolumeCreationPending, setIsVolumeCreationPending] = useState(false) // this or setIsNewVolumeCreated is obsolete, but we will keep it for now
 
   const getSigner = (): PrivateKey | undefined => {
     const pkItem = localStorage.getItem('fmPrivateKey')
@@ -106,6 +127,12 @@ export function Provider({ children }: Props): ReactElement {
         setFileDownLoadQueue,
         isNewVolumeCreated,
         setIsNewVolumeCreated,
+        errorText,
+        setErrorText,
+        showErrorModal,
+        setShowErrorModal,
+        isVolumeCreationPending,
+        setIsVolumeCreationPending,
       }}
     >
       {children}

@@ -6,21 +6,15 @@ import SizeSlider from './SizeSlider'
 import { BZZ, Duration, Size, BeeResponseError } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
-import ErrorModal from './ErrorModal'
 import { VOLUME_CHARACTER_NUMBER } from '../../../constants'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
 interface VolumePropertiesModalProps {
   newVolume: boolean
   modalDisplay: (value: boolean) => void
-  setIsPending: (value: boolean) => void
 }
 
-const NewVolumePropertiesModal = ({
-  newVolume,
-  modalDisplay,
-  setIsPending,
-}: VolumePropertiesModalProps): ReactElement => {
+const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesModalProps): ReactElement => {
   const classes = useFileManagerGlobalStyles()
   const [size, setSize] = useState(Size.fromBytes(0))
   const [validity, setValidity] = useState(new Date())
@@ -28,16 +22,15 @@ const NewVolumePropertiesModal = ({
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const { beeApi } = useContext(SettingsContext)
-  const [showErrorModal, setShowErrorModal] = useState(false)
-  const [errorText, setErrorText] = useState('')
-  const { setIsNewVolumeCreated } = useContext(FileManagerContext)
+  const { setIsNewVolumeCreated, setErrorText, setShowErrorModal, setIsVolumeCreationPending } =
+    useContext(FileManagerContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const createPostageStamp = async () => {
     try {
       if (isCreateEnabled) {
-        setIsPending(true)
-        //modalDisplay(false)
+        setIsVolumeCreationPending(true)
+        modalDisplay(false)
         const postageBuyResponse = await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
 
         // eslint-disable-next-line no-console
@@ -73,7 +66,7 @@ const NewVolumePropertiesModal = ({
       setErrorText(errorMessage)
       setShowErrorModal(true)
     } finally {
-      setIsPending(false)
+      setIsVolumeCreationPending(false)
     }
   }
 
@@ -162,7 +155,6 @@ const NewVolumePropertiesModal = ({
           Create
         </div>{' '}
       </div>
-      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} errorText={errorText} /> : null}
     </div>
   )
 }

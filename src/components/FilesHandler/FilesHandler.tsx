@@ -11,6 +11,7 @@ import Grouping from './Grouping'
 import Order from './Order/Order'
 import Download from './Download'
 import { getUsableStamps } from '../../utils/file'
+import ErrorModal from './VolumeManage/ErrorModal'
 
 const useStyles = makeStyles(() =>
   createStyles({
@@ -41,7 +42,8 @@ const useStyles = makeStyles(() =>
 const FilesHandler = (): ReactElement => {
   const classes = useStyles()
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
-  const { selectedBatchIds, setSelectedBatchIds, isNewVolumeCreated } = useContext(FileManagerContext)
+  const { selectedBatchIds, setSelectedBatchIds, isNewVolumeCreated, showErrorModal, setShowErrorModal, errorText } =
+    useContext(FileManagerContext)
   const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
@@ -97,6 +99,7 @@ const FilesHandler = (): ReactElement => {
         <FileUpload usableStamps={usableStamps} />
         <Order />
       </div>
+      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} errorText={errorText} /> : null}
     </div>
   )
 }
