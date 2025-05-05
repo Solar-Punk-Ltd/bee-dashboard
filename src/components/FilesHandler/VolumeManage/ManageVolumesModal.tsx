@@ -106,9 +106,10 @@ export interface ActiveVolume {
 
 interface ManageModalProps {
   modalDisplay: (value: boolean) => void
+  setIsPending: (value: boolean) => void
 }
 
-const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement => {
+const ManageVolumesModal = ({ modalDisplay, setIsPending }: ManageModalProps): ReactElement => {
   const classes = useStyles()
   const classesGlobal = useFileManagerGlobalStyles()
   const [newVolumeModalDisplay, setNewVolumeModalDisplay] = useState(false)
@@ -207,7 +208,12 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
           </div>
         </div>
       </div>
-      {newVolumeModalDisplay && <NewVolumeModal modalDisplay={(value: boolean) => setNewVolumeModalDisplay(value)} />}
+      {newVolumeModalDisplay && (
+        <NewVolumeModal
+          modalDisplay={(value: boolean) => setNewVolumeModalDisplay(value)}
+          setIsPending={setIsPending}
+        />
+      )}
       {activeVolume.volumeModalDisplay && (
         <VolumeModal
           modalDisplay={(value: boolean) => setActiveVolume(prev => ({ ...prev, volumeModalDisplay: value }))}

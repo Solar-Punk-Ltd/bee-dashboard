@@ -11,9 +11,10 @@ import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerSty
 interface VolumeModalProps {
   modalDisplay: (value: boolean) => void
   newVolume?: boolean
+  setIsPending: (value: boolean) => void
 }
 
-const VolumeModal = ({ modalDisplay, newVolume }: VolumeModalProps): ReactElement => {
+const VolumeModal = ({ modalDisplay, newVolume, setIsPending }: VolumeModalProps): ReactElement => {
   const classes = useFileManagerGlobalStyles()
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Properties)
 
@@ -36,7 +37,11 @@ const VolumeModal = ({ modalDisplay, newVolume }: VolumeModalProps): ReactElemen
           </div> */}
         </div>
         {activeTab === Tab.Properties ? (
-          <NewVolumePropertiesModal modalDisplay={modalDisplay} newVolume={newVolume ? newVolume : false} />
+          <NewVolumePropertiesModal
+            modalDisplay={modalDisplay}
+            newVolume={newVolume ? newVolume : false}
+            setIsPending={setIsPending}
+          />
         ) : null}
         {/* This is commented out because this feature is not part of phase1 */}
         {/* {activeTab === Tab.Sharing ? (

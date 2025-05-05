@@ -53,9 +53,10 @@ const useStyles = makeStyles(() =>
 
 interface InvalidValueModalProps {
   modalDisplay: (value: boolean) => void
+  errorText?: string
 }
 
-const ErrorModal = ({ modalDisplay }: InvalidValueModalProps): ReactElement => {
+const ErrorModal = ({ modalDisplay, errorText = 'Uh oh, an error happened' }: InvalidValueModalProps): ReactElement => {
   const classes = useStyles()
   const classesGlobal = useFileManagerGlobalStyles()
 
@@ -63,7 +64,7 @@ const ErrorModal = ({ modalDisplay }: InvalidValueModalProps): ReactElement => {
     <div className={classes.modalContainer}>
       <div className={classes.modalContent}>
         <div className={classesGlobal.modalHeader}>Warning!</div>
-        <div className={classes.modalContentText}>Uh oh, an error happened</div>
+        <div className={classes.modalContentText}>{errorText}</div>
         <div className={classesGlobal.bottomButtonContainer}>
           <div
             className={`${classesGlobal.buttonElementBase} ${classesGlobal.generalButtonElement}`}

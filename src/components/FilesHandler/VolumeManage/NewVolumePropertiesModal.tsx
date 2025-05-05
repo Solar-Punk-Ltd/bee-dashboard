@@ -3,7 +3,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { SwarmTextInput } from '../../SwarmTextInput'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { BZZ, Duration, Size } from '@ethersphere/bee-js'
+import { BZZ, Duration, Size, BeeResponseError } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import ErrorModal from './ErrorModal'
@@ -13,9 +13,14 @@ import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerSty
 interface VolumePropertiesModalProps {
   newVolume: boolean
   modalDisplay: (value: boolean) => void
+  setIsPending: (value: boolean) => void
 }
 
-const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesModalProps): ReactElement => {
+const NewVolumePropertiesModal = ({
+  newVolume,
+  modalDisplay,
+  setIsPending,
+}: VolumePropertiesModalProps): ReactElement => {
   const classes = useFileManagerGlobalStyles()
   const [size, setSize] = useState(Size.fromBytes(0))
   const [validity, setValidity] = useState(new Date())
@@ -24,20 +29,51 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const { beeApi } = useContext(SettingsContext)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorText, setErrorText] = useState('')
   const { setIsNewVolumeCreated } = useContext(FileManagerContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const createPostageStamp = async () => {
     try {
       if (isCreateEnabled) {
+        setIsPending(true)
+        //modalDisplay(false)
         const postageBuyResponse = await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
+
         // eslint-disable-next-line no-console
         console.log('BatchID: ', postageBuyResponse?.toString())
         setIsNewVolumeCreated(true)
-        modalDisplay(false)
       }
     } catch (e) {
+      let errorMessage = ''
+
+      if (e instanceof BeeResponseError) {
+        // eslint-disable-next-line no-console
+        console.error('Bee API Error:', {
+          message: e.message,
+          method: e.method,
+          url: e.url,
+          status: e.status,
+          statusText: e.statusText,
+          responseBody: e.responseBody,
+        })
+
+        if (e.responseBody) {
+          errorMessage = (e.responseBody as any).message
+        }
+      } else {
+        // eslint-disable-next-line no-console
+        console.error('Unexpected error:', e)
+        errorMessage = 'Unexpected error: ' + e
+      }
+
+      // eslint-disable-next-line no-console
+      console.error('Error message:', errorMessage)
+
+      setErrorText(errorMessage)
       setShowErrorModal(true)
+    } finally {
+      setIsPending(false)
     }
   }
 
@@ -126,7 +162,7 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           Create
         </div>{' '}
       </div>
-      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}
+      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} errorText={errorText} /> : null}
     </div>
   )
 }

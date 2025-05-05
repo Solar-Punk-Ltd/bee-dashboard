@@ -9,14 +9,14 @@ import { CircularProgress } from '@mui/material'
 const VolumeManage = (): ReactElement => {
   const classes = useFileManagerGlobalStyles()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isPending, isIsPending] = useState(true)
+  const [isPending, setIsPending] = useState(false)
 
   return (
     <div>
       <div className={classes.filesHandlerItemContainer} onClick={() => setIsModalOpen(true)}>
         {isPending ? (
           <CircularProgress
-            size={12}
+            size={16}
             sx={{
               color: '#DE7700',
             }}
@@ -27,7 +27,9 @@ const VolumeManage = (): ReactElement => {
         )}
         <div>Manage</div>
       </div>
-      {isModalOpen && <ManageVolumesModal modalDisplay={(value: boolean) => setIsModalOpen(value)} />}
+      {isModalOpen && (
+        <ManageVolumesModal modalDisplay={(value: boolean) => setIsModalOpen(value)} setIsPending={setIsPending} />
+      )}
     </div>
   )
 }
