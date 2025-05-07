@@ -29,7 +29,7 @@ const FlatFileList = ({ fileList, fileOrder, queue }: FlatFileListProps): ReactE
   const classes = useStyles()
   const [usableStamps, setUsableStampsStamps] = useState<PostageBatch[]>([])
   const { beeApi } = useContext(SettingsContext)
-  const { isNewVolumeCreated } = useContext(FileManagerContext)
+  const { isVolumeCreationPending } = useContext(FileManagerContext)
 
   useEffect(() => {
     const getStamps = async () => {
@@ -37,7 +37,7 @@ const FlatFileList = ({ fileList, fileOrder, queue }: FlatFileListProps): ReactE
       setUsableStampsStamps([...usableStamps])
     }
     getStamps()
-  }, [beeApi, isNewVolumeCreated])
+  }, [beeApi, isVolumeCreationPending])
 
   return (
     <div className={classes.container}>

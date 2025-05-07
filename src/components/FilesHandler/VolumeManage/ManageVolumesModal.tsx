@@ -116,7 +116,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [activeVolume, setActiveVolume] = useState<ActiveVolume>({} as ActiveVolume)
   const [volumeCreation, setVolumeCreation] = useState(false)
-  const { isNewVolumeCreated, setIsNewVolumeCreated } = useContext(FileManagerContext)
+  const { isVolumeCreationPending, setIsVolumeCreationPending } = useContext(FileManagerContext)
   const notificationThresholdDate = new Date()
   notificationThresholdDate.setDate(new Date().getDate() + 7)
   const handlerCreateNewVolume = (value: boolean) => {
@@ -134,7 +134,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   }, [beeApi])
 
   useEffect(() => {
-    if (isNewVolumeCreated) {
+    if (!isVolumeCreationPending) {
       setVolumeCreation(true)
       const getStamps = async () => {
         const stamps = await getUsableStamps(beeApi)
@@ -146,9 +146,8 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
         })
       }
       getStamps()
-      setIsNewVolumeCreated(false)
     }
-  }, [beeApi, isNewVolumeCreated, setIsNewVolumeCreated])
+  }, [beeApi, isVolumeCreationPending, setIsVolumeCreationPending])
 
   // Escape will close the modal
   useEffect(() => {

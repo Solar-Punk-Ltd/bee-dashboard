@@ -15,8 +15,6 @@ interface ContextInterface {
   setFileOrder: (order: string) => void
   fileDownLoadQueue: FileInfo[]
   setFileDownLoadQueue: (queue: FileInfo[]) => void
-  isNewVolumeCreated: boolean
-  setIsNewVolumeCreated: (isNewVolumeCreated: boolean) => void
   errorText: string
   setErrorText: (errorText: string) => void
   showErrorModal: boolean
@@ -40,10 +38,6 @@ const initialValues: ContextInterface = {
   },
   fileDownLoadQueue: [],
   setFileDownLoadQueue: (_: FileInfo[]): void => {
-    return
-  },
-  isNewVolumeCreated: false,
-  setIsNewVolumeCreated: (_: boolean): void => {
     return
   },
   errorText: '',
@@ -74,10 +68,9 @@ export function Provider({ children }: Props): ReactElement {
   const [isGroupingOn, setIsGroupingOn] = useState<boolean>(false)
   const [fileOrder, setFileOrder] = useState<string>('nameAsc')
   const [fileDownLoadQueue, setFileDownLoadQueue] = useState<FileInfo[]>([])
-  const [isNewVolumeCreated, setIsNewVolumeCreated] = useState<boolean>(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [errorText, setErrorText] = useState('')
-  const [isVolumeCreationPending, setIsVolumeCreationPending] = useState(false) // this or setIsNewVolumeCreated is obsolete, but we will keep it for now
+  const [isVolumeCreationPending, setIsVolumeCreationPending] = useState(false)
 
   const getSigner = (): PrivateKey | undefined => {
     const pkItem = localStorage.getItem('fmPrivateKey')
@@ -125,8 +118,6 @@ export function Provider({ children }: Props): ReactElement {
         setFileOrder,
         fileDownLoadQueue,
         setFileDownLoadQueue,
-        isNewVolumeCreated,
-        setIsNewVolumeCreated,
         errorText,
         setErrorText,
         showErrorModal,

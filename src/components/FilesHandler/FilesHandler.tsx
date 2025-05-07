@@ -42,8 +42,14 @@ const useStyles = makeStyles(() =>
 const FilesHandler = (): ReactElement => {
   const classes = useStyles()
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
-  const { selectedBatchIds, setSelectedBatchIds, isNewVolumeCreated, showErrorModal, setShowErrorModal, errorText } =
-    useContext(FileManagerContext)
+  const {
+    selectedBatchIds,
+    setSelectedBatchIds,
+    isVolumeCreationPending,
+    showErrorModal,
+    setShowErrorModal,
+    errorText,
+  } = useContext(FileManagerContext)
   const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
@@ -52,7 +58,7 @@ const FilesHandler = (): ReactElement => {
       setUsableStamps([...stamps])
     }
     getStamps()
-  }, [beeApi, isNewVolumeCreated])
+  }, [beeApi, isVolumeCreationPending])
 
   const handlerSelectedBatchIds = (batchId: BatchId, isSelected: boolean) => {
     const newSelectedBatchIds = Array.from(selectedBatchIds)

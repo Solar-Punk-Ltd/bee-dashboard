@@ -22,8 +22,7 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const { beeApi } = useContext(SettingsContext)
-  const { setIsNewVolumeCreated, setErrorText, setShowErrorModal, setIsVolumeCreationPending } =
-    useContext(FileManagerContext)
+  const { setErrorText, setShowErrorModal, setIsVolumeCreationPending } = useContext(FileManagerContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const createPostageStamp = async () => {
@@ -32,7 +31,6 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
         setIsVolumeCreationPending(true)
         modalDisplay(false)
         await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label })
-        setIsNewVolumeCreated(true)
       }
     } catch (e) {
       let errorMessage = ''
