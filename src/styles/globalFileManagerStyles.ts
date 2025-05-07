@@ -309,5 +309,9 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
         backgroundColor: '#B62D00 !important',
       },
     },
+    uploading: {
+      backgroundColor: '#DE7700 !important',
+      color: '#F2F2F2 !important',
+    },
   }),
 )
