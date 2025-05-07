@@ -137,6 +137,8 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
         Cost: &nbsp; <span style={{ fontWeight: 700 }}>{cost !== null ? cost : '0'} BZZ</span>
       </div>
 
+      <div className={classes.modalContent}>{'Creating a postage stamp might take several minutes.'}</div>
+
       <div className={classes.bottomButtonContainer}>
         <div
           className={`${classes.buttonElementBase} ${classes.generalButtonElement}`}
