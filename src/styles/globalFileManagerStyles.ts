@@ -309,5 +309,19 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
         backgroundColor: '#B62D00 !important',
       },
     },
+    orangeTextPulsation: {
+      fontFamily: '"iAWriterMonoV", monospace',
+      fontSize: '14px',
+      fontWeight: 400,
+      lineHeight: '18px',
+      letterSpacing: '0%',
+      color: '#DE7700',
+      animation: '$pulsate 2s ease-in-out infinite',
+    },
+    '@keyframes pulsate': {
+      '0%': { opacity: 1 },
+      '50%': { opacity: 0.5 },
+      '100%': { opacity: 1 },
+    },
   }),
 )

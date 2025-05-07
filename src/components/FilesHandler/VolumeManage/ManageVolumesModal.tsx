@@ -6,7 +6,6 @@ import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import VolumeModal from './VolumeModal'
 import { PostageBatch } from '@ethersphere/bee-js'
-import NotificationSign from '../../NotificationSign'
 import { getUsableStamps } from '../../../utils/file'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 import VolumeItem from './VolumeItem'
@@ -168,6 +167,11 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
     <div className={classesGlobal.modal}>
       <div className={classesGlobal.modalContainer}>
         <div className={classesGlobal.modalHeader}>Manage volumes</div>
+
+        {isVolumeCreationPending && (
+          <div className={classesGlobal.orangeTextPulsation}>{' New volume is being created...'}</div>
+        )}
+
         <div className={classes.modalContent}>
           {
             "Info, Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s..."
