@@ -1,4 +1,4 @@
-import { Bee, BeeDev } from '@ethersphere/bee-js'
+import { Bee } from '@ethersphere/bee-js'
 import { providers } from 'ethers'
 import { ReactElement, ReactNode, createContext, useEffect, useState } from 'react'
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
@@ -74,7 +74,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   const [rpcProvider, setRpcProvider] = useState(new providers.JsonRpcProvider(propsProviderUrl))
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
   const url = makeHttpUrl(config?.['api-addr'] ?? apiUrl)
-  const [beeApi, setBeeApi] = useState<Bee | null>(new BeeDev(url))
+  const [beeApi, setBeeApi] = useState<Bee | null>(new Bee(url))
   useEffect(() => {
     const urlSearchParams = new URLSearchParams(window.location.search)
     const newApiKey = urlSearchParams.get('v')
@@ -89,7 +89,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   useEffect(() => {
     try {
       const url = makeHttpUrl(config?.['api-addr'] ?? apiUrl)
-      setBeeApi(new BeeDev(url))
+      setBeeApi(new Bee(url))
 
       sessionStorage.setItem('api_host', url)
     } catch (e) {

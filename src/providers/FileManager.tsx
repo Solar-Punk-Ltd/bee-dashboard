@@ -1,5 +1,5 @@
 import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
-import { BatchId, Bee, BeeDev, PrivateKey } from '@ethersphere/bee-js'
+import { BatchId, Bee, PrivateKey } from '@ethersphere/bee-js'
 
 import { FileInfo, FileManager, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from './Settings'
@@ -99,7 +99,7 @@ export function Provider({ children }: Props): ReactElement {
       const signer = getSigner()
 
       if (signer) {
-        const bee = new BeeDev(apiUrl, { signer })
+        const bee = new Bee(apiUrl, { signer })
         const fm = new FileManagerBase(bee)
         fm.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, (e: boolean) => {
           if (e) {
