@@ -57,22 +57,27 @@ const Upload = ({ usableStamps }: Props): ReactElement => {
   const handleUploadProgress = (value: number, isUploadingInProgress: boolean) => {
     setUploadingProgress(value)
     setIsUploading(isUploadingInProgress)
+    setIsActive(true)
 
     if (value >= 99) {
       setTimeout(() => {
         setIsUploading(false)
+        setIsActive(false)
       }, 500)
     }
   }
 
   return (
     <div
-      className={classesGlobal.dropdownElementContainer}
+      className={`
+        ${classesGlobal.dropdownElementContainer} 
+        ${isUploading ? classesGlobal.uploading : ''}
+      `}
       onMouseEnter={() => {
         setIsActive(true)
       }}
       onMouseLeave={() => {
-        setIsActive(false)
+        if (!isUploading) setIsActive(false)
       }}
     >
       {isUploading ? (
