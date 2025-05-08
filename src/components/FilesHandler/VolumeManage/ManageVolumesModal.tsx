@@ -6,7 +6,6 @@ import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
 import VolumeModal from './VolumeModal'
 import { PostageBatch } from '@ethersphere/bee-js'
-import NotificationSign from '../../NotificationSign'
 import { getUsableStamps } from '../../../utils/file'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 import VolumeItem from './VolumeItem'
@@ -116,7 +115,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [activeVolume, setActiveVolume] = useState<ActiveVolume>({} as ActiveVolume)
   const [volumeCreation, setVolumeCreation] = useState(false)
-  const { isNewVolumeCreated, setIsNewVolumeCreated } = useContext(FileManagerContext)
+  const { isVolumeCreationPending, setIsVolumeCreationPending } = useContext(FileManagerContext)
   const notificationThresholdDate = new Date()
   notificationThresholdDate.setDate(new Date().getDate() + 7)
   const handlerCreateNewVolume = (value: boolean) => {
@@ -134,7 +133,7 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
   }, [beeApi])
 
   useEffect(() => {
-    if (isNewVolumeCreated) {
+    if (!isVolumeCreationPending) {
       setVolumeCreation(true)
       const getStamps = async () => {
         const stamps = await getUsableStamps(beeApi)
@@ -146,9 +145,8 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
         })
       }
       getStamps()
-      setIsNewVolumeCreated(false)
     }
-  }, [beeApi, isNewVolumeCreated, setIsNewVolumeCreated])
+  }, [beeApi, isVolumeCreationPending, setIsVolumeCreationPending])
 
   // Escape will close the modal
   useEffect(() => {
@@ -169,6 +167,11 @@ const ManageVolumesModal = ({ modalDisplay }: ManageModalProps): ReactElement =>
     <div className={classesGlobal.modal}>
       <div className={classesGlobal.modalContainer}>
         <div className={classesGlobal.modalHeader}>Manage volumes</div>
+
+        {isVolumeCreationPending && (
+          <div className={classesGlobal.orangeTextPulsation}>{' New volume is being created...'}</div>
+        )}
+
         <div className={classes.modalContent}>
           {
             "Info, Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s..."

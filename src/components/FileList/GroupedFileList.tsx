@@ -35,7 +35,7 @@ const GroupedFileList = ({ fileList, fileOrder, queue }: GroupedFileListProps): 
   const classes = useStyles()
   const [usableStamps, setUsableStampsStamps] = useState<PostageBatch[]>([])
   const { beeApi } = useContext(SettingsContext)
-  const { isNewVolumeCreated, selectedBatchIds } = useContext(FileManagerContext)
+  const { isVolumeCreationPending, selectedBatchIds } = useContext(FileManagerContext)
 
   useEffect(() => {
     const getStamps = async () => {
@@ -43,7 +43,7 @@ const GroupedFileList = ({ fileList, fileOrder, queue }: GroupedFileListProps): 
       setUsableStampsStamps([...usableStamps])
     }
     getStamps()
-  }, [beeApi, isNewVolumeCreated])
+  }, [beeApi, isVolumeCreationPending])
 
   return (
     <div className={classes.container}>

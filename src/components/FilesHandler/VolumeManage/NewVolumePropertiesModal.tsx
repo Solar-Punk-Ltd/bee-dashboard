@@ -3,10 +3,9 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { SwarmTextInput } from '../../SwarmTextInput'
 import DateSlider from './DateSlider'
 import SizeSlider from './SizeSlider'
-import { BZZ, Duration, Size } from '@ethersphere/bee-js'
+import { BZZ, Duration, Size, BeeResponseError } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { Context as FileManagerContext } from '../../../providers/FileManager'
-import ErrorModal from './ErrorModal'
 import { VOLUME_CHARACTER_NUMBER } from '../../../constants'
 import { useFileManagerGlobalStyles } from '../../../styles/globalFileManagerStyles'
 
@@ -23,19 +22,32 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
   const [label, setLabel] = useState('')
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const { beeApi } = useContext(SettingsContext)
-  const [showErrorModal, setShowErrorModal] = useState(false)
-  const { setIsNewVolumeCreated } = useContext(FileManagerContext)
+  const { setErrorText, setShowErrorModal, setIsVolumeCreationPending } = useContext(FileManagerContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const createPostageStamp = async () => {
     try {
       if (isCreateEnabled) {
-        await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label: label })
-        setIsNewVolumeCreated(true)
+        setIsVolumeCreationPending(true)
         modalDisplay(false)
+        await beeApi?.buyStorage(size, Duration.fromEndDate(validity), { label })
       }
     } catch (e) {
+      let errorMessage = ''
+
+      // eslint-disable-next-line no-console
+      console.error('Error creating postage stamp:', e)
+
+      if (e instanceof BeeResponseError && e.responseBody) {
+        errorMessage = (e.responseBody as any).message
+      } else {
+        errorMessage = 'Unexpected error: ' + e
+      }
+
+      setErrorText(errorMessage)
       setShowErrorModal(true)
+    } finally {
+      setIsVolumeCreationPending(false)
     }
   }
 
@@ -106,6 +118,8 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
         Cost: &nbsp; <span style={{ fontWeight: 700 }}>{cost !== null ? cost : '0'} BZZ</span>
       </div>
 
+      <div className={classes.modalContent}>{'Creating a postage stamp might take several minutes.'}</div>
+
       <div className={classes.bottomButtonContainer}>
         <div
           className={`${classes.buttonElementBase} ${classes.generalButtonElement}`}
@@ -124,7 +138,6 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
           Create
         </div>{' '}
       </div>
-      {showErrorModal ? <ErrorModal modalDisplay={value => setShowErrorModal(value)} /> : null}
     </div>
   )
 }
