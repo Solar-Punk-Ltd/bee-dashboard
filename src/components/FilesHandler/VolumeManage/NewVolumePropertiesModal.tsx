@@ -35,28 +35,14 @@ const NewVolumePropertiesModal = ({ newVolume, modalDisplay }: VolumePropertiesM
     } catch (e) {
       let errorMessage = ''
 
-      if (e instanceof BeeResponseError) {
-        // eslint-disable-next-line no-console
-        console.error('Bee API Error:', {
-          message: e.message,
-          method: e.method,
-          url: e.url,
-          status: e.status,
-          statusText: e.statusText,
-          responseBody: e.responseBody,
-        })
+      // eslint-disable-next-line no-console
+      console.error('Error creating postage stamp:', e)
 
-        if (e.responseBody) {
-          errorMessage = (e.responseBody as any).message
-        }
+      if (e instanceof BeeResponseError && e.responseBody) {
+        errorMessage = (e.responseBody as any).message
       } else {
-        // eslint-disable-next-line no-console
-        console.error('Unexpected error:', e)
         errorMessage = 'Unexpected error: ' + e
       }
-
-      // eslint-disable-next-line no-console
-      console.error('Error message:', errorMessage)
 
       setErrorText(errorMessage)
       setShowErrorModal(true)
