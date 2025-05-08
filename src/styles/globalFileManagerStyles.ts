@@ -323,5 +323,9 @@ export const useFileManagerGlobalStyles = makeStyles(() =>
       '50%': { opacity: 0.5 },
       '100%': { opacity: 1 },
     },
+    uploading: {
+      backgroundColor: '#DE7700 !important',
+      color: '#F2F2F2 !important',
+    },
   }),
 )
