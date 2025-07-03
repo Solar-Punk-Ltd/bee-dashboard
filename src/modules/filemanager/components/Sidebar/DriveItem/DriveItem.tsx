@@ -28,7 +28,6 @@ export function DriveItem(): ReactElement {
     setShowContext(false)
   }
 
-  // Ha a context menün kívül kattintunk, zárjuk be
   useEffect(() => {
     if (!showContext) return
 
