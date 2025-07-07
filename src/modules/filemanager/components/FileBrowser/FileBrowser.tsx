@@ -1,45 +1,21 @@
-import { ReactElement, useState, useRef, useEffect } from 'react'
+import { ReactElement } from 'react'
 import './FileBrowser.scss'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import UpIcon from 'remixicon-react/ArrowUpSLineIcon'
 import { FileItem } from './FileItem/FileItem'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
+import { useContextMenu } from '../../hooks/useContextMenu'
 
 export function FileBrowser(): ReactElement {
-  const [showContext, setShowContext] = useState(false)
-  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const contextRef = useRef<HTMLDivElement | null>(null)
+  const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
 
-  function handleContextMenu(e: React.MouseEvent<HTMLDivElement>) {
+  function handleFileBrowserContextMenu(e: React.MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) {
       return
     }
-    e.preventDefault()
-    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-    setShowContext(true)
-    setPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    })
+    handleContextMenu(e)
   }
-
-  function handleClick() {
-    setShowContext(false)
-  }
-
-  useEffect(() => {
-    if (!showContext) return
-
-    function handleDocumentClick(e: MouseEvent) {
-      if (contextRef.current && !contextRef.current.contains(e.target as Node)) {
-        setShowContext(false)
-      }
-    }
-    document.addEventListener('mousedown', handleDocumentClick)
-
-    return () => document.removeEventListener('mousedown', handleDocumentClick)
-  }, [showContext])
 
   return (
     <div className="fm-file-browser-container">
@@ -47,7 +23,7 @@ export function FileBrowser(): ReactElement {
       <div className="fm-file-browser-content">
         <div className="fm-file-browser-content-header">
           <div className="fm-file-browser-content-header-item fm-checkbox">
-            <input type="checkbox" style={{ accentColor: 'rgb(237,129,49)' }} />
+            <input type="checkbox" />
           </div>
           <div className="fm-file-browser-content-header-item fm-name">
             Name
@@ -70,20 +46,18 @@ export function FileBrowser(): ReactElement {
         </div>
         <div
           className="fm-file-browser-content-body"
-          style={{ flex: '1 1 auto', position: 'relative' }}
-          onContextMenu={handleContextMenu}
-          onClick={handleClick}
+          onContextMenu={handleFileBrowserContextMenu}
+          onClick={handleCloseContext}
         >
           <FileItem icon="image" name="File1.jpg" size="1.2MB" dateMod="2025-05-19" />
           <FileItem icon="doc" name="Report.pdf" size="0.5MB" dateMod="2025-05-25" />
           {showContext && (
             <div
               ref={contextRef}
+              className={'fm-file-browser-context-menu'}
               style={{
-                position: 'absolute',
                 top: pos.y,
                 left: pos.x,
-                zIndex: 1000,
               }}
             >
               <ContextMenu>
@@ -99,8 +73,8 @@ export function FileBrowser(): ReactElement {
           )}
         </div>
         <div className="fm-file-browser-content-footer">
-          <div style={{ textDecoration: 'underline' }}>Uploading file_x.zip (67%)...</div>
-          <div style={{ textDecoration: 'underline' }}>Downloading Report.pdf (45%)...</div>
+          <div className="fm-upload-download-indicator">Uploading file_x.zip (67%)...</div>
+          <div className="fm-upload-download-indicator">Downloading Report.pdf (45%)...</div>
           <div>2 Drives expiring soon</div>
         </div>
       </div>

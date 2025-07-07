@@ -20,7 +20,7 @@ export function Sidebar(): ReactElement {
       <div>
         <div className="fm-sidebar-item">
           <div className="fm-sidebar-item-icon">
-            <Add size="16px"></Add>
+            <Add size="16px" />
           </div>
           <div>Create new drive</div>
         </div>
@@ -31,17 +31,17 @@ export function Sidebar(): ReactElement {
           onClick={() => setIsMyDriveOpen(!isMyDrivesOpen)}
         >
           <div className="fm-sidebar-item-icon">
-            {isMyDrivesOpen ? <ArrowDown size="16px"></ArrowDown> : <ArrowRight size="16px"></ArrowRight>}
+            {isMyDrivesOpen ? <ArrowDown size="16px" /> : <ArrowRight size="16px" />}
           </div>
           <div className="fm-sidebar-item-icon" style={{ opacity: hovered === 'my-drives' ? 1 : 1 }}>
-            {hovered === 'my-drives' ? <FolderFill size="16px"></FolderFill> : <Folder size="16px"></Folder>}
+            {hovered === 'my-drives' ? <FolderFill size="16px" /> : <Folder size="16px" />}
           </div>
           <div>My Drives</div>
         </div>
         {isMyDrivesOpen && (
           <div className={`fm-drive-items-container fm-drive-items-container-open`}>
-            <DriveItem></DriveItem>
-            <DriveItem></DriveItem>
+            <DriveItem />
+            <DriveItem />
           </div>
         )}
 
@@ -52,10 +52,10 @@ export function Sidebar(): ReactElement {
           onClick={() => setIsTrashOpen(!isTrashOpen)}
         >
           <div className="fm-sidebar-item-icon">
-            <ArrowRight size="16px"></ArrowRight>
+            <ArrowRight size="16px" />
           </div>
           <div className="fm-sidebar-item-icon">
-            {hovered === 'trash' ? <DeleteFill size="16px"></DeleteFill> : <Delete size="16px"></Delete>}
+            {hovered === 'trash' ? <DeleteFill size="16px" /> : <Delete size="16px" />}
           </div>
           <div>Trash</div>
         </div>

@@ -6,15 +6,13 @@ import './Header.scss'
 export function Header(): ReactElement {
   return (
     <div className="fm-header-container">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '370px', padding: '0 16px' }}>
-        <div className="fm-header-logo">
-          <FileIcon />
-        </div>
-        <div className="fm-header-title">File Manager</div>
-        <div className="fm-header-search">
-          <SearchIcon color="#9f9f9f" size="16px" />
-          <input type="text" placeholder="Quick search..." />
-        </div>
+      <div className="fm-header-logo">
+        <FileIcon />
+      </div>
+      <div className="fm-header-title">File Manager</div>
+      <div className="fm-header-search">
+        <SearchIcon color="#9f9f9f" size="16px" />
+        <input type="text" placeholder="Quick search..." />
       </div>
     </div>
   )

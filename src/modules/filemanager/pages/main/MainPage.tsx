@@ -9,13 +9,13 @@ import { FileBrowser } from '../../components/FileBrowser/FileBrowser'
 export function MainPage(): ReactElement {
   return (
     <div className="fm-main">
-      <Header></Header>
+      <Header />
       <div className="fm-main-content">
-        <Sidebar></Sidebar>
+        <Sidebar />
 
-        <FileBrowser></FileBrowser>
+        <FileBrowser />
       </div>
-      <OwnerStatusBar></OwnerStatusBar>
+      <OwnerStatusBar />
     </div>
   )
 }

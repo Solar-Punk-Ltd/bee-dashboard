@@ -1,4 +1,5 @@
 .fm-file-item-content {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 2fr 1fr 1fr;
 
@@ -22,6 +23,10 @@
   &.fm-checkbox {
     flex-grow: 1;
   }
+
+  & input {
+    accent-color: rgb(237, 129, 49);
+  }
 }
 
 .fm-file-item-name {
@@ -36,4 +41,9 @@
     height: 20px;
     color: rgb(237, 129, 49);
   }
+}
+
+.fm-file-item-context-menu {
+  position: absolute;
+  z-index: 1000;
 }
