@@ -1,8 +1,11 @@
 import { ReactElement, useState } from 'react'
 import './CreateDriveModal.scss'
+import '../../styles/global.scss'
+
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
 import { FMSlider } from '../FMSlider/FMSlider'
+import { createPortal } from 'react-dom'
 
 const initialCapacityOptions = [
   { value: '5', label: '5 GB' },
@@ -51,16 +54,18 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
   const [lifetime, setLifetime] = useState('personal')
   const [sliderValue, setSliderValue] = useState(0)
 
-  return (
-    <div className="fm-create-drive-modal-container">
-      <div className="fm-create-drive-modal">
-        <div className="fm-create-drive-modal-header">Create new drive</div>
-        <div className="fm-create-drive-modal-body">
-          <div className="fm-create-drive-modal-input-container">
+  const modalRoot = document.querySelector('.fm-main') || document.body
+
+  return createPortal(
+    <div className="fm-modal-container">
+      <div className="fm-modal-window">
+        <div className="fm-modal-window-header">Create new drive</div>
+        <div className="fm-modal-window-body">
+          <div className="fm-modal-window-input-container">
             <label htmlFor="drive-name">Drive name:</label>
             <input type="text" id="drive-name" placeholder="My important files" />
           </div>
-          <div className="fm-create-drive-modal-input-container">
+          <div className="fm-modal-window-input-container">
             <CustomDropdown
               id="drive-type"
               label="Initial capacity:"
@@ -71,7 +76,7 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
               infoText="Amount of data you can store on the drive. Later you can upgrade it."
             />
           </div>
-          <div className="fm-create-drive-modal-input-container">
+          <div className="fm-modal-window-input-container">
             <CustomDropdown
               id="drive-type"
               label="Desired lifetime:"
@@ -89,11 +94,12 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
             <div>(Based on current network conditions)</div>
           </div>
         </div>
-        <div className="fm-create-drive-modal-footer">
+        <div className="fm-modal-window-footer">
           <FMButton label="Create drive" variant="primary" />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
-    </div>
+    </div>,
+    modalRoot,
   )
 }
