@@ -72,7 +72,7 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
               options={initialCapacityOptions}
               value={capacity}
               onChange={setCapacity}
-              placeholder="Select type"
+              placeholder="Select a value"
               infoText="Amount of data you can store on the drive. Later you can upgrade it."
             />
           </div>
@@ -83,7 +83,7 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
               options={desiredLifetimeOptions}
               value={lifetime}
               onChange={setLifetime}
-              placeholder="Select type"
+              placeholder="Select a value"
               infoText="Might change over time depending on the network"
             />
           </div>
