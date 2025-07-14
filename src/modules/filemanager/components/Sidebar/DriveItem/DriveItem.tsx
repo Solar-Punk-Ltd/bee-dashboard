@@ -68,18 +68,10 @@ export function DriveItem(): ReactElement {
                     setIsDestroyDriveModalOpen(true)
                   }}
                 >
-                <div
-                  className="fm-context-item red"
-                  onClick={() => {
-                    handleDestroyDriveClick()
-                    setIsDestroyDriveModalOpen(true)
-                  }}
-                >
                   Destroy entire drive
                 </div>
               </ContextMenu>
             </div>,
-
 
             document.body,
           )}
