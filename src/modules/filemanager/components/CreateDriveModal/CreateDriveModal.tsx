@@ -27,6 +27,9 @@ const marks = Object.entries(RedundancyLevel)
     label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(), // vagy akár: key[0] + key.slice(1).toLowerCase()
   }))
 
+const minMarkValue = Math.min(...marks.map(mark => mark.value))
+const maxMarkValue = Math.max(...marks.map(mark => mark.value))
+
 interface CreateDriveModalProps {
   onCancelClick: () => void
 }
@@ -67,7 +70,14 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
               infoText="Might change over time depending on the network"
             />
           </div>
-          <FMSlider defaultValue={0} marks={marks} onChange={value => setSliderValue(value)} />
+          <FMSlider
+            defaultValue={0}
+            marks={marks}
+            onChange={value => setSliderValue(value)}
+            minValue={minMarkValue}
+            maxValue={maxMarkValue}
+            step={1}
+          />
 
           <div>
             <div>Estimated Cost: XX.XXX BZZ</div>
