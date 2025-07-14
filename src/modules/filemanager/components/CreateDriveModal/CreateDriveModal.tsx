@@ -24,7 +24,7 @@ const marks = Object.entries(RedundancyLevel)
   .filter(([key, value]) => typeof value === 'number')
   .map(([key, value]) => ({
     value: value as number,
-    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(), // vagy akár: key[0] + key.slice(1).toLowerCase()
+    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(),
   }))
 
 const minMarkValue = Math.min(...marks.map(mark => mark.value))
