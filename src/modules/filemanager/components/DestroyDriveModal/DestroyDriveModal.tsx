@@ -14,7 +14,9 @@ const modalRoot = document.querySelector('.fm-main') || document.body
 export function DestroyDriveModal({ driveName, onCancelClick }: DestroyDriveModalProps): ReactElement {
   const [driveNameInput, setDriveNameInput] = useState('')
 
-  return createPortal(
+  const destroyDriveText = `DESTROY DRIVE ${driveName}`
+
+  return (
     <div className="fm-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header fm-red-font">Destroy entire drive</div>
@@ -30,13 +32,13 @@ export function DestroyDriveModal({ driveName, onCancelClick }: DestroyDriveModa
             <div>Confirmation:</div>
             <div>Requires typing a fixed expression to prevent accidental deletion. This action cannot be undone.</div>
             <div>
-              Type: <span className="fm-emphasized-text">DESTROY DRIVE {driveName}</span>
+              Type: <span className="fm-emphasized-text">{destroyDriveText}</span>
             </div>
             <div className="fm-modal-window-input-container">
               <input
                 type="text"
                 id="drive-name"
-                placeholder={`DESTROY DRIVE ${driveName}`}
+                placeholder={destroyDriveText}
                 value={driveNameInput}
                 onChange={e => setDriveNameInput(e.target.value)}
               />
@@ -52,7 +54,6 @@ export function DestroyDriveModal({ driveName, onCancelClick }: DestroyDriveModa
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
-    </div>,
-    modalRoot,
+    </div>
   )
 }
