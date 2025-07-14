@@ -1,11 +1,9 @@
 import { ReactElement, useState } from 'react'
+import { RedundancyLevel } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
-import '../../styles/global.scss'
-
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
 import { FMSlider } from '../FMSlider/FMSlider'
-import { createPortal } from 'react-dom'
 
 const initialCapacityOptions = [
   { value: '5', label: '5 GB' },
@@ -22,28 +20,15 @@ const desiredLifetimeOptions = [
   { value: '5', label: '5 year' },
 ]
 
-const marks = [
-  {
-    value: 0,
-    label: 'No',
-  },
-  {
-    value: 1,
-    label: 'Medium',
-  },
-  {
-    value: 2,
-    label: 'Strong',
-  },
-  {
-    value: 3,
-    label: 'Insane',
-  },
-  {
-    value: 4,
-    label: 'Paranoid',
-  },
-]
+const marks = Object.entries(RedundancyLevel)
+  .filter(([key, value]) => typeof value === 'number')
+  .map(([key, value]) => ({
+    value: value as number,
+    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(),
+  }))
+
+const minMarkValue = Math.min(...marks.map(mark => mark.value))
+const maxMarkValue = Math.max(...marks.map(mark => mark.value))
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
@@ -56,7 +41,7 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
 
   const modalRoot = document.querySelector('.fm-main') || document.body
 
-  return createPortal(
+  return (
     <div className="fm-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Create new drive</div>
@@ -87,7 +72,14 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
               infoText="Might change over time depending on the network"
             />
           </div>
-          <FMSlider defaultValue={0} marks={marks} onChange={value => setSliderValue(value)} />
+          <FMSlider
+            defaultValue={0}
+            marks={marks}
+            onChange={value => setSliderValue(value)}
+            minValue={minMarkValue}
+            maxValue={maxMarkValue}
+            step={1}
+          />
 
           <div>
             <div>Estimated Cost: XX.XXX BZZ</div>
@@ -99,7 +91,6 @@ export function CreateDriveModal({ onCancelClick }: CreateDriveModalProps): Reac
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
-    </div>,
-    modalRoot,
+    </div>
   )
 }

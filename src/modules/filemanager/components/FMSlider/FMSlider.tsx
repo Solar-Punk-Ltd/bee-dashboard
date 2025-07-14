@@ -32,9 +32,12 @@ interface FMSliderProps {
   marks?: { value: number; label: string }[]
   defaultValue?: number
   onChange: (value: number) => void
+  minValue?: number
+  maxValue?: number
+  step?: number
 }
 
-export function FMSlider({ marks, defaultValue, onChange }: FMSliderProps): ReactElement {
+export function FMSlider({ marks, defaultValue, onChange, minValue, maxValue, step }: FMSliderProps): ReactElement {
   const [value, setValue] = useState(defaultValue || 0)
   const classes = useStyles()
 
@@ -61,9 +64,9 @@ export function FMSlider({ marks, defaultValue, onChange }: FMSliderProps): Reac
           onChange(Number(val))
         }}
         defaultValue={defaultValue || 0}
-        min={0}
-        max={4}
-        step={1}
+        min={minValue || 0}
+        max={maxValue || 100}
+        step={step || 1}
         marks={marks}
         valueLabelDisplay="off"
       />
