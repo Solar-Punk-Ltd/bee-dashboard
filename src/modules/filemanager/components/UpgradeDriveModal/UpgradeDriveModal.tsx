@@ -58,10 +58,15 @@ export function UpgradeDriveModal({ driveName, onCancelClick }: UpgradeDriveModa
               <div className="fm-value-snippet">0x742d...4a9c</div>
             </div>
             <div className="fm-upgrade-drive-modal-info fm-swarm-orange-font">
-              <div className="fm-upgrade-drive-modal-info-link fm-pointer">
+              <a
+                className="fm-upgrade-drive-modal-info-link fm-pointer"
+                href="https://www.ethswarm.org/get-bzz#how-to-get-bzz"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ExternalLinkIcon size="14px" />
                 Need help topping up?
-              </div>
+              </a>
             </div>
           </div>
         </div>
