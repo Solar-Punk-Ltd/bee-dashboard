@@ -43,11 +43,7 @@ export function DestroyDriveModal({ driveName, onCancelClick }: DestroyDriveModa
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton
-            label="Destroy entire drive"
-            variant="danger"
-            disabled={driveNameInput !== `DESTROY DRIVE ${driveName}`}
-          />
+          <FMButton label="Destroy entire drive" variant="danger" disabled={destroyDriveText !== driveNameInput} />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
