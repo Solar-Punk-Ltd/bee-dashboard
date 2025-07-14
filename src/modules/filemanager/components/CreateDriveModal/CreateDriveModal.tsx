@@ -1,4 +1,5 @@
 import { ReactElement, useState } from 'react'
+import { RedundancyLevel } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
@@ -19,28 +20,12 @@ const desiredLifetimeOptions = [
   { value: '5', label: '5 year' },
 ]
 
-const marks = [
-  {
-    value: 0,
-    label: 'No',
-  },
-  {
-    value: 1,
-    label: 'Medium',
-  },
-  {
-    value: 2,
-    label: 'Strong',
-  },
-  {
-    value: 3,
-    label: 'Insane',
-  },
-  {
-    value: 4,
-    label: 'Paranoid',
-  },
-]
+const marks = Object.entries(RedundancyLevel)
+  .filter(([key, value]) => typeof value === 'number')
+  .map(([key, value]) => ({
+    value: value as number,
+    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(), // vagy akár: key[0] + key.slice(1).toLowerCase()
+  }))
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
