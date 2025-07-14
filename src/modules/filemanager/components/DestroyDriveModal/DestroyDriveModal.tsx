@@ -2,14 +2,11 @@ import { ReactElement, useState } from 'react'
 import '../../styles/global.scss'
 import './DestroyDriveModal.scss'
 import { FMButton } from '../FMButton/FMButton'
-import { createPortal } from 'react-dom'
 
 interface DestroyDriveModalProps {
   driveName: string
   onCancelClick?: () => void
 }
-
-const modalRoot = document.querySelector('.fm-main') || document.body
 
 export function DestroyDriveModal({ driveName, onCancelClick }: DestroyDriveModalProps): ReactElement {
   const [driveNameInput, setDriveNameInput] = useState('')
