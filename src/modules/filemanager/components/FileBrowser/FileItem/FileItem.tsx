@@ -17,7 +17,7 @@ interface FileItemProps {
   dateMod: string
 }
 
-export const FILE_PROPERTIES = [
+export const FILE_PROPERTIES_MOCK = [
   {
     title: 'General',
     icon: <GeneralIcon size="14px" color="rgb(237, 129, 49)" />,
@@ -99,7 +99,7 @@ export function FileItem({ icon, name, size, dateMod }: FileItemProps): ReactEle
         </div>
       )}
       {showGetInfoModal && (
-        <GetInfoModal onCancelClick={() => setShowGetInfoModal(false)} name={name} properties={FILE_PROPERTIES} />
+        <GetInfoModal onCancelClick={() => setShowGetInfoModal(false)} name={name} properties={FILE_PROPERTIES_MOCK} />
       )}
       {showDeleteFileModal && <DeleteFileModal name={name} onCancelClick={() => setShowDeleteFileModal(false)} />}
     </div>
