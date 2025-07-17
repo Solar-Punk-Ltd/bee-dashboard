@@ -1,5 +1,4 @@
 import { ReactElement, useState } from 'react'
-import { ReactElement, useState } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
@@ -93,9 +92,6 @@ export function FileItem({ icon, name, size, dateMod }: FileItemProps): ReactEle
               Delete
             </div>
             <div className="fm-context-item-border"></div>
-            <div className="fm-context-item" onClick={() => setShowGetInfoModal(true)}>
-              Get info
-            </div>
             <div className="fm-context-item" onClick={() => setShowGetInfoModal(true)}>
               Get info
             </div>
