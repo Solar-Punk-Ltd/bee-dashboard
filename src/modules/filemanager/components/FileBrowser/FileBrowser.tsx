@@ -7,6 +7,7 @@ import { FileItem } from './FileItem/FileItem'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
+import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -74,8 +75,8 @@ export function FileBrowser(): ReactElement {
           )}
         </div>
         <div className="fm-file-browser-content-footer">
-          <div className="fm-upload-download-indicator">Uploading file_x.zip (67%)...</div>
-          <div className="fm-upload-download-indicator">Downloading Report.pdf (45%)...</div>
+          <FileProgressNotification label="Uploading files" type="upload" />
+          <FileProgressNotification label="Downloading files" type="download" />
           <NotificationBar numberOfExpiration={2} />
         </div>
       </div>
