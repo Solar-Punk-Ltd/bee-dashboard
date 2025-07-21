@@ -21,7 +21,6 @@ export function FileBrowser(): ReactElement {
 
   return (
     <>
-      {/* <div></div> */}
       <div className="fm-file-browser-container">
         <FileBrowserTopBar label="Drive A" />
         <div className="fm-file-browser-content">
