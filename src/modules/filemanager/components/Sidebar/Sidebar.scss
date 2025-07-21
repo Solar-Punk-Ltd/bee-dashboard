@@ -9,6 +9,10 @@
   justify-content: space-between;
 }
 
+.fm-sidebar-content {
+  overflow: auto;
+}
+
 .fm-sidebar-item {
   padding: 12px;
   display: flex;
@@ -37,6 +41,7 @@
 }
 
 .fm-sidebar-drive-creation {
+  // max-height: 45px;
   padding: 12px;
   border-top: 1px solid rgb(146, 146, 146);
 }

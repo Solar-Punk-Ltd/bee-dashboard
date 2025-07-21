@@ -1,4 +1,5 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement } from 'react'
+import CloseIcon from 'remixicon-react/CloseLineIcon'
 import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
@@ -14,28 +15,47 @@ export function FileProgressWindow({
   type,
   onCancelClick,
 }: FileProgressWindowProps): ReactElement | null {
-  const [showFileProgressWindow, setShowFileProgressWindow] = useState(false)
+  const FILES_MOCK = [
+    { name: 'example.zip', percent: 67, size: '3.4MB' },
+    { name: 'filename.jpg', percent: 20, size: '12.8MB' },
+    { name: 'test.jpg', percent: 78, size: '2.5MB' },
+  ]
 
   return (
-    <>
-      <div className="fm-file-progress-window">
-        <div className="fm-file-progress-window-header fm-emphasized-text">
-          {numberOfFiles} {type}
+    <div className="fm-file-progress-window">
+      <div className="fm-file-progress-window-header">
+        <div className="fm-emphasized-text">
+          {FILES_MOCK.length} {type}
+          {FILES_MOCK.length === 1 ? '' : 's'}
         </div>
+        <div className="fm-file-progress-window-header-close" onClick={onCancelClick}>
+          <CloseIcon size="16" />
+        </div>
+      </div>
 
-        <div className="fm-file-progress-window-file-item">
-          <div className="">
-            <GetIconElement icon="image" color="black" />
+      {FILES_MOCK.map(file => (
+        <div className="fm-file-progress-window-file-item" key={file.name}>
+          <div className="fm-file-progress-window-file-type-icon">
+            <GetIconElement size="14" icon="image" color="black" />
           </div>
           <div className="fm-file-progress-window-file-datas">
             <div className="fm-file-progress-window-file-item-header">
-              <div>filename.zip</div>
-              <div>67%</div>
+              <div>{file.name}</div>
+              <div>{file.percent}%</div>
             </div>
-            <ProgressBar value={20} width={150} backgroundColor="rgb(229, 231, 235)" />
+            <ProgressBar
+              value={file.percent}
+              width="100%"
+              backgroundColor="rgb(229, 231, 235)"
+              color={type === 'download' ? 'rgb(220, 38, 38)' : 'rgb(34, 197, 94)'}
+            />
+            <div className="fm-file-progress-window-file-item-footer">
+              <div>{file.size}</div>
+              <div>{type === 'download' ? 'Downloading...' : 'Uploading...'}</div>
+            </div>
           </div>
         </div>
-      </div>
-    </>
+      ))}
+    </div>
   )
 }

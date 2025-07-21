@@ -14,22 +14,24 @@ export function FileProgressNotification({ label, percent, type }: FileProgressN
   const [showFileProgressWindow, setShowFileProgressWindow] = useState(false)
 
   return (
-    <>
+    <div style={{ position: 'relative' }}>
       <div className="fm-file-progress-notification" onClick={() => setShowFileProgressWindow(true)}>
         {label}
         {type === 'upload' && <UpIcon size="16px" color="green" />}
         {type === 'download' && <DownIcon size="16px" color="red" />}
-
-        {showFileProgressWindow && (
-          <FileProgressWindow
-            numberOfFiles={3}
-            type={type}
-            onCancelClick={() => {
-              setShowFileProgressWindow(false)
-            }}
-          />
-        )}
       </div>
-    </>
+
+      {showFileProgressWindow && (
+        <FileProgressWindow
+          numberOfFiles={3}
+          type={type}
+          onCancelClick={() => {
+            // eslint-disable-next-line no-console
+            console.log('cancel clicked')
+            setShowFileProgressWindow(false)
+          }}
+        />
+      )}
+    </div>
   )
 }
