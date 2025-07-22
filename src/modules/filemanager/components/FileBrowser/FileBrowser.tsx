@@ -8,9 +8,12 @@ import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
+import { useView } from '../../providers/FileViewContext'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
+
+  const { view } = useView()
 
   function handleFileBrowserContextMenu(e: React.MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) {
@@ -22,7 +25,7 @@ export function FileBrowser(): ReactElement {
   return (
     <>
       <div className="fm-file-browser-container">
-        <FileBrowserTopBar label="Drive A" />
+        <FileBrowserTopBar />
         <div className="fm-file-browser-content">
           <div className="fm-file-browser-content-header">
             <div className="fm-file-browser-content-header-item fm-checkbox">
@@ -63,15 +66,21 @@ export function FileBrowser(): ReactElement {
                   left: pos.x,
                 }}
               >
-                <ContextMenu>
-                  <div className="fm-context-item">New folder</div>
-                  <div className="fm-context-item">Upload file</div>
-                  <div className="fm-context-item">Upload folder</div>
-                  <div className="fm-context-item-border"></div>
-                  <div className="fm-context-item">Paste</div>
-                  <div className="fm-context-item-border"></div>
-                  <div className="fm-context-item">Refresh</div>
-                </ContextMenu>
+                {view === 'trash' ? (
+                  <ContextMenu>
+                    <div className="fm-context-item">Empty trash</div>
+                  </ContextMenu>
+                ) : (
+                  <ContextMenu>
+                    <div className="fm-context-item">New folder</div>
+                    <div className="fm-context-item">Upload file</div>
+                    <div className="fm-context-item">Upload folder</div>
+                    <div className="fm-context-item-border"></div>
+                    <div className="fm-context-item">Paste</div>
+                    <div className="fm-context-item-border"></div>
+                    <div className="fm-context-item">Refresh</div>
+                  </ContextMenu>
+                )}
               </div>
             )}
           </div>
