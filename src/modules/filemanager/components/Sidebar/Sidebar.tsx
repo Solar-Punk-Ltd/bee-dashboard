@@ -11,6 +11,7 @@ import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
 import { DriveItem } from './DriveItem/DriveItem'
 import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
 import { useView } from '../../providers/FileViewContext'
+import { ViewType } from '../../constants/constants'
 
 export function Sidebar(): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
@@ -69,7 +70,7 @@ export function Sidebar(): ReactElement {
             <div
               className="fm-sidebar-item fm-trash-item"
               onClick={() => {
-                setView('trash')
+                setView(ViewType.Trash)
                 setActualItemView?.('Drive A Trash')
               }}
             >
@@ -78,7 +79,7 @@ export function Sidebar(): ReactElement {
             <div
               className="fm-sidebar-item fm-trash-item"
               onClick={() => {
-                setView('trash')
+                setView(ViewType.Trash)
                 setActualItemView?.('Drive B Trash')
               }}
             >

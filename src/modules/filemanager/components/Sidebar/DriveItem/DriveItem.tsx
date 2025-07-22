@@ -11,6 +11,7 @@ import { FMButton } from '../../FMButton/FMButton'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
 import { useView } from '../../../providers/FileViewContext'
+import { ViewType } from '../../../constants/constants'
 
 interface DriveItemProps {
   name: string
@@ -38,7 +39,7 @@ export function DriveItem({ name }: DriveItemProps): ReactElement {
     <div
       className="fm-drive-item-container"
       onClick={() => {
-        setView('file')
+        setView(ViewType.File)
         setActualItemView?.(name)
       }}
     >

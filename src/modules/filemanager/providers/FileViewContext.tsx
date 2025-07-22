@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-
-export type ViewType = 'file' | 'trash'
+import { ViewType } from '../constants/constants'
 
 interface ViewContextProps {
   view: ViewType
@@ -12,7 +11,7 @@ interface ViewContextProps {
 const FileViewContext = createContext<ViewContextProps | undefined>(undefined)
 
 export function FileViewProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<ViewType>('file')
+  const [view, setView] = useState<ViewType>(ViewType.File)
   const [actualItemView, setActualItemView] = useState<string | undefined>(undefined)
 
   return (
