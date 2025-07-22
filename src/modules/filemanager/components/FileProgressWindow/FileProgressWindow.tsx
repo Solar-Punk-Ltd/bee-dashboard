@@ -3,10 +3,11 @@ import CloseIcon from 'remixicon-react/CloseLineIcon'
 import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
+import { FileTransferType } from '../../constants/constants'
 
 interface FileProgressWindowProps {
   numberOfFiles?: number
-  type?: 'upload' | 'download'
+  type: FileTransferType
   onCancelClick: () => void
 }
 
@@ -47,11 +48,11 @@ export function FileProgressWindow({
               value={file.percent}
               width="100%"
               backgroundColor="rgb(229, 231, 235)"
-              color={type === 'download' ? 'rgb(220, 38, 38)' : 'rgb(34, 197, 94)'}
+              color={type === FileTransferType.Download ? 'rgb(220, 38, 38)' : 'rgb(34, 197, 94)'}
             />
             <div className="fm-file-progress-window-file-item-footer">
               <div>{file.size}</div>
-              <div>{type === 'download' ? 'Downloading...' : 'Uploading...'}</div>
+              <div>{type === FileTransferType.Download ? 'Downloading...' : 'Uploading...'}</div>
             </div>
           </div>
         </div>
