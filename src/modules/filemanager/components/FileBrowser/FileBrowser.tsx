@@ -7,6 +7,8 @@ import { FileItem } from './FileItem/FileItem'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
+
+import { FileTransferType } from '../../constants/constants'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../providers/FileViewContext'
 
@@ -86,8 +88,8 @@ export function FileBrowser(): ReactElement {
           </div>
         </div>
         <div className="fm-file-browser-footer">
-          <FileProgressNotification label="Uploading files" type="upload" />
-          <FileProgressNotification label="Downloading files" type="download" />
+          <FileProgressNotification label="Uploading files" type={FileTransferType.Upload} />
+          <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
           <NotificationBar numberOfExpiration={2} />
         </div>
       </div>

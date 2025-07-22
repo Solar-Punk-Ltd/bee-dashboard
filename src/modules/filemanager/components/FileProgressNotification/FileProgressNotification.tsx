@@ -3,11 +3,12 @@ import './FileProgressNotification.scss'
 import UpIcon from 'remixicon-react/ArrowUpSLineIcon'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import { FileProgressWindow } from '../FileProgressWindow/FileProgressWindow'
+import { FileTransferType } from '../../constants/constants'
 
 interface FileProgressNotificationProps {
   label?: string
   percent?: string
-  type?: 'upload' | 'download'
+  type: FileTransferType
 }
 
 export function FileProgressNotification({ label, percent, type }: FileProgressNotificationProps): ReactElement | null {
@@ -17,8 +18,8 @@ export function FileProgressNotification({ label, percent, type }: FileProgressN
     <div style={{ position: 'relative' }}>
       <div className="fm-file-progress-notification" onClick={() => setShowFileProgressWindow(true)}>
         {label}
-        {type === 'upload' && <UpIcon size="16px" color="green" />}
-        {type === 'download' && <DownIcon size="16px" color="red" />}
+        {type === FileTransferType.Upload && <UpIcon size="16px" color="green" />}
+        {type === FileTransferType.Download && <DownIcon size="16px" color="red" />}
       </div>
 
       {showFileProgressWindow && (
@@ -26,8 +27,6 @@ export function FileProgressNotification({ label, percent, type }: FileProgressN
           numberOfFiles={3}
           type={type}
           onCancelClick={() => {
-            // eslint-disable-next-line no-console
-            console.log('cancel clicked')
             setShowFileProgressWindow(false)
           }}
         />
