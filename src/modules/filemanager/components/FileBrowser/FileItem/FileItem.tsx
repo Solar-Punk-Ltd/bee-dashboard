@@ -11,6 +11,7 @@ import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { useView } from '../../../providers/FileViewContext'
+import { ViewType } from '../../../constants/constants'
 
 interface FileItemProps {
   icon: string
@@ -87,7 +88,7 @@ export function FileItem({ icon, name, size, dateMod }: FileItemProps): ReactEle
             left: pos.x,
           }}
         >
-          {view === 'file' ? (
+          {view === ViewType.File ? (
             <ContextMenu>
               <div className="fm-context-item">View / Open</div>
               <div className="fm-context-item">Download</div>
