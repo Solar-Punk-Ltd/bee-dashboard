@@ -8,9 +8,9 @@ import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
 
-import { FileTransferType } from '../../constants/constants'
+import { FileTransferType, ViewType } from '../../constants/constants'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
-import { useView } from '../../providers/FileViewContext'
+import { useView } from '../../providers/FMFileViewContext'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -68,7 +68,7 @@ export function FileBrowser(): ReactElement {
                   left: pos.x,
                 }}
               >
-                {view === 'trash' ? (
+                {view === ViewType.Trash ? (
                   <ContextMenu>
                     <div className="fm-context-item">Empty trash</div>
                   </ContextMenu>
