@@ -35,7 +35,10 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
   function handleDestroyDriveClick() {
     setShowContext(false)
   }
-  const driveName = stamp.label || stamp.batchID.toString()
+
+  const batchIdStr = stamp.batchID.toString()
+  const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
+  const driveName = stamp.label || shortBatchId
 
   return (
     <div
@@ -56,7 +59,7 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
-            Capacity <ProgressBar value={stamp.usage * 100} width="64px" />{' '}
+            Capacity <ProgressBar value={stamp.usage * 100} width="64px" /> {stamp.remainingSize.toGigabytes()} dd
             {stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()} GB / {stamp.size.toGigabytes()} GB
           </div>
           <div className="fm-drive-item-capacity">Expiry date: {stamp.duration.toEndDate().toLocaleDateString()}</div>
