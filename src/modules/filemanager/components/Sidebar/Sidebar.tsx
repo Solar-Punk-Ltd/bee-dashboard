@@ -60,17 +60,11 @@ export function Sidebar(): ReactElement {
           <div>My Drives</div>
         </div>
         {isMyDrivesOpen &&
-          usableStamps?.map(
-            (stamp, index) => (
-              // eslint-disable-next-line no-console
-              console.log(stamp),
-              (
-                <div key={index} className="fm-drive-items-container fm-drive-items-container-open">
-                  <DriveItem label={stamp.label} size={stamp.amount} />
-                </div>
-              )
-            ),
-          )}
+          usableStamps?.map((stamp, index) => (
+            <div key={index} className="fm-drive-items-container fm-drive-items-container-open">
+              <DriveItem label={stamp.label} size={stamp.amount} />
+            </div>
+          ))}
         <div
           className="fm-sidebar-item"
           onMouseEnter={() => setHovered('trash')}
