@@ -35,7 +35,10 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
   function handleDestroyDriveClick() {
     setShowContext(false)
   }
-  const driveName = stamp.label || stamp.batchID.toString()
+
+  const batchIdStr = stamp.batchID.toString()
+  const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
+  const driveName = stamp.label || shortBatchId
 
   return (
     <div
