@@ -11,7 +11,7 @@ import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
 import { DriveItem } from './DriveItem/DriveItem'
 import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
 import { ViewType } from '../../constants/constants'
-import { Duration, PostageBatch, Size } from '@ethersphere/bee-js'
+import { Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { getUsableStamps } from '../../utils/utils'
 import { useView } from '../../providers/FMFileViewContext'
@@ -28,14 +28,22 @@ export function Sidebar(): ReactElement {
 
   const { setActualItemView, setView } = useView()
 
-  async function handleCreateDrive(size: Size, duration: Duration, label: string) {
+  async function handleCreateDrive(
+    size: Size,
+    duration: Duration,
+    label: string,
+    encryption: boolean,
+    erasureCodeLevel: RedundancyLevel,
+  ) {
     try {
       setIsStampCreationInProgress(true)
-      await beeApi?.buyStorage(size, duration, { label })
+
+      await beeApi?.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
       setIsStampCreationInProgress(false)
     } catch (e) {
+      //TODO It needs to be discussed what happens to the error
       // eslint-disable-next-line no-console
-      console.error('Error creating drive:')
+      console.error('Error creating drive:', e)
       setIsStampCreationInProgress(false)
     }
   }
@@ -60,9 +68,13 @@ export function Sidebar(): ReactElement {
         {isCreateDriveOpen && (
           <CreateDriveModal
             onCancelClick={() => setIsCreateDriveOpen(false)}
-            handleCreateDrive={(size: Size, duration: Duration, label: string) =>
-              handleCreateDrive(size, duration, label)
-            }
+            handleCreateDrive={(
+              size: Size,
+              duration: Duration,
+              label: string,
+              encryption: boolean,
+              erasureCodeLevel: RedundancyLevel,
+            ) => handleCreateDrive(size, duration, label, encryption, erasureCodeLevel)}
           />
         )}
         <div
