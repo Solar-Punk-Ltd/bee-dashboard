@@ -42,38 +42,22 @@ export const fromBytesConversion = (size: number, metric: string) => {
   }
 }
 
+const lifetimeAdjustments = new Map<number, (date: Date) => void>([
+  [1, date => date.setDate(date.getDate() + 7)],
+  [2, date => date.setMonth(date.getMonth() + 1)],
+  [3, date => date.setMonth(date.getMonth() + 3)],
+  [4, date => date.setMonth(date.getMonth() + 6)],
+  [5, date => date.setFullYear(date.getFullYear() + 1)],
+])
+
 export function getExpiryDateByLifetime(lifetimeValue: number): Date {
   const now = new Date()
-  const selected = desiredLifetimeOptions.find(opt => opt.value === lifetimeValue)
-  // eslint-disable-next-line no-console
-  console.log('getExpiryDateByLifetime called with:', lifetimeValue)
-  // eslint-disable-next-line no-console
-  console.log('Selected lifetime option:', selected)
 
-  if (!selected) return now
+  const adjustDate = lifetimeAdjustments.get(lifetimeValue)
 
-  switch (selected.label) {
-    case '1 week':
-      now.setDate(now.getDate() + 7)
-      break
-    case '1 month':
-      now.setMonth(now.getMonth() + 1)
-      break
-    case '3 months':
-      now.setMonth(now.getMonth() + 3)
-      break
-    case '6 months':
-      now.setMonth(now.getMonth() + 6)
-      break
-    case '1 year':
-      now.setFullYear(now.getFullYear() + 1)
-      break
-    default:
-      break
+  if (adjustDate) {
+    adjustDate(now)
   }
-
-  // eslint-disable-next-line no-console
-  console.log('Calculated expiry date:', now)
 
   return now
 }

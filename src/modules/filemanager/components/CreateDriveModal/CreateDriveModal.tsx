@@ -21,7 +21,13 @@ const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
-  handleCreateDrive: (size: Size, duration: Duration, label: string) => void
+  handleCreateDrive: (
+    size: Size,
+    duration: Duration,
+    label: string,
+    encryption: boolean,
+    erasureCodeLevel: RedundancyLevel,
+  ) => void
 }
 
 export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDriveModalProps): ReactElement {
@@ -30,30 +36,49 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [label, setLabel] = useState('')
-  const [sliderValue, setSliderValue] = useState(0)
+  const [capacityIndex, setCapacityIndex] = useState(-1)
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
+
+  const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const { beeApi } = useContext(SettingsContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
-  const sizes = Array.from(Utils.getStampEffectiveBytesBreakpoints().values())
-  const firstIndex = sizes.findIndex(size => size === 628910000)
-  const lastIndex = sizes.findIndex(size => size === 908810000000)
+  const handleCapacityChange = (value: number, index: number) => {
+    setCapacity(value)
+    setCapacityIndex(index)
+  }
 
-  const realSizes = sizes.slice(firstIndex, lastIndex + 1)
-
-  const sizeMarks = realSizes.map((size, index) => ({
-    value: size,
-    label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
-  }))
-
-  const createPostageStamp = () => {
+  const createPostageStamp = async () => {
     try {
       if (isCreateEnabled) {
         onCancelClick()
-        handleCreateDrive(Size.fromBytes(capacity), Duration.fromEndDate(validityEndDate), label)
+        await handleCreateDrive(
+          Size.fromBytes(capacity),
+          Duration.fromEndDate(validityEndDate),
+          label,
+          encryptionEnabled,
+          erasureCodeLevel,
+        )
       }
-    } catch (e) {}
+    } catch (e) {
+      //TODO It needs to be discussed what happens to the error
+    }
   }
+
+  useEffect(() => {
+    const newSizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(encryptionEnabled, erasureCodeLevel).values())
+
+    setSizeMarks(
+      newSizes.map(size => ({
+        value: size,
+        label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
+      })),
+    )
+
+    setCapacity(newSizes[capacityIndex])
+  }, [encryptionEnabled, erasureCodeLevel])
 
   useEffect(() => {
     const fetchCost = async () => {
@@ -64,12 +89,20 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
         let cost: BZZ | undefined = undefined
         try {
           if (Size.fromBytes(capacity).toGigabytes() >= 0 && validityEndDate.getTime() >= new Date().getTime()) {
-            cost = await beeApi?.getStorageCost(Size.fromBytes(capacity), Duration.fromEndDate(validityEndDate))
+            cost = await beeApi?.getStorageCost(
+              Size.fromBytes(capacity),
+              Duration.fromEndDate(validityEndDate),
+              undefined,
+              encryptionEnabled,
+              erasureCodeLevel,
+            )
             setCost(cost ? cost.toSignificantDigits(2) : '0')
           } else {
             setCost('0')
           }
-        } catch (e) {}
+        } catch (e) {
+          //TODO It needs to be discussed what happens to the error
+        }
       })()
       currentFetch.current = fetchPromise
       await fetchPromise
@@ -113,7 +146,7 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
               label="Initial capacity:"
               options={sizeMarks}
               value={capacity}
-              onChange={setCapacity}
+              onChange={handleCapacityChange}
               placeholder="Select a value"
               infoText="Amount of data you can store on the drive. Later you can upgrade it."
             />
@@ -129,14 +162,17 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
               infoText="Might change over time depending on the network"
             />
           </div>
-          <FMSlider
-            defaultValue={0}
-            marks={erasureCodeMarks}
-            onChange={value => setSliderValue(value)}
-            minValue={minMarkValue}
-            maxValue={maxMarkValue}
-            step={1}
-          />
+          <div className="fm-modal-window-input-container">
+            <FMSlider
+              label="Security Level"
+              defaultValue={0}
+              marks={erasureCodeMarks}
+              onChange={value => setErasureCodeLevel(value)}
+              minValue={minMarkValue}
+              maxValue={maxMarkValue}
+              step={1}
+            />
+          </div>
 
           <div>
             <div>Estimated Cost: {cost} BZZ</div>
