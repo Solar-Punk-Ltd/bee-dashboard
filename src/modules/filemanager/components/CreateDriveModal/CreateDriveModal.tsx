@@ -1,10 +1,10 @@
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
-import { BZZ, Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
+import { fmFetchCost, fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
@@ -81,36 +81,8 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
   }, [encryptionEnabled, erasureCodeLevel])
 
   useEffect(() => {
-    const fetchCost = async () => {
-      if (currentFetch.current) {
-        await currentFetch.current
-      }
-      const fetchPromise = (async () => {
-        let cost: BZZ | undefined = undefined
-        try {
-          if (Size.fromBytes(capacity).toGigabytes() >= 0 && validityEndDate.getTime() >= new Date().getTime()) {
-            cost = await beeApi?.getStorageCost(
-              Size.fromBytes(capacity),
-              Duration.fromEndDate(validityEndDate),
-              undefined,
-              encryptionEnabled,
-              erasureCodeLevel,
-            )
-            setCost(cost ? cost.toSignificantDigits(2) : '0')
-          } else {
-            setCost('0')
-          }
-        } catch (e) {
-          //TODO It needs to be discussed what happens to the error
-        }
-      })()
-      currentFetch.current = fetchPromise
-      await fetchPromise
-      currentFetch.current = null
-    }
-
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
-      fetchCost()
+      fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
 
       if (label) {
         setIsCreateEnabled(true)
