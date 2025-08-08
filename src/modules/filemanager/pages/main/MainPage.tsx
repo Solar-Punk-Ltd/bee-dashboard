@@ -1,5 +1,4 @@
 import { ReactElement, useContext, useEffect, useState } from 'react'
-
 import './MainPage.scss'
 import { Header } from '../../components/Header/Header'
 import { Sidebar } from '../../components/Sidebar/Sidebar'
