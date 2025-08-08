@@ -1,7 +1,6 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useContext, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
-
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
 import { createPortal } from 'react-dom'
@@ -11,6 +10,7 @@ import WalletIcon from 'remixicon-react/Wallet3LineIcon'
 import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import { desiredLifetimeOptions } from '../../constants/constants'
+import { Context as BeeContext } from '../../../../providers/Bee'
 
 const initialCapacityOptions = [
   { value: 5, label: '5 GB' },
@@ -27,6 +27,7 @@ interface UpgradeDriveModalProps {
 }
 
 export function UpgradeDriveModal({ driveName, onCancelClick, containerColor }: UpgradeDriveModalProps): ReactElement {
+  const { nodeAddresses, nodeInfo, status, walletBalance } = useContext(BeeContext)
   const [capacity, setCapacity] = useState(0)
   const [lifetime, setLifetime] = useState(0)
 
@@ -44,14 +45,20 @@ export function UpgradeDriveModal({ driveName, onCancelClick, containerColor }: 
             <div className="fm-upgrade-drive-modal-wallet-header fm-emphasized-text">
               <WalletIcon size="14px" color="rgb(237, 129, 49)" /> Wallet information
             </div>
-            <div className="fm-upgrade-drive-modal-wallet-info">
-              <div>Balance</div>
-              <div>245.67 BZZ</div>
-            </div>
-            <div className="fm-upgrade-drive-modal-wallet-info">
-              <div>Wallet address:</div>
-              <div className="fm-value-snippet">0x742d...4a9c</div>
-            </div>
+            {walletBalance && nodeAddresses ? (
+              <div className="fm-upgrade-drive-modal-wallet-info-container">
+                <div className="fm-upgrade-drive-modal-wallet-info">
+                  <div>Balance</div>
+                  <div>{`${walletBalance.bzzBalance.toSignificantDigits(4)} xBZZ`}</div>
+                </div>
+                <div className="fm-upgrade-drive-modal-wallet-info">
+                  <div>Wallet address:</div>
+                  <div className="fm-value-snippet">0x742d...4a9c</div>
+                </div>
+              </div>
+            ) : (
+              <div>Wallet information is not available</div>
+            )}
             <div className="fm-upgrade-drive-modal-info fm-swarm-orange-font">
               <a
                 className="fm-upgrade-drive-modal-info-link fm-pointer"
