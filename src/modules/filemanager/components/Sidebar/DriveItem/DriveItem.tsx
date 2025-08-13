@@ -99,7 +99,7 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
         <FMButton label="Upgrade" variant="primary" size="small" onClick={() => setIsUpgradeDriveModalOpen(true)} />
       </div>
       {isUpgradeDriveModalOpen && (
-        <UpgradeDriveModal driveName={driveName} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
+        <UpgradeDriveModal stamp={stamp} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
       )}
       {isDestroyDriveModalOpen && (
         <DestroyDriveModal driveName={driveName} onCancelClick={() => setIsDestroyDriveModalOpen(false)} />
