@@ -224,8 +224,6 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
             variant="primary"
             disabled={extensionCost === '0'}
             onClick={() => {
-              // eslint-disable-next-line no-console
-              console.log('durationExtensionCost', durationExtensionCost)
               beeApi?.extendStorage(
                 stamp.batchID,
                 capacity,
