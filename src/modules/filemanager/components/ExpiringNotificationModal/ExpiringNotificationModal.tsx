@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useContext, useEffect, useState } from 'react'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 
@@ -8,7 +8,9 @@ import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
-import { getDaysLeft } from '../../utils/utils'
+import { getDaysLeft, getUsableStamps } from '../../utils/utils'
+import { Context as SettingsContext } from '../../../../providers/Settings'
+import { PostageBatch } from '@ethersphere/bee-js'
 
 const EXPIRING_DRIVES = [
   {
@@ -43,7 +45,17 @@ interface ExpiringNotificationModalProps {
 
 export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
+  const [stamps, setStamps] = useState([] as PostageBatch[])
+  const { beeApi } = useContext(SettingsContext)
   const modalRoot = document.querySelector('.fm-main') || document.body
+
+  useEffect(() => {
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      setStamps([...stamps])
+    }
+    getStamps()
+  }, [beeApi])
 
   return createPortal(
     <div className="fm-modal-container">
@@ -96,7 +108,10 @@ export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificatio
           </div>
         </div>
       </div>
-      {showUpgradeDriveModal && <UpgradeDriveModal onCancelClick={onCancelClick} containerColor="none" />}
+      {showUpgradeDriveModal && (
+        //TODO The stamps[0] is just for mock purpose, it needs to implemented correctly
+        <UpgradeDriveModal stamp={stamps[0]} onCancelClick={onCancelClick} containerColor="none" />
+      )}
     </div>,
     modalRoot,
   )
