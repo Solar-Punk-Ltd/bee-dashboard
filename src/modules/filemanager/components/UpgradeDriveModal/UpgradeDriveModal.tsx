@@ -109,45 +109,36 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
   }, [])
 
   useEffect(() => {
+    let isCapacitySet = false
+    let isDurationSet = false
+    let duration = Duration.ZERO
     const fetchExtensionCost = () => {
       if (capacityIndex !== 0 && lifetimeIndex !== 0) {
-        handleCostCalculation(
-          stamp.batchID,
-          capacity,
-          Duration.fromEndDate(validityEndDate),
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-          true,
-          true,
-        )
+        isCapacitySet = true
+        isDurationSet = true
+        duration = Duration.fromEndDate(validityEndDate)
       } else if (capacityIndex !== 0 && lifetimeIndex === 0) {
-        handleCostCalculation(
-          stamp.batchID,
-          capacity,
-          Duration.ZERO,
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-          true,
-          false,
-        )
+        isCapacitySet = true
+        isDurationSet = false
+        duration = Duration.ZERO
       } else if (capacityIndex === 0 && lifetimeIndex !== 0) {
-        handleCostCalculation(
-          stamp.batchID,
-          capacity,
-          Duration.fromEndDate(validityEndDate),
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-          false,
-          true,
-        )
+        isCapacitySet = false
+        isDurationSet = true
+        duration = Duration.fromEndDate(validityEndDate)
       } else {
-        setDurationExtensionCost('0')
-        setCapacityExtensionCost('0')
-        setExtensionCost('0')
+        isCapacitySet = false
+        isDurationSet = false
       }
+      handleCostCalculation(
+        stamp.batchID,
+        capacity,
+        duration,
+        undefined,
+        false,
+        mockedErasureCodeLevel,
+        isCapacitySet,
+        isDurationSet,
+      )
     }
     fetchExtensionCost()
   }, [capacity, validityEndDate])
