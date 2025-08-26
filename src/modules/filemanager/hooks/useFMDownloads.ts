@@ -28,7 +28,6 @@ function upsertItem(name: string, patch: Partial<DownloadItem>) {
 
       return [...state.items, merged]
     }
-
     const curr = state.items[idx]
     const updated = { ...curr, ...patch } as DownloadItem
     const copy = state.items.slice()
@@ -36,7 +35,6 @@ function upsertItem(name: string, patch: Partial<DownloadItem>) {
 
     return copy
   })()
-
   emit({ items: next })
 }
 
@@ -64,49 +62,60 @@ const formatBytes = (v?: string | number) => {
   return `${val.toFixed(1)} ${units[i]}`
 }
 
+const isUint8Array = (x: unknown): x is Uint8Array => x instanceof Uint8Array
+const isArrayBuffer = (x: unknown): x is ArrayBuffer => typeof ArrayBuffer !== 'undefined' && x instanceof ArrayBuffer
+const isBlob = (x: unknown): x is Blob => typeof Blob !== 'undefined' && x instanceof Blob
+const hasBufferLike = (x: unknown): x is { buffer: ArrayBufferLike; byteLength: number } =>
+  Boolean(x) &&
+  typeof x === 'object' &&
+  'buffer' in (x as Record<string, unknown>) &&
+  'byteLength' in (x as Record<string, unknown>)
+
 function bytesToBlob(bytes: Uint8Array, mime?: string): Blob {
   return new Blob([bytes], { type: mime || 'application/octet-stream' })
 }
 
-async function partToUint8(part: any): Promise<Uint8Array | undefined> {
-  if (!part) return undefined
+async function partToUint8(part: unknown): Promise<Uint8Array | undefined> {
+  if (part == null) return undefined
 
-  if (part instanceof Uint8Array) return part
+  if (isUint8Array(part)) return part
 
-  if (typeof Blob !== 'undefined' && part instanceof Blob) {
+  if (isBlob(part)) {
     const ab = await part.arrayBuffer()
 
     return new Uint8Array(ab)
   }
 
-  if (part.data) return partToUint8(part.data)
+  if (typeof part === 'object' && part !== null && 'data' in part) {
+    const nested = (part as { data?: unknown }).data
 
-  if (typeof ArrayBuffer !== 'undefined' && part instanceof ArrayBuffer) {
-    return new Uint8Array(part)
+    return partToUint8(nested)
   }
 
-  if (part.buffer && typeof part.byteLength === 'number') {
+  if (isArrayBuffer(part)) return new Uint8Array(part)
+
+  if (hasBufferLike(part)) {
     try {
-      return new Uint8Array(part as ArrayBufferLike)
+      return new Uint8Array(part.buffer)
     } catch {
-      // ignore
+      /* noop */
     }
   }
 
   try {
     if (typeof Response !== 'undefined') {
-      const ab = await new Response(part as any).arrayBuffer()
+      const ab = await new Response(part as BodyInit).arrayBuffer()
 
       return new Uint8Array(ab)
     }
   } catch {
-    // ignore
+    /* noop */
   }
 
   return undefined
 }
 
-async function toBestBlob(result: any, mime?: string): Promise<Blob> {
+async function toBestBlob(result: unknown, mime?: string): Promise<Blob> {
   if (Array.isArray(result)) {
     const buffers = (await Promise.all(result.map(p => partToUint8(p)))).filter(Boolean) as Uint8Array[]
 
@@ -146,7 +155,6 @@ function guessMimeFromName(name?: string): string | undefined {
   return ext ? map[ext] : undefined
 }
 
-// CHANGE: remove noopener/noreferrer so we can set location on the opened window
 function openSentryWindow() {
   try {
     return window.open('', '_blank') || null
@@ -208,10 +216,10 @@ export function useFMDownloads() {
   const performDownload = useCallback(
     async (fileInfo: FileInfo) => {
       if (!fm) throw new Error('FileManager not ready')
-      const res = await fm.download(fileInfo) // Bytes[] in browser, shapes vary
-      const mime =
-        (fileInfo as any)?.customMetadata?.mime || guessMimeFromName(fileInfo.name) || 'application/octet-stream'
-      const blob = await toBestBlob(res, mime)
+      const res = await fm.download(fileInfo)
+      const mimeFromMeta = fileInfo.customMetadata?.mime
+      const mime = mimeFromMeta || guessMimeFromName(fileInfo.name) || 'application/octet-stream'
+      const blob = await toBestBlob(res as unknown, mime)
 
       return blob
     },
@@ -221,7 +229,7 @@ export function useFMDownloads() {
   const downloadFile = useCallback(
     async (fileInfo: FileInfo) => {
       const name = fileInfo.name || 'download'
-      const sizeHint = formatBytes((fileInfo as any)?.customMetadata?.size)
+      const sizeHint = formatBytes(fileInfo.customMetadata?.size)
       try {
         startLinearRamp(name, sizeHint)
         const blob = await performDownload(fileInfo)
@@ -234,7 +242,6 @@ export function useFMDownloads() {
         document.body.appendChild(a)
         a.click()
         a.remove()
-        // Conservative revoke to avoid races on slow disks
         setTimeout(() => URL.revokeObjectURL(url), 15000)
 
         refreshFiles?.()
@@ -248,7 +255,7 @@ export function useFMDownloads() {
   const viewFile = useCallback(
     async (fileInfo: FileInfo) => {
       const name = fileInfo.name || 'file'
-      const sizeHint = formatBytes((fileInfo as any)?.customMetadata?.size)
+      const sizeHint = formatBytes(fileInfo.customMetadata?.size)
       const win = openSentryWindow()
 
       try {
@@ -258,16 +265,13 @@ export function useFMDownloads() {
 
         const url = URL.createObjectURL(blob)
 
-        // Navigate opened tab/window if we got one (avoids popup blockers)
         if (win) {
           try {
-            // replace() avoids extra history entries and is more reliable in Safari
             win.location.replace(url)
           } catch {
             window.open(url, '_blank')
           }
 
-          // Revoke when the tab closes (plus a fallback after 2 minutes)
           const timer = window.setInterval(() => {
             try {
               if (win.closed) {
@@ -275,29 +279,34 @@ export function useFMDownloads() {
                 window.clearInterval(timer)
               }
             } catch {
-              // ignore
+              /* noop */
             }
           }, 5000)
 
           window.setTimeout(() => {
             try {
               URL.revokeObjectURL(url)
-            } catch {}
+            } catch {
+              /* noop */
+            }
           }, 120000)
         } else {
-          // Popup blocked: open directly and revoke later
           window.open(url, '_blank')
           window.setTimeout(() => {
             try {
               URL.revokeObjectURL(url)
-            } catch {}
+            } catch {
+              /* noop */
+            }
           }, 120000)
         }
       } catch {
         if (win) {
           try {
             win.close()
-          } catch {}
+          } catch {
+            /* noop */
+          }
         }
         upsertItem(name, { status: 'error' as const })
       }

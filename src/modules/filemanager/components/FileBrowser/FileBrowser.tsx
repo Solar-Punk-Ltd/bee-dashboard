@@ -146,7 +146,7 @@ export function FileBrowser(): ReactElement {
   }, [showContext, pos, contextRef])
 
   const isTrashed = (fi: FileInfo) => {
-    const s = (fi as any).status
+    const s = (fi as FileInfo).status
 
     if (s == null) return false
 
@@ -165,7 +165,7 @@ export function FileBrowser(): ReactElement {
   const rows = useMemo(() => {
     if (!currentBatch) return []
     const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(fi => String((fi as any).batchId) === wanted)
+    const sameDrive = files.filter(fi => String((fi as FileInfo).batchId) === wanted)
 
     const map = new Map<string, FileInfo>()
     sameDrive.forEach(fi => {

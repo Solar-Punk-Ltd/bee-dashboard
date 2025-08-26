@@ -5,8 +5,12 @@ import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { ViewType } from '../../../constants/constants'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { useFMDownloads } from '../../../hooks/useFMDownloads'
+import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
+import { useFM } from '../../../providers/FMContext'
+import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
+import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -33,6 +37,10 @@ export function FileItem({ fileInfo }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
   const { downloadFile, viewFile } = useFMDownloads()
+  const { fm, currentBatch } = useFM()
+
+  const [showGetInfoModal, setShowGetInfoModal] = useState(false)
+  const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
@@ -48,7 +56,6 @@ export function FileItem({ fileInfo }: FileItemProps): ReactElement {
       const menu = contextRef.current
 
       if (!menu) return
-
       const rect = menu.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
@@ -70,6 +77,18 @@ export function FileItem({ fileInfo }: FileItemProps): ReactElement {
       setDropDir(dir)
     })
   }, [showContext, pos, contextRef])
+
+  const openGetInfo = async () => {
+    if (!fm) return
+    try {
+      setInfoGroups(null)
+      const groups = await buildGetInfoGroups(fm as FileManagerBase, fileInfo, { driveLabel: currentBatch?.label })
+      setInfoGroups(groups)
+      setShowGetInfoModal(true)
+    } catch (e) {
+      // TODO: Figure out what to do with this error
+    }
+  }
 
   return (
     <div className="fm-file-item-content" onContextMenu={handleContextMenu} onClick={handleCloseContext}>
@@ -121,7 +140,13 @@ export function FileItem({ fileInfo }: FileItemProps): ReactElement {
                 Delete
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  openGetInfo()
+                }}
+              >
                 Get info
               </div>
             </ContextMenu>
@@ -159,12 +184,22 @@ export function FileItem({ fileInfo }: FileItemProps): ReactElement {
                 Forget permanently
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  openGetInfo()
+                }}
+              >
                 Get info
               </div>
             </ContextMenu>
           )}
         </div>
+      )}
+
+      {showGetInfoModal && infoGroups && (
+        <GetInfoModal name={name} properties={infoGroups} onCancelClick={() => setShowGetInfoModal(false)} />
       )}
     </div>
   )

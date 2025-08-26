@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useFM } from '../providers/FMContext'
+import { buildUploadMeta } from '../utils/buildUploadMeta'
+import type { FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 
 export type TransferItem = {
   name: string
@@ -8,16 +10,21 @@ export type TransferItem = {
   status: 'uploading' | 'finalizing' | 'done' | 'error'
 }
 
-function buildUploadMeta(files: File[] | FileList) {
-  const arr = Array.from(files as File[])
-  const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
-  const primary = arr[0]
+const formatBytes = (v?: string | number) => {
+  const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : NaN
 
-  return {
-    size: String(totalSize),
-    fileCount: String(arr.length),
-    mime: primary?.type || 'application/octet-stream',
+  if (!Number.isFinite(n) || n < 0) return undefined
+
+  if (n < 1024) return `${n} B`
+  const units = ['KB', 'MB', 'GB', 'TB']
+  let val = n / 1024
+  let i = 0
+  while (val >= 1024 && i < units.length - 1) {
+    val /= 1024
+    i++
   }
+
+  return `${val.toFixed(1)} ${units[i]}`
 }
 
 export function useFMTransfers() {
@@ -28,9 +35,9 @@ export function useFMTransfers() {
   const isUploading = uploadItems.some(i => i.status !== 'done' && i.status !== 'error')
   const uploadCount = uploadItems.length
 
-  const startLinearRamp = useCallback((name: string) => {
+  const startLinearRamp = useCallback((name: string, size?: string) => {
     setUploadItems(prev =>
-      prev.find(p => p.name === name) ? prev : [...prev, { name, percent: 0, status: 'uploading' }],
+      prev.find(p => p.name === name) ? prev : [...prev, { name, size, percent: 0, status: 'uploading' }],
     )
     const begin = Date.now()
     const DURATION = 1500
@@ -72,7 +79,6 @@ export function useFMTransfers() {
     tick()
   }, [])
 
-  /** Upload using current drive (batch). Shows progress in the mini window. */
   const uploadFiles = useCallback(
     async (picked: FileList | File[]) => {
       if (!fm || !currentBatch) return
@@ -80,24 +86,27 @@ export function useFMTransfers() {
 
       if (arr.length === 0) return
 
-      const name = arr[0].name
-      startLinearRamp(name)
+      const firstName = arr[0].name
+      const meta = buildUploadMeta(arr)
+      const prettySize = formatBytes(meta.size)
 
-      const info = {
+      startLinearRamp(firstName, prettySize)
+
+      const payload: FileInfoOptions = {
         info: {
           batchId: currentBatch.batchID.toString(),
-          name,
-          customMetadata: buildUploadMeta(arr),
+          name: firstName,
+          customMetadata: meta,
         },
         files: arr,
       }
 
       try {
-        await fm.upload(info as any)
-        finishLastQuarter(name)
-        refreshFiles()
+        await fm.upload(payload)
+        finishLastQuarter(firstName)
+        refreshFiles?.()
       } catch {
-        setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: 'error' } : it)))
+        setUploadItems(prev => prev.map(it => (it.name === firstName ? { ...it, status: 'error' } : it)))
       }
     },
     [fm, currentBatch, refreshFiles, startLinearRamp, finishLastQuarter],
