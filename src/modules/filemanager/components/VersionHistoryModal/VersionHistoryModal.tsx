@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useContext, useEffect, useState } from 'react'
 import './VersionHistoryModal.scss'
 import '../../styles/global.scss'
 
@@ -9,6 +9,9 @@ import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
+import { Context as SettingsContext } from '../../../../providers/Settings'
+import { PostageBatch } from '@ethersphere/bee-js'
+import { getUsableStamps } from '../../utils/utils'
 
 interface VersionHistoryModalProps {
   fileName: string
@@ -44,7 +47,17 @@ const FILE_VERSIONS_MOCK = [
 
 export function VersionHistoryModal({ fileName, onCancelClick }: VersionHistoryModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
+  const [stamps, setStamps] = useState([] as PostageBatch[])
+  const { beeApi } = useContext(SettingsContext)
   const modalRoot = document.querySelector('.fm-main') || document.body
+
+  useEffect(() => {
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      setStamps([...stamps])
+    }
+    getStamps()
+  }, [beeApi])
 
   return createPortal(
     <div className="fm-modal-container">
@@ -86,7 +99,9 @@ export function VersionHistoryModal({ fileName, onCancelClick }: VersionHistoryM
           </div>
         </div>
       </div>
-      {showUpgradeDriveModal && <UpgradeDriveModal onCancelClick={onCancelClick} containerColor="none" />}
+      {showUpgradeDriveModal && (
+        <UpgradeDriveModal stamp={stamps[0]} onCancelClick={onCancelClick} containerColor="none" />
+      )}
     </div>,
     modalRoot,
   )
