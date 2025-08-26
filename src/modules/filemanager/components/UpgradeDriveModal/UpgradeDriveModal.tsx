@@ -13,7 +13,16 @@ import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as BeeContext } from '../../../../providers/Bee'
 import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { capacityBreakpoints, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import {
+  BatchId,
+  BeeRequestOptions,
+  capacityBreakpoints,
+  Duration,
+  PostageBatch,
+  RedundancyLevel,
+  Size,
+  Utils,
+} from '@ethersphere/bee-js'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
@@ -45,6 +54,38 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
     setCapacityIndex(index)
   }
 
+  const handleCostCalculation = async (
+    batchId: BatchId,
+    capacity: Size,
+    duration: Duration,
+    options: BeeRequestOptions | undefined,
+    encryption: boolean,
+    erasureCodeLevel: RedundancyLevel,
+    isCapacityExtensionSet: boolean,
+    isDurationExtensionSet: boolean,
+  ) => {
+    const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, undefined, false, mockedErasureCodeLevel)
+    const costText = cost ? cost.toSignificantDigits(2) : '0'
+
+    if (isCapacityExtensionSet && isDurationExtensionSet) {
+      setDurationExtensionCost('')
+      setCapacityExtensionCost('')
+      setExtensionCost(costText)
+    } else if (!isCapacityExtensionSet && isDurationExtensionSet) {
+      setCapacityExtensionCost('0')
+      setDurationExtensionCost(costText)
+      setExtensionCost(costText)
+    } else if (isCapacityExtensionSet && !isDurationExtensionSet) {
+      setDurationExtensionCost('0')
+      setCapacityExtensionCost(costText)
+      setExtensionCost(costText)
+    } else {
+      setDurationExtensionCost('0')
+      setCapacityExtensionCost('0')
+      setExtensionCost('0')
+    }
+  }
+
   useEffect(() => {
     const fetchSizes = async () => {
       const sizes = Array.from(await Utils.getStampEffectiveBytesBreakpoints(false, mockedErasureCodeLevel).values())
@@ -68,50 +109,36 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
   }, [])
 
   useEffect(() => {
-    const fetchExtensionCost = async () => {
+    let isCapacitySet = false
+    let isDurationSet = false
+    let duration = Duration.ZERO
+    const fetchExtensionCost = () => {
       if (capacityIndex !== 0 && lifetimeIndex !== 0) {
-        const fullExtensionCost = await beeApi?.getExtensionCost(
-          stamp.batchID,
-          capacity,
-          Duration.fromEndDate(validityEndDate),
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-        )
-        setDurationExtensionCost('')
-        setCapacityExtensionCost('')
-        setExtensionCost(fullExtensionCost ? fullExtensionCost.toSignificantDigits(2) : '0')
+        isCapacitySet = true
+        isDurationSet = true
+        duration = Duration.fromEndDate(validityEndDate)
       } else if (capacityIndex !== 0 && lifetimeIndex === 0) {
-        setDurationExtensionCost('0')
-
-        const cost = await beeApi?.getExtensionCost(
-          stamp.batchID,
-          capacity,
-          Duration.ZERO,
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-        )
-
-        setCapacityExtensionCost(cost ? cost.toSignificantDigits(2) : '0')
-        setExtensionCost(cost ? cost.toSignificantDigits(2) : '0')
+        isCapacitySet = true
+        isDurationSet = false
+        duration = Duration.ZERO
       } else if (capacityIndex === 0 && lifetimeIndex !== 0) {
-        setCapacityExtensionCost('0')
-        const durationExtensionCost = await beeApi?.getExtensionCost(
-          stamp.batchID,
-          stamp.size,
-          Duration.fromEndDate(validityEndDate),
-          undefined,
-          false,
-          mockedErasureCodeLevel,
-        )
-        setDurationExtensionCost(durationExtensionCost ? durationExtensionCost.toSignificantDigits(2) : '0')
-        setExtensionCost(durationExtensionCost ? durationExtensionCost.toSignificantDigits(2) : '0')
+        isCapacitySet = false
+        isDurationSet = true
+        duration = Duration.fromEndDate(validityEndDate)
       } else {
-        setDurationExtensionCost('0')
-        setCapacityExtensionCost('0')
-        setExtensionCost('0')
+        isCapacitySet = false
+        isDurationSet = false
       }
+      handleCostCalculation(
+        stamp.batchID,
+        capacity,
+        duration,
+        undefined,
+        false,
+        mockedErasureCodeLevel,
+        isCapacitySet,
+        isDurationSet,
+      )
     }
     fetchExtensionCost()
   }, [capacity, validityEndDate])
