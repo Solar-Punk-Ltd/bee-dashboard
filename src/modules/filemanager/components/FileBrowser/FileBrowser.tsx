@@ -203,7 +203,7 @@ export function FileBrowser(): ReactElement {
             items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
           />
           <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
-          <NotificationBar numberOfExpiration={2} />
+          <NotificationBar />
         </div>
       </div>
     </>

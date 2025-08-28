@@ -1,17 +1,16 @@
 import { Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 
 import { MouseEvent } from 'react'
-import { desiredLifetimeOptions } from '../constants/constants'
 export function preventDefault(event: MouseEvent) {
   event.preventDefault()
 }
 
-export function getDaysLeft(expiryDate: string): number {
+export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()
-  const expiry = new Date(expiryDate)
-  const diffMs = expiry.getTime() - now.getTime()
 
-  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
+  const diffMs = expiryDate.getTime() - now.getTime()
+
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
 }
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
