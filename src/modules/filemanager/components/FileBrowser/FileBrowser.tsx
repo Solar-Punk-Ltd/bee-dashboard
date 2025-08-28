@@ -121,19 +121,6 @@ export function FileBrowser(): ReactElement {
     <>
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
 
-      {isDragging && currentBatch && (
-        <div
-          className="fm-drag-overlay"
-          onDragOver={e => {
-            e.preventDefault()
-            ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
-          }}
-          onDrop={onOverlayDrop}
-        >
-          <div className="fm-drag-text">Drop file(s) to upload</div>
-        </div>
-      )}
-
       <div className="fm-file-browser-container">
         <FileBrowserTopBar />
 
@@ -205,6 +192,18 @@ export function FileBrowser(): ReactElement {
           <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
           <NotificationBar />
         </div>
+        {isDragging && currentBatch && (
+          <div
+            className="fm-drag-overlay"
+            onDragOver={e => {
+              e.preventDefault()
+              ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
+            }}
+            onDrop={onOverlayDrop}
+          >
+            <div className="fm-drag-text">Drop file(s) to upload</div>
+          </div>
+        )}
       </div>
     </>
   )
