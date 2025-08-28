@@ -7,7 +7,7 @@ export function preventDefault(event: MouseEvent) {
 
 export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()
-  // const expiry = new Date(expiryDate)
+
   const diffMs = expiryDate.getTime() - now.getTime()
 
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
