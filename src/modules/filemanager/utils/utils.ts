@@ -1,6 +1,7 @@
 import { Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 
 import { MouseEvent } from 'react'
+import { desiredLifetimeOptions } from '../constants/constants'
 export function preventDefault(event: MouseEvent) {
   event.preventDefault()
 }
@@ -42,6 +43,8 @@ export const fromBytesConversion = (size: number, metric: string) => {
 }
 
 const lifetimeAdjustments = new Map<number, (date: Date) => void>([
+  //TODO It needs to be discussed the minimum value for value upgrade
+  [0, date => date.setMinutes(date.getMinutes() + 1)],
   [1, date => date.setDate(date.getDate() + 7)],
   [2, date => date.setMonth(date.getMonth() + 1)],
   [3, date => date.setMonth(date.getMonth() + 3)],
@@ -49,8 +52,8 @@ const lifetimeAdjustments = new Map<number, (date: Date) => void>([
   [5, date => date.setFullYear(date.getFullYear() + 1)],
 ])
 
-export function getExpiryDateByLifetime(lifetimeValue: number): Date {
-  const now = new Date()
+export function getExpiryDateByLifetime(lifetimeValue: number, actualValidity?: Date): Date {
+  const now = actualValidity || new Date()
 
   const adjustDate = lifetimeAdjustments.get(lifetimeValue)
 

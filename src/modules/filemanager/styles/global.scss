@@ -110,11 +110,13 @@
 }
 
 .fm-value-snippet {
+  position: relative;
   padding: 4px;
   background-color: white;
   font-size: 12px;
   border: 1px solid rgb(229, 231, 235);
   border-radius: 4px;
+  right: -2px;
 }
 
 .fm-swarm-orange-font {
