@@ -90,7 +90,7 @@ export function FileBrowser(): ReactElement {
         <div className="fm-file-browser-footer">
           <FileProgressNotification label="Uploading files" type={FileTransferType.Upload} />
           <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
-          <NotificationBar numberOfExpiration={2} />
+          <NotificationBar />
         </div>
       </div>
     </>
