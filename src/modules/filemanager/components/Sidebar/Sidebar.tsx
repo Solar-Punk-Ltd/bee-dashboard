@@ -96,7 +96,7 @@ export function Sidebar(): ReactElement {
               return (
                 <div
                   key={stamp.batchID.toString()}
-                  className={`fm-sidebar-item fm-drive-item${isSelected ? ' selected' : ''}`}
+                  className={`fm-drive-item${isSelected ? ' selected' : ''}`}
                   onClick={() => {
                     setCurrentBatch(stamp)
                     setView(ViewType.File)

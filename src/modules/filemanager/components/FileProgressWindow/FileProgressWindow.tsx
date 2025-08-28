@@ -3,7 +3,7 @@ import CloseIcon from 'remixicon-react/CloseLineIcon'
 import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
-import { FileTransferType } from '../../constants/constants'
+import { FileTransferType, TransferBarColor } from '../../constants/constants'
 
 type ProgressItem = {
   name: string
@@ -37,7 +37,7 @@ export function FileProgressWindow({
 
   const noun = type === FileTransferType.Download ? 'download' : 'upload'
   const statusText = type === FileTransferType.Download ? 'Downloading…' : 'Uploading…'
-  const barColor = type === FileTransferType.Download ? 'rgb(220, 38, 38)' : 'rgb(34, 197, 94)'
+  const barColor = type === FileTransferType.Download ? TransferBarColor.Download : TransferBarColor.Upload
 
   return (
     <div className="fm-file-progress-window">
