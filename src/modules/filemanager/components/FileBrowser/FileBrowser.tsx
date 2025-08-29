@@ -179,8 +179,19 @@ export function FileBrowser(): ReactElement {
               </div>
             )}
           </div>
+          {isDragging && currentBatch && (
+            <div
+              className="fm-drag-overlay"
+              onDragOver={e => {
+                e.preventDefault()
+                ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
+              }}
+              onDrop={onOverlayDrop}
+            >
+              <div className="fm-drag-text">Drop file(s) to upload</div>
+            </div>
+          )}
         </div>
-
         <div className="fm-file-browser-footer">
           <FileProgressNotification
             label="Uploading files"
@@ -192,18 +203,6 @@ export function FileBrowser(): ReactElement {
           <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
           <NotificationBar />
         </div>
-        {isDragging && currentBatch && (
-          <div
-            className="fm-drag-overlay"
-            onDragOver={e => {
-              e.preventDefault()
-              ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
-            }}
-            onDrop={onOverlayDrop}
-          >
-            <div className="fm-drag-text">Drop file(s) to upload</div>
-          </div>
-        )}
       </div>
     </>
   )
