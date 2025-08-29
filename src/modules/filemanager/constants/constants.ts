@@ -8,6 +8,11 @@ export enum ViewType {
   Trash = 'trash',
 }
 
+export enum TransferBarColor {
+  Download = 'rgb(220, 38, 38)',
+  Upload = 'rgb(34, 197, 94)',
+}
+
 export const desiredLifetimeOptions = [
   { value: 0, label: 'Select a value' },
   { value: 1, label: '1 week' },
