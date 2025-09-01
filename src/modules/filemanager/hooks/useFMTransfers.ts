@@ -8,7 +8,22 @@ export type TransferItem = {
   status: 'uploading' | 'finalizing' | 'done' | 'error'
 }
 
-function buildUploadMeta(files: File[] | FileList) {
+type UploadMeta = {
+  size: string
+  fileCount: string
+  mime: string
+}
+
+type UploadPayload = {
+  info: {
+    batchId: string
+    name: string
+    customMetadata: UploadMeta
+  }
+  files: File[]
+}
+
+function buildUploadMeta(files: File[] | FileList): UploadMeta {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -72,18 +87,15 @@ export function useFMTransfers() {
     tick()
   }, [])
 
-  /** Upload using current drive (batch). Shows progress in the mini window. */
   const uploadFiles = useCallback(
     async (picked: FileList | File[]) => {
       if (!fm || !currentBatch) return
       const arr = Array.from(picked)
 
       if (arr.length === 0) return
-
       const name = arr[0].name
       startLinearRamp(name)
-
-      const info = {
+      const info: UploadPayload = {
         info: {
           batchId: currentBatch.batchID.toString(),
           name,
@@ -91,9 +103,9 @@ export function useFMTransfers() {
         },
         files: arr,
       }
-
       try {
-        await fm.upload(info as any)
+        const uploader = fm as unknown as { upload: (p: UploadPayload) => Promise<unknown> }
+        await uploader.upload(info)
         finishLastQuarter(name)
         refreshFiles()
       } catch {
