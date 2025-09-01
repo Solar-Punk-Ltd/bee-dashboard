@@ -88,26 +88,23 @@ export function Sidebar(): ReactElement {
           <div>My Drives</div>
         </div>
 
-        {isMyDrivesOpen && (
-          <div className="fm-drive-items-container fm-drive-items-container-open">
-            {drives.map(stamp => {
-              const isSelected = currentBatch?.batchID.toString() === stamp.batchID.toString()
+        {isMyDrivesOpen &&
+          // <div className="fm-drive-items-container fm-drive-items-container-open">
+          drives.map(stamp => {
+            const isSelected = currentBatch?.batchID.toString() === stamp.batchID.toString()
 
-              return (
-                <div
-                  key={stamp.batchID.toString()}
-                  className={`fm-sidebar-item fm-drive-item${isSelected ? ' selected' : ''}`}
-                  onClick={() => {
-                    setCurrentBatch(stamp)
-                    setView(ViewType.File)
-                  }}
-                >
-                  <DriveItem stamp={stamp} />
-                </div>
-              )
-            })}
-          </div>
-        )}
+            return (
+              <div
+                key={stamp.batchID.toString()}
+                onClick={() => {
+                  setCurrentBatch(stamp)
+                  setView(ViewType.File)
+                }}
+              >
+                <DriveItem stamp={stamp} isSelected={isSelected} />
+              </div>
+            )
+          })}
 
         <div
           className="fm-sidebar-item"

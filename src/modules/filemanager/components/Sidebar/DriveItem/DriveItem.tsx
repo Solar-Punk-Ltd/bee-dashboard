@@ -16,9 +16,10 @@ import { PostageBatch } from '@ethersphere/bee-js'
 
 interface DriveItemProps {
   stamp: PostageBatch
+  isSelected: boolean
 }
 
-export function DriveItem({ stamp }: DriveItemProps): ReactElement {
+export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
@@ -42,7 +43,7 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
 
   return (
     <div
-      className="fm-drive-item-container"
+      className={`fm-drive-item-container${isSelected ? ' fm-drive-item-container-selected' : ''}`}
       onClick={() => {
         setView(ViewType.File)
         setActualItemView?.(driveName)
@@ -99,10 +100,10 @@ export function DriveItem({ stamp }: DriveItemProps): ReactElement {
         <FMButton label="Upgrade" variant="primary" size="small" onClick={() => setIsUpgradeDriveModalOpen(true)} />
       </div>
       {isUpgradeDriveModalOpen && (
-        <UpgradeDriveModal driveName={driveName} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
+        <UpgradeDriveModal stamp={stamp} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
       )}
       {isDestroyDriveModalOpen && (
-        <DestroyDriveModal driveName={driveName} onCancelClick={() => setIsDestroyDriveModalOpen(false)} />
+        <DestroyDriveModal stamp={stamp} onCancelClick={() => setIsDestroyDriveModalOpen(false)} />
       )}
     </div>
   )

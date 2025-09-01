@@ -5,12 +5,12 @@ export function preventDefault(event: MouseEvent) {
   event.preventDefault()
 }
 
-export function getDaysLeft(expiryDate: string): number {
+export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()
-  const expiry = new Date(expiryDate)
-  const diffMs = expiry.getTime() - now.getTime()
 
-  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
+  const diffMs = expiryDate.getTime() - now.getTime()
+
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
 }
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
@@ -42,6 +42,8 @@ export const fromBytesConversion = (size: number, metric: string) => {
 }
 
 const lifetimeAdjustments = new Map<number, (date: Date) => void>([
+  //TODO It needs to be discussed the minimum value for value upgrade
+  [0, date => date.setMinutes(date.getMinutes() + 1)],
   [1, date => date.setDate(date.getDate() + 7)],
   [2, date => date.setMonth(date.getMonth() + 1)],
   [3, date => date.setMonth(date.getMonth() + 3)],
@@ -49,8 +51,8 @@ const lifetimeAdjustments = new Map<number, (date: Date) => void>([
   [5, date => date.setFullYear(date.getFullYear() + 1)],
 ])
 
-export function getExpiryDateByLifetime(lifetimeValue: number): Date {
-  const now = new Date()
+export function getExpiryDateByLifetime(lifetimeValue: number, actualValidity?: Date): Date {
+  const now = actualValidity || new Date()
 
   const adjustDate = lifetimeAdjustments.get(lifetimeValue)
 

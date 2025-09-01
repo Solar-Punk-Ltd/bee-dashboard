@@ -39,6 +39,10 @@
     background-color: rgb(209, 209, 209);
     cursor: pointer;
   }
+
+  &.fm-drive-item-container-selected {
+    background-color: rgb(209, 209, 209);
+  }
 }
 
 .fm-drive-item-capacity {

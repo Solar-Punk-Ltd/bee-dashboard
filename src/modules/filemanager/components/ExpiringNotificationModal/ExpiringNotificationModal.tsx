@@ -10,39 +10,16 @@ import AlertIcon from 'remixicon-react/AlertLineIcon'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { getDaysLeft } from '../../utils/utils'
 
-const EXPIRING_DRIVES = [
-  {
-    driveName: 'Drive A',
-    driveUsedCapacity: '7GB',
-    driveTotalCapacity: '10GB',
-    expiryDate: '2025-07-25',
-  },
-  {
-    driveName: 'Drive B',
-    driveUsedCapacity: '2GB',
-    driveTotalCapacity: '5GB',
-    expiryDate: '2025-07-30',
-  },
-  {
-    driveName: 'Drive C',
-    driveUsedCapacity: '9GB',
-    driveTotalCapacity: '10GB',
-    expiryDate: '2025-07-28',
-  },
-  {
-    driveName: 'Drive C',
-    driveUsedCapacity: '9GB',
-    driveTotalCapacity: '10GB',
-    expiryDate: '2025-07-29',
-  },
-]
+import { PostageBatch, Size } from '@ethersphere/bee-js'
 
 interface ExpiringNotificationModalProps {
+  stamps: PostageBatch[]
   onCancelClick: () => void
 }
 
-export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificationModalProps): ReactElement {
+export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
+  const [actualStamp, setActualStamp] = useState<PostageBatch>()
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(
@@ -54,8 +31,8 @@ export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificatio
         <div>The following drives will expire soon. Extend them to keep your data accessible.</div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {EXPIRING_DRIVES.map(drive => {
-            const daysLeft = getDaysLeft(drive.expiryDate)
+          {stamps.map((stamp, index) => {
+            const daysLeft = getDaysLeft(stamp.duration.toEndDate())
             let daysClass = ''
 
             if (daysLeft < 10) {
@@ -65,25 +42,33 @@ export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificatio
             }
 
             return (
-              <div key={drive.driveName} className="fm-modal-white-section fm-space-between">
+              <div key={stamp.label} className="fm-modal-white-section fm-space-between">
                 <div className="fm-expiring-notification-modal-section-left fm-space-between">
                   <DriveIcon size="20" color="rgb(237, 129, 49)" />
                   <div>
                     <div className="fm-expiring-notification-modal-section-left-header fm-emphasized-text">
-                      {drive.driveName}
+                      {stamp.label}
                     </div>
                     <div className="fm-expiring-notification-modal-section-left-value">
-                      {drive.driveUsedCapacity}/{drive.driveTotalCapacity}
+                      {Size.fromBytes(stamp.size.toBytes() * stamp.usage).toFormattedString()} /{' '}
+                      {stamp.size.toFormattedString()}
                     </div>
                   </div>
                 </div>
                 <div className="fm-expiring-notification-modal-section-right">
                   <div className="fm-expiring-notification-modal-section-right-header">
-                    <CalendarIcon size="14" /> Expiry date: {drive.expiryDate}
+                    <CalendarIcon size="14" /> Expiry date: {stamp.duration.toEndDate().toLocaleDateString()}
                   </div>
                   <div className={daysClass}>{daysLeft} days left</div>
                   <div className="fm-expiring-notification-modal-section-right-button">
-                    <FMButton label="Upgrade" variant="primary" onClick={() => setShowUpgradeDriveModal(true)} />
+                    <FMButton
+                      label="Upgrade"
+                      variant="primary"
+                      onClick={() => {
+                        setShowUpgradeDriveModal(true)
+                        setActualStamp(stamp)
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -96,7 +81,10 @@ export function ExpiringNotificationModal({ onCancelClick }: ExpiringNotificatio
           </div>
         </div>
       </div>
-      {showUpgradeDriveModal && <UpgradeDriveModal onCancelClick={onCancelClick} containerColor="none" />}
+      {showUpgradeDriveModal && actualStamp && (
+        //TODO The stamps[0] is just for mock purpose, it needs to implemented correctly
+        <UpgradeDriveModal stamp={actualStamp} onCancelClick={onCancelClick} containerColor="none" />
+      )}
     </div>,
     modalRoot,
   )

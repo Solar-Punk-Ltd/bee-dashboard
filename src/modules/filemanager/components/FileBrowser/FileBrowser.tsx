@@ -19,7 +19,7 @@ export function FileBrowser(): ReactElement {
   const { fm, files, currentBatch, refreshFiles } = useFM()
   const { uploadFiles, isUploading, uploadCount, uploadItems } = useFMTransfers()
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
@@ -33,7 +33,7 @@ export function FileBrowser(): ReactElement {
   const [isDragging, setIsDragging] = useState(false)
   const dragCounter = useRef(0)
 
-  const hasFiles = (e: DragEvent) => {
+  const hasFiles = (e: DragEvent): boolean => {
     const dt = e.dataTransfer
 
     if (!dt) return false
@@ -76,6 +76,16 @@ export function FileBrowser(): ReactElement {
       dragCounter.current = Math.max(dragCounter.current - 1, 0)
 
       if (dragCounter.current === 0) setIsDragging(false)
+    }
+
+    const onDrop = (e: DragEvent) => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      const files = e.dataTransfer?.files ?? null
+      dragCounter.current = 0
+      setIsDragging(false)
+
+      if (files && files.length) uploadFiles(files)
     }
 
     window.addEventListener('dragenter', onDragEnter)
@@ -190,20 +200,6 @@ export function FileBrowser(): ReactElement {
     <>
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
 
-      {isDragging && currentBatch && (
-        <div
-          className="fm-drag-overlay"
-          onDragOver={e => {
-            e.preventDefault()
-            e.stopPropagation()
-            ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
-          }}
-          onDrop={onOverlayDrop}
-        >
-          <div className="fm-drag-text">Drop file(s) to upload</div>
-        </div>
-      )}
-
       <div className="fm-file-browser-container">
         <FileBrowserTopBar />
 
@@ -274,6 +270,19 @@ export function FileBrowser(): ReactElement {
               </div>
             )}
           </div>
+
+          {isDragging && currentBatch && (
+            <div
+              className="fm-drag-overlay"
+              onDragOver={e => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'copy'
+              }}
+              onDrop={onOverlayDrop}
+            >
+              <div className="fm-drag-text">Drop file(s) to upload</div>
+            </div>
+          )}
         </div>
 
         <div className="fm-file-browser-footer">
@@ -285,7 +294,7 @@ export function FileBrowser(): ReactElement {
             items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
           />
           <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
-          <NotificationBar numberOfExpiration={2} />
+          <NotificationBar />
         </div>
       </div>
     </>
