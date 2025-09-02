@@ -20,7 +20,7 @@ export function FileBrowser(): ReactElement {
   const { uploadFiles, isUploading, uploadCount, uploadItems } = useFMTransfers()
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
@@ -34,9 +34,7 @@ export function FileBrowser(): ReactElement {
   const [isDragging, setIsDragging] = useState(false)
   const dragCounter = useRef(0)
 
-  const hasFiles = (e: DragEvent): boolean => {
-    const dt = e.dataTransfer
-
+  const hasFilesDT = (dt: DataTransfer | null): boolean => {
     if (!dt) return false
 
     if (dt.types && Array.from(dt.types).includes('Files')) return true
@@ -46,56 +44,36 @@ export function FileBrowser(): ReactElement {
     return false
   }
 
-  const isInsideBrowser = (e: DragEvent): boolean => {
-    const rect = containerRef.current?.getBoundingClientRect()
+  const onContentDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFilesDT(e.dataTransfer)) return
+    e.preventDefault()
 
-    if (!rect) return false
-    const { clientX, clientY } = e
-
-    return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    if (dragCounter.current++ === 0) setIsDragging(true)
   }
 
-  useEffect(() => {
-    const onDragEnter = (e: DragEvent) => {
-      if (!hasFiles(e) || !isInsideBrowser(e)) return
-      e.preventDefault()
-      dragCounter.current += 1
+  const onContentDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFilesDT(e.dataTransfer)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
 
-      if (dragCounter.current === 1) setIsDragging(true)
-    }
+  const onContentDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFilesDT(e.dataTransfer)) return
+    e.preventDefault()
+    dragCounter.current = Math.max(0, dragCounter.current - 1)
 
-    const onDragOver = (e: DragEvent) => {
-      if (!hasFiles(e) || !isInsideBrowser(e)) return
-      e.preventDefault()
+    if (dragCounter.current === 0) setIsDragging(false)
+  }
 
-      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
-    }
+  const onContentDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFilesDT(e.dataTransfer)) return
+    e.preventDefault()
+    const files = e.dataTransfer?.files ?? null
+    dragCounter.current = 0
+    setIsDragging(false)
 
-    const onDragLeave = (e: DragEvent) => {
-      if (!hasFiles(e)) return
-
-      if (!isInsideBrowser(e)) {
-        dragCounter.current = 0
-        setIsDragging(false)
-
-        return
-      }
-      e.preventDefault()
-      dragCounter.current = Math.max(dragCounter.current - 1, 0)
-
-      if (dragCounter.current === 0) setIsDragging(false)
-    }
-
-    window.addEventListener('dragenter', onDragEnter)
-    window.addEventListener('dragover', onDragOver)
-    window.addEventListener('dragleave', onDragLeave)
-
-    return () => {
-      window.removeEventListener('dragenter', onDragEnter)
-      window.removeEventListener('dragover', onDragOver)
-      window.removeEventListener('dragleave', onDragLeave)
-    }
-  }, [])
+    if (files && files.length) uploadFiles(files)
+  }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
@@ -198,11 +176,17 @@ export function FileBrowser(): ReactElement {
     <>
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
 
-      <div className="fm-file-browser-container" ref={containerRef}>
-        {/* NEW ref */}
+      <div className="fm-file-browser-container">
         <FileBrowserTopBar />
 
-        <div className="fm-file-browser-content">
+        <div
+          className="fm-file-browser-content"
+          ref={contentRef}
+          onDragEnter={onContentDragEnter}
+          onDragOver={onContentDragOver}
+          onDragLeave={onContentDragLeave}
+          onDrop={onContentDrop}
+        >
           <div className="fm-file-browser-content-header">
             <div className="fm-file-browser-content-header-item fm-checkbox">
               <input type="checkbox" />
@@ -275,7 +259,7 @@ export function FileBrowser(): ReactElement {
               className="fm-drag-overlay"
               onDragOver={e => {
                 e.preventDefault()
-                e.dataTransfer.dropEffect = 'copy'
+                ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
               }}
               onDrop={onOverlayDrop}
             >
