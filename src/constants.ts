@@ -9,5 +9,5 @@ export const GITHUB_BEE_DASHBOARD_URL = 'https://github.com/ethersphere/bee-dash
 export const BEE_DESKTOP_LATEST_RELEASE_PAGE = 'https://github.com/ethersphere/bee-desktop/releases/latest'
 export const BEE_DESKTOP_LATEST_RELEASE_PAGE_API =
   'https://api.github.com/repos/ethersphere/bee-desktop/releases/latest'
-export const DEFAULT_BEE_API_HOST = 'http://localhost:1733'
+export const DEFAULT_BEE_API_HOST = 'http://localhost:1633'
 export const DEFAULT_RPC_URL = 'https://xdai.fairdatasociety.org'
