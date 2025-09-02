@@ -89,7 +89,6 @@ export function Sidebar(): ReactElement {
         </div>
 
         {isMyDrivesOpen &&
-          // <div className="fm-drive-items-container fm-drive-items-container-open">
           drives.map(stamp => {
             const isSelected = currentBatch?.batchID.toString() === stamp.batchID.toString()
 
