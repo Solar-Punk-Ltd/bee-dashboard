@@ -93,8 +93,10 @@ export function useFMTransfers() {
       const arr = Array.from(picked)
 
       if (arr.length === 0) return
+
       const name = arr[0].name
       startLinearRamp(name)
+
       const info: UploadPayload = {
         info: {
           batchId: currentBatch.batchID.toString(),
@@ -103,11 +105,17 @@ export function useFMTransfers() {
         },
         files: arr,
       }
+
       try {
         const uploader = fm as unknown as { upload: (p: UploadPayload) => Promise<unknown> }
         await uploader.upload(info)
         finishLastQuarter(name)
         refreshFiles()
+        try {
+          localStorage.setItem('fm:pulse', String(Date.now()))
+        } catch {
+          // TODO: figure what to do with the error
+        }
       } catch {
         setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: 'error' } : it)))
       }

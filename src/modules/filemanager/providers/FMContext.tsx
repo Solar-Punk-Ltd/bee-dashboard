@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { Bee, PrivateKey, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
@@ -10,7 +10,7 @@ function normalizeHexKey(pk: string): string | null {
   if (!pk) return null
   const k = pk.startsWith('0x') ? pk.slice(2) : pk
 
-  return /^[0-9a-fA-F]{64}$/.test(k) ? '0x' + k.toLowerCase() : null
+  return /^[0-9a-fA-F]{64}$/.test(k) ? `0x${k.toLowerCase()}` : null
 }
 
 function generatePrivateKey(): string {
@@ -25,7 +25,6 @@ function generatePrivateKey(): string {
   )
 }
 
-// optional: read private key from URL (?pk=0x...)
 function consumePkFromUrl(): string | null {
   try {
     const url = new URL(window.location.href)
@@ -33,24 +32,18 @@ function consumePkFromUrl(): string | null {
 
     if (!pk) return null
     const norm = normalizeHexKey(pk)
-
-    if (norm) {
-      localStorage.setItem(KEY_STORAGE, norm)
-      url.searchParams.delete('pk')
-      window.history.replaceState({}, '', url.toString())
-
-      return norm
-    }
     url.searchParams.delete('pk')
     window.history.replaceState({}, '', url.toString())
 
-    return null
+    if (!norm) return null
+    localStorage.setItem(KEY_STORAGE, norm)
+
+    return norm
   } catch {
     return null
   }
 }
 
-// env helpers (typed, no `any`)
 type ViteEnv = { VITE_FM_DEV_PRIVATE_KEY?: string; MODE?: string }
 type CraEnv = { REACT_APP_FM_DEV_PRIVATE_KEY?: string; NODE_ENV?: string }
 
@@ -78,7 +71,6 @@ function getDevEnvPk(): string | undefined {
   return getViteEnv()?.VITE_FM_DEV_PRIVATE_KEY ?? getCraEnv()?.REACT_APP_FM_DEV_PRIVATE_KEY
 }
 
-/** Resolve a private key from URL -> localStorage -> DEV env -> (optional) dev autogen */
 function ensurePrivateKey(opts: { devAutogen: boolean }): string | null {
   const fromUrl = consumePkFromUrl()
 
@@ -88,8 +80,8 @@ function ensurePrivateKey(opts: { devAutogen: boolean }): string | null {
 
   if (fromLocal) return fromLocal
 
-  const devEnv = getDevEnvPk()
   const mode = getBuildMode()
+  const devEnv = getDevEnvPk()
 
   if (devEnv && mode !== 'production') {
     const norm = normalizeHexKey(devEnv)
@@ -111,7 +103,6 @@ function ensurePrivateKey(opts: { devAutogen: boolean }): string | null {
   return null
 }
 
-// small window helpers (typed) for manual import/export/sharing
 declare global {
   interface Window {
     fmExportKey: () => string | null
@@ -163,15 +154,36 @@ export function FMProvider({ children }: { children: ReactNode }) {
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [currentBatch, setCurrentBatch] = useState<PostageBatch | undefined>()
+  const managerRef = useRef<FileManagerBase | null>(null)
+  const initInFlight = useRef<Promise<void> | null>(null)
+
+  const rescanFromNode = useCallback(() => {
+    if (!managerRef.current) return Promise.resolve()
+
+    if (initInFlight.current) return initInFlight.current
+
+    initInFlight.current = managerRef.current
+      .initialize()
+      .catch(() => {
+        // TODO: Identify what to do with the error
+      })
+      .finally(() => {
+        if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
+        initInFlight.current = null
+      })
+
+    return initInFlight.current
+  }, [])
 
   const refreshFiles = useCallback(() => {
-    if (fm) setFiles([...fm.fileInfoList])
-  }, [fm])
+    if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
+    void rescanFromNode()
+  }, [rescanFromNode])
 
   useEffect(() => {
     if (!apiUrl) return
 
-    const raw = ensurePrivateKey({ devAutogen: true })
+    const raw = ensurePrivateKey({ devAutogen: false })
 
     if (!raw) return
 
@@ -197,6 +209,8 @@ export function FMProvider({ children }: { children: ReactNode }) {
       }
 
       const manager = new FileManagerBase(bee)
+      managerRef.current = manager
+
       const sync = () => setFiles([...manager.fileInfoList])
 
       manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, sync)
@@ -208,6 +222,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
 
       try {
         await manager.initialize()
+        setFiles([...manager.fileInfoList])
       } catch {
         // allow initialize to fail silently when no owner stamp exists
       }
@@ -215,6 +230,54 @@ export function FMProvider({ children }: { children: ReactNode }) {
       setFm(manager)
     })()
   }, [apiUrl])
+
+  useEffect(() => {
+    const refreshFromNetwork = () => {
+      if (!managerRef.current) return
+      managerRef.current
+        .initialize()
+        .then(() => {
+          if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
+        })
+        .catch(() => undefined)
+    }
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'fm:pulse') refreshFromNetwork()
+    }
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refreshFromNetwork()
+    }
+    const onFocus = () => refreshFromNetwork()
+
+    window.addEventListener('storage', onStorage)
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('focus', onFocus)
+
+    let iv: number | null = null
+    const start = () => {
+      if (iv !== null) return
+      iv = window.setInterval(() => {
+        if (document.visibilityState === 'visible') refreshFromNetwork()
+      }, 15000)
+    }
+    const stop = () => {
+      if (iv !== null) {
+        clearInterval(iv)
+        iv = null
+      }
+    }
+
+    onVis()
+    start()
+
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onFocus)
+      stop()
+    }
+  }, [])
 
   return (
     <FMContext.Provider value={{ fm, files, currentBatch, setCurrentBatch, refreshFiles }}>
