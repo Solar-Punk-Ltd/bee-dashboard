@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { Bee, PrivateKey, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
@@ -75,11 +75,9 @@ function ensurePrivateKey(opts: { devAutogen: boolean }): string | null {
   const fromUrl = consumePkFromUrl()
 
   if (fromUrl) return fromUrl
-
   const fromLocal = normalizeHexKey(localStorage.getItem(KEY_STORAGE) || '')
 
   if (fromLocal) return fromLocal
-
   const mode = getBuildMode()
   const devEnv = getDevEnvPk()
 
@@ -157,32 +155,28 @@ export function FMProvider({ children }: { children: ReactNode }) {
   const managerRef = useRef<FileManagerBase | null>(null)
   const initInFlight = useRef<Promise<void> | null>(null)
 
-  const rescanFromNode = useCallback(() => {
+  const rescanFromNode = useCallback((): Promise<void> => {
     if (!managerRef.current) return Promise.resolve()
 
     if (initInFlight.current) return initInFlight.current
-
     initInFlight.current = managerRef.current
       .initialize()
-      .catch(() => {
-        // TODO: Identify what to do with the error
-      })
+      .catch(e => undefined)
       .finally(() => {
         if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
         initInFlight.current = null
-      })
+      }) as Promise<void>
 
     return initInFlight.current
   }, [])
 
-  const refreshFiles = useCallback(() => {
+  const refreshFiles = useCallback((): void => {
     if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
     void rescanFromNode()
   }, [rescanFromNode])
 
   useEffect(() => {
     if (!apiUrl) return
-
     const raw = ensurePrivateKey({ devAutogen: false })
 
     if (!raw) return
@@ -205,12 +199,11 @@ export function FMProvider({ children }: { children: ReactNode }) {
 
         if (firstDrive) setCurrentBatch(firstDrive)
       } catch {
-        // ignore
+        // TODO: Handle the error
       }
 
       const manager = new FileManagerBase(bee)
       managerRef.current = manager
-
       const sync = () => setFiles([...manager.fileInfoList])
 
       manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, sync)
@@ -224,7 +217,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
         await manager.initialize()
         setFiles([...manager.fileInfoList])
       } catch {
-        // allow initialize to fail silently when no owner stamp exists
+        // TODO: Handle the error
       }
 
       setFm(manager)

@@ -52,12 +52,27 @@
 
 .fm-file-browser-footer {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
   max-height: 45px;
   padding: 12px;
   border-top: 1px solid #929292;
   background-color: #ededed;
 }
+
+.fm-file-browser-footer > * {
+  flex: 0 0 auto;
+}
+
+.fm-file-browser-footer > :nth-child(1) {
+  margin-right: 8px;
+}
+
+.fm-file-browser-footer > :nth-child(3) {
+  margin-left: auto;        
+}
+
+.fm-file-browser-footer { column-gap: 12px; }
 
 .fm-file-browser-context-menu {
   position: absolute;

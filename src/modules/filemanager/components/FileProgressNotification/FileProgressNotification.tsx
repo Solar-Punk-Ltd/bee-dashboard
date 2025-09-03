@@ -25,15 +25,20 @@ export function FileProgressNotification({
   const [showFileProgressWindow, setShowFileProgressWindow] = useState(Boolean(open))
 
   useEffect(() => {
-    setShowFileProgressWindow(Boolean(open))
+    if (open) setShowFileProgressWindow(true)
   }, [open])
 
   return (
     <div style={{ position: 'relative' }}>
-      <div className="fm-file-progress-notification" onClick={() => setShowFileProgressWindow(true)}>
-        {label}
-        {type === FileTransferType.Upload && <UpIcon size="16px" color="green" />}
-        {type === FileTransferType.Download && <DownIcon size="16px" color="red" />}
+      <div
+        className="fm-file-progress-notification"
+        onClick={() => setShowFileProgressWindow(true)}
+        role="button"
+        aria-label={label}
+      >
+        <span>{label}</span>
+        {type === FileTransferType.Upload && <UpIcon size="16px" style={{ marginLeft: 6 }} />}
+        {type === FileTransferType.Download && <DownIcon size="16px" style={{ marginLeft: 6 }} />}
       </div>
 
       {showFileProgressWindow && (

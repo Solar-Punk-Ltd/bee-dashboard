@@ -13,11 +13,28 @@ import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useFM } from '../../providers/FMContext'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
+type WithStatus = { status?: string | number | null }
+const hasStatus = (x: unknown): x is WithStatus =>
+  typeof x === 'object' && x !== null && 'status' in (x as Record<string, unknown>)
+
+type WithBatchId = { batchId?: string | number | bigint | null }
+const hasBatchId = (x: unknown): x is WithBatchId =>
+  typeof x === 'object' && x !== null && 'batchId' in (x as Record<string, unknown>)
+
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
   const { fm, files, currentBatch, refreshFiles } = useFM()
-  const { uploadFiles, isUploading, uploadCount, uploadItems } = useFMTransfers()
+  const {
+    uploadFiles,
+    isUploading,
+    uploadCount,
+    uploadItems,
+    isDownloading,
+    downloadCount,
+    downloadItems,
+    trackDownload,
+  } = useFMTransfers()
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -68,11 +85,11 @@ export function FileBrowser(): ReactElement {
   const onContentDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!hasFilesDT(e.dataTransfer)) return
     e.preventDefault()
-    const files = e.dataTransfer?.files ?? null
+    const droppedFiles = e.dataTransfer?.files ?? null
     dragCounter.current = 0
     setIsDragging(false)
 
-    if (files && files.length) uploadFiles(files)
+    if (droppedFiles && droppedFiles.length) uploadFiles(droppedFiles)
   }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -103,17 +120,13 @@ export function FileBrowser(): ReactElement {
       const container = document.querySelector('.fm-file-browser-container') as HTMLElement | null
 
       if (!menu || !container) return
-
       const rect = menu.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
       const margin = 8
-
       const containerRect = container.getBoundingClientRect()
       const containerMidY = containerRect.top + containerRect.height / 2
-
       const left = Math.max(margin, Math.min(pos.x, vw - rect.width - margin))
-
       let top = pos.y
       let dir: 'down' | 'up' = 'down'
 
@@ -123,14 +136,13 @@ export function FileBrowser(): ReactElement {
       } else {
         top = Math.max(margin, Math.min(pos.y, vh - rect.height - margin))
       }
-
       setSafePos({ x: left, y: top })
       setDropDir(dir)
     })
   }, [showContext, pos, contextRef])
 
   const isTrashed = (fi: FileInfo) => {
-    const s = (fi as any).status
+    const s = hasStatus(fi) ? fi.status : undefined
 
     if (s == null) return false
 
@@ -149,8 +161,7 @@ export function FileBrowser(): ReactElement {
   const rows = useMemo(() => {
     if (!currentBatch) return []
     const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(fi => String((fi as any).batchId) === wanted)
-
+    const sameDrive = files.filter(fi => hasBatchId(fi) && String(fi.batchId) === wanted)
     const map = new Map<string, FileInfo>()
     sameDrive.forEach(fi => {
       const key = fi.topic?.toString?.()
@@ -162,7 +173,6 @@ export function FileBrowser(): ReactElement {
 
       if (!prev || vi > pi) map.set(key, fi)
     })
-
     const latest = Array.from(map.values())
 
     return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
@@ -171,6 +181,16 @@ export function FileBrowser(): ReactElement {
   useEffect(() => {
     if (fm && currentBatch) refreshFiles()
   }, [fm, currentBatch, refreshFiles])
+
+  let bodyContent: ReactElement | ReactElement[]
+
+  if (!currentBatch) {
+    bodyContent = <div className="fm-drop-hint">Select a drive to view its files</div>
+  } else if (rows.length === 0) {
+    bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
+  } else {
+    bodyContent = rows.map(fi => <FileItem key={fi.topic.toString()} fileInfo={fi} onDownload={trackDownload} />)
+  }
 
   return (
     <>
@@ -216,16 +236,7 @@ export function FileBrowser(): ReactElement {
             onContextMenu={handleFileBrowserContextMenu}
             onClick={handleCloseContext}
           >
-            {currentBatch ? (
-              rows.length === 0 ? (
-                <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
-              ) : (
-                rows.map(fi => <FileItem key={fi.topic.toString()} fileInfo={fi} />)
-              )
-            ) : (
-              <div className="fm-drop-hint">Select a drive to view its files</div>
-            )}
-
+            {bodyContent}
             {showContext && (
               <div
                 ref={contextRef}
@@ -276,7 +287,13 @@ export function FileBrowser(): ReactElement {
             count={uploadCount}
             items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
           />
-          <FileProgressNotification label="Downloading files" type={FileTransferType.Download} />
+          <FileProgressNotification
+            label="Downloading files"
+            type={FileTransferType.Download}
+            open={isDownloading}
+            count={downloadCount}
+            items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
+          />
           <NotificationBar />
         </div>
       </div>
