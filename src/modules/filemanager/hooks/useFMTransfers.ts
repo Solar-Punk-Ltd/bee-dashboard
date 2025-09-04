@@ -1,25 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { useFM } from '../providers/FMContext'
+import { buildUploadMeta } from '../utils/buildUploadMeta'
+import type { FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 
 export type TransferItem = {
   name: string
   size?: string
   percent: number
   status: 'uploading' | 'finalizing' | 'done' | 'error'
-}
-
-type UploadMeta = { size: string; fileCount: string; mime: string }
-type UploadPayload = {
-  info: { batchId: string; name: string; customMetadata: UploadMeta }
-  files: File[]
-}
-
-function buildUploadMeta(files: File[] | FileList): UploadMeta {
-  const arr = Array.from(files as File[])
-  const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
-  const primary = arr[0]
-
-  return { size: String(totalSize), fileCount: String(arr.length), mime: primary?.type || 'application/octet-stream' }
 }
 
 export function useFMTransfers() {
@@ -30,9 +18,36 @@ export function useFMTransfers() {
   const isUploading = uploadItems.some(i => i.status !== 'done' && i.status !== 'error')
   const uploadCount = uploadItems.length
 
-  const startUploadRamp = useCallback((name: string): void => {
+  const formatBytes = (v?: string | number) => {
+    const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : NaN
+
+    if (!Number.isFinite(n) || n < 0) return undefined
+
+    if (n < 1024) return `${n} B`
+    const units = ['KB', 'MB', 'GB', 'TB']
+    let val = n / 1024
+    let i = 0
+    while (val >= 1024 && i < units.length - 1) {
+      val /= 1024
+      i++
+    }
+
+    return `${val.toFixed(1)} ${units[i]}`
+  }
+
+  const startUploadRamp = useCallback((name: string, size?: string): void => {
     setUploadItems(prev =>
-      prev.find(p => p.name === name) ? prev : [...prev, { name, percent: 0, status: 'uploading' }],
+      prev.find(p => p.name === name)
+        ? prev
+        : [
+            ...prev,
+            {
+              name,
+              size,
+              percent: 0,
+              status: 'uploading',
+            },
+          ],
     )
     const begin = Date.now()
     const DURATION = 1500
@@ -77,27 +92,32 @@ export function useFMTransfers() {
   const uploadFiles = useCallback(
     async (picked: FileList | File[]): Promise<void> => {
       if (!fm || !currentBatch) return
-      const arr = Array.from(picked)
+      const arr = Array.from(picked) as File[]
 
       if (arr.length === 0) return
-      const name = arr[0].name
-      startUploadRamp(name)
-      const info: UploadPayload = {
-        info: { batchId: currentBatch.batchID.toString(), name, customMetadata: buildUploadMeta(arr) },
+
+      const firstName = arr[0].name
+      const meta = buildUploadMeta(arr)
+      const prettySize = formatBytes(meta.size)
+
+      // Start ramp ONCE, with size
+      startUploadRamp(firstName, prettySize)
+
+      const payload: FileInfoOptions = {
+        info: {
+          batchId: currentBatch.batchID.toString(),
+          name: firstName,
+          customMetadata: meta,
+        },
         files: arr,
       }
+
       try {
-        const uploader = fm as unknown as { upload: (p: UploadPayload) => Promise<unknown> }
-        await uploader.upload(info)
-        finishUploadRamp(name)
-        refreshFiles()
-        try {
-          localStorage.setItem('fm:pulse', String(Date.now()))
-        } catch {
-          // TODO: Handle the error
-        }
+        await fm.upload(payload)
+        finishUploadRamp(firstName)
+        refreshFiles?.()
       } catch {
-        setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: 'error' } : it)))
+        setUploadItems(prev => prev.map(it => (it.name === firstName ? { ...it, status: 'error' } : it)))
       }
     },
     [fm, currentBatch, refreshFiles, startUploadRamp, finishUploadRamp],

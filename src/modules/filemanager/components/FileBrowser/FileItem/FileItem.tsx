@@ -4,14 +4,19 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { ViewType } from '../../../constants/constants'
+import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
+import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
+import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
 
 interface FileItemProps {
   fileInfo: FileInfo
   onDownload?: (name: string, task: () => Promise<void>, opts?: { size?: string }) => Promise<void>
 }
+
+type BlobWithName = { blob: Blob; fileName: string }
 
 const formatBytes = (v?: string) => {
   const n = v ? Number(v) : NaN
@@ -150,7 +155,17 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
 
+  const [showGetInfoModal, setShowGetInfoModal] = useState(false)
+  const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
+
   type BlobWithName = { blob: Blob; fileName: string }
+
+  const openGetInfo = async () => {
+    if (!fm) return
+    const groups = await buildGetInfoGroups(fm as FileManagerBase, fileInfo)
+    setInfoGroups(groups)
+    setShowGetInfoModal(true)
+  }
 
   const hasEssentials = (fi: FileInfo): boolean => {
     const f = asInternals(fi)
@@ -351,7 +366,13 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 Delete
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  void openGetInfo()
+                }}
+              >
                 Get info
               </div>
             </ContextMenu>
@@ -377,12 +398,22 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 Forget permanently
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  void openGetInfo()
+                }}
+              >
                 Get info
               </div>
             </ContextMenu>
           )}
         </div>
+      )}
+
+      {showGetInfoModal && infoGroups && (
+        <GetInfoModal name={name} properties={infoGroups} onCancelClick={() => setShowGetInfoModal(false)} />
       )}
     </div>
   )
