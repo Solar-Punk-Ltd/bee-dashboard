@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useLayoutEffect, useState } from 'react'
+import { ReactElement, useLayoutEffect, useState } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
@@ -7,7 +7,6 @@ import { ViewType } from '../../../constants/constants'
 import { useView } from '../../../providers/FMFileViewContext'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
-import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -31,38 +30,47 @@ const formatBytes = (v?: string) => {
   return `${val.toFixed(1)} ${units[i]}`
 }
 
+/* ---------------- Normalizers ---------------- */
 type BeeBytes = { toUint8Array: () => Uint8Array }
 const hasToUint8Array = (x: unknown): x is BeeBytes =>
-  typeof x === 'object' && x !== null && 'toUint8Array' in x && typeof (x as BeeBytes).toUint8Array === 'function'
-const hasGetReader = (x: unknown): x is { getReader: () => ReadableStreamDefaultReader<Uint8Array> } =>
+  typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
+
+type HasGetReader = { getReader: () => ReadableStreamDefaultReader<Uint8Array> }
+const hasGetReader = (x: unknown): x is HasGetReader =>
   typeof x === 'object' &&
   x !== null &&
-  'getReader' in x &&
-  typeof (x as ReadableStream<Uint8Array>).getReader === 'function'
-const hasArrayBufferFn = (x: unknown): x is { arrayBuffer: () => Promise<ArrayBuffer> } =>
+  'getReader' in (x as HasGetReader) &&
+  typeof (x as HasGetReader).getReader === 'function'
+
+type HasArrayBuffer = { arrayBuffer: () => Promise<ArrayBuffer> }
+const hasArrayBufferFn = (x: unknown): x is HasArrayBuffer =>
   typeof x === 'object' &&
   x !== null &&
-  'arrayBuffer' in x &&
-  typeof (x as { arrayBuffer: () => Promise<ArrayBuffer> }).arrayBuffer === 'function'
+  'arrayBuffer' in (x as HasArrayBuffer) &&
+  typeof (x as HasArrayBuffer).arrayBuffer === 'function'
+
+type HasBlob = { blob: () => Promise<Blob> }
+const hasBlobFn = (x: unknown): x is HasBlob =>
+  typeof x === 'object' && x !== null && 'blob' in (x as HasBlob) && typeof (x as HasBlob).blob === 'function'
 
 async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
   let total = 0
-  let doneReading = false
 
-  while (!doneReading) {
-    const { done, value } = await reader.read()
+  try {
+    let res: ReadableStreamReadResult<Uint8Array> = await reader.read()
+    while (!res.done) {
+      const chunk = res.value
 
-    if (done) {
-      doneReading = true
-      break
+      if (chunk) {
+        chunks.push(chunk)
+        total += chunk.byteLength
+      }
+      res = await reader.read()
     }
-
-    if (value) {
-      chunks.push(value)
-      total += value.byteLength
-    }
+  } finally {
+    reader.releaseLock()
   }
 
   const out = new Uint8Array(total)
@@ -75,12 +83,7 @@ async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<U
   return out
 }
 
-type DownloadPart =
-  | Blob
-  | Uint8Array
-  | BeeBytes
-  | ReadableStream<Uint8Array>
-  | { arrayBuffer: () => Promise<ArrayBuffer> }
+type DownloadPart = Blob | Uint8Array | BeeBytes | ReadableStream<Uint8Array> | HasArrayBuffer | HasBlob
 
 async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob> {
   const type = mime || 'application/octet-stream'
@@ -92,13 +95,20 @@ async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob>
   if (part instanceof Uint8Array) return new Blob([part], { type })
 
   if (hasGetReader(part)) {
-    const u8 = await streamToUint8Array(part as unknown as ReadableStream<Uint8Array>)
+    const stream = part as unknown as ReadableStream<Uint8Array>
+    const u8 = await streamToUint8Array(stream)
 
     return new Blob([u8], { type })
   }
 
+  if (hasBlobFn(part)) {
+    const b = await (part as HasBlob).blob()
+
+    return b.type ? b : new Blob([await b.arrayBuffer()], { type })
+  }
+
   if (hasArrayBufferFn(part)) {
-    const buf = await part.arrayBuffer()
+    const buf = await (part as HasArrayBuffer).arrayBuffer()
 
     return new Blob([buf], { type })
   }
@@ -115,22 +125,23 @@ interface FileManagerLike {
   download: (fi: FileInfo, paths?: string[]) => Promise<unknown | unknown[]>
 }
 
-type BeeWrapperJSON = {
-  fileRef?: string
-  file?: string
-  reference?: string
-  ref?: string
-  dataRef?: string
-  uploadFilesRes?: string
-  manifestRef?: string
-  manifest?: string
+/** Local view into optional internals we need to probe for presence only. */
+type FileInfoInternals = FileInfo & {
+  owner?: string
+  actPublisher?: unknown
+  file?: {
+    reference?: unknown
+    historyRef?: unknown
+  }
 }
 
+const asInternals = (fi: FileInfo): FileInfoInternals => fi as FileInfoInternals
+
+/* ---------------- Component ---------------- */
 export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
   const { fm } = useFM()
-  const { apiUrl } = useContext(SettingsContext)
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
@@ -139,76 +150,22 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
 
-  const fetchJsonFromBytes = async (fi: FileInfo): Promise<BeeWrapperJSON | null> => {
-    if (!apiUrl || !fi?.file?.reference || !fi?.file?.historyRef || !fi?.actPublisher) return null
-    try {
-      const url = `${apiUrl.replace(/\/+$/, '')}/bytes/${fi.file.reference.toString()}`
-      const publisher = typeof fi.actPublisher === 'string' ? fi.actPublisher : fi.actPublisher.toString()
-      const historyAddr = typeof fi.file.historyRef === 'string' ? fi.file.historyRef : fi.file.historyRef.toString()
+  type BlobWithName = { blob: Blob; fileName: string }
 
-      const r = await fetch(url, {
-        headers: {
-          'Swarm-Act': 'true',
-          'Swarm-Act-Publisher': publisher,
-          'Swarm-Act-History-Address': historyAddr,
-        } as Record<string, string>,
-      })
+  const hasEssentials = (fi: FileInfo): boolean => {
+    const f = asInternals(fi)
+    const hasOwner = typeof f.owner === 'string' && f.owner.length > 0
+    const hasRef = typeof f.file?.reference === 'string' && f.file.reference.length > 0
+    const hasHist = typeof f.file?.historyRef === 'string' && f.file.historyRef.length > 0
+    const hasPub = f.actPublisher !== undefined && f.actPublisher !== null
 
-      if (!r.ok) return null
-      const text = await r.text()
-      try {
-        return JSON.parse(text) as BeeWrapperJSON
-      } catch {
-        return null
-      }
-    } catch {
-      return null
-    }
+    return hasOwner && hasRef && hasHist && hasPub
   }
 
-  const fetchBytesByRef = async (ref: string, fi: FileInfo): Promise<Blob | null> => {
-    if (!apiUrl) return null
-    try {
-      const url = `${apiUrl.replace(/\/+$/, '')}/bytes/${ref}`
-      const headers: Record<string, string> = {}
-
-      if (fi?.actPublisher && fi?.file?.historyRef) {
-        headers['Swarm-Act'] = 'true'
-        headers['Swarm-Act-Publisher'] =
-          typeof fi.actPublisher === 'string' ? fi.actPublisher : fi.actPublisher.toString()
-        headers['Swarm-Act-History-Address'] =
-          typeof fi.file.historyRef === 'string' ? fi.file.historyRef : fi.file.historyRef.toString()
-      }
-      const r = await fetch(url, { headers })
-
-      if (!r.ok) return null
-
-      return await r.blob()
-    } catch {
-      return null
-    }
-  }
-
-  const fetchFromManifestPath = async (manifestRef: string, path: string): Promise<Blob | null> => {
-    if (!apiUrl) return null
-    try {
-      const base = apiUrl.replace(/\/+$/, '')
-      const url = `${base}/bzz/${manifestRef}/${encodeURIComponent(path)}`
-      const r = await fetch(url)
-
-      if (!r.ok) return null
-
-      return await r.blob()
-    } catch {
-      return null
-    }
-  }
-
-  const ensureHead = async (fi: FileInfo, fmLike: FileManagerLike): Promise<FileInfo> => {
-    const essentialsOk = Boolean(fi?.file?.reference && fi?.file?.historyRef && fi?.actPublisher)
-
-    if (essentialsOk) return fi
-    const canGetHead = Boolean(fi?.topic && (fi as unknown as { owner?: unknown })?.owner)
+  async function ensureHead(fmLike: FileManagerLike, fi: FileInfo): Promise<FileInfo> {
+    if (hasEssentials(fi)) return fi
+    const f = asInternals(fi)
+    const canGetHead = Boolean(fi.topic) && typeof f.owner === 'string'
 
     if (!canGetHead) return fi
     try {
@@ -218,68 +175,59 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
     }
   }
 
-  type BlobWithName = { blob: Blob; fileName: string }
+  function validateHead(fi: FileInfo): void {
+    const f = asInternals(fi)
+    const missing: string[] = []
 
-  async function attemptFmDownload(
-    fmLike: FileManagerLike,
-    head: FileInfo,
-    baseName: string,
-    mime: string,
-  ): Promise<BlobWithName | null> {
+    if (!(typeof f.owner === 'string' && f.owner)) missing.push('owner')
+
+    if (!(typeof f.file?.reference === 'string' && f.file.reference)) missing.push('file.reference')
+
+    if (!(typeof f.file?.historyRef === 'string' && f.file.historyRef)) missing.push('file.historyRef')
+
+    if (!(f.actPublisher !== undefined && f.actPublisher !== null)) missing.push('actPublisher')
+
+    if (missing.length) throw new Error(`FileInfo missing required fields: ${missing.join(', ')}`)
+  }
+
+  async function libDownload(fmLike: FileManagerLike, source: FileInfo): Promise<BlobWithName> {
+    const head = await ensureHead(fmLike, source)
+    validateHead(head)
+
+    const baseName = head.name || 'download'
+    const mime = head.customMetadata?.mime || 'application/octet-stream'
+
+    // Try to enumerate collection paths (ok if it fails — single-file case)
+    let paths: string[] | undefined
     try {
       const list = await fmLike.listFiles(head)
 
-      if (!list?.length) return null
-
-      const matching = list.find(e => e.path === baseName || e.path.endsWith('/' + baseName))
-      const paths = matching ? [matching.path] : list.map(e => e.path)
-
-      const res = await fmLike.download(head, paths)
-      const arr = Array.isArray(res) ? res : [res]
-      const blobs = await Promise.all(arr.map(p => normalizeToBlob(p as DownloadPart, mime)))
-
-      if (blobs.length === 1) return { blob: blobs[0], fileName: baseName }
-
-      const { default: JSZip } = await import('jszip')
-      const zip = new JSZip()
-      await Promise.all(
-        blobs.map(async (b, i) => {
-          const ab = await b.arrayBuffer()
-          const name = paths[i] || `file-${i}`
-          zip.file(name, ab)
-        }),
-      )
-      const zipBlob = await zip.generateAsync({ type: 'blob' })
-
-      return { blob: zipBlob, fileName: `${baseName}.zip` }
+      if (Array.isArray(list) && list.length > 0) {
+        const matching = list.find(e => e.path === baseName || e.path.endsWith('/' + baseName))
+        paths = matching ? [matching.path] : list.map(e => e.path)
+      }
     } catch {
-      return null
-    }
-  }
-
-  async function attemptWrapperFallback(head: FileInfo, baseName: string): Promise<BlobWithName | null> {
-    const wrapper = await fetchJsonFromBytes(head)
-
-    if (!wrapper || typeof wrapper !== 'object') return null
-
-    const refCandidate = wrapper.fileRef || wrapper.file || wrapper.reference || wrapper.ref || wrapper.dataRef || null
-
-    if (typeof refCandidate === 'string') {
-      const b = await fetchBytesByRef(refCandidate, head)
-
-      if (b) return { blob: b, fileName: baseName }
+      /* ignore: single-file likely */
     }
 
-    const manifest = wrapper.uploadFilesRes || wrapper.manifestRef || wrapper.manifest || null
+    const res = await fmLike.download(head, paths)
+    const arr = Array.isArray(res) ? res : [res]
 
-    if (typeof manifest === 'string') {
-      const tryPath = head.name || baseName
-      const b = await fetchFromManifestPath(manifest, tryPath)
+    if (arr.length === 0) throw new Error('No content returned by FileManager.download()')
 
-      if (b) return { blob: b, fileName: baseName }
+    const blobs = await Promise.all(arr.map(p => normalizeToBlob(p as DownloadPart, mime)))
+
+    if (blobs.length === 1) {
+      return { blob: blobs[0], fileName: baseName }
     }
 
-    return null
+    const { default: JSZip } = await import('jszip')
+    const zip = new JSZip()
+    const names = Array.isArray(paths) && paths.length === blobs.length ? paths : blobs.map((_, i) => `file-${i}`)
+    await Promise.all(blobs.map(async (b, i) => zip.file(names[i], await b.arrayBuffer())))
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+
+    return { blob: zipBlob, fileName: `${baseName}.zip` }
   }
 
   const getBlobAndName = async (): Promise<BlobWithName> => {
@@ -287,19 +235,7 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
 
     if (!fmLike) throw new Error('FM not ready')
 
-    const head = await ensureHead(fileInfo, fmLike)
-    const mime = head.customMetadata?.mime || 'application/octet-stream'
-    const baseName = head.name || 'download'
-
-    const fmResult = await attemptFmDownload(fmLike, head, baseName, mime)
-
-    if (fmResult) return fmResult
-
-    const fallback = await attemptWrapperFallback(head, baseName)
-
-    if (fallback) return fallback
-
-    throw new Error('Manifest or raw bytes unavailable')
+    return await libDownload(fmLike, fileInfo)
   }
 
   const runTracked = (label: string, task: () => Promise<void>) =>
