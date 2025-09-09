@@ -22,33 +22,6 @@ const FM_DEBUG = (() => {
   }
 })()
 
-function hexToDecStrMaybe(hex?: string): string | undefined {
-  if (!hex) return undefined
-  try {
-    // supports "0x000..."; BigInt handles both hex and decimal strings
-    return BigInt(hex).toString()
-  } catch {
-    try {
-      return BigInt(String(hex)).toString()
-    } catch {
-      return undefined
-    }
-  }
-}
-
-function getProvenance(fi: FileInfo): {
-  originHex?: string
-  originDec?: string
-  restoredAt?: number
-} {
-  const cm = (fi.customMetadata || {}) as any
-  const originHex = typeof cm.restoredFromVersion === 'string' ? cm.restoredFromVersion : undefined
-  const originDec = originHex ? hexToDecStrMaybe(originHex) : undefined
-  const restoredAt = typeof cm.restoredAt === 'number' ? cm.restoredAt : undefined
-
-  return { originHex, originDec, restoredAt }
-}
-
 function looksLikeEthAddr(s: string) {
   return /^0x[0-9a-fA-F]{40}$/.test(s.trim())
 }
@@ -97,34 +70,6 @@ interface VersionHistoryModalProps {
 /** ---------------- helpers: version index normalization & dedupe ---------------- */
 const HEX_INDEX_BYTES = 8
 const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
-const HEX8_RE = /^0x[0-9a-fA-F]{16}$/
-
-/** Choose the canonical "origin" version for a restore.
- *  If the source already carries restoredFromVersion, keep it.
- *  Otherwise use the source version (normalized to 8-byte hex).
- */
-function pickOriginRestoreHex(versionFi: FileInfo): string {
-  const existing = (versionFi.customMetadata as any)?.restoredFromVersion as string | undefined
-
-  if (existing && HEX8_RE.test(existing)) return existing
-
-  const srcIdx = parseIndex(versionFi.version) ?? BigInt(0)
-
-  return toHexIndexStr(srcIdx)
-}
-
-/** Build the provenance metadata block we’ll attach/propagate. */
-function buildProvenanceMetadata(versionFi: FileInfo) {
-  const originHex = pickOriginRestoreHex(versionFi)
-  const existingChain = (versionFi.customMetadata as any)?.restoredChain
-  const chain = Array.isArray(existingChain) ? existingChain : [originHex]
-
-  return {
-    restoredFromVersion: originHex,
-    restoredAt: Date.now(),
-    restoredChain: chain,
-  }
-}
 const toHexIndexStr = (i: bigint) => '0x' + i.toString(16).padStart(HEX_INDEX_CHARS, '0')
 // old helpers that worked before
 const padIndexHex = (hexNoPrefix: string) => {
@@ -573,9 +518,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
 
     return t // return as-is; caller will still validate and show a helpful error
   }
-
-  // ───────────────────────────── updated restoreVersion (drop-in) ─────────────────────────────
-
+  
   const restoreVersion = async (versionFi: FileInfo) => {
     if (!fm) return
 
@@ -612,9 +555,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     const fileRef = (versionFi as any)?.file?.reference
     const histRef = (versionFi as any)?.file?.historyRef
 
-    // provenance (new)
-    const provenanceMeta = buildProvenanceMetadata(versionFi)
-
     // 5) Build & show a debug packet (and keep it in state for dev)
     const debugPacket = {
       name: versionFi?.name,
@@ -628,7 +568,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       hasHistoryRef: Boolean(histRef),
       headTopic: safeStr((headFi as any)?.topic),
       headOwner: safeStr((headFi as any)?.owner),
-      originHex: provenanceMeta.restoredFromVersion, // new
     }
     console.debug('[FM-UI:VH] restore:resolved', debugPacket)
     setRestoreDebug(debugPacket)
@@ -649,6 +588,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     }
 
     if (!ETH_RE.test(ownerStr)) {
+      // bail out early; this was the most common cause in your logs
       setError(`Failed to restore: owner address is not a valid Ethereum address (${ownerStr}).`)
       console.debug('[FM-UI:VH] restore:abort (bad owner format)')
 
@@ -662,16 +602,12 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       return
     }
 
-    // 7) Build the payload exactly for the lib — include provenance metadata
+    // 7) Build the payload exactly for the lib
     const fixed: FileInfo = {
       ...versionFi,
       topic: topicStr as any,
       owner: ownerStr as any, // <- string with 0x prefix
       version: idxHex,
-      customMetadata: {
-        ...(versionFi.customMetadata || {}),
-        ...provenanceMeta, // <- inject/propagate origin
-      } as any,
     }
 
     console.debug('[FM-UI:VH] restore:calling fm.restoreVersion', {
@@ -714,18 +650,16 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
             {
               info: {
                 batchId,
+                // keep same name; you can also choose headFi?.name to avoid duplicates
                 name: versionFi.name,
                 topic: topicStr,
-                // reuse existing content
+                // tell FileManager to reuse the existing content
                 file: {
                   reference: (versionFi as any).file.reference.toString(),
                   historyRef: (versionFi as any).file.historyRef.toString(),
                 },
-                // carry forward metadata + provenance
-                customMetadata: {
-                  ...(versionFi.customMetadata || {}),
-                  ...provenanceMeta,
-                },
+                // keep metadata if you want it carried over
+                customMetadata: versionFi.customMetadata,
               },
             },
             // no uploadOptions (we’re not uploading content)
@@ -814,46 +748,16 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
               const modified = item.timestamp != null ? new Date(item.timestamp).toLocaleString() : '—'
               const key = `${item.topic?.toString?.() ?? ''}:${toHexIndexStr(idx)}`
 
-              // NEW: provenance shown on any entry that was created via restore()
-              const { originDec, restoredAt } = getProvenance(item)
-              const showProvenance = Boolean(originDec)
-              const restoredAtStr = restoredAt ? new Date(restoredAt).toLocaleString() : null
-
               return (
                 <div key={key} className="fm-modal-white-section fm-space-between">
                   <div className="fm-version-history-modal-section-left fm-space-between">
-                    <div className="fm-version-history-modal-section-left-row" style={{ gap: 6 }}>
+                    <div className="fm-version-history-modal-section-left-row">
                       <div className="fm-emphasized-text">v{idx.toString()}</div>
                       {isCurrent && <div className="fm-current-tag">Current</div>}
-                      {showProvenance && (
-                        // you can style this class in your SCSS if you want a pill look;
-                        // otherwise it’ll inherit the same typographic styles.
-                        <div
-                          className="fm-origin-tag"
-                          title={restoredAtStr ? `Restored on ${restoredAtStr}` : 'Restored'}
-                          style={{
-                            padding: '2px 6px',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            opacity: 0.8,
-                            border: '1px solid rgba(255,255,255,0.15)',
-                          }}
-                        >
-                          Restored from v{originDec}
-                        </div>
-                      )}
                     </div>
-
-                    <div className="fm-version-history-modal-section-left-row" style={{ gap: 6 }}>
+                    <div className="fm-version-history-modal-section-left-row">
                       <CalendarIcon size="12" /> {modified} <UserIcon size="12" />
                     </div>
-
-                    {showProvenance && restoredAtStr && (
-                      <div className="fm-version-history-modal-section-left-row fm-provenance" style={{ opacity: 0.8 }}>
-                        <HistoryIcon size="12" style={{ marginRight: 4 }} />
-                        Restored on {restoredAtStr}
-                      </div>
-                    )}
                   </div>
 
                   <div className="fm-version-history-modal-section-right">
