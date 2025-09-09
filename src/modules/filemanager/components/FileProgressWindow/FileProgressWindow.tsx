@@ -9,6 +9,7 @@ type ProgressItem = {
   name: string
   percent?: number
   size?: string
+  kind?: 'upload' | 'update' | 'download'
 }
 
 interface FileProgressWindowProps {
@@ -45,29 +46,41 @@ export function FileProgressWindow({
   const rows: ProgressItem[] =
     items && items.length > 0
       ? items
-      : Array.from({ length: count }, (_, i) => ({
-          name: `Pending file ${i + 1}`,
-          percent: 0,
-          size: '',
-        }))
+      : Array.from({ length: count }, (_, i) => ({ name: `Pending file ${i + 1}`, percent: 0, size: '' }))
 
-  const noun = type === FileTransferType.Download ? 'download' : 'upload'
+  const topNoun =
+    type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload'
 
-  const statusText = (pct?: number): string => {
+  const statusText = (it: ProgressItem, pct?: number): string => {
     if (pct === 100) return 'Done'
+    const k =
+      it.kind ??
+      (type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload')
 
-    if (type === FileTransferType.Download) return 'Downloading…'
+    if (k === 'download') return 'Downloading…'
+
+    if (k === 'update') return 'Updating…'
 
     return 'Uploading…'
   }
 
-  const barColor = type === FileTransferType.Download ? TransferBarColor.Download : TransferBarColor.Upload
+  const barColorFor = (it: ProgressItem): TransferBarColor => {
+    const k =
+      it.kind ??
+      (type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload')
+
+    if (k === 'download') return TransferBarColor.Download
+
+    if (k === 'update') return TransferBarColor.Update
+
+    return TransferBarColor.Upload
+  }
 
   return (
     <div className="fm-file-progress-window">
       <div className="fm-file-progress-window-header">
         <div className="fm-emphasized-text">
-          {count} {noun}
+          {count} {topNoun}
           {count === 1 ? '' : 's'}
         </div>
         <div className="fm-file-progress-window-header-close" onClick={onCancelClick} role="button" aria-label="Close">
@@ -87,22 +100,11 @@ export function FileProgressWindow({
             <div className="fm-file-progress-window-file-datas">
               <div
                 className="fm-file-progress-window-file-item-header"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto',
-                  alignItems: 'center',
-                  gap: 8,
-                  minWidth: 0,
-                }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 8, minWidth: 0 }}
               >
                 <div
                   title={file.name}
-                  style={{
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                  style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 >
                   {file.name}
                 </div>
@@ -113,7 +115,7 @@ export function FileProgressWindow({
                 value={typeof pct === 'number' ? pct : 0}
                 width="100%"
                 backgroundColor="rgb(229, 231, 235)"
-                color={barColor}
+                color={barColorFor(file)}
               />
 
               <div
@@ -121,7 +123,7 @@ export function FileProgressWindow({
                 style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center' }}
               >
                 <div>{prettySize(file.size)}</div>
-                <div>{statusText(pct)}</div>
+                <div>{statusText(file, pct)}</div>
               </div>
             </div>
           </div>

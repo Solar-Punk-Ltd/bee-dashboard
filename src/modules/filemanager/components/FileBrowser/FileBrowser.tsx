@@ -14,12 +14,23 @@ import { useFM } from '../../providers/FMContext'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 type WithStatus = { status?: string | number | null }
-const hasStatus = (x: unknown): x is WithStatus =>
-  typeof x === 'object' && x !== null && 'status' in (x as Record<string, unknown>)
-
+const hasStatus = (x: unknown): x is WithStatus => typeof x === 'object' && x !== null && 'status' in (x as any)
 type WithBatchId = { batchId?: string | number | bigint | null }
-const hasBatchId = (x: unknown): x is WithBatchId =>
-  typeof x === 'object' && x !== null && 'batchId' in (x as Record<string, unknown>)
+const hasBatchId = (x: unknown): x is WithBatchId => typeof x === 'object' && x !== null && 'batchId' in (x as any)
+
+function safeTopic(t: unknown) {
+  try {
+    return (t as any)?.toString?.() ?? String(t ?? '')
+  } catch {
+    return String(t ?? '')
+  }
+}
+
+function historyKey(fi: FileInfo): string {
+  const ref = (fi as any)?.file?.historyRef ?? (fi as any)?.historyRef ?? (fi as any)?.actHistoryRef
+
+  return ref ? String(ref) : ''
+}
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -34,6 +45,7 @@ export function FileBrowser(): ReactElement {
     downloadCount,
     downloadItems,
     trackDownload,
+    conflictPortal,
   } = useFMTransfers()
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -45,7 +57,6 @@ export function FileBrowser(): ReactElement {
     if (f && f.length) uploadFiles(f)
     e.target.value = ''
   }
-
   const onContextUploadFile = () => fileInputRef.current?.click()
 
   const [isDragging, setIsDragging] = useState(false)
@@ -67,13 +78,11 @@ export function FileBrowser(): ReactElement {
 
     if (dragCounter.current++ === 0) setIsDragging(true)
   }
-
   const onContentDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (!hasFilesDT(e.dataTransfer)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
   }
-
   const onContentDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     if (!hasFilesDT(e.dataTransfer)) return
     e.preventDefault()
@@ -81,7 +90,6 @@ export function FileBrowser(): ReactElement {
 
     if (dragCounter.current === 0) setIsDragging(false)
   }
-
   const onContentDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (!hasFilesDT(e.dataTransfer)) return
     e.preventDefault()
@@ -142,7 +150,7 @@ export function FileBrowser(): ReactElement {
   }, [showContext, pos, contextRef])
 
   const isTrashed = (fi: FileInfo) => {
-    const s = hasStatus(fi) ? fi.status : undefined
+    const s = hasStatus(fi) ? (fi as any).status : undefined
 
     if (s == null) return false
 
@@ -161,18 +169,53 @@ export function FileBrowser(): ReactElement {
   const rows = useMemo(() => {
     if (!currentBatch) return []
     const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(fi => hasBatchId(fi) && String(fi.batchId) === wanted)
+    const sameDrive = files.filter(
+      fi => hasBatchId(fi) && String((fi as any).batchId ?? (fi as any).batchID) === wanted,
+    )
+
+    const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
+      const n = fi.name || ''
+      acc[n] = (acc[n] || 0) + 1
+
+      return acc
+    }, {})
+
+    const keyOf = (fi: FileInfo) => {
+      const n = fi.name || ''
+
+      if (nameCount[n] > 1) return `N:${n}`
+      const hist = historyKey(fi)
+
+      if (hist) return `H:${hist}`
+      const t = safeTopic(fi.topic)
+
+      if (t) return `T:${t}`
+
+      return `N:${n}`
+    }
+
     const map = new Map<string, FileInfo>()
     sameDrive.forEach(fi => {
-      const key = fi.topic?.toString?.()
-
-      if (!key) return
+      const key = keyOf(fi)
       const prev = map.get(key)
-      const vi = BigInt(fi.version ?? '0')
-      const pi = BigInt(prev?.version ?? '0')
 
-      if (!prev || vi > pi) map.set(key, fi)
+      if (!prev) {
+        map.set(key, fi)
+
+        return
+      }
+      const vi = BigInt(fi.version ?? '0')
+      const pi = BigInt(prev.version ?? '0')
+
+      if (vi > pi) {
+        map.set(key, fi)
+
+        return
+      }
+
+      if (vi === pi && Number(fi.timestamp || 0) > Number(prev.timestamp || 0)) map.set(key, fi)
     })
+
     const latest = Array.from(map.values())
 
     return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
@@ -182,23 +225,26 @@ export function FileBrowser(): ReactElement {
     if (fm && currentBatch) refreshFiles()
   }, [fm, currentBatch, refreshFiles])
 
-  let bodyContent: ReactElement | ReactElement[]
+  let bodyContent: ReactElement | ReactElement[] = <div className="fm-drop-hint">Select a drive to view its files</div>
 
-  if (!currentBatch) {
-    bodyContent = <div className="fm-drop-hint">Select a drive to view its files</div>
-  } else if (rows.length === 0) {
+  if (currentBatch && rows.length === 0) {
     bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
-  } else {
-    bodyContent = rows.map(fi => <FileItem key={fi.topic.toString()} fileInfo={fi} onDownload={trackDownload} />)
+  } else if (currentBatch && rows.length > 0) {
+    bodyContent = rows.map(fi => (
+      <FileItem
+        key={`${historyKey(fi) || safeTopic(fi.topic) || fi.name}::${fi.version ?? ''}`}
+        fileInfo={fi}
+        onDownload={trackDownload}
+      />
+    ))
   }
 
   return (
     <>
+      {conflictPortal}
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
-
       <div className="fm-file-browser-container">
         <FileBrowserTopBar />
-
         <div
           className="fm-file-browser-content"
           ref={contentRef}
@@ -212,19 +258,19 @@ export function FileBrowser(): ReactElement {
               <input type="checkbox" />
             </div>
             <div className="fm-file-browser-content-header-item fm-name">
-              Name
+              Name{' '}
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
             </div>
             <div className="fm-file-browser-content-header-item fm-size">
-              Size
+              Size{' '}
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
             </div>
             <div className="fm-file-browser-content-header-item fm-date-mod">
-              Date mod.
+              Date mod.{' '}
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
@@ -285,14 +331,14 @@ export function FileBrowser(): ReactElement {
             type={FileTransferType.Upload}
             open={isUploading}
             count={uploadCount}
-            items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
+            items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
           />
           <FileProgressNotification
             label="Downloading files"
             type={FileTransferType.Download}
             open={isDownloading}
             count={downloadCount}
-            items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size }))}
+            items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
           />
           <NotificationBar />
         </div>

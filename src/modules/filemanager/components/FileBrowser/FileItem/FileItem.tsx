@@ -1,10 +1,11 @@
-import { ReactElement, useLayoutEffect, useState } from 'react'
+import { ReactElement, useCallback, useLayoutEffect, useState } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { ViewType } from '../../../constants/constants'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
+import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
@@ -25,8 +26,8 @@ const formatBytes = (v?: string) => {
 
   if (n < 1024) return `${n} B`
   const units = ['KB', 'MB', 'GB', 'TB']
-  let val = n / 1024
-  let i = 0
+  let val = n / 1024,
+    i = 0
   while (val >= 1024 && i < units.length - 1) {
     val /= 1024
     i++
@@ -35,25 +36,21 @@ const formatBytes = (v?: string) => {
   return `${val.toFixed(1)} ${units[i]}`
 }
 
-/* ---------------- Normalizers ---------------- */
 type BeeBytes = { toUint8Array: () => Uint8Array }
 const hasToUint8Array = (x: unknown): x is BeeBytes =>
   typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
-
 type HasGetReader = { getReader: () => ReadableStreamDefaultReader<Uint8Array> }
 const hasGetReader = (x: unknown): x is HasGetReader =>
   typeof x === 'object' &&
   x !== null &&
   'getReader' in (x as HasGetReader) &&
   typeof (x as HasGetReader).getReader === 'function'
-
 type HasArrayBuffer = { arrayBuffer: () => Promise<ArrayBuffer> }
 const hasArrayBufferFn = (x: unknown): x is HasArrayBuffer =>
   typeof x === 'object' &&
   x !== null &&
   'arrayBuffer' in (x as HasArrayBuffer) &&
   typeof (x as HasArrayBuffer).arrayBuffer === 'function'
-
 type HasBlob = { blob: () => Promise<Blob> }
 const hasBlobFn = (x: unknown): x is HasBlob =>
   typeof x === 'object' && x !== null && 'blob' in (x as HasBlob) && typeof (x as HasBlob).blob === 'function'
@@ -62,7 +59,6 @@ async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<U
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
   let total = 0
-
   try {
     let res: ReadableStreamReadResult<Uint8Array> = await reader.read()
     while (!res.done) {
@@ -77,7 +73,6 @@ async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<U
   } finally {
     reader.releaseLock()
   }
-
   const out = new Uint8Array(total)
   let offset = 0
   for (const c of chunks) {
@@ -100,8 +95,7 @@ async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob>
   if (part instanceof Uint8Array) return new Blob([part], { type })
 
   if (hasGetReader(part)) {
-    const stream = part as unknown as ReadableStream<Uint8Array>
-    const u8 = await streamToUint8Array(stream)
+    const u8 = await streamToUint8Array(part as unknown as ReadableStream<Uint8Array>)
 
     return new Blob([u8], { type })
   }
@@ -125,28 +119,132 @@ function sanitizeFileName(s: string) {
 }
 
 interface FileManagerLike {
-  getVersion: (fi: FileInfo) => Promise<FileInfo>
-  listFiles: (fi: FileInfo) => Promise<Array<{ path: string }>>
   download: (fi: FileInfo, paths?: string[]) => Promise<unknown | unknown[]>
+  listFiles: (fi: FileInfo) => Promise<Array<{ path: string }>>
+  getVersion: (fi?: FileInfo, version?: string) => Promise<FileInfo>
+  restoreVersion?: (fi: FileInfo) => Promise<void>
 }
 
-/** Local view into optional internals we need to probe for presence only. */
-type FileInfoInternals = FileInfo & {
-  owner?: string
-  actPublisher?: unknown
-  file?: {
-    reference?: unknown
-    historyRef?: unknown
+/** ------------ helpers: ACT-publisher aware hydration ------------ */
+const HEX_INDEX_BYTES = 8
+const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
+const indexToHex8 = (i: bigint) => `0x${i.toString(16).padStart(HEX_INDEX_CHARS, '0')}`
+const parseIndex = (v: unknown): bigint => {
+  if (v == null) return BigInt(0)
+  const s = String(v).trim()
+
+  return s.startsWith('0x') ? BigInt(s) : BigInt(s || '0')
+}
+
+function sameTopic(a?: FileInfo, b?: FileInfo) {
+  try {
+    return a?.topic?.toString?.() === b?.topic?.toString?.()
+  } catch {
+    return false
   }
 }
 
-const asInternals = (fi: FileInfo): FileInfoInternals => fi as FileInfoInternals
+async function getCandidatePublishers(fm: any, seed: FileInfo): Promise<string[]> {
+  const out = new Set<string>()
+  const seedPub = (seed as any)?.actPublisher
 
-/* ---------------- Component ---------------- */
+  if (seedPub) out.add(String(seedPub))
+  try {
+    const bee = (fm as any)?.bee
+    const pub = await bee?.getNodeAddresses?.()
+
+    if (pub?.publicKey) out.add(String(pub.publicKey))
+  } catch {
+    /* ignore */
+  }
+  try {
+    const list: FileInfo[] = fm?.fileInfoList || []
+    for (const f of list) {
+      if (sameTopic(f, seed) && (f as any)?.actPublisher) out.add(String((f as any).actPublisher))
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return Array.from(out)
+}
+
+async function hydrateWithPublishers(
+  fmLike: FileManagerLike,
+  fmAny: any,
+  seed: FileInfo,
+  version?: string,
+): Promise<FileInfo> {
+  const pubs = await getCandidatePublishers(fmAny, seed)
+  for (const p of pubs) {
+    try {
+      const variant = { ...seed, actPublisher: p } as FileInfo
+      const res = await fmLike.getVersion(variant, version)
+
+      return (res as any)?.actPublisher ? res : ({ ...res, actPublisher: p } as FileInfo)
+    } catch {
+      /* try next */
+    }
+  }
+  const res = await fmLike.getVersion(seed, version)
+
+  if (!(res as any)?.actPublisher && pubs.length) {
+    return { ...res, actPublisher: pubs[0] } as FileInfo
+  }
+
+  return res
+}
+
+/** ---------- helpers to locate HEAD for the visible row ---------- */
+function historyKey(fi: FileInfo): string {
+  const ref = (fi as any)?.file?.historyRef ?? (fi as any)?.historyRef ?? (fi as any)?.actHistoryRef
+
+  return ref ? String(ref) : ''
+}
+
+function normTopic(x: unknown): string {
+  try {
+    return (x as any)?.toString?.() ?? String(x ?? '')
+  } catch {
+    return String(x ?? '')
+  }
+}
+
+function pickLatest(a: FileInfo, b: FileInfo): FileInfo {
+  const av = BigInt(a?.version ?? '0'),
+    bv = BigInt(b?.version ?? '0')
+
+  if (av === bv) return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
+
+  return av > bv ? a : b
+}
+
+function getHeadCandidate(fmObj: any, seed: FileInfo): FileInfo | null {
+  try {
+    const list: FileInfo[] = fmObj?.fileInfoList || []
+
+    if (!list.length) return null
+    const hist = historyKey(seed)
+    let same: FileInfo[]
+
+    if (hist) same = list.filter(f => historyKey(f) === hist)
+    else {
+      const t = normTopic(seed.topic)
+      same = t ? list.filter(f => normTopic(f.topic) === t) : list.filter(f => f.name === seed.name)
+    }
+
+    if (!same.length) return null
+
+    return same.reduce(pickLatest)
+  } catch {
+    return null
+  }
+}
+
 export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
-  const { fm } = useFM()
+  const { fm, refreshFiles } = useFM()
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
@@ -154,11 +252,9 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
-
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
   const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
-
-  type BlobWithName = { blob: Blob; fileName: string }
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   const openGetInfo = async () => {
     if (!fm) return
@@ -167,90 +263,64 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
     setShowGetInfoModal(true)
   }
 
-  const hasEssentials = (fi: FileInfo): boolean => {
-    const f = asInternals(fi)
-    const hasOwner = typeof f.owner === 'string' && f.owner.length > 0
-    const hasRef = typeof f.file?.reference === 'string' && f.file.reference.length > 0
-    const hasHist = typeof f.file?.historyRef === 'string' && f.file.historyRef.length > 0
-    const hasPub = f.actPublisher !== undefined && f.actPublisher !== null
+  /** HEAD (latest) — try cached list, else hydrate with publisher fallbacks */
+  const ensureHead = useCallback(
+    async (fmLike: FileManagerLike, fi: FileInfo): Promise<FileInfo> => {
+      console.debug('[FM-UI] ensureHead:req', { name: fi?.name, topic: fi?.topic?.toString?.(), version: fi?.version })
+      const cached = getHeadCandidate(fm as any, fi)
 
-    return hasOwner && hasRef && hasHist && hasPub
-  }
+      if (cached) {
+        console.debug('[FM-UI] ensureHead:hit-cache', { version: cached?.version })
 
-  async function ensureHead(fmLike: FileManagerLike, fi: FileInfo): Promise<FileInfo> {
-    if (hasEssentials(fi)) return fi
-    const f = asInternals(fi)
-    const canGetHead = Boolean(fi.topic) && typeof f.owner === 'string'
+        return cached
+      }
+      try {
+        const res = await hydrateWithPublishers(fmLike, fm as any, fi)
+        console.debug('[FM-UI] ensureHead:hydrated', { version: res?.version, actPub: (res as any)?.actPublisher })
 
-    if (!canGetHead) return fi
-    try {
-      return await fmLike.getVersion(fi)
-    } catch {
-      return fi
-    }
-  }
+        return res
+      } catch (e) {
+        console.debug('[FM-UI] ensureHead:error', String(e))
 
-  function validateHead(fi: FileInfo): void {
-    const f = asInternals(fi)
-    const missing: string[] = []
+        return fi
+      }
+    },
+    [fm],
+  )
 
-    if (!(typeof f.owner === 'string' && f.owner)) missing.push('owner')
+  const fileInfoToBlob = async (fmLike: FileManagerLike, fi: FileInfo): Promise<BlobWithName> => {
+    console.debug('[FM-UI] toBlob:start', { name: fi?.name, topic: fi?.topic?.toString?.(), version: fi?.version })
+    const baseName = fi.name || 'download'
+    const mime = fi.customMetadata?.mime || 'application/octet-stream'
 
-    if (!(typeof f.file?.reference === 'string' && f.file.reference)) missing.push('file.reference')
-
-    if (!(typeof f.file?.historyRef === 'string' && f.file.historyRef)) missing.push('file.historyRef')
-
-    if (!(f.actPublisher !== undefined && f.actPublisher !== null)) missing.push('actPublisher')
-
-    if (missing.length) throw new Error(`FileInfo missing required fields: ${missing.join(', ')}`)
-  }
-
-  async function libDownload(fmLike: FileManagerLike, source: FileInfo): Promise<BlobWithName> {
-    const head = await ensureHead(fmLike, source)
-    validateHead(head)
-
-    const baseName = head.name || 'download'
-    const mime = head.customMetadata?.mime || 'application/octet-stream'
-
-    // Try to enumerate collection paths (ok if it fails — single-file case)
     let paths: string[] | undefined
     try {
-      const list = await fmLike.listFiles(head)
-
-      if (Array.isArray(list) && list.length > 0) {
-        const matching = list.find(e => e.path === baseName || e.path.endsWith('/' + baseName))
-        paths = matching ? [matching.path] : list.map(e => e.path)
-      }
-    } catch {
-      /* ignore: single-file likely */
+      const entries = await fmLike.listFiles(fi)
+      console.debug('[FM-UI] toBlob:listFiles', { count: entries.length, sample: entries.slice(0, 5) })
+      const exact = entries.find(e => e.path === baseName || e.path.endsWith('/' + baseName))
+      paths = exact ? [exact.path] : entries.map(e => e.path)
+    } catch (e) {
+      console.debug('[FM-UI] toBlob:listFiles:error', String(e))
+      paths = undefined
     }
 
-    const res = await fmLike.download(head, paths)
+    console.debug('[FM-UI] toBlob:download:req', { paths })
+    const res = await (fmLike.download as any)(fi, paths)
     const arr = Array.isArray(res) ? res : [res]
+    console.debug('[FM-UI] toBlob:download:res', { isArray: Array.isArray(res), count: arr.length })
 
     if (arr.length === 0) throw new Error('No content returned by FileManager.download()')
 
     const blobs = await Promise.all(arr.map(p => normalizeToBlob(p as DownloadPart, mime)))
 
-    if (blobs.length === 1) {
-      return { blob: blobs[0], fileName: baseName }
-    }
+    if (blobs.length === 1) return { blob: blobs[0], fileName: baseName }
 
     const { default: JSZip } = await import('jszip')
     const zip = new JSZip()
-    const names = Array.isArray(paths) && paths.length === blobs.length ? paths : blobs.map((_, i) => `file-${i}`)
-    await Promise.all(blobs.map(async (b, i) => zip.file(names[i], await b.arrayBuffer())))
+    await Promise.all(blobs.map(async (b, i) => zip.file(paths?.[i] ?? `file-${i}`, await b.arrayBuffer())))
     const zipBlob = await zip.generateAsync({ type: 'blob' })
 
     return { blob: zipBlob, fileName: `${baseName}.zip` }
-  }
-
-  const getBlobAndName = async (): Promise<BlobWithName> => {
-    const fmLike = (fm as unknown as FileManagerLike) || null
-
-    if (!fmLike) throw new Error('FM not ready')
-
-    return await libDownload(fmLike, fileInfo)
   }
 
   const runTracked = (label: string, task: () => Promise<void>) =>
@@ -258,12 +328,26 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
       size: fileInfo.customMetadata?.size,
     })
 
+  /** Open latest (HEAD) */
   const handleOpen = async () => {
     handleCloseContext()
+    const fmLike = (fm as unknown as FileManagerLike) || null
+
+    if (!fmLike) return
     const win = window.open('', '_blank')
     await runTracked(fileInfo.name || 'open', async () => {
       try {
-        const { blob } = await getBlobAndName()
+        const head = await ensureHead(fmLike, fileInfo)
+        const headIdx = parseIndex(head.version)
+        const anchor: FileInfo = { ...head, version: indexToHex8(headIdx) }
+        const hydrated = await hydrateWithPublishers(fmLike, fm as any, anchor, anchor.version)
+        const pubs = await getCandidatePublishers(fm as any, anchor)
+        const withPublisher = (hydrated as any).actPublisher
+          ? hydrated
+          : ({ ...hydrated, actPublisher: pubs[0] } as FileInfo)
+        const { blob } = await fileInfoToBlob(fmLike, withPublisher)
+        console.debug('[FM-UI] open:blob:ok', { bytes: blob.size })
+
         const url = URL.createObjectURL(blob)
 
         if (win) {
@@ -274,16 +358,30 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
           setTimeout(() => URL.revokeObjectURL(url), 30000)
         }
       } catch (e) {
-        if (win) win.close()
+        console.debug('[FM-UI] open:error', String(e))
+        win?.close()
         throw e
       }
     })
   }
 
+  /** Download latest (HEAD) */
   const handleDownload = async () => {
     handleCloseContext()
+    const fmLike = (fm as unknown as FileManagerLike) || null
+
+    if (!fmLike) return
     await runTracked(fileInfo.name || 'download', async () => {
-      const { blob, fileName } = await getBlobAndName()
+      const headSeed = await ensureHead(fmLike, fileInfo)
+      const headIdx = parseIndex(headSeed.version)
+      const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
+      const hydrated = await hydrateWithPublishers(fmLike, fm as any, anchor, anchor.version)
+      const pubs = await getCandidatePublishers(fm as any, anchor)
+      const withPublisher = (hydrated as any).actPublisher
+        ? hydrated
+        : ({ ...hydrated, actPublisher: pubs[0] } as FileInfo)
+      const { blob, fileName } = await fileInfoToBlob(fmLike, withPublisher)
+      console.debug('[FM-UI] download:blob:ok', { bytes: blob.size, fileName })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -359,7 +457,13 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 Rename
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  setShowVersionHistory(true)
+                }}
+              >
                 Version history
               </div>
               <div className="fm-context-item red" onClick={handleCloseContext}>
@@ -370,7 +474,14 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 className="fm-context-item"
                 onClick={() => {
                   handleCloseContext()
-                  void openGetInfo()
+                  void (async () => {
+                    const groups = fm ? await buildGetInfoGroups(fm as FileManagerBase, fileInfo) : null
+
+                    if (groups) {
+                      setInfoGroups(groups)
+                      setShowGetInfoModal(true)
+                    }
+                  })()
                 }}
               >
                 Get info
@@ -385,7 +496,13 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 Download
               </div>
               <div className="fm-context-item-border" />
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  setShowVersionHistory(true)
+                }}
+              >
                 Version history
               </div>
               <div className="fm-context-item" onClick={handleCloseContext}>
@@ -414,6 +531,10 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
 
       {showGetInfoModal && infoGroups && (
         <GetInfoModal name={name} properties={infoGroups} onCancelClick={() => setShowGetInfoModal(false)} />
+      )}
+
+      {showVersionHistory && (
+        <VersionHistoryModal fileInfo={fileInfo} onCancelClick={() => setShowVersionHistory(false)} />
       )}
     </div>
   )

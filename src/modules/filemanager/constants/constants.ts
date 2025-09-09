@@ -1,16 +1,18 @@
 export enum FileTransferType {
   Upload = 'upload',
   Download = 'download',
+  Update = 'update',
+}
+
+export enum TransferBarColor {
+  Upload = '#22c55e',
+  Update = '#f59e0b',
+  Download = '#3b82f6',
 }
 
 export enum ViewType {
   File = 'file',
   Trash = 'trash',
-}
-
-export enum TransferBarColor {
-  Download = 'rgb(220, 38, 38)',
-  Upload = 'rgb(34, 197, 94)',
 }
 
 export const desiredLifetimeOptions = [
