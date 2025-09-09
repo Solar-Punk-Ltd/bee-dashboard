@@ -11,7 +11,7 @@ import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
 import { useFM } from '../../providers/FMContext'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
 
 interface VersionHistoryModalProps {
@@ -384,24 +384,41 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     }
   }, [fm, headFi?.topic, enumerateAll])
 
-  // Restore to selected version (normalize index to padded hex)
+  const toStr = (x: unknown) => {
+    try {
+      // covers string, EthAddress-like, Topic-like
+      return (x as { toString?: () => string })?.toString?.() ?? String(x ?? '')
+    } catch {
+      return String(x ?? '')
+    }
+  }
+
   const restoreVersion = async (versionFi: FileInfo) => {
     if (!fm) return
     try {
       const idx = parseIndex(versionFi.version) ?? BigInt(0)
+
+      // normalize critical fields; ensure owner/topic are strings
+      const ownerStr = toStr((versionFi as any)?.owner) || toStr((headFi as any)?.owner)
+      const topicStr = toStr(versionFi.topic) || toStr((headFi as any)?.topic)
+
+      if (!ownerStr || !topicStr) {
+        throw new Error('Missing owner/topic for restore')
+      }
+
       const fixed: FileInfo = {
         ...versionFi,
+        owner: ownerStr as any, // lib accepts string/EthAddress; toString() happens inside
+        topic: topicStr as any,
         version: toHexIndexStr(idx),
-        ...((versionFi as any).owner ? {} : { owner: (headFi as any)?.owner }),
       }
-      try {
-        await (fm as any).restoreVersion(fixed)
-      } catch {
-        await (fm as any).restoreVersion(headFi, toHexIndexStr(idx))
-      }
+
+      await (fm as FileManagerBase).restoreVersion(fixed)
+
       await Promise.resolve(refreshFiles?.())
       onCancelClick()
-    } catch {
+    } catch (e) {
+      console.debug('[FM-UI:VH] restoreVersion:error', e)
       setError('Failed to restore this version')
     }
   }
