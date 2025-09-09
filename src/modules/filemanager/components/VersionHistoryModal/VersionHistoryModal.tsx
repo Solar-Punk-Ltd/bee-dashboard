@@ -11,8 +11,83 @@ import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
 import { useFM } from '../../providers/FMContext'
-import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManager, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
+// --- DEV flag: set localStorage.fmDebug = "1" to enable inline debug dump
+const FM_DEBUG = (() => {
+  try {
+    return localStorage.getItem('fmDebug') === '1'
+  } catch {
+    return false
+  }
+})()
+
+function hexToDecStrMaybe(hex?: string): string | undefined {
+  if (!hex) return undefined
+  try {
+    // supports "0x000..."; BigInt handles both hex and decimal strings
+    return BigInt(hex).toString()
+  } catch {
+    try {
+      return BigInt(String(hex)).toString()
+    } catch {
+      return undefined
+    }
+  }
+}
+
+function getProvenance(fi: FileInfo): {
+  originHex?: string
+  originDec?: string
+  restoredAt?: number
+} {
+  const cm = (fi.customMetadata || {}) as any
+  const originHex = typeof cm.restoredFromVersion === 'string' ? cm.restoredFromVersion : undefined
+  const originDec = originHex ? hexToDecStrMaybe(originHex) : undefined
+  const restoredAt = typeof cm.restoredAt === 'number' ? cm.restoredAt : undefined
+
+  return { originHex, originDec, restoredAt }
+}
+
+function looksLikeEthAddr(s: string) {
+  return /^0x[0-9a-fA-F]{40}$/.test(s.trim())
+}
+
+function safeStr(x: unknown) {
+  try {
+    const s = (x as any)?.toString?.() ?? String(x ?? '')
+
+    return s !== '[object Object]' ? s : ''
+  } catch {
+    return ''
+  }
+}
+
+// probe FM internals once (owner/address/bee)
+async function probeFM(fmAny: any) {
+  const out: Record<string, any> = {}
+  try {
+    out.fm_owner = safeStr(fmAny?.owner)
+  } catch {}
+  try {
+    out.fm_address = safeStr(fmAny?.address)
+  } catch {}
+  try {
+    out.fm_signerAddress = safeStr(fmAny?.signerAddress)
+  } catch {}
+  try {
+    out.fm_getOwner = safeStr(await fmAny?.getOwner?.())
+  } catch {}
+  try {
+    out.fm_getAddress = safeStr(await fmAny?.getAddress?.())
+  } catch {}
+  try {
+    const node = await fmAny?.bee?.getNodeAddresses?.()
+    out.bee_pub_compressed = safeStr(node?.publicKey?.toCompressedHex?.())
+  } catch {}
+
+  return out
+}
 
 interface VersionHistoryModalProps {
   fileInfo: FileInfo
@@ -22,7 +97,57 @@ interface VersionHistoryModalProps {
 /** ---------------- helpers: version index normalization & dedupe ---------------- */
 const HEX_INDEX_BYTES = 8
 const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
+const HEX8_RE = /^0x[0-9a-fA-F]{16}$/
+
+/** Choose the canonical "origin" version for a restore.
+ *  If the source already carries restoredFromVersion, keep it.
+ *  Otherwise use the source version (normalized to 8-byte hex).
+ */
+function pickOriginRestoreHex(versionFi: FileInfo): string {
+  const existing = (versionFi.customMetadata as any)?.restoredFromVersion as string | undefined
+
+  if (existing && HEX8_RE.test(existing)) return existing
+
+  const srcIdx = parseIndex(versionFi.version) ?? BigInt(0)
+
+  return toHexIndexStr(srcIdx)
+}
+
+/** Build the provenance metadata block we’ll attach/propagate. */
+function buildProvenanceMetadata(versionFi: FileInfo) {
+  const originHex = pickOriginRestoreHex(versionFi)
+  const existingChain = (versionFi.customMetadata as any)?.restoredChain
+  const chain = Array.isArray(existingChain) ? existingChain : [originHex]
+
+  return {
+    restoredFromVersion: originHex,
+    restoredAt: Date.now(),
+    restoredChain: chain,
+  }
+}
 const toHexIndexStr = (i: bigint) => '0x' + i.toString(16).padStart(HEX_INDEX_CHARS, '0')
+// old helpers that worked before
+const padIndexHex = (hexNoPrefix: string) => {
+  const h = hexNoPrefix.toLowerCase()
+
+  return h.length >= HEX_INDEX_CHARS ? h : h.padStart(HEX_INDEX_CHARS, '0')
+}
+const toHexIndex = (v?: string | number | bigint) => {
+  if (v == null || v === '') return undefined
+  const s = String(v)
+
+  return s.startsWith('0x') ? `0x${padIndexHex(s.slice(2))}` : `0x${padIndexHex(BigInt(s).toString(16))}`
+}
+
+const getLocalPublisher = (fmObj: any): string | undefined => {
+  // same helper you used before
+  try {
+    return fmObj?.nodeAddresses?.publicKey?.toCompressedHex?.()
+  } catch {
+    return undefined
+  }
+}
+
 const parseIndex = (v: unknown): bigint | null => {
   try {
     if (v == null) return null
@@ -201,6 +326,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
   const { fm, refreshFiles } = useFM()
   const { downloadBlob } = useFMTransfers()
   const modalRoot = document.querySelector('.fm-main') || document.body
+  const [restoreDebug, setRestoreDebug] = useState<any | null>(null)
 
   const [allVersions, setAllVersions] = useState<FileInfo[]>([])
   const [loading, setLoading] = useState(false)
@@ -384,42 +510,254 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     }
   }, [fm, headFi?.topic, enumerateAll])
 
-  const toStr = (x: unknown) => {
-    try {
-      // covers string, EthAddress-like, Topic-like
-      return (x as { toString?: () => string })?.toString?.() ?? String(x ?? '')
-    } catch {
-      return String(x ?? '')
+  // --- add these helpers near the other helpers ---
+  async function resolveOwner(fmLike: any, preferred?: unknown): Promise<string> {
+    // try preferred (from version/head), then fm fields, then async getters
+    const candidates: unknown[] = [preferred, fmLike?.owner, fmLike?.address, fmLike?.signerAddress]
+
+    for (const c of candidates) {
+      const s = c?.toString?.()
+
+      if (s && s !== '[object Object]') return String(s)
     }
+
+    try {
+      const got = await fmLike?.getOwner?.()
+
+      if (got) return String(got)
+    } catch {}
+    try {
+      const got = await fmLike?.getAddress?.()
+
+      if (got) return String(got)
+    } catch {}
+
+    // LAST resort: bee signer/public key (may not exist in browser)
+    try {
+      const beeAddr = await fmLike?.bee?.signer?.publicKey?.address?.()
+
+      if (beeAddr) return String(beeAddr)
+    } catch {}
+    try {
+      const pub = await fmLike?.bee?.getNodeAddresses?.()
+      const hex = pub?.publicKey?.toCompressedHex?.()
+
+      if (hex) return String(hex)
+    } catch {}
+
+    return '' // signal failure to caller
   }
+
+  function resolveTopic(preferred?: unknown, fallback?: unknown): string {
+    const tryOne = (x: unknown) => {
+      try {
+        const s = (x as any)?.toString?.() ?? String(x ?? '')
+
+        return s && s !== '[object Object]' ? s : ''
+      } catch {
+        return ''
+      }
+    }
+
+    return tryOne(preferred) || tryOne(fallback)
+  }
+  const HEX40 = /^[0-9a-fA-F]{40}$/
+  const ETH_RE = /^0x[0-9a-fA-F]{40}$/
+
+  function normalizeOwnerHex(s: string): string {
+    const t = s.trim()
+
+    if (ETH_RE.test(t)) return t
+
+    if (HEX40.test(t)) return '0x' + t.toLowerCase()
+
+    return t // return as-is; caller will still validate and show a helpful error
+  }
+
+  // ───────────────────────────── updated restoreVersion (drop-in) ─────────────────────────────
 
   const restoreVersion = async (versionFi: FileInfo) => {
     if (!fm) return
+
+    // 1) Resolve topic & owner (with aggressive fallbacks)
+    const topicStr = safeStr((versionFi as any)?.topic) || safeStr((headFi as any)?.topic) || safeStr(fileInfo.topic)
+
+    // try version → head → fm.* fields → async getters
+    let ownerRaw =
+      safeStr((versionFi as any)?.owner) ||
+      safeStr((headFi as any)?.owner) ||
+      safeStr((fm as any)?.owner) ||
+      safeStr((fm as any)?.address) ||
+      safeStr((fm as any)?.signerAddress)
+
+    if (!ownerRaw) {
+      try {
+        ownerRaw = safeStr(await (fm as any)?.getOwner?.())
+      } catch {}
+
+      if (!ownerRaw) {
+        try {
+          ownerRaw = safeStr(await (fm as any)?.getAddress?.())
+        } catch {}
+      }
+    }
+
+    // 2) Normalize the owner to a proper 0x40-hex address if possible
+    const ownerStr = normalizeOwnerHex(ownerRaw)
+
+    // 3) Normalize version to 8-byte hex
+    const idxHex = toHexIndex((versionFi as any)?.version ?? '0') || toHexIndex(0)
+
+    // 4) Validate references
+    const fileRef = (versionFi as any)?.file?.reference
+    const histRef = (versionFi as any)?.file?.historyRef
+
+    // provenance (new)
+    const provenanceMeta = buildProvenanceMetadata(versionFi)
+
+    // 5) Build & show a debug packet (and keep it in state for dev)
+    const debugPacket = {
+      name: versionFi?.name,
+      topicStr,
+      ownerRaw,
+      ownerStr,
+      ownerLooksEth: ETH_RE.test(ownerStr),
+      idxRaw: String((versionFi as any)?.version ?? ''),
+      idxHex,
+      hasFileRef: Boolean(fileRef),
+      hasHistoryRef: Boolean(histRef),
+      headTopic: safeStr((headFi as any)?.topic),
+      headOwner: safeStr((headFi as any)?.owner),
+      originHex: provenanceMeta.restoredFromVersion, // new
+    }
+    console.debug('[FM-UI:VH] restore:resolved', debugPacket)
+    setRestoreDebug(debugPacket)
+
+    // 6) Hard validations with explicit messages
+    if (!topicStr) {
+      setError('Failed to restore: could not resolve feed topic.')
+      console.debug('[FM-UI:VH] restore:abort (no topic)')
+
+      return
+    }
+
+    if (!ownerStr) {
+      setError('Failed to restore: could not resolve owner address.')
+      console.debug('[FM-UI:VH] restore:abort (no owner)')
+
+      return
+    }
+
+    if (!ETH_RE.test(ownerStr)) {
+      setError(`Failed to restore: owner address is not a valid Ethereum address (${ownerStr}).`)
+      console.debug('[FM-UI:VH] restore:abort (bad owner format)')
+
+      return
+    }
+
+    if (!fileRef || !histRef) {
+      setError('Failed to restore: missing file reference(s) on the selected version.')
+      console.debug('[FM-UI:VH] restore:abort (missing refs)', { fileRef, histRef })
+
+      return
+    }
+
+    // 7) Build the payload exactly for the lib — include provenance metadata
+    const fixed: FileInfo = {
+      ...versionFi,
+      topic: topicStr as any,
+      owner: ownerStr as any, // <- string with 0x prefix
+      version: idxHex,
+      customMetadata: {
+        ...(versionFi.customMetadata || {}),
+        ...provenanceMeta, // <- inject/propagate origin
+      } as any,
+    }
+
+    console.debug('[FM-UI:VH] restore:calling fm.restoreVersion', {
+      topic: topicStr,
+      owner: ownerStr,
+      version: idxHex,
+      fileRef,
+      histRef,
+    })
+
     try {
-      const idx = parseIndex(versionFi.version) ?? BigInt(0)
-
-      // normalize critical fields; ensure owner/topic are strings
-      const ownerStr = toStr((versionFi as any)?.owner) || toStr((headFi as any)?.owner)
-      const topicStr = toStr(versionFi.topic) || toStr((headFi as any)?.topic)
-
-      if (!ownerStr || !topicStr) {
-        throw new Error('Missing owner/topic for restore')
-      }
-
-      const fixed: FileInfo = {
-        ...versionFi,
-        owner: ownerStr as any, // lib accepts string/EthAddress; toString() happens inside
-        topic: topicStr as any,
-        version: toHexIndexStr(idx),
-      }
-
       await (fm as FileManagerBase).restoreVersion(fixed)
-
+      console.debug('[FM-UI:VH] restore:success')
       await Promise.resolve(refreshFiles?.())
       onCancelClick()
-    } catch (e) {
-      console.debug('[FM-UI:VH] restoreVersion:error', e)
-      setError('Failed to restore this version')
+    } catch (e: any) {
+      const msg = String(e?.message || e || '')
+      console.debug('[FM-UI:VH] restore:failure', { error: e, message: msg, fixed })
+      setRestoreDebug({ ...debugPacket, errorMessage: msg })
+
+      // --- Fallback path: metadata-only upload to "promote" this old file as new head ---
+      const looksLikeFeedIndexEqualsBug =
+        /uint8ArrayToHex|Bytes\.toHex|FeedIndex\.equals/i.test(e?.stack || '') ||
+        /Cannot read properties of undefined \(reading 'toString'\)/i.test(msg)
+
+      if (looksLikeFeedIndexEqualsBug) {
+        try {
+          const batchId = (versionFi as any)?.batchId?.toString?.() || (headFi as any)?.batchId?.toString?.()
+
+          if (!batchId) throw new Error('Missing batchId for fallback upload')
+
+          console.debug('[FM-UI:VH] restore:fallback-upload:start', {
+            batchId,
+            topicStr,
+            ownerStr,
+            idxHex,
+          })
+
+          await (fm as any).upload(
+            {
+              info: {
+                batchId,
+                name: versionFi.name,
+                topic: topicStr,
+                // reuse existing content
+                file: {
+                  reference: (versionFi as any).file.reference.toString(),
+                  historyRef: (versionFi as any).file.historyRef.toString(),
+                },
+                // carry forward metadata + provenance
+                customMetadata: {
+                  ...(versionFi.customMetadata || {}),
+                  ...provenanceMeta,
+                },
+              },
+            },
+            // no uploadOptions (we’re not uploading content)
+            undefined,
+            // requestOptions
+            undefined,
+          )
+
+          console.debug('[FM-UI:VH] restore:fallback-upload:success')
+          await Promise.resolve(refreshFiles?.())
+          onCancelClick()
+
+          return
+        } catch (fallbackErr: any) {
+          console.debug('[FM-UI:VH] restore:fallback-upload:failure', {
+            error: fallbackErr,
+            message: String(fallbackErr?.message || fallbackErr || ''),
+          })
+          // bubble to normal error mapping below
+        }
+      }
+
+      // nice messages for other cases
+      if (/postage|batch|stamp|insufficient/i.test(msg)) {
+        setError('Failed to restore: need a valid postage stamp on this drive.')
+      } else if (/feed.*not.*found/i.test(msg)) {
+        setError('Failed to restore: feed not found for this owner/topic.')
+      } else if (/has to be defined|version.*defined/i.test(msg)) {
+        setError('Failed to restore: version index was not resolved.')
+      } else {
+        setError(FM_DEBUG ? `Failed to restore: ${msg}` : 'Failed to restore this version')
+      }
     }
   }
 
@@ -439,7 +777,28 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         </div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {error && <div className="fm-modal-white-section fm-soft-text">{error}</div>}
+          {error && (
+            <div className="fm-modal-white-section fm-soft-text">
+              {error}
+              {FM_DEBUG && restoreDebug && (
+                <pre
+                  style={{
+                    marginTop: 8,
+                    maxHeight: 220,
+                    overflow: 'auto',
+                    background: '#111',
+                    color: '#eee',
+                    padding: 8,
+                    borderRadius: 6,
+                    fontSize: 11,
+                  }}
+                >
+                  {JSON.stringify(restoreDebug, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+
           {!error && loading && <div className="fm-loading">Loading…</div>}
 
           {!error && !loading && pageVersions.length === 0 && (
@@ -455,16 +814,46 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
               const modified = item.timestamp != null ? new Date(item.timestamp).toLocaleString() : '—'
               const key = `${item.topic?.toString?.() ?? ''}:${toHexIndexStr(idx)}`
 
+              // NEW: provenance shown on any entry that was created via restore()
+              const { originDec, restoredAt } = getProvenance(item)
+              const showProvenance = Boolean(originDec)
+              const restoredAtStr = restoredAt ? new Date(restoredAt).toLocaleString() : null
+
               return (
                 <div key={key} className="fm-modal-white-section fm-space-between">
                   <div className="fm-version-history-modal-section-left fm-space-between">
-                    <div className="fm-version-history-modal-section-left-row">
+                    <div className="fm-version-history-modal-section-left-row" style={{ gap: 6 }}>
                       <div className="fm-emphasized-text">v{idx.toString()}</div>
                       {isCurrent && <div className="fm-current-tag">Current</div>}
+                      {showProvenance && (
+                        // you can style this class in your SCSS if you want a pill look;
+                        // otherwise it’ll inherit the same typographic styles.
+                        <div
+                          className="fm-origin-tag"
+                          title={restoredAtStr ? `Restored on ${restoredAtStr}` : 'Restored'}
+                          style={{
+                            padding: '2px 6px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            opacity: 0.8,
+                            border: '1px solid rgba(255,255,255,0.15)',
+                          }}
+                        >
+                          Restored from v{originDec}
+                        </div>
+                      )}
                     </div>
-                    <div className="fm-version-history-modal-section-left-row">
+
+                    <div className="fm-version-history-modal-section-left-row" style={{ gap: 6 }}>
                       <CalendarIcon size="12" /> {modified} <UserIcon size="12" />
                     </div>
+
+                    {showProvenance && restoredAtStr && (
+                      <div className="fm-version-history-modal-section-left-row fm-provenance" style={{ opacity: 0.8 }}>
+                        <HistoryIcon size="12" style={{ marginRight: 4 }} />
+                        Restored on {restoredAtStr}
+                      </div>
+                    )}
                   </div>
 
                   <div className="fm-version-history-modal-section-right">
