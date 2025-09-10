@@ -11,11 +11,29 @@ import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { FileInfo, FileInfoOptions, FileStatus } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManager, FileInfoOptions, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
 import { BatchId } from '@ethersphere/bee-js'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import type { PostageBatch } from '@ethersphere/bee-js'
+
+import {
+  formatBytes,
+  sanitizeFileName,
+  parseIndexSafe,
+  indexToHex8,
+  normalizeToBlob,
+  historyKey,
+  getHeadCandidate,
+  getBatchIdForFile,
+  batchIdToString,
+  hydrateWithPublishers,
+  getCandidatePublishers,
+  computeContextMenuPosition,
+  toStr,
+} from '../../../utils/fm'
+
+import type { DownloadPart } from '../../../utils/fm'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -25,254 +43,6 @@ interface FileItemProps {
 }
 
 type BlobWithName = { blob: Blob; fileName: string }
-
-const formatBytes = (v?: string) => {
-  const n = v ? Number(v) : NaN
-
-  if (!Number.isFinite(n) || n < 0) return '—'
-
-  if (n < 1024) return `${n} B`
-  const units = ['KB', 'MB', 'GB', 'TB']
-  let val = n / 1024
-  let i = 0
-  while (val >= 1024 && i < units.length - 1) {
-    val /= 1024
-    i++
-  }
-
-  return `${val.toFixed(1)} ${units[i]}`
-}
-
-type BeeBytes = { toUint8Array: () => Uint8Array }
-const hasToUint8Array = (x: unknown): x is BeeBytes =>
-  typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
-
-type HasGetReader = { getReader: () => ReadableStreamDefaultReader<Uint8Array> }
-const hasGetReader = (x: unknown): x is HasGetReader =>
-  typeof x === 'object' &&
-  x !== null &&
-  'getReader' in (x as HasGetReader) &&
-  typeof (x as HasGetReader).getReader === 'function'
-
-type HasArrayBuffer = { arrayBuffer: () => Promise<ArrayBuffer> }
-const hasArrayBufferFn = (x: unknown): x is HasArrayBuffer =>
-  typeof x === 'object' &&
-  x !== null &&
-  'arrayBuffer' in (x as HasArrayBuffer) &&
-  typeof (x as HasArrayBuffer).arrayBuffer === 'function'
-
-type HasBlob = { blob: () => Promise<Blob> }
-const hasBlobFn = (x: unknown): x is HasBlob =>
-  typeof x === 'object' && x !== null && 'blob' in (x as HasBlob) && typeof (x as HasBlob).blob === 'function'
-
-async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
-  const reader = stream.getReader()
-  const chunks: Uint8Array[] = []
-  let total = 0
-  try {
-    let res: ReadableStreamReadResult<Uint8Array> = await reader.read()
-    while (!res.done) {
-      const chunk = res.value
-
-      if (chunk) {
-        chunks.push(chunk)
-        total += chunk.byteLength
-      }
-      res = await reader.read()
-    }
-  } finally {
-    reader.releaseLock()
-  }
-  const out = new Uint8Array(total)
-  let offset = 0
-  for (const c of chunks) {
-    out.set(c, offset)
-    offset += c.byteLength
-  }
-
-  return out
-}
-
-type DownloadPart = Blob | Uint8Array | BeeBytes | ReadableStream<Uint8Array> | HasArrayBuffer | HasBlob
-
-async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob> {
-  const type = mime || 'application/octet-stream'
-
-  if (part instanceof Blob) return part
-
-  if (hasToUint8Array(part)) return new Blob([part.toUint8Array()], { type })
-
-  if (part instanceof Uint8Array) return new Blob([part], { type })
-
-  if (hasGetReader(part)) {
-    const u8 = await streamToUint8Array(part as unknown as ReadableStream<Uint8Array>)
-
-    return new Blob([u8], { type })
-  }
-
-  if (hasBlobFn(part)) {
-    const b = await (part as HasBlob).blob()
-
-    return b.type ? b : new Blob([await b.arrayBuffer()], { type })
-  }
-
-  if (hasArrayBufferFn(part)) {
-    const buf = await (part as HasArrayBuffer).arrayBuffer()
-
-    return new Blob([buf], { type })
-  }
-  throw new Error('Unsupported downloaded part type')
-}
-
-function sanitizeFileName(s: string) {
-  return (s || 'download').replace(/[\\/:*?"<>|]+/g, '_')
-}
-
-type FileManagerLike = {
-  download: (fi: FileInfo, paths?: string[]) => Promise<ReadableStream<Uint8Array>[] | Uint8Array[] | unknown>
-  listFiles: (fi: FileInfo) => Promise<Array<{ path: string }>>
-  getVersion: (fi: FileInfo, version?: string | number | bigint) => Promise<FileInfo>
-  restoreVersion?: (fi: FileInfo) => Promise<void>
-  trashFile: (fi: FileInfo) => Promise<void>
-  recoverFile: (fi: FileInfo) => Promise<void>
-  forgetFile: (fi: FileInfo) => Promise<void>
-  destroyVolume: (batchId: BatchId) => Promise<void>
-  upload: (opts: FileInfoOptions) => Promise<void>
-  fileInfoList?: FileInfo[]
-  bee?: { getNodeAddresses?: () => Promise<{ publicKey?: string }> }
-}
-
-const HEX_INDEX_BYTES = 8
-const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
-const indexToHex8 = (i: bigint) => `0x${i.toString(16).padStart(HEX_INDEX_CHARS, '0')}`
-
-const parseIndex = (v: unknown): bigint => {
-  if (v == null) return BigInt(0)
-  const s = String(v).trim()
-
-  return s.startsWith('0x') ? BigInt(s) : BigInt(s || '0')
-}
-
-const toStr = (x: unknown): string => {
-  try {
-    return (x as { toString?: () => string })?.toString?.() ?? String(x ?? '')
-  } catch {
-    return String(x ?? '')
-  }
-}
-
-function sameTopic(a?: FileInfo, b?: FileInfo): boolean {
-  try {
-    return toStr(a?.topic) === toStr(b?.topic)
-  } catch {
-    return false
-  }
-}
-
-async function getCandidatePublishers(
-  fm: Pick<FileManagerLike, 'fileInfoList' | 'bee'>,
-  seed: FileInfo,
-): Promise<string[]> {
-  const out = new Set<string>()
-  const seedPub = seed.actPublisher
-
-  if (seedPub) out.add(toStr(seedPub))
-
-  try {
-    const pub = await fm.bee?.getNodeAddresses?.()
-
-    if (pub?.publicKey) out.add(String(pub.publicKey))
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const list: FileInfo[] = fm.fileInfoList || []
-    for (const f of list) {
-      if (sameTopic(f, seed) && f.actPublisher) out.add(toStr(f.actPublisher))
-    }
-  } catch {
-    /* ignore */
-  }
-
-  return Array.from(out)
-}
-
-async function hydrateWithPublishers(
-  fmLike: FileManagerLike,
-  fmAny: Pick<FileManagerLike, 'fileInfoList' | 'bee'>,
-  seed: FileInfo,
-  version?: string,
-): Promise<FileInfo> {
-  const pubs = await getCandidatePublishers(fmAny, seed)
-  for (const p of pubs) {
-    try {
-      const variant: FileInfo = { ...seed, actPublisher: p }
-      const res = await fmLike.getVersion(variant, version)
-
-      return res.actPublisher ? res : { ...res, actPublisher: p }
-    } catch {
-      /* try next */
-    }
-  }
-  const res = await fmLike.getVersion(seed, version)
-
-  return res.actPublisher || pubs.length === 0 ? res : { ...res, actPublisher: pubs[0] }
-}
-
-function historyKey(fi: FileInfo): string {
-  const ref = (fi.file as { historyRef?: unknown })?.historyRef
-
-  return ref ? toStr(ref) : ''
-}
-
-function normTopic(x: unknown): string {
-  return toStr(x)
-}
-
-function pickLatest(a: FileInfo, b: FileInfo): FileInfo {
-  const av = BigInt(a?.version ?? '0')
-  const bv = BigInt(b?.version ?? '0')
-
-  if (av === bv) return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
-
-  return av > bv ? a : b
-}
-
-function getHeadCandidate(fmObj: { fileInfoList?: FileInfo[] } | null | undefined, seed: FileInfo): FileInfo | null {
-  try {
-    const list: FileInfo[] = fmObj?.fileInfoList || []
-
-    if (!list.length) return null
-    const hist = historyKey(seed)
-    const seedTopicNorm = normTopic(seed.topic)
-
-    const same = list.filter(f => {
-      if (hist) return historyKey(f) === hist
-
-      if (seedTopicNorm) return normTopic(f.topic) === seedTopicNorm
-
-      return f.name === seed.name
-    })
-
-    return same.length ? same.reduce(pickLatest) : null
-  } catch {
-    return null
-  }
-}
-
-const batchIdToString = (id: string | BatchId | undefined): string =>
-  typeof id === 'string' ? id : id?.toString() ?? ''
-
-function getBatchIdForFile(fi: FileInfo, fallback?: unknown): string | undefined {
-  const direct = fi?.batchId
-
-  if (direct) return batchIdToString(direct as string | BatchId | undefined)
-
-  if (fallback != null) return toStr(fallback)
-
-  return undefined
-}
 
 type FMContextLike = {
   fm: unknown
@@ -286,7 +56,7 @@ type GetInfoFM = Parameters<typeof buildGetInfoGroups>[0]
 export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentBatch, files } = useFM() as unknown as FMContextLike
-  const fmLike = (fm || null) as FileManagerLike | null
+  const fmLike = (fm || null) as FileManager | null
   const { view } = useView()
 
   const name = fileInfo.name
@@ -337,7 +107,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     return out
   }, [files, currentBatch, thisHistory])
 
-  const ensureHead = useCallback(async (manager: FileManagerLike, fi: FileInfo): Promise<FileInfo> => {
+  const ensureHead = useCallback(async (manager: FileManager, fi: FileInfo): Promise<FileInfo> => {
     const cached = getHeadCandidate(manager, fi)
 
     if (cached) return cached
@@ -348,7 +118,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     }
   }, [])
 
-  const fileInfoToBlob = async (manager: FileManagerLike, fi: FileInfo): Promise<BlobWithName> => {
+  const fileInfoToBlob = async (manager: FileManager, fi: FileInfo): Promise<BlobWithName> => {
     const baseName = fi.name || 'download'
     const mime = fi.customMetadata?.mime || 'application/octet-stream'
 
@@ -391,7 +161,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     await runTracked(fileInfo.name || 'open', async () => {
       try {
         const head = await ensureHead(fmLike, fileInfo)
-        const headIdx = parseIndex(head.version)
+        const headIdx = parseIndexSafe(head.version)
         const anchor: FileInfo = { ...head, version: indexToHex8(headIdx) }
         const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
         const pubs = await getCandidatePublishers(fmLike, anchor)
@@ -422,7 +192,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
 
     await runTracked(fileInfo.name || 'download', async () => {
       const headSeed = await ensureHead(fmLike, fileInfo)
-      const headIdx = parseIndex(headSeed.version)
+      const headIdx = parseIndexSafe(headSeed.version)
       const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
       const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
       const pubs = await getCandidatePublishers(fmLike, anchor)
@@ -482,7 +252,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     if (!batchId) throw new Error('no-batch')
 
     const headSeed = await ensureHead(fmLike, fileInfo)
-    const headIdx = parseIndex(headSeed.version)
+    const headIdx = parseIndexSafe(headSeed.version)
     const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
 
     let hydrated = headSeed
@@ -520,22 +290,14 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
       const menu = contextRef.current
 
       if (!menu) return
-      const rect = menu.getBoundingClientRect()
-      const vw = window.innerWidth
-      const vh = window.innerHeight
-      const margin = 8
-      const left = Math.max(margin, Math.min(pos.x, vw - rect.width - margin))
-      let top = pos.y
-      let dir: 'down' | 'up' = 'down'
-
-      if (pos.y > vh * 0.5 || pos.y + rect.height + margin > vh) {
-        top = Math.max(margin, pos.y - rect.height)
-        dir = 'up'
-      } else {
-        top = Math.max(margin, Math.min(pos.y, vh - rect.height - margin))
-      }
-      setSafePos({ x: left, y: top })
-      setDropDir(dir)
+      const { safePos: s, dropDir: d } = computeContextMenuPosition({
+        clickPos: pos,
+        menuRect: menu.getBoundingClientRect(),
+        viewport: { w: window.innerWidth, h: window.innerHeight },
+        margin: 8,
+      })
+      setSafePos(s)
+      setDropDir(d)
     })
   }, [showContext, pos, contextRef])
 

@@ -16,7 +16,8 @@ import type { FileInfo, FileManager, FileStatus } from '@solarpunkltd/file-manag
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { getUsableStamps } from '../../utils/utils'
 import { useFMSearch } from '../../providers/FMSearchContext'
-import { ReferenceWithHistory } from '@solarpunkltd/file-manager-lib/dist/types/utils/types'
+
+import { toStr, normalizeBatchId, historyKey, computeContextMenuPosition } from '../../utils/fm'
 
 type Point = { x: number; y: number }
 
@@ -24,28 +25,10 @@ type CurrentBatch = { batchID: BatchId; label?: string }
 type SettingsValue = { beeApi: unknown }
 type StampLike = { label?: string; batchID?: { toString?: () => string } | string }
 
-const toStringSafe = (x: unknown): string => {
-  if (x == null) return ''
-
-  if (typeof x === 'string') return x
-  try {
-    const s = (x as { toString?: () => string }).toString?.() ?? String(x)
-
-    return s !== '[object Object]' ? s : ''
-  } catch {
-    return ''
-  }
-}
-
-type Stringish = { toString?: () => string } | string | number | boolean | bigint | null | undefined
-const normalizeBatchId = (v: unknown): string => {
-  const s = toStringSafe((v as Stringish)?.toString?.() ?? v)
-
-  return s.startsWith('0x') ? s.slice(2).toLowerCase() : s.toLowerCase()
-}
-
-const historyKey = (fi: FileInfo): string => toStringSafe((fi.file as ReferenceWithHistory)?.historyRef)
+// local helper: status check
 const isTrashed = (fi: FileInfo): boolean => (fi.status as FileStatus | undefined) === 'trashed'
+
+// safe bigint parse for version comparison (kept local to avoid over-importing)
 const toBigIntSafe = (v: unknown): bigint => {
   try {
     return BigInt(String(v ?? '0'))
@@ -188,30 +171,28 @@ export function FileBrowser(): ReactElement {
       const menu = contextRef.current
       const container = document.querySelector('.fm-file-browser-container') as HTMLElement | null
 
-      if (!menu || !container) return
+      if (!menu) return
+
       const rect = menu.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const margin = 8
-      const containerRect = container.getBoundingClientRect()
-      const containerMidY = containerRect.top + containerRect.height / 2
-      const left = Math.max(margin, Math.min((pos as Point).x, vw - rect.width - margin))
-      let top = (pos as Point).y
-      let dir: 'down' | 'up' = 'down'
+      const containerRect = container?.getBoundingClientRect() ?? null
 
-      if ((pos as Point).y > containerMidY || (pos as Point).y + rect.height + margin > vh) {
-        top = Math.max(margin, (pos as Point).y - rect.height)
-        dir = 'up'
-      } else {
-        top = Math.max(margin, Math.min((pos as Point).y, vh - rect.height - margin))
-      }
-      setSafePos({ x: left, y: top })
-      setDropDir(dir)
+      const { safePos: sp, dropDir: dd } = computeContextMenuPosition({
+        clickPos: pos as Point,
+        menuRect: rect,
+        viewport: { w: vw, h: vh },
+        margin: 8,
+        containerRect, // pass the rect; util will compute midY itself
+      })
+
+      setSafePos(sp)
+      setDropDir(dd)
     })
   }, [showContext, pos, contextRef])
 
   const currentDriveLabel = useMemo(
-    () => (currentBatch ? currentBatch.label || toStringSafe(currentBatch.batchID) : ''),
+    () => (currentBatch ? currentBatch.label || toStr(currentBatch.batchID) : ''),
     [currentBatch],
   )
 
@@ -241,7 +222,7 @@ export function FileBrowser(): ReactElement {
       const hist = historyKey(fi)
 
       if (hist) return `H:${hist}`
-      const t = toStringSafe(fi.topic)
+      const t = toStr(fi.topic)
 
       if (t) return `T:${t}`
 
@@ -316,7 +297,7 @@ export function FileBrowser(): ReactElement {
       const hist = historyKey(fi)
 
       if (hist) return `H:${hist}`
-      const t = toStringSafe(fi.topic)
+      const t = toStr(fi.topic)
       const n = fi.name || ''
 
       return `T:${t}|N:${n}`
@@ -364,7 +345,7 @@ export function FileBrowser(): ReactElement {
     } else {
       bodyContent = listToRender.map(fi => (
         <FileItem
-          key={`${historyKey(fi) || toStringSafe(fi.topic) || fi.name}::${fi.version ?? ''}`}
+          key={`${historyKey(fi) || toStr(fi.topic) || fi.name}::${fi.version ?? ''}`}
           fileInfo={fi}
           onDownload={trackDownload}
         />
@@ -380,7 +361,7 @@ export function FileBrowser(): ReactElement {
 
         return (
           <FileItem
-            key={`${historyKey(fi) || toStringSafe(fi.topic) || fi.name}::${fi.version ?? ''}`}
+            key={`${historyKey(fi) || toStr(fi.topic) || fi.name}::${fi.version ?? ''}`}
             fileInfo={fi}
             onDownload={trackDownload}
             showDriveColumn={true}

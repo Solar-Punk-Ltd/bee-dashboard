@@ -16,179 +16,15 @@ import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
-const HEX_INDEX_BYTES = 8
-const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
-
-const toHexIndexStr = (i: bigint): string => `0x${i.toString(16).padStart(HEX_INDEX_CHARS, '0')}`
-const padIndexHex = (hexNoPrefix: string): string => {
-  const h = hexNoPrefix.toLowerCase()
-
-  return h.length >= HEX_INDEX_CHARS ? h : h.padStart(HEX_INDEX_CHARS, '0')
-}
-const toHexIndex = (v?: string | number | bigint): string | undefined => {
-  if (v == null || v === '') return undefined
-  const s = String(v)
-
-  return s.startsWith('0x') ? `0x${padIndexHex(s.slice(2))}` : `0x${padIndexHex(BigInt(s).toString(16))}`
-}
-const parseIndex = (v: unknown): bigint | null => {
-  try {
-    if (v == null) return null
-
-    if (typeof v === 'bigint') return v
-    const s = String(v).trim()
-
-    return BigInt(s)
-  } catch {
-    return null
-  }
-}
-const safeStr = (x: unknown): string => {
-  try {
-    const s = (x as { toString?: () => string })?.toString?.() ?? String(x ?? '')
-
-    return s !== '[object Object]' ? s : ''
-  } catch {
-    return ''
-  }
-}
-const sameTopic = (a?: FileInfo, b?: FileInfo): boolean => {
-  try {
-    return a?.topic?.toString?.() === b?.topic?.toString?.()
-  } catch {
-    return false
-  }
-}
-const keyOf = (fi: FileInfo): string => {
-  const t = fi.topic?.toString?.() ?? ''
-  const idx = parseIndex(fi.version)
-  const idxHex = idx != null ? toHexIndexStr(idx) : String(fi.version ?? '').toLowerCase()
-
-  return `${t}:${idxHex}`
-}
-const getHeadByTopic = (list: FileInfo[], topic?: unknown): FileInfo | null => {
-  try {
-    const t = (topic as { toString?: () => string } | undefined)?.toString?.()
-
-    if (!t) return null
-    const same = list.filter(f => f.topic?.toString?.() === t)
-
-    if (!same.length) return null
-
-    return same.reduce((a, b) => (BigInt(a.version ?? '0') >= BigInt(b.version ?? '0') ? a : b))
-  } catch {
-    return null
-  }
-}
-
-type BeeAddresses = { publicKey?: string }
-type BeeLike = { getNodeAddresses?: () => Promise<BeeAddresses> }
-type FMWithBee = FileManager & { bee?: BeeLike }
-
-type BeeBytes = { toUint8Array: () => Uint8Array }
-const hasToUint8Array = (x: unknown): x is BeeBytes =>
-  typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
-type HasGetReader = { getReader: () => ReadableStreamDefaultReader<Uint8Array> }
-const hasGetReader = (x: unknown): x is HasGetReader =>
-  typeof x === 'object' && x !== null && 'getReader' in (x as HasGetReader)
-type HasArrayBuffer = { arrayBuffer: () => Promise<ArrayBuffer> }
-const hasArrayBufferFn = (x: unknown): x is HasArrayBuffer =>
-  typeof x === 'object' && x !== null && 'arrayBuffer' in (x as HasArrayBuffer)
-type HasBlob = { blob: () => Promise<Blob> }
-const hasBlobFn = (x: unknown): x is HasBlob => typeof x === 'object' && x !== null && 'blob' in (x as HasBlob)
-
-async function streamToUint8Array(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
-  const reader = stream.getReader()
-  const chunks: Uint8Array[] = []
-  let total = 0
-  let res = await reader.read()
-  while (!res.done) {
-    if (res.value) {
-      chunks.push(res.value)
-      total += res.value.byteLength
-    }
-    res = await reader.read()
-  }
-  reader.releaseLock()
-  const out = new Uint8Array(total)
-  let offset = 0
-  for (const c of chunks) {
-    out.set(c, offset)
-    offset += c.byteLength
-  }
-
-  return out
-}
-
-type DownloadPart = Blob | Uint8Array | BeeBytes | ReadableStream<Uint8Array> | HasArrayBuffer | HasBlob
-
-async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob> {
-  const type = mime || 'application/octet-stream'
-
-  if (part instanceof Blob) return part
-
-  if (hasToUint8Array(part)) return new Blob([part.toUint8Array()], { type })
-
-  if (part instanceof Uint8Array) return new Blob([part], { type })
-
-  if (hasGetReader(part)) {
-    const u8 = await streamToUint8Array(part as unknown as ReadableStream<Uint8Array>)
-
-    return new Blob([u8], { type })
-  }
-
-  if (hasBlobFn(part)) {
-    const b = await part.blob()
-
-    return b.type ? b : new Blob([await b.arrayBuffer()], { type })
-  }
-
-  if (hasArrayBufferFn(part)) {
-    const buf = await part.arrayBuffer()
-
-    return new Blob([buf], { type })
-  }
-  throw new Error('Unsupported downloaded part type')
-}
-
-async function getCandidatePublishers(fm: FMWithBee, seed: FileInfo): Promise<string[]> {
-  const out = new Set<string>()
-
-  if (seed.actPublisher) out.add(String(seed.actPublisher))
-  const beePub = await fm.bee?.getNodeAddresses?.()
-
-  if (beePub?.publicKey) out.add(String(beePub.publicKey))
-  const list = fm.fileInfoList || []
-  for (const f of list) {
-    if (sameTopic(f, seed) && f.actPublisher) out.add(String(f.actPublisher))
-  }
-
-  return Array.from(out)
-}
-
-async function hydrateWithPublishers(
-  fmLike: Pick<FileManager, 'getVersion'>,
-  fmFull: FMWithBee,
-  seed: FileInfo,
-  version?: string,
-): Promise<FileInfo> {
-  const pubs = await getCandidatePublishers(fmFull, seed)
-  for (const p of pubs) {
-    const variant: FileInfo = { ...seed, actPublisher: p }
-    try {
-      const res = await fmLike.getVersion(
-        variant,
-        (version as unknown as FeedIndex) || (seed.version as unknown as FeedIndex),
-      )
-
-      return res
-    } catch {
-      /* try next publisher */
-    }
-  }
-
-  return fmLike.getVersion(seed, (version as unknown as FeedIndex) || (seed.version as unknown as FeedIndex))
-}
+import {
+  toStr,
+  parseIndexSafe,
+  indexToHex8,
+  normalizeToBlob,
+  getCandidatePublishers,
+  hydrateWithPublishers,
+} from '../../utils/fm'
+import type { DownloadPart } from '../../utils/fm'
 
 type ConflictChoice = { action: 'keep-both' | 'replace' | 'cancel'; newName?: string }
 
@@ -202,6 +38,7 @@ type FMContextLike = {
   files?: FileInfo[]
   currentBatch?: { batchID: { toString(): string } } | null
 }
+
 type RestoreDebug = {
   name?: string
   topicStr: string
@@ -223,6 +60,38 @@ const truncateMiddle = (s: string, max = 42): string => {
   const half = Math.floor((max - 1) / 2)
 
   return `${str.slice(0, half)}…${str.slice(-half)}`
+}
+
+const keyOf = (fi: FileInfo): string => {
+  const t = toStr(fi.topic)
+  const idx = parseIndexSafe(fi.version)
+  const idxHex = indexToHex8(idx)
+
+  return `${t}:${idxHex}`
+}
+
+const getHeadByTopic = (list: FileInfo[], topic?: unknown): FileInfo | null => {
+  try {
+    const t = toStr(topic)
+
+    if (!t) return null
+    const same = list.filter(f => toStr(f.topic) === t)
+
+    if (!same.length) return null
+
+    return same.reduce((a, b) => {
+      const av = parseIndexSafe(a.version)
+      const bv = parseIndexSafe(b.version)
+
+      if (av === bv) {
+        return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
+      }
+
+      return av > bv ? a : b
+    })
+  } catch {
+    return null
+  }
 }
 
 function ErrorPanel({ error, debug }: { error: string | null; debug: RestoreDebug | null }) {
@@ -333,10 +202,10 @@ function VersionsList({
     <div className="fm-version-history-list">
       {versions.map(item => {
         const vStr = item.version ?? '0'
-        const idx = parseIndex(vStr) ?? BigInt(0)
-        const isCurrent = (parseIndex(headFi?.version) ?? BigInt(0)) === idx
+        const idx = parseIndexSafe(vStr)
+        const isCurrent = parseIndexSafe(headFi?.version) === idx
         const modified = item.timestamp != null ? new Date(item.timestamp).toLocaleString() : '—'
-        const key = `${item.topic?.toString?.() ?? ''}:${toHexIndexStr(idx)}`
+        const key = `${toStr(item.topic)}:${indexToHex8(idx)}`
         const willRename = (headFi?.name || '') !== (item.name || '')
 
         return (
@@ -397,7 +266,9 @@ function VersionsList({
 export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryModalProps): ReactElement {
   const { fm, refreshFiles, files, currentBatch } = useFM() as unknown as FMContextLike
   const fmTyped: FileManager | null = (fm || null) as FileManager | null
-  const fmWithBee: FMWithBee | null = (fm || null) as FMWithBee | null
+  const fmWithBee = (fm || null) as
+    | (FileManager & { bee?: { getNodeAddresses?: () => Promise<{ publicKey?: string }> } })
+    | null
 
   const { downloadBlob } = useFMTransfers()
   const [openConflict, conflictPortal] = useUploadConflictDialog()
@@ -427,8 +298,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     return getHeadByTopic(fmTyped.fileInfoList || [], fileInfo.topic) || fileInfo
   }, [fmTyped, fileInfo])
 
-  const headIdx = useMemo<bigint>(() => parseIndex(headFi?.version) ?? BigInt(0), [headFi])
-  const headTopicStr = useMemo(() => headFi?.topic?.toString?.() ?? '', [headFi])
+  const headIdx = useMemo(() => parseIndexSafe(headFi?.version), [headFi])
+  const headTopicStr = useMemo(() => toStr(headFi?.topic), [headFi])
 
   const enumerateAll = useCallback(async (): Promise<FileInfo[]> => {
     if (!fmTyped || !headFi) return []
@@ -443,7 +314,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       }
     }
 
-    const headAnchor: FileInfo = { ...headFi, version: toHexIndexStr(headIdx) }
+    const headAnchor: FileInfo = { ...headFi, version: indexToHex8(headIdx) }
     pushUnique(headFi)
 
     const MAX_RELATIVE = 2048
@@ -463,7 +334,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       const MAX_MISSES = 8
       const HARD_LIMIT = 4096
       for (let i = headIdx - BigInt(1); i >= BigInt(0) && rows.length < HARD_LIMIT; i--) {
-        const hex = toHexIndexStr(i)
+        const hex = indexToHex8(i)
         let ok = false
         try {
           pushUnique(await fmTyped.getVersion(headAnchor, hex as unknown as FeedIndex))
@@ -488,8 +359,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
   const getVersionBlob = useCallback(
     async (fi: FileInfo): Promise<Blob> => {
       if (!fmTyped || !fmWithBee) throw new Error('FileManager not available')
-      const idx = parseIndex(fi.version) ?? BigInt(0)
-      const versionParam = toHexIndexStr(idx)
+      const idx = parseIndexSafe(fi.version)
+      const versionParam = indexToHex8(idx)
       const anchor: FileInfo = { ...fi, version: versionParam }
 
       const hydrated = await hydrateWithPublishers(
@@ -628,12 +499,14 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         return false
       }
 
-      const idx = parseIndex(versionFi.version) ?? BigInt(0)
-      const versionParam = toHexIndexStr(idx)
+      const idx = parseIndexSafe(versionFi.version)
+      const versionParam = indexToHex8(idx)
       const anchor: FileInfo = { ...versionFi, version: versionParam }
 
       const hydrated = await hydrateWithPublishers(
-        { getVersion: fmTyped.getVersion.bind(fmTyped) },
+        {
+          getVersion: (fi: FileInfo, v: FeedIndex) => fmTyped.getVersion(fi, v as FeedIndex),
+        },
         fmWithBee,
         anchor,
         versionParam,
@@ -653,8 +526,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
           batchId: String(batchId),
           name: finalName,
           file: {
-            reference: typeof ref === 'string' ? ref : ref.toString(),
-            historyRef: typeof histRef === 'string' ? histRef : histRef.toString(),
+            reference: typeof ref === 'string' ? ref : toStr(ref),
+            historyRef: typeof histRef === 'string' ? histRef : toStr(histRef),
           },
           customMetadata: hydrated.customMetadata ?? {},
         },
@@ -680,11 +553,11 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       if (!fmTyped) return
 
       const resolveOwnerRaw = (): string =>
-        safeStr(versionFi.owner) ||
-        safeStr(headFi?.owner) ||
-        safeStr((fmTyped as unknown as { owner?: string }).owner) ||
-        safeStr((fmTyped as unknown as { address?: string }).address) ||
-        safeStr((fmTyped as unknown as { signerAddress?: string }).signerAddress)
+        toStr(versionFi.owner) ||
+        toStr(headFi?.owner) ||
+        toStr((fmTyped as unknown as { owner?: string }).owner) ||
+        toStr((fmTyped as unknown as { address?: string }).address) ||
+        toStr((fmTyped as unknown as { signerAddress?: string }).signerAddress)
 
       const normalizeOwnerHexLocal = (s: string): string => {
         const HEX40 = /^[0-9a-fA-F]{40}$/
@@ -747,13 +620,11 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
           topic: topicStr,
           file: {
             reference:
-              typeof versionFi.file.reference === 'string'
-                ? versionFi.file.reference
-                : versionFi.file.reference.toString(),
+              typeof versionFi.file.reference === 'string' ? versionFi.file.reference : toStr(versionFi.file.reference),
             historyRef:
               typeof versionFi.file.historyRef === 'string'
                 ? versionFi.file.historyRef
-                : versionFi.file.historyRef.toString(),
+                : toStr(versionFi.file.historyRef),
           },
           customMetadata: versionFi.customMetadata ?? {},
         },
@@ -764,10 +635,10 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         onCancelClick()
       }
 
-      const topicStr = safeStr(versionFi.topic) || safeStr(headFi?.topic) || safeStr(fileInfo.topic)
+      const topicStr = toStr(versionFi.topic) || toStr(headFi?.topic) || toStr(fileInfo.topic)
       const ownerRaw = resolveOwnerRaw()
       const ownerStr = normalizeOwnerHexLocal(ownerRaw)
-      const idxHex = toHexIndex(versionFi.version ?? '0') || toHexIndex(0)
+      const idxHex = indexToHex8(parseIndexSafe(versionFi.version ?? '0'))
       const fileRef = versionFi.file?.reference
       const histRef = versionFi.file?.historyRef
 
@@ -781,8 +652,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         idxHex,
         hasFileRef: Boolean(fileRef),
         hasHistoryRef: Boolean(histRef),
-        headTopic: safeStr(headFi?.topic),
-        headOwner: safeStr(headFi?.owner),
+        headTopic: toStr(headFi?.topic),
+        headOwner: toStr(headFi?.owner),
       })
 
       const err = validateInputs(topicStr, ownerStr, fileRef, histRef)
@@ -846,7 +717,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       })
 
       const nameConflicts = sameDrive.filter(fi => (fi.name || '') === targetName)
-      const otherHistoryConflicts = nameConflicts.filter(fi => (fi.topic?.toString?.() ?? '') !== headTopic)
+      const otherHistoryConflicts = nameConflicts.filter(fi => (toStr(fi.topic) ?? '') !== headTopic)
 
       if (targetName && headName && targetName !== headName && otherHistoryConflicts.length === 0) {
         setRenameConfirm({ version: versionFi, headName, targetName })
@@ -888,9 +759,9 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         {truncateMiddle(headFi?.name ?? fileInfo.name, 56)}
       </span>
       {headFi && (
-        <span className="vh-title-sub" title={`Version v${(parseIndex(headFi.version) ?? BigInt(0)).toString()}`}>
+        <span className="vh-title-sub" title={`Version v${parseIndexSafe(headFi.version).toString()}`}>
           {' '}
-          (version v{(parseIndex(headFi.version) ?? BigInt(0)).toString()})
+          (version v{parseIndexSafe(headFi.version).toString()})
         </span>
       )}
     </>
