@@ -10,6 +10,7 @@ import { FMProvider } from '../../providers/FMContext'
 import { getUsableStamps } from '../../utils/utils'
 import { Context as SettingsContext, Provider as SettingsProvider } from '../../../../providers/Settings'
 import { PostageBatch } from '@ethersphere/bee-js'
+import { FMSearchProvider } from '../../providers/FMSearchContext'
 
 export function MainPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -19,7 +20,6 @@ export function MainPage(): ReactElement {
   useEffect(() => {
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
-
       const hasOwnerStamp = stamps.some(stamp => stamp.label === 'owner')
 
       if (!hasOwnerStamp) {
@@ -28,31 +28,31 @@ export function MainPage(): ReactElement {
         setShowInitialModal(false)
         const ownerStamp = stamps.find(stamp => stamp.label === 'owner')
 
-        if (ownerStamp) {
-          setOwnerStamp(ownerStamp)
-        }
+        if (ownerStamp) setOwnerStamp(ownerStamp)
       }
     }
     getStamps()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showInitialModal])
 
   return (
     <SettingsProvider>
       <FMProvider>
-        <FMFileViewProvider>
-          <div className="fm-main">
-            {showInitialModal && (
-              <FMInitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
-            )}
-            <Header />
-            <div className="fm-main-content">
-              <Sidebar />
-
-              <FileBrowser />
+        <FMSearchProvider>
+          <FMFileViewProvider>
+            <div className="fm-main">
+              {showInitialModal && (
+                <FMInitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
+              )}
+              <Header />
+              <div className="fm-main-content">
+                <Sidebar />
+                <FileBrowser />
+              </div>
+              <OwnerStatusBar ownerStamp={ownerStamp} />
             </div>
-            <OwnerStatusBar ownerStamp={ownerStamp} />
-          </div>
-        </FMFileViewProvider>
+          </FMFileViewProvider>
+        </FMSearchProvider>
       </FMProvider>
     </SettingsProvider>
   )

@@ -6,35 +6,17 @@ import { createPortal } from 'react-dom'
 import { BatchId, PostageBatch } from '@ethersphere/bee-js'
 
 interface DestroyDriveModalProps {
-  stamp: PostageBatch
+  stamp: Pick<PostageBatch, 'batchID' | 'label'>
   onCancelClick: () => void
+  onConfirm: (batchId: BatchId) => void | Promise<void>
 }
 
-export function DestroyDriveModal({ stamp, onCancelClick }: DestroyDriveModalProps): ReactElement {
+export function DestroyDriveModal({ stamp, onCancelClick, onConfirm }: DestroyDriveModalProps): ReactElement {
   const [driveNameInput, setDriveNameInput] = useState('')
   const batchIdStr = stamp.batchID.toString()
   const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
-
   const destroyDriveText = `DESTROY DRIVE ${stamp.label || shortBatchId}`
-
   const modalRoot = document.querySelector('.fm-main') || document.body
-
-  const handleDestroyVolume = async (batchId: BatchId) => {
-    await destroyVolume(batchId)
-    onCancelClick()
-  }
-
-  //TODO the destroyVolume function below is a mocked function for drive destroying. It needs to be changed to the real destroyVolume function.
-  const destroyVolume = (batchId: BatchId) => {
-    // Mocked API call
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // eslint-disable-next-line no-console
-        console.log(`Drive ${shortBatchId} destroyed`)
-        resolve(true)
-      }, 1000)
-    })
-  }
 
   return createPortal(
     <div className="fm-modal-container">
@@ -70,7 +52,7 @@ export function DestroyDriveModal({ stamp, onCancelClick }: DestroyDriveModalPro
             label="Destroy entire drive"
             variant="danger"
             disabled={destroyDriveText !== driveNameInput}
-            onClick={() => handleDestroyVolume(stamp.batchID)}
+            onClick={() => onConfirm(stamp.batchID)}
           />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>

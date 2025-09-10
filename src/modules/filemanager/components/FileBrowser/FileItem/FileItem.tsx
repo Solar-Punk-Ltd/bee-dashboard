@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useLayoutEffect, useState } from 'react'
+import { ReactElement, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
@@ -7,15 +7,21 @@ import { ViewType } from '../../../constants/constants'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
+import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileInfoOptions, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
+import { BatchId } from '@ethersphere/bee-js'
+import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
+import type { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
   fileInfo: FileInfo
   onDownload?: (name: string, task: () => Promise<void>, opts?: { size?: string }) => Promise<void>
+  showDriveColumn?: boolean
+  driveLabel?: string
 }
 
 type BlobWithName = { blob: Blob; fileName: string }
@@ -27,8 +33,8 @@ const formatBytes = (v?: string) => {
 
   if (n < 1024) return `${n} B`
   const units = ['KB', 'MB', 'GB', 'TB']
-  let val = n / 1024,
-    i = 0
+  let val = n / 1024
+  let i = 0
   while (val >= 1024 && i < units.length - 1) {
     val /= 1024
     i++
@@ -40,18 +46,21 @@ const formatBytes = (v?: string) => {
 type BeeBytes = { toUint8Array: () => Uint8Array }
 const hasToUint8Array = (x: unknown): x is BeeBytes =>
   typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
+
 type HasGetReader = { getReader: () => ReadableStreamDefaultReader<Uint8Array> }
 const hasGetReader = (x: unknown): x is HasGetReader =>
   typeof x === 'object' &&
   x !== null &&
   'getReader' in (x as HasGetReader) &&
   typeof (x as HasGetReader).getReader === 'function'
+
 type HasArrayBuffer = { arrayBuffer: () => Promise<ArrayBuffer> }
 const hasArrayBufferFn = (x: unknown): x is HasArrayBuffer =>
   typeof x === 'object' &&
   x !== null &&
   'arrayBuffer' in (x as HasArrayBuffer) &&
   typeof (x as HasArrayBuffer).arrayBuffer === 'function'
+
 type HasBlob = { blob: () => Promise<Blob> }
 const hasBlobFn = (x: unknown): x is HasBlob =>
   typeof x === 'object' && x !== null && 'blob' in (x as HasBlob) && typeof (x as HasBlob).blob === 'function'
@@ -119,17 +128,25 @@ function sanitizeFileName(s: string) {
   return (s || 'download').replace(/[\\/:*?"<>|]+/g, '_')
 }
 
-interface FileManagerLike {
-  download: (fi: FileInfo, paths?: string[]) => Promise<unknown | unknown[]>
+/** Minimal surface used by this component; purposely widened for compatibility. */
+type FileManagerLike = {
+  download: (fi: FileInfo, paths?: string[]) => Promise<ReadableStream<Uint8Array>[] | Uint8Array[] | unknown>
   listFiles: (fi: FileInfo) => Promise<Array<{ path: string }>>
-  getVersion: (fi?: FileInfo, version?: string) => Promise<FileInfo>
+  getVersion: (fi: FileInfo, version?: string | number | bigint) => Promise<FileInfo>
   restoreVersion?: (fi: FileInfo) => Promise<void>
+  trashFile: (fi: FileInfo) => Promise<void>
+  recoverFile: (fi: FileInfo) => Promise<void>
+  forgetFile: (fi: FileInfo) => Promise<void>
+  destroyVolume: (batchId: BatchId) => Promise<void>
+  upload: (opts: FileInfoOptions) => Promise<void>
+  fileInfoList?: FileInfo[]
+  bee?: { getNodeAddresses?: () => Promise<{ publicKey?: string }> }
 }
 
-/** ------------ helpers: ACT-publisher aware hydration ------------ */
 const HEX_INDEX_BYTES = 8
 const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
 const indexToHex8 = (i: bigint) => `0x${i.toString(16).padStart(HEX_INDEX_CHARS, '0')}`
+
 const parseIndex = (v: unknown): bigint => {
   if (v == null) return BigInt(0)
   const s = String(v).trim()
@@ -137,31 +154,43 @@ const parseIndex = (v: unknown): bigint => {
   return s.startsWith('0x') ? BigInt(s) : BigInt(s || '0')
 }
 
-function sameTopic(a?: FileInfo, b?: FileInfo) {
+const toStr = (x: unknown): string => {
   try {
-    return a?.topic?.toString?.() === b?.topic?.toString?.()
+    return (x as { toString?: () => string })?.toString?.() ?? String(x ?? '')
+  } catch {
+    return String(x ?? '')
+  }
+}
+
+function sameTopic(a?: FileInfo, b?: FileInfo): boolean {
+  try {
+    return toStr(a?.topic) === toStr(b?.topic)
   } catch {
     return false
   }
 }
 
-async function getCandidatePublishers(fm: any, seed: FileInfo): Promise<string[]> {
+async function getCandidatePublishers(
+  fm: Pick<FileManagerLike, 'fileInfoList' | 'bee'>,
+  seed: FileInfo,
+): Promise<string[]> {
   const out = new Set<string>()
-  const seedPub = (seed as any)?.actPublisher
+  const seedPub = seed.actPublisher
 
-  if (seedPub) out.add(String(seedPub))
+  if (seedPub) out.add(toStr(seedPub))
+
   try {
-    const bee = (fm as any)?.bee
-    const pub = await bee?.getNodeAddresses?.()
+    const pub = await fm.bee?.getNodeAddresses?.()
 
     if (pub?.publicKey) out.add(String(pub.publicKey))
   } catch {
     /* ignore */
   }
+
   try {
-    const list: FileInfo[] = fm?.fileInfoList || []
+    const list: FileInfo[] = fm.fileInfoList || []
     for (const f of list) {
-      if (sameTopic(f, seed) && (f as any)?.actPublisher) out.add(String((f as any).actPublisher))
+      if (sameTopic(f, seed) && f.actPublisher) out.add(toStr(f.actPublisher))
     }
   } catch {
     /* ignore */
@@ -172,168 +201,173 @@ async function getCandidatePublishers(fm: any, seed: FileInfo): Promise<string[]
 
 async function hydrateWithPublishers(
   fmLike: FileManagerLike,
-  fmAny: any,
+  fmAny: Pick<FileManagerLike, 'fileInfoList' | 'bee'>,
   seed: FileInfo,
   version?: string,
 ): Promise<FileInfo> {
   const pubs = await getCandidatePublishers(fmAny, seed)
   for (const p of pubs) {
     try {
-      const variant = { ...seed, actPublisher: p } as FileInfo
+      const variant: FileInfo = { ...seed, actPublisher: p }
       const res = await fmLike.getVersion(variant, version)
 
-      return (res as any)?.actPublisher ? res : ({ ...res, actPublisher: p } as FileInfo)
+      return res.actPublisher ? res : { ...res, actPublisher: p }
     } catch {
       /* try next */
     }
   }
   const res = await fmLike.getVersion(seed, version)
 
-  if (!(res as any)?.actPublisher && pubs.length) {
-    return { ...res, actPublisher: pubs[0] } as FileInfo
-  }
-
-  return res
+  return res.actPublisher || pubs.length === 0 ? res : { ...res, actPublisher: pubs[0] }
 }
 
-/** ---------- helpers to locate HEAD for the visible row ---------- */
 function historyKey(fi: FileInfo): string {
-  const ref = (fi as any)?.file?.historyRef ?? (fi as any)?.historyRef ?? (fi as any)?.actHistoryRef
+  const ref = (fi.file as { historyRef?: unknown })?.historyRef
 
-  return ref ? String(ref) : ''
+  return ref ? toStr(ref) : ''
 }
 
 function normTopic(x: unknown): string {
-  try {
-    return (x as any)?.toString?.() ?? String(x ?? '')
-  } catch {
-    return String(x ?? '')
-  }
+  return toStr(x)
 }
 
 function pickLatest(a: FileInfo, b: FileInfo): FileInfo {
-  const av = BigInt(a?.version ?? '0'),
-    bv = BigInt(b?.version ?? '0')
+  const av = BigInt(a?.version ?? '0')
+  const bv = BigInt(b?.version ?? '0')
 
   if (av === bv) return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
 
   return av > bv ? a : b
 }
 
-function getHeadCandidate(fmObj: any, seed: FileInfo): FileInfo | null {
+function getHeadCandidate(fmObj: { fileInfoList?: FileInfo[] } | null | undefined, seed: FileInfo): FileInfo | null {
   try {
     const list: FileInfo[] = fmObj?.fileInfoList || []
 
     if (!list.length) return null
     const hist = historyKey(seed)
-    let same: FileInfo[]
+    const seedTopicNorm = normTopic(seed.topic)
 
-    if (hist) same = list.filter(f => historyKey(f) === hist)
-    else {
-      const t = normTopic(seed.topic)
-      same = t ? list.filter(f => normTopic(f.topic) === t) : list.filter(f => f.name === seed.name)
-    }
+    const same = list.filter(f => {
+      if (hist) return historyKey(f) === hist
 
-    if (!same.length) return null
+      if (seedTopicNorm) return normTopic(f.topic) === seedTopicNorm
 
-    return same.reduce(pickLatest)
+      return f.name === seed.name
+    })
+
+    return same.length ? same.reduce(pickLatest) : null
   } catch {
     return null
   }
 }
 
-/** Resolve a batch/stamp id from the file info (prefer file’s own stamp over current drive). */
+const batchIdToString = (id: string | BatchId | undefined): string =>
+  typeof id === 'string' ? id : id?.toString() ?? ''
+
 function getBatchIdForFile(fi: FileInfo, fallback?: unknown): string | undefined {
-  const anyFi = fi as any
-  const direct =
-    anyFi?.batchId ??
-    anyFi?.batchID ??
-    anyFi?.stampId ??
-    anyFi?.stampID ??
-    anyFi?.file?.batchId ??
-    fi?.customMetadata?.batchId ??
-    fi?.customMetadata?.stampId
+  const direct = fi?.batchId
 
-  if (direct) return String(direct)
+  if (direct) return batchIdToString(direct as string | BatchId | undefined)
 
-  if (fallback != null) return String((fallback as any).toString?.() ?? fallback)
+  if (fallback != null) return toStr(fallback)
 
   return undefined
 }
 
-export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement {
+type FMContextLike = {
+  fm: unknown
+  files: FileInfo[]
+  currentBatch: { batchID: { toString(): string }; label?: string } | null
+  refreshFiles: () => void | Promise<void>
+}
+
+type GetInfoFM = Parameters<typeof buildGetInfoGroups>[0]
+
+export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
+  const { fm, refreshFiles, currentBatch, files } = useFM() as unknown as FMContextLike
+  const fmLike = (fm || null) as FileManagerLike | null
   const { view } = useView()
-  const { fm, refreshFiles, currentBatch } = useFM()
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
   const currentDriveName = currentBatch?.label
-
+  const isTrashedFile = (fileInfo.status as FileStatus) === 'trashed'
+  const statusLabel = isTrashedFile ? 'Trash' : 'Active'
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
   const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
+  const [destroyStamp, setDestroyStamp] = useState<Pick<PostageBatch, 'batchID' | 'label'> | null>(null)
+  const thisHistory = historyKey(fileInfo)
+
+  const makeStampForFile = (): Pick<PostageBatch, 'batchID' | 'label'> | null => {
+    const batchIdStr = getBatchIdForFile(fileInfo, currentBatch?.batchID ?? null)
+
+    if (!batchIdStr) return null
+
+    return { batchID: new BatchId(batchIdStr), label: currentBatch?.label ?? '' }
+  }
 
   const openGetInfo = async () => {
-    if (!fm) return
-    const groups = await buildGetInfoGroups(fm as FileManagerBase, fileInfo)
+    if (!fmLike) return
+    const groups = await buildGetInfoGroups(fm as GetInfoFM, fileInfo)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
   }
 
-  /** HEAD (latest) — try cached list, else hydrate with publisher fallbacks */
-  const ensureHead = useCallback(
-    async (fmLike: FileManagerLike, fi: FileInfo): Promise<FileInfo> => {
-      console.debug('[FM-UI] ensureHead:req', { name: fi?.name, topic: fi?.topic?.toString?.(), version: fi?.version })
-      const cached = getHeadCandidate(fm as any, fi)
+  const takenNames = useMemo(() => {
+    if (!currentBatch || !files) return new Set<string>()
+    const wanted = currentBatch.batchID.toString()
+    const sameDrive = files.filter(fi => batchIdToString(fi.batchId) === wanted)
+    const out = new Set<string>()
+    sameDrive.forEach(fi => {
+      const n = fi.name || ''
 
-      if (cached) {
-        console.debug('[FM-UI] ensureHead:hit-cache', { version: cached?.version })
+      if (!n) return
 
-        return cached
-      }
-      try {
-        const res = await hydrateWithPublishers(fmLike, fm as any, fi)
-        console.debug('[FM-UI] ensureHead:hydrated', { version: res?.version, actPub: (res as any)?.actPublisher })
+      if (historyKey(fi) !== thisHistory) out.add(n)
+    })
 
-        return res
-      } catch (e) {
-        console.debug('[FM-UI] ensureHead:error', String(e))
+    return out
+  }, [files, currentBatch, thisHistory])
 
-        return fi
-      }
-    },
-    [fm],
-  )
+  const ensureHead = useCallback(async (manager: FileManagerLike, fi: FileInfo): Promise<FileInfo> => {
+    const cached = getHeadCandidate(manager, fi)
 
-  const fileInfoToBlob = async (fmLike: FileManagerLike, fi: FileInfo): Promise<BlobWithName> => {
-    console.debug('[FM-UI] toBlob:start', { name: fi?.name, topic: fi?.topic?.toString?.(), version: fi?.version })
+    if (cached) return cached
+    try {
+      return await hydrateWithPublishers(manager, manager, fi)
+    } catch {
+      return fi
+    }
+  }, [])
+
+  const fileInfoToBlob = async (manager: FileManagerLike, fi: FileInfo): Promise<BlobWithName> => {
     const baseName = fi.name || 'download'
     const mime = fi.customMetadata?.mime || 'application/octet-stream'
 
     let paths: string[] | undefined
     try {
-      const entries = await fmLike.listFiles(fi)
-      console.debug('[FM-UI] toBlob:listFiles', { count: entries.length, sample: entries.slice(0, 5) })
+      const entries = await manager.listFiles(fi)
       const exact = entries.find(e => e.path === baseName || e.path.endsWith('/' + baseName))
       paths = exact ? [exact.path] : entries.map(e => e.path)
-    } catch (e) {
-      console.debug('[FM-UI] toBlob:listFiles:error', String(e))
+    } catch {
       paths = undefined
     }
 
-    console.debug('[FM-UI] toBlob:download:req', { paths })
-    const res = await (fmLike.download as any)(fi, paths)
-    const arr = Array.isArray(res) ? res : [res]
-    console.debug('[FM-UI] toBlob:download:res', { isArray: Array.isArray(res), count: arr.length })
+    const res = await manager.download(fi, paths)
+    const parts = (Array.isArray(res) ? res : [res]) as Array<ReadableStream<Uint8Array> | Uint8Array>
 
-    if (arr.length === 0) throw new Error('No content returned by FileManager.download()')
+    if (parts.length === 0) throw new Error('No content returned by FileManager.download()')
 
-    const blobs = await Promise.all(arr.map(p => normalizeToBlob(p as DownloadPart, mime)))
+    const blobs = await Promise.all(parts.map(p => normalizeToBlob(p as DownloadPart, mime)))
 
     if (blobs.length === 1) return { blob: blobs[0], fileName: baseName }
 
@@ -350,10 +384,8 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
       size: fileInfo.customMetadata?.size,
     })
 
-  /** Open latest (HEAD) */
   const handleOpen = async () => {
     handleCloseContext()
-    const fmLike = (fm as unknown as FileManagerLike) || null
 
     if (!fmLike) return
     const win = window.open('', '_blank')
@@ -362,47 +394,42 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
         const head = await ensureHead(fmLike, fileInfo)
         const headIdx = parseIndex(head.version)
         const anchor: FileInfo = { ...head, version: indexToHex8(headIdx) }
-        const hydrated = await hydrateWithPublishers(fmLike, fm as any, anchor, anchor.version)
-        const pubs = await getCandidatePublishers(fm as any, anchor)
-        const withPublisher = (hydrated as any).actPublisher
-          ? hydrated
-          : ({ ...hydrated, actPublisher: pubs[0] } as FileInfo)
+        const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
+        const pubs = await getCandidatePublishers(fmLike, anchor)
+        const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
         const { blob } = await fileInfoToBlob(fmLike, withPublisher)
-        console.debug('[FM-UI] open:blob:ok', { bytes: blob.size })
         const url = URL.createObjectURL(blob)
 
         if (win) {
           win.location.href = url
           setTimeout(() => URL.revokeObjectURL(url), 30000)
         } else {
-          window.open(url, '_blank')
+          const popup = window.open(url, '_blank')
+
+          if (!popup) return
           setTimeout(() => URL.revokeObjectURL(url), 30000)
         }
-      } catch (e) {
-        console.debug('[FM-UI] open:error', String(e))
+      } catch {
         win?.close()
-        throw e
+        throw new Error('Open failed')
       }
     })
   }
 
-  /** Download latest (HEAD) */
   const handleDownload = async () => {
     handleCloseContext()
-    const fmLike = (fm as unknown as FileManagerLike) || null
 
     if (!fmLike) return
+
     await runTracked(fileInfo.name || 'download', async () => {
       const headSeed = await ensureHead(fmLike, fileInfo)
       const headIdx = parseIndex(headSeed.version)
       const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
-      const hydrated = await hydrateWithPublishers(fmLike, fm as any, anchor, anchor.version)
-      const pubs = await getCandidatePublishers(fm as any, anchor)
-      const withPublisher = (hydrated as any).actPublisher
-        ? hydrated
-        : ({ ...hydrated, actPublisher: pubs[0] } as FileInfo)
+      const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
+      const pubs = await getCandidatePublishers(fmLike, anchor)
+      const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
       const { blob, fileName } = await fileInfoToBlob(fmLike, withPublisher)
-      console.debug('[FM-UI] download:blob:ok', { bytes: blob.size, fileName })
+
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -420,61 +447,74 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
     })
   }
 
-  // ─── file lifecycle actions ──────────────────────────────────────────────────
   const doTrash = async () => {
-    if (!fm) return
-    await (fm as any).trashFile(fileInfo)
+    if (!fmLike) return
+    await fmLike.trashFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
   const doRecover = async () => {
-    if (!fm) return
-    await (fm as any).recoverFile(fileInfo)
+    if (!fmLike) return
+    await fmLike.recoverFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
   const doForget = async () => {
-    if (!fm) return
-    await (fm as any).forgetFile(fileInfo)
+    if (!fmLike) return
+    await fmLike.forgetFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
-  /** Destroy the drive that owns THIS file (use the file’s own stamp if present). */
-  const doDestroyDrive = async () => {
-    if (!fm) return
-    // Prefer the stamp carried by the file itself, fallback to the currently-selected drive
-    const fallbackBatch = (currentBatch as any)?.batchID
-    const batchId = getBatchIdForFile(fileInfo, fallbackBatch)
+  /** Destroy the drive that owns THIS file (use the file’s own stamp when available). */
+  const doDestroyDrive = () => {
+    const s = makeStampForFile()
 
-    if (!batchId) {
-      console.warn('[FM-UI] No batch/stamp id found for destroyDrive.')
+    if (!s) return
+    setDestroyStamp(s)
+    setShowDestroyDriveModal(true)
+  }
 
-      return
-    }
+  /** Rename = publish a new version with the same content refs but a new `name`. */
+  const doRename = async (newName: string) => {
+    if (!fmLike) return
 
-    // Pick the correct destroy function name exposed by the FM (destroyDrive or destroyVolume)
-    const destroyFn: any = (fm as any)?.destroyDrive || (fm as any)?.destroyVolume
+    if (takenNames.has(newName)) throw new Error('name-taken')
 
-    if (typeof destroyFn !== 'function') {
-      console.warn('[FM-UI] destroyDrive/destroyVolume not available on FileManager.')
+    const batchId = getBatchIdForFile(fileInfo, currentBatch?.batchID)
 
-      return
-    }
+    if (!batchId) throw new Error('no-batch')
 
-    // Confirm to avoid accidental total data loss for the whole drive
-    const ok = window.confirm(
-      'Destroying this drive will make ALL files on this drive inaccessible. This action is irreversible.\n\nProceed?',
-    )
+    const headSeed = await ensureHead(fmLike, fileInfo)
+    const headIdx = parseIndex(headSeed.version)
+    const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
 
-    if (!ok) return
-
+    let hydrated = headSeed
     try {
-      await destroyFn.call(fm, String(batchId))
-      await Promise.resolve(refreshFiles?.())
-    } catch (e) {
-      console.debug('[FM-UI] destroyDrive:error', String(e))
-      throw e
+      hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
+    } catch {
+      /* best-effort hydration */
     }
+    const pubs = await getCandidatePublishers(fmLike, anchor)
+    const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
+
+    const ref = (withPublisher.file as { reference?: unknown })?.reference
+    const historyRef = (withPublisher.file as { historyRef?: unknown })?.historyRef
+
+    if (!ref || !historyRef) throw new Error('missing-refs')
+
+    const info: FileInfoOptions['info'] = {
+      batchId: String(batchId),
+      name: newName,
+      topic: withPublisher.topic,
+      file: {
+        reference: toStr(ref),
+        historyRef: toStr(historyRef),
+      },
+      customMetadata: withPublisher.customMetadata ?? {},
+    }
+
+    await fmLike.upload({ info })
+    await Promise.resolve(refreshFiles?.())
   }
 
   useLayoutEffect(() => {
@@ -507,10 +547,21 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
       <div className="fm-file-item-content-item fm-checkbox">
         <input type="checkbox" />
       </div>
+
       <div className="fm-file-item-content-item fm-name">
         <GetIconElement icon={name} />
         {name}
       </div>
+
+      {showDriveColumn && (
+        <div className="fm-file-item-content-item fm-drive">
+          <span className="fm-drive-name">{(driveLabel || '').trim()}</span>
+          <span className={`fm-pill ${isTrashedFile ? 'fm-pill--trash' : 'fm-pill--active'}`} title={statusLabel}>
+            {statusLabel}
+          </span>
+        </div>
+      )}
+
       <div className="fm-file-item-content-item fm-size">{size}</div>
       <div className="fm-file-item-content-item fm-date-mod">{dateMod}</div>
 
@@ -531,7 +582,13 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
               <div className="fm-context-item" onClick={handleDownload}>
                 Download
               </div>
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  setShowRenameModal(true)
+                }}
+              >
                 Rename
               </div>
               <div className="fm-context-item-border" />
@@ -548,7 +605,7 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 className="fm-context-item red"
                 onClick={() => {
                   handleCloseContext()
-                  setShowDeleteModal(true) // choose: Trash / Forget / Destroy drive
+                  setShowDeleteModal(true)
                 }}
               >
                 Delete
@@ -559,7 +616,7 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 onClick={() => {
                   handleCloseContext()
                   void (async () => {
-                    const groups = fm ? await buildGetInfoGroups(fm as FileManagerBase, fileInfo) : null
+                    const groups = fm ? await buildGetInfoGroups(fm as GetInfoFM, fileInfo) : null
 
                     if (groups) {
                       setInfoGroups(groups)
@@ -584,15 +641,6 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 className="fm-context-item"
                 onClick={() => {
                   handleCloseContext()
-                  setShowVersionHistory(true)
-                }}
-              >
-                Version history
-              </div>
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
                   void doRecover()
                 }}
               >
@@ -602,8 +650,11 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
                 className="fm-context-item red"
                 onClick={() => {
                   handleCloseContext()
-                  // IMPORTANT: call destroy for the file’s OWN drive stamp (no modal here)
-                  void doDestroyDrive()
+                  const s = makeStampForFile()
+
+                  if (!s) return
+                  setDestroyStamp(s)
+                  setShowDestroyDriveModal(true)
                 }}
               >
                 Destroy
@@ -651,6 +702,50 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
             if (action === 'trash') await doTrash()
             else if (action === 'forget') await doForget()
             else if (action === 'destroy') await doDestroyDrive()
+          }}
+        />
+      )}
+      {showRenameModal && (
+        <RenameFileModal
+          currentName={name}
+          takenNames={(() => {
+            try {
+              const driveId = currentBatch?.batchID?.toString?.()
+
+              if (!driveId) return new Set<string>()
+              const sameDrive = (files || []).filter(fi => batchIdToString(fi.batchId) === driveId)
+              const names = sameDrive.map(fi => fi?.name || '').filter(n => n && n !== name)
+
+              return new Set(names)
+            } catch {
+              return new Set<string>()
+            }
+          })()}
+          onCancelClick={() => setShowRenameModal(false)}
+          onProceed={async newName => {
+            try {
+              await doRename(newName)
+              setShowRenameModal(false)
+            } catch {
+              /* keep modal open on error */
+            }
+          }}
+        />
+      )}
+
+      {showDestroyDriveModal && destroyStamp && (
+        <DestroyDriveModal
+          stamp={destroyStamp}
+          onCancelClick={() => {
+            setShowDestroyDriveModal(false)
+            setDestroyStamp(null)
+          }}
+          onConfirm={async batchId => {
+            if (!fmLike) return
+            await fmLike.destroyVolume(batchId)
+            await Promise.resolve(refreshFiles?.())
+            setShowDestroyDriveModal(false)
+            setDestroyStamp(null)
           }}
         />
       )}

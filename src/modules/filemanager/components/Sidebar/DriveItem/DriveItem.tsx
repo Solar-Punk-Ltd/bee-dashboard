@@ -13,6 +13,7 @@ import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
 import { ViewType } from '../../../constants/constants'
 import { useView } from '../../../providers/FMFileViewContext'
 import { PostageBatch } from '@ethersphere/bee-js'
+import { useFM } from '../../../providers/FMContext'
 
 interface DriveItemProps {
   stamp: PostageBatch
@@ -23,6 +24,7 @@ export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
+  const { fm, refreshFiles } = useFM()
 
   const { showContext, pos, contextRef, setPos, handleCloseContext, setShowContext } = useContextMenu<HTMLDivElement>()
 
@@ -103,7 +105,16 @@ export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
         <UpgradeDriveModal stamp={stamp} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
       )}
       {isDestroyDriveModalOpen && (
-        <DestroyDriveModal stamp={stamp} onCancelClick={() => setIsDestroyDriveModalOpen(false)} />
+        <DestroyDriveModal
+          stamp={stamp}
+          onCancelClick={() => setIsDestroyDriveModalOpen(false)}
+          onConfirm={async batchId => {
+            if (!fm) return
+            await fm.destroyVolume(batchId)
+            await Promise.resolve(refreshFiles?.())
+            setIsDestroyDriveModalOpen(false)
+          }}
+        />
       )}
     </div>
   )

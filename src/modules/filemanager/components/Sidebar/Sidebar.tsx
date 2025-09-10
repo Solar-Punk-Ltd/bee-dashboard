@@ -54,7 +54,6 @@ export function Sidebar(): ReactElement {
 
   const drives = usableStamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
 
-  // ▶ Auto-select the first drive when none is selected but drives exist
   useEffect(() => {
     if (!currentBatch && drives.length > 0) {
       setCurrentBatch(drives[0])
@@ -62,7 +61,6 @@ export function Sidebar(): ReactElement {
     }
   }, [currentBatch, drives, setCurrentBatch, setView])
 
-  // Small helper to show a friendly drive name
   const driveName = (s: PostageBatch) => s.label?.trim() || `Drive ${String(s.batchID).slice(0, 6)}`
   const isCurrent = (s: PostageBatch) => currentBatch?.batchID.toString() === s.batchID.toString()
 

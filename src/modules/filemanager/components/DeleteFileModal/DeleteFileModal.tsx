@@ -43,13 +43,7 @@ export function DeleteFileModal({
               <div className="fm-form-control-label">
                 <FormControlLabel
                   value="trash"
-                  control={
-                    <Radio
-                      checked={value === 'trash'}
-                      onChange={() => setValue('trash')}
-                      // no className on Radio to avoid typing issues
-                    />
-                  }
+                  control={<Radio checked={value === 'trash'} onChange={() => setValue('trash')} />}
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Move to Trash</div>

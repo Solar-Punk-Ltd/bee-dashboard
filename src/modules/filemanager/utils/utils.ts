@@ -22,7 +22,7 @@ export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> 
     return (await bee.getPostageBatches())
       .filter(s => s.usable)
       .sort((a, b) => (a.label || '').localeCompare(b.label || ''))
-  } catch (error: unknown) {
+  } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Error getting usable stamps: ', error)
 

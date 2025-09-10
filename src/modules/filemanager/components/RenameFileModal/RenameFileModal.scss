@@ -1,0 +1,112 @@
+/* RenameFileModal.scss
+   Scoped, gentle styles that fit the existing .fm-modal-* theme.
+   No global overrides, only small refinements for this modal.
+*/
+
+/* Overlay container for the rename modal */
+.fm-rename-modal {
+  position: fixed; /* ensure overlay */
+  inset: 0;
+  z-index: 9999; /* above file browser & context menus */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 10, 0.55); /* dim backdrop */
+  backdrop-filter: blur(2px);
+}
+
+/* Window + inner structure (scoped to the rename modal) */
+.fm-rename-modal .fm-modal-window {
+  /* keep consistent padding/radius from global.scss; add tiny spacing tweaks */
+
+  .fm-modal-window-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+      opacity: 0.9;
+    }
+  }
+
+  .fm-modal-window-body {
+    .fm-modal-white-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px; /* small vertical rhythm for label / input / help */
+    }
+  }
+
+  /* Input styling kept consistent with your other modals.
+     If .fm-input is already defined globally, these act as subtle refinements. */
+  .fm-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--fm-border-color, rgba(255, 255, 255, 0.08));
+    background: var(--fm-input-bg, rgba(255, 255, 255, 0.04));
+    color: var(--fm-text-color, #fff);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 120ms ease, background-color 120ms ease;
+
+    &:focus {
+      border-color: var(--fm-accent, #6aa7ff);
+      background: var(--fm-input-bg-focus, rgba(255, 255, 255, 0.06));
+    }
+
+    &::placeholder {
+      color: var(--fm-placeholder, rgba(255, 255, 255, 0.5));
+    }
+  }
+
+  /* Strengthen input contrast specifically for the rename field */
+  .fm-rename-input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
+
+    &:focus {
+      border-color: var(--fm-accent, #6aa7ff);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  /* Soft helper text (already uses .fm-soft-text in markup). Keep spacing clean. */
+  .fm-soft-text {
+    line-height: 1.3;
+  }
+
+  /* Validation error */
+  .fm-error-text {
+    color: var(--fm-error, #ff6b6b);
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .fm-modal-window-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    /* Button spacing aligns with other modals */
+    .fm-button + .fm-button {
+      margin-left: 8px;
+    }
+  }
+}
+
+.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input {
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important; /* Safari */
+  caret-color: #111 !important;
+}
+
+.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input::placeholder {
+  color: rgba(0, 0, 0, 0.5) !important;
+}

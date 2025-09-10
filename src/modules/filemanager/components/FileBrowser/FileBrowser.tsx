@@ -11,34 +11,60 @@ import { FileProgressNotification } from '../FileProgressNotification/FileProgre
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { BatchId } from '@ethersphere/bee-js'
+import type { FileInfo, FileManager, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { getUsableStamps } from '../../utils/utils'
+import { useFMSearch } from '../../providers/FMSearchContext'
 
-type WithStatus = { status?: string | number | null }
-const hasStatus = (x: unknown): x is WithStatus => typeof x === 'object' && x !== null && 'status' in (x as any)
-type WithBatchId = { batchId?: string | number | bigint | null }
-const hasBatchId = (x: unknown): x is WithBatchId => typeof x === 'object' && x !== null && 'batchId' in (x as any)
+type Point = { x: number; y: number }
 
-function safeTopic(t: unknown) {
+type CurrentBatch = { batchID: BatchId; label?: string }
+type SettingsValue = { beeApi: unknown }
+type StampLike = { label?: string; batchID?: { toString?: () => string } | string }
+
+const toStringSafe = (x: unknown): string => {
+  if (x == null) return ''
+
+  if (typeof x === 'string') return x
   try {
-    return (t as any)?.toString?.() ?? String(t ?? '')
+    const s = (x as { toString?: () => string }).toString?.() ?? String(x)
+
+    return s !== '[object Object]' ? s : ''
   } catch {
-    return String(t ?? '')
+    return ''
   }
 }
 
-function historyKey(fi: FileInfo): string {
-  const ref = (fi as any)?.file?.historyRef ?? (fi as any)?.historyRef ?? (fi as any)?.actHistoryRef
+type Stringish = { toString?: () => string } | string | number | boolean | bigint | null | undefined
+const normalizeBatchId = (v: unknown): string => {
+  const s = toStringSafe((v as Stringish)?.toString?.() ?? v)
 
-  return ref ? String(ref) : ''
+  return s.startsWith('0x') ? s.slice(2).toLowerCase() : s.toLowerCase()
+}
+
+const historyKey = (fi: FileInfo): string => toStringSafe((fi.file as any)?.historyRef)
+const isTrashed = (fi: FileInfo): boolean => (fi.status as FileStatus | undefined) === 'trashed'
+const toBigIntSafe = (v: unknown): bigint => {
+  try {
+    return BigInt(String(v ?? '0'))
+  } catch {
+    return BigInt(0)
+  }
 }
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { view } = useView()
-  const { fm, files, currentBatch, refreshFiles } = useFM()
-  const { beeApi } = useContext(SettingsContext)
+  const { view, setActualItemView } = useView()
+
+  const { files, currentBatch, refreshFiles } = useFM() as {
+    fm: FileManager
+    files: FileInfo[]
+    currentBatch: CurrentBatch | null
+    refreshFiles: () => void
+  }
+
+  const { beeApi } = useContext(SettingsContext) as SettingsValue
 
   const {
     uploadFiles,
@@ -53,17 +79,31 @@ export function FileBrowser(): ReactElement {
   } = useFMTransfers()
 
   const [hasAnyDrive, setHasAnyDrive] = useState(false)
+  const [stampLabels, setStampLabels] = useState<Map<string, string>>(new Map())
 
-  // Detect whether any usable drives exist (so we can show the right empty-state message)
+  // ——— search state
+  const { query, scope, includeActive, includeTrashed } = useFMSearch()
+  const q = query.trim().toLowerCase()
+  const isSearchMode = q.length > 0
+
+  // ——— load stamps (for drive names + hasAnyDrive)
   useEffect(() => {
     let mounted = true
-    const run = async () => {
-      const stamps = await getUsableStamps(beeApi)
+    ;(async () => {
+      const stamps = (await getUsableStamps(beeApi as any)) as StampLike[]
       const drives = stamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
 
-      if (mounted) setHasAnyDrive(drives.length > 0)
-    }
-    run()
+      if (mounted) {
+        setHasAnyDrive(drives.length > 0)
+        const m = new Map<string, string>()
+        for (const s of stamps as any[]) {
+          const id = normalizeBatchId((s.batchID as any) ?? '')
+          const lbl = typeof s.label === 'string' && s.label.trim() ? s.label.trim() : `Drive ${id.slice(0, 6)}`
+          m.set(id, lbl)
+        }
+        setStampLabels(m)
+      }
+    })()
 
     return () => {
       mounted = false
@@ -140,7 +180,7 @@ export function FileBrowser(): ReactElement {
     [uploadFiles],
   )
 
-  const [safePos, setSafePos] = useState(pos)
+  const [safePos, setSafePos] = useState<Point>(pos as Point)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
 
   useLayoutEffect(() => {
@@ -156,44 +196,39 @@ export function FileBrowser(): ReactElement {
       const margin = 8
       const containerRect = container.getBoundingClientRect()
       const containerMidY = containerRect.top + containerRect.height / 2
-      const left = Math.max(margin, Math.min(pos.x, vw - rect.width - margin))
-      let top = pos.y
+      const left = Math.max(margin, Math.min((pos as Point).x, vw - rect.width - margin))
+      let top = (pos as Point).y
       let dir: 'down' | 'up' = 'down'
 
-      if (pos.y > containerMidY || pos.y + rect.height + margin > vh) {
-        top = Math.max(margin, pos.y - rect.height)
+      if ((pos as Point).y > containerMidY || (pos as Point).y + rect.height + margin > vh) {
+        top = Math.max(margin, (pos as Point).y - rect.height)
         dir = 'up'
       } else {
-        top = Math.max(margin, Math.min(pos.y, vh - rect.height - margin))
+        top = Math.max(margin, Math.min((pos as Point).y, vh - rect.height - margin))
       }
       setSafePos({ x: left, y: top })
       setDropDir(dir)
     })
   }, [showContext, pos, contextRef])
 
-  const isTrashed = (fi: FileInfo) => {
-    const s = hasStatus(fi) ? (fi as any).status : undefined
-
-    if (s == null) return false
-
-    if (typeof s === 'string') return s.toLowerCase() === 'trashed'
-
-    if (typeof s === 'number') return s !== 0
-
-    return false
-  }
-
   const currentDriveLabel = useMemo(
-    () => (currentBatch ? currentBatch.label || currentBatch.batchID.toString() : ''),
+    () => (currentBatch ? currentBatch.label || toStringSafe(currentBatch.batchID) : ''),
     [currentBatch],
   )
 
-  const rows = useMemo(() => {
+  // Update the top bar title when entering/exiting search mode
+  useEffect(() => {
+    const title = isSearchMode
+      ? `Search results${scope === 'selected' && currentDriveLabel ? ` — ${currentDriveLabel}` : ''}`
+      : currentDriveLabel
+    setActualItemView?.(title)
+  }, [isSearchMode, scope, currentDriveLabel, setActualItemView])
+
+  // Normal (non-search) list: latest per history/topic within the selected drive, filtered by Trash vs Active via `view`
+  const rows = useMemo((): FileInfo[] => {
     if (!currentBatch) return []
-    const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(
-      fi => hasBatchId(fi) && String((fi as any).batchId ?? (fi as any).batchID) === wanted,
-    )
+    const wanted = normalizeBatchId(currentBatch.batchID)
+    const sameDrive = files.filter(fi => normalizeBatchId(fi.batchId as any) === wanted)
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
       const n = fi.name || ''
@@ -202,14 +237,14 @@ export function FileBrowser(): ReactElement {
       return acc
     }, {})
 
-    const keyOf = (fi: FileInfo) => {
+    const keyOf = (fi: FileInfo): string => {
       const n = fi.name || ''
 
       if (nameCount[n] > 1) return `N:${n}`
       const hist = historyKey(fi)
 
       if (hist) return `H:${hist}`
-      const t = safeTopic(fi.topic)
+      const t = toStringSafe(fi.topic)
 
       if (t) return `T:${t}`
 
@@ -226,8 +261,8 @@ export function FileBrowser(): ReactElement {
 
         return
       }
-      const vi = BigInt(fi.version ?? '0')
-      const pi = BigInt(prev.version ?? '0')
+      const vi = toBigIntSafe(fi.version)
+      const pi = toBigIntSafe(prev.version)
 
       if (vi > pi) {
         map.set(key, fi)
@@ -243,48 +278,130 @@ export function FileBrowser(): ReactElement {
     return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
   }, [files, currentBatch, view])
 
-  useEffect(() => {
-    if (fm && currentBatch) refreshFiles()
-  }, [fm, currentBatch, refreshFiles])
+  // Search helpers
+  const statusIncluded = (fi: FileInfo): boolean => {
+    const trashed = isTrashed(fi)
 
-  // ── Empty-state + content rendering rules ───────────────────────────────
+    if (trashed && !includeTrashed) return false
+
+    if (!trashed && !includeActive) return false
+
+    return true
+  }
+
+  const matchesQuery = (fi: FileInfo): boolean => {
+    if (!q) return true
+    const name = (fi.name || '').toLowerCase()
+    const mime = (fi.customMetadata?.mime || '').toLowerCase()
+    const topic = String(fi.topic ?? '').toLowerCase()
+
+    return name.includes(q) || mime.includes(q) || topic.includes(q)
+  }
+
+  const selectedBatchId = useMemo(() => (currentBatch ? normalizeBatchId(currentBatch.batchID) : ''), [currentBatch])
+
+  // Search list: filter by scope + status + query, dedupe to latest per history/topic/name, sort by recency
+  const searchRows = useMemo((): FileInfo[] => {
+    if (!isSearchMode) return []
+
+    const source =
+      scope === 'selected' && selectedBatchId
+        ? files.filter(f => normalizeBatchId(f.batchId as any) === selectedBatchId)
+        : files
+
+    const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
+
+    const keyOf = (fi: FileInfo): string => {
+      const hist = historyKey(fi)
+
+      if (hist) return `H:${hist}`
+      const t = toStringSafe(fi.topic)
+      const n = fi.name || ''
+
+      return `T:${t}|N:${n}`
+    }
+
+    const latest = new Map<string, FileInfo>()
+    for (const fi of filtered) {
+      const k = keyOf(fi)
+      const prev = latest.get(k)
+
+      if (!prev) {
+        latest.set(k, fi)
+      } else {
+        const a = toBigIntSafe(fi.version)
+        const b = toBigIntSafe(prev.version)
+
+        if (a > b || (a === b && Number(fi.timestamp || 0) > Number(prev.timestamp || 0))) {
+          latest.set(k, fi)
+        }
+      }
+    }
+
+    return Array.from(latest.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
+  }, [isSearchMode, scope, selectedBatchId, files, includeActive, includeTrashed, q])
+
+  const listToRender = isSearchMode ? searchRows : rows
+
+  // Empty + body content
   let bodyContent: ReactElement | ReactElement[] = (
     <div className="fm-drop-hint">Select a drive to upload or view its files</div>
   )
 
   if (!hasAnyDrive) {
-    // 1) No stamp/drive exists
     bodyContent = <div className="fm-drop-hint">Create a drive to start using the file manager</div>
-  } else if (!currentBatch) {
-    // 3) Drives exist but nothing selected (rare, we auto-select; but keep as fallback)
-    bodyContent = <div className="fm-drop-hint">Select a drive to upload or view its files</div>
-  } else if (rows.length === 0) {
-    // 2) Selected drive but empty rows
-    if (view === ViewType.Trash) {
-      bodyContent = (
-        <div className="fm-drop-hint">Files from “{currentDriveLabel}” that are trashed can be viewed here</div>
-      )
+  } else if (!isSearchMode) {
+    // normal mode requires a selected drive
+    if (!currentBatch) {
+      bodyContent = <div className="fm-drop-hint">Select a drive to upload or view its files</div>
+    } else if (listToRender.length === 0) {
+      if (view === ViewType.Trash) {
+        bodyContent = (
+          <div className="fm-drop-hint">Files from “{currentDriveLabel}” that are trashed can be viewed here</div>
+        )
+      } else {
+        bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
+      }
     } else {
-      bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
+      bodyContent = listToRender.map(fi => (
+        <FileItem
+          key={`${historyKey(fi) || toStringSafe(fi.topic) || fi.name}::${fi.version ?? ''}`}
+          fileInfo={fi}
+          onDownload={trackDownload}
+        />
+      ))
     }
   } else {
-    bodyContent = rows.map(fi => (
-      <FileItem
-        key={`${historyKey(fi) || safeTopic(fi.topic) || fi.name}::${fi.version ?? ''}`}
-        fileInfo={fi}
-        onDownload={trackDownload}
-      />
-    ))
+    // search mode (works even without selecting a drive if scope=all)
+    if (listToRender.length === 0) {
+      bodyContent = <div className="fm-drop-hint">No results found.</div>
+    } else {
+      bodyContent = listToRender.map(fi => {
+        const bid = normalizeBatchId(fi.batchId as any)
+        const driveLabel = stampLabels.get(bid) || bid.slice(0, 6)
+
+        return (
+          <FileItem
+            key={`${historyKey(fi) || toStringSafe(fi.topic) || fi.name}::${fi.version ?? ''}`}
+            fileInfo={fi}
+            onDownload={trackDownload}
+            showDriveColumn={true}
+            driveLabel={driveLabel}
+          />
+        )
+      })
+    }
   }
 
   return (
     <>
       {conflictPortal}
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
-      <div className="fm-file-browser-container">
+      <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
         <FileBrowserTopBar />
         <div
           className="fm-file-browser-content"
+          data-search-mode={isSearchMode ? 'true' : 'false'}
           ref={contentRef}
           onDragEnter={onContentDragEnter}
           onDragOver={onContentDragOver}
@@ -295,32 +412,44 @@ export function FileBrowser(): ReactElement {
             <div className="fm-file-browser-content-header-item fm-checkbox">
               <input type="checkbox" />
             </div>
+
             <div className="fm-file-browser-content-header-item fm-name">
-              Name{' '}
+              Name
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
             </div>
+
+            {isSearchMode && (
+              <div className="fm-file-browser-content-header-item fm-drive">
+                Drive
+                <div className="fm-file-browser-content-header-item-icon">
+                  <DownIcon size="16px" />
+                </div>
+              </div>
+            )}
+
             <div className="fm-file-browser-content-header-item fm-size">
-              Size{' '}
+              Size
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
             </div>
+
             <div className="fm-file-browser-content-header-item fm-date-mod">
-              Date mod.{' '}
+              Date mod.
               <div className="fm-file-browser-content-header-item-icon">
                 <DownIcon size="16px" />
               </div>
             </div>
           </div>
-
           <div
             className="fm-file-browser-content-body"
             onContextMenu={handleFileBrowserContextMenu}
             onClick={handleCloseContext}
           >
             {bodyContent}
+
             {showContext && (
               <div
                 ref={contextRef}
@@ -342,7 +471,9 @@ export function FileBrowser(): ReactElement {
                     <div className="fm-context-item-border" />
                     <div className="fm-context-item">Paste</div>
                     <div className="fm-context-item-border" />
-                    <div className="fm-context-item">Refresh</div>
+                    <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                      Refresh
+                    </div>
                   </ContextMenu>
                 )}
               </div>
@@ -354,7 +485,7 @@ export function FileBrowser(): ReactElement {
               className="fm-drag-overlay"
               onDragOver={e => {
                 e.preventDefault()
-                ;(e.dataTransfer as DataTransfer).dropEffect = 'copy'
+                e.dataTransfer.dropEffect = 'copy'
               }}
               onDrop={onOverlayDrop}
             >

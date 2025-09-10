@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFM } from '../providers/FMContext'
 import { buildUploadMeta } from '../utils/buildUploadMeta'
-import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
-import { useUploadConflictDialog } from './useUploadConflictDialog'
+import type { FileInfo, FileInfoOptions, FileManager, ShareItem } from '@solarpunkltd/file-manager-lib'
 import { FileManagerEvents } from '@solarpunkltd/file-manager-lib'
+import type { BatchId } from '@ethersphere/bee-js'
+import { useUploadConflictDialog } from './useUploadConflictDialog'
 
 export type TransferItem = {
   name: string
@@ -13,9 +14,164 @@ export type TransferItem = {
   kind?: 'upload' | 'update' | 'download'
 }
 
+type CurrentBatch = { batchID: BatchId; label?: string }
+type FMContextShape = {
+  fm: FileManager | null
+  currentBatch: CurrentBatch | null
+  files: FileInfo[]
+  refreshFiles?: () => void | Promise<void>
+}
+
+type ConflictChoice = { action: 'cancel' } | { action: 'keep-both'; newName: string } | { action: 'replace' }
+
+type OpenConflictFn = (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictChoice>
+
+type UploadMeta = Record<string, string | number>
+
+const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(meta)) out[k] = typeof v === 'string' ? v : String(v)
+
+  return out
+}
+
+/** Best-effort safe string */
+const toStringSafe = (v: unknown): string => {
+  if (v == null) return ''
+
+  if (typeof v === 'string') return v
+
+  return String(v)
+}
+
+const formatBytes = (v?: string | number): string | undefined => {
+  let n: number
+
+  if (typeof v === 'string') n = Number(v)
+  else if (typeof v === 'number') n = v
+  else n = NaN
+
+  if (!Number.isFinite(n) || n < 0) return undefined
+
+  if (n < 1024) return `${n} B`
+
+  const units = ['KB', 'MB', 'GB', 'TB'] as const
+  let val = n / 1024
+  let i = 0
+  while (val >= 1024 && i < units.length - 1) {
+    val /= 1024
+    i++
+  }
+
+  return `${val.toFixed(1)} ${units[i]}`
+}
+
+const getBatchIdString = (fi: FileInfo): string => toStringSafe((fi.batchId as BatchId | string) ?? '')
+
+const sameDriveAs = (fi: FileInfo, wanted: string): boolean => getBatchIdString(fi) === wanted
+
+const latestOf = (a: FileInfo, b: FileInfo): FileInfo => {
+  let av = BigInt(0)
+  let bv = BigInt(0)
+  try {
+    av = BigInt(a.version ?? '0')
+  } catch {
+    av = BigInt(0)
+  }
+  try {
+    bv = BigInt(b.version ?? '0')
+  } catch {
+    bv = BigInt(0)
+  }
+
+  if (av === bv) {
+    return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
+  }
+
+  return av > bv ? a : b
+}
+
+const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined => {
+  const sameName = rows.filter(f => f.name === name)
+
+  if (!sameName.length) return undefined
+
+  return sameName.reduce(latestOf)
+}
+
+/** Wait until FILE_UPLOADED event matches criteria (or timeout). */
+const waitForUploadEvent = (
+  manager: FileManager,
+  criteria: { name: string; batchId: string; topic?: string },
+  ms = 90_000,
+): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    const emitter = manager.emitter as {
+      on?: (evt: string, cb: (payload: ShareItem | { fileInfo?: FileInfo } | FileInfo) => void) => void
+      off?: (evt: string, cb: (payload: ShareItem | { fileInfo?: FileInfo } | FileInfo) => void) => void
+    }
+
+    if (!emitter?.on) {
+      resolve()
+
+      return
+    }
+
+    const onUploaded = (payload: ShareItem | { fileInfo?: FileInfo } | FileInfo) => {
+      const fi: FileInfo | undefined =
+        (payload as ShareItem)?.fileInfo ?? (payload as { fileInfo?: FileInfo })?.fileInfo ?? (payload as FileInfo)
+
+      if (!fi) return
+
+      const fiBatch = toStringSafe((fi.batchId as BatchId | string) ?? '')
+      const fiName = fi.name ?? ''
+      const fiTopic = (fi.topic as { toString?: () => string } | string | undefined) && toStringSafe(fi.topic)
+
+      const nameOk = fiName === criteria.name
+      const batchOk = fiBatch === criteria.batchId
+      const topicOk = criteria.topic ? fiTopic === criteria.topic : true
+
+      if (nameOk && batchOk && topicOk) {
+        clearTimeout(timer)
+        emitter.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
+        resolve()
+      }
+    }
+
+    const timer = window.setTimeout(() => {
+      emitter?.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
+      reject(new Error('upload event timeout'))
+    }, ms)
+
+    emitter.on?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
+  })
+}
+
+/** Build upload payload for FileManager.upload() */
+const makeUploadInfo = (args: {
+  batchId: string
+  name: string
+  files: File[]
+  meta: Record<string, string | number>
+  topic?: string
+}): FileInfoOptions => {
+  const info: FileInfoOptions['info'] = {
+    batchId: args.batchId,
+    name: args.name,
+    customMetadata: normalizeCustomMetadata(args.meta),
+  }
+
+  if (args.topic) info.topic = args.topic
+
+  return {
+    info,
+    files: args.files,
+  }
+}
+
 export function useFMTransfers() {
-  const { fm, currentBatch, refreshFiles, files } = useFM()
-  const [openConflict, conflictPortal] = useUploadConflictDialog()
+  const { fm, currentBatch, refreshFiles, files } = useFM() as unknown as FMContextShape
+  const [openConflict, conflictPortal] = useUploadConflictDialog() as unknown as [OpenConflictFn, JSX.Element | null]
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const timers = useRef<Map<string, number>>(new Map())
@@ -23,24 +179,7 @@ export function useFMTransfers() {
   const isUploading = uploadItems.some(i => i.status !== 'done' && i.status !== 'error')
   const uploadCount = uploadItems.length
 
-  const formatBytes = (v?: string | number) => {
-    const n = typeof v === 'string' ? Number(v) : typeof v === 'number' ? v : NaN
-
-    if (!Number.isFinite(n) || n < 0) return undefined
-
-    if (n < 1024) return `${n} B`
-    const units = ['KB', 'MB', 'GB', 'TB']
-    let val = n / 1024,
-      i = 0
-    while (val >= 1024 && i < units.length - 1) {
-      val /= 1024
-      i++
-    }
-
-    return `${val.toFixed(1)} ${units[i]}`
-  }
-
-  const clearTimer = (name: string) => {
+  const clearTimer = (name: string): void => {
     const id = timers.current.get(name)
 
     if (id != null) {
@@ -48,7 +187,7 @@ export function useFMTransfers() {
       timers.current.delete(name)
     }
   }
-  const clearEndTimer = (name: string) => {
+  const clearEndTimer = (name: string): void => {
     const id = endTimers.current.get(name)
 
     if (id != null) {
@@ -70,8 +209,9 @@ export function useFMTransfers() {
     })
     clearTimer(name)
     clearEndTimer(name)
-    const begin = Date.now(),
-      DURATION = 1500
+
+    const begin = Date.now()
+    const DURATION = 1500
     const tick = () => {
       const t = Math.min(1, (Date.now() - begin) / DURATION)
       const p = Math.floor(t * 75)
@@ -82,7 +222,9 @@ export function useFMTransfers() {
       if (t < 1) {
         const id = window.setTimeout(tick, 60)
         timers.current.set(name, id)
-      } else timers.current.delete(name)
+      } else {
+        timers.current.delete(name)
+      }
     }
     const id = window.setTimeout(tick, 0)
     timers.current.set(name, id)
@@ -93,8 +235,8 @@ export function useFMTransfers() {
     setUploadItems(prev =>
       prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, 75), status: 'finalizing' } : it)),
     )
-    const begin = Date.now(),
-      DURATION = 700
+    const begin = Date.now()
+    const DURATION = 700
     const endTick = () => {
       const t = Math.min(1, (Date.now() - begin) / DURATION)
       const p = 75 + Math.floor(t * 25)
@@ -112,176 +254,90 @@ export function useFMTransfers() {
     endTimers.current.set(name, id)
   }, [])
 
-  useEffect(
-    () => () => {
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
       timers.current.forEach(id => clearTimeout(id))
       timers.current.clear()
       endTimers.current.forEach(id => clearTimeout(id))
       endTimers.current.clear()
+    }
+  }, [])
+
+  /** Split helpers to keep complexity down */
+  const collectSameDrive = useCallback(
+    (batchId: string): FileInfo[] => files.filter(fi => sameDriveAs(fi, batchId)),
+    [files],
+  )
+
+  const resolveConflict = useCallback(
+    async (
+      originalName: string,
+      sameDrive: FileInfo[],
+    ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string }> => {
+      const taken = new Set(sameDrive.map(fi => fi.name))
+
+      if (!taken.has(originalName)) {
+        return { finalName: originalName, isReplace: false }
+      }
+
+      const choice = await openConflict({ originalName, existingNames: taken })
+
+      if (choice.action === 'cancel') return { finalName: originalName, isReplace: false }
+
+      if (choice.action === 'keep-both') {
+        return { finalName: choice.newName.trim(), isReplace: false }
+      }
+
+      const latest = pickLatestByName(sameDrive, originalName)
+      const topic = latest ? toStringSafe(latest.topic) : undefined
+
+      return { finalName: originalName, isReplace: true, replaceTopic: topic }
+    },
+    [openConflict],
+  )
+
+  const runUpload = useCallback(
+    async (manager: FileManager, info: FileInfoOptions, wait: { name: string; batchId: string; topic?: string }) => {
+      const uploadPromise = manager.upload(info)
+      const withTimeout = <T>(p: Promise<T>, ms: number) =>
+        Promise.race<T>([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('upload timeout')), ms))])
+      const eventP = waitForUploadEvent(manager, wait, 90_000)
+      await Promise.race([withTimeout(uploadPromise, 90_000), eventP])
     },
     [],
   )
 
-  const waitForUploadEvent = (
-    manager: any,
-    criteria: { name: string; batchId: string; topic?: string },
-    ms = 90_000,
-  ) => {
-    return new Promise<void>((resolve, reject) => {
-      const emitter = manager?.emitter
-
-      if (!emitter?.on) {
-        resolve()
-
-        return
-      }
-      const onUploaded = (payload: any) => {
-        try {
-          const fi = payload?.fileInfo ?? payload
-          const fiBatch = (fi?.batchId ?? fi?.batchID)?.toString?.() ?? ''
-          const fiName = fi?.name ?? ''
-          const fiTopic = fi?.topic?.toString?.()
-          const ok =
-            fiName === criteria.name &&
-            fiBatch === criteria.batchId &&
-            (criteria.topic ? fiTopic === criteria.topic : true)
-
-          if (ok) {
-            clearTimeout(timer)
-            emitter.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-            resolve()
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-      const timer = window.setTimeout(() => {
-        try {
-          emitter.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-        } catch {}
-        reject(new Error('upload event timeout'))
-      }, ms)
-      emitter.on?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-    })
-  }
-
   const uploadFiles = useCallback(
     async (picked: FileList | File[]): Promise<void> => {
       if (!fm || !currentBatch) return
+
       const arr = Array.from(picked) as File[]
 
       if (arr.length === 0) return
 
       const originalName = arr[0].name
-      const meta = buildUploadMeta(arr)
+      const meta = buildUploadMeta(arr) as UploadMeta
       const prettySize = formatBytes(meta.size)
+      const batchIdStr = toStringSafe(currentBatch.batchID as unknown as string)
 
-      const sameDrive = (files || []).filter(
-        fi => String((fi as any).batchId ?? (fi as any).batchID ?? '') === currentBatch.batchID.toString(),
-      )
+      const sameDrive = collectSameDrive(batchIdStr)
+      const { finalName, isReplace, replaceTopic } = await resolveConflict(originalName, sameDrive)
 
-      const taken = new Set(sameDrive.map(fi => fi.name))
-      let finalName = originalName
-      let replaceTopic: unknown | undefined
-      let isReplace = false
-
-      if (taken.has(originalName)) {
-        const choice = await openConflict({ originalName, existingNames: taken })
-
-        if (choice.action === 'cancel') return
-
-        if (choice.action === 'keep-both') {
-          finalName = choice.newName
-        } else {
-          isReplace = true
-          const sameName = sameDrive.filter(fi => fi.name === originalName)
-          const latest = sameName.reduce((a, b) => {
-            const av = BigInt(a?.version ?? '0'),
-              bv = BigInt(b.version ?? '0')
-
-            if (av === bv) return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
-
-            return av > bv ? a : b
-          })
-          replaceTopic = latest?.topic
-        }
-      }
+      if (finalName.trim().length === 0) return
 
       startUploadRamp(finalName, prettySize, isReplace ? 'update' : 'upload')
 
-      let includeTopic = Boolean(isReplace && replaceTopic)
-      let existing: FileInfo | undefined
-
-      if (isReplace) {
-        const candidates = sameDrive.filter(fi => fi.name === originalName)
-        existing = candidates.reduce((a, b) => {
-          const av = BigInt(a?.version ?? '0'),
-            bv = BigInt(b.version ?? '0')
-
-          if (av === bv) return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
-
-          return av > bv ? a : b
-        }, candidates[0])
-      }
+      const info = makeUploadInfo({
+        batchId: batchIdStr,
+        name: finalName,
+        files: arr,
+        meta,
+        topic: isReplace ? replaceTopic : undefined,
+      })
 
       try {
-        const existingOwner = (existing as any)?.owner?.toString?.()?.toLowerCase?.()
-        const currentOwner = (
-          (fm as any)?.owner ||
-          (fm as any)?.address ||
-          (fm as any)?.signerAddress ||
-          (await (fm as any)?.getOwner?.()) ||
-          (await (fm as any)?.getAddress?.())
-        )
-          ?.toString?.()
-          ?.toLowerCase?.()
-
-        if (includeTopic && existingOwner && currentOwner && existingOwner !== currentOwner) {
-          includeTopic = false
-        }
-      } catch {
-        /* best-effort */
-      }
-
-      const topicStr = includeTopic ? (replaceTopic as any)?.toString?.() ?? String(replaceTopic) : undefined
-      const chainRefStr = includeTopic
-        ? String(
-            (existing as any)?.file?.historyRef ??
-              (existing as any)?.historyRef ??
-              (existing as any)?.actHistoryRef ??
-              '',
-          ) || undefined
-        : undefined
-
-      const payloadBase: FileInfoOptions = {
-        info: {
-          batchId: currentBatch.batchID.toString(),
-          name: finalName,
-          customMetadata: meta,
-          ...(topicStr ? { topic: topicStr } : {}),
-        },
-        files: arr as File[],
-      }
-
-      const uploadOpts: Record<string, any> = {
-        redundancyLevel: 1,
-      }
-
-      const withTimeout = <T>(p: Promise<T>, ms: number) =>
-        Promise.race<T>([
-          p,
-          new Promise<T>((_, rej) => setTimeout(() => rej(new Error('upload timeout')), ms)) as Promise<T>,
-        ])
-
-      try {
-        const uploadP = fm.upload(payloadBase as any, uploadOpts)
-        uploadP.catch(() => void 0)
-        const eventP = waitForUploadEvent(
-          fm,
-          { name: finalName, batchId: currentBatch.batchID.toString(), topic: topicStr },
-          90_000,
-        )
-        await Promise.race([withTimeout(uploadP, 90_000), eventP])
+        await runUpload(fm, info, { name: finalName, batchId: batchIdStr, topic: isReplace ? replaceTopic : undefined })
       } catch {
         clearTimer(finalName)
         clearEndTimer(finalName)
@@ -291,12 +347,14 @@ export function useFMTransfers() {
       }
 
       finishUploadRamp(finalName)
-      await Promise.resolve(refreshFiles?.())
+
+      if (typeof refreshFiles === 'function') {
+        void refreshFiles()
+      }
     },
-    [fm, currentBatch, refreshFiles, files, openConflict, startUploadRamp, finishUploadRamp],
+    [fm, currentBatch, collectSameDrive, resolveConflict, startUploadRamp, runUpload, finishUploadRamp, refreshFiles],
   )
 
-  // -------------------- Downloads --------------------
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
   const downloadTimer = useRef<number | null>(null)
   const isDownloading = downloadItems.some(i => i.status !== 'done' && i.status !== 'error')
@@ -306,12 +364,16 @@ export function useFMTransfers() {
     setDownloadItems(prev => {
       const row: TransferItem = { name, size: opts?.size, percent: 1, status: 'uploading', kind: 'download' }
       const idx = prev.findIndex(p => p.name === name)
-      const out = idx === -1 ? [...prev, row] : Object.assign([...prev], { [idx]: row })
 
-      return out as TransferItem[]
+      if (idx === -1) return [...prev, row]
+      const out = [...prev]
+      out[idx] = row
+
+      return out
     })
-    const begin = Date.now(),
-      DURATION = 1500
+
+    const begin = Date.now()
+    const DURATION = 1500
     const ramp = () => {
       const t = Math.min(1, (Date.now() - begin) / DURATION)
       const p = Math.max(1, Math.floor(t * 75))
@@ -320,6 +382,7 @@ export function useFMTransfers() {
       if (t < 1) downloadTimer.current = window.setTimeout(ramp, 60)
     }
     requestAnimationFrame(ramp)
+
     try {
       await task()
 
@@ -327,8 +390,9 @@ export function useFMTransfers() {
         clearTimeout(downloadTimer.current)
         downloadTimer.current = null
       }
-      const endBegin = Date.now(),
-        END_DURATION = 700
+
+      const endBegin = Date.now()
+      const END_DURATION = 700
       const endTick = () => {
         const t = Math.min(1, (Date.now() - endBegin) / END_DURATION)
         const p = 75 + Math.floor(t * 25)

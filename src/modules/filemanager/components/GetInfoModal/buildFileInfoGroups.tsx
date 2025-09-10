@@ -147,7 +147,7 @@ function buildDatesGroup(createdTs?: number, modifiedTs?: number, expires?: stri
     properties: [
       { key: 'created', label: 'Created', value: fmtDate(createdTs) },
       { key: 'modified', label: 'Modified', value: fmtDate(modifiedTs) },
-      { key: 'accessed', label: 'Last Accessed', value: '—' }, // not tracked
+      { key: 'accessed', label: 'Last Accessed', value: '—' },
       { key: 'expires', label: 'Expires', value: expires ?? '—' },
     ],
   }

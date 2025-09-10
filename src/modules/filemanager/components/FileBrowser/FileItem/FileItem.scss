@@ -1,7 +1,7 @@
+/* ───────── Row container (grid matches header layouts) ───────── */
 .fm-file-item-content {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr;
   padding: 12px;
 
   & input {
@@ -10,38 +10,92 @@
     height: 16px;
   }
 
-  &:hover {
-    background-color: #d1d1d1;
-  }
+  &:hover { background-color: #d1d1d1; }
 }
 
+/* Normal mode: ☐ | Name | Size | Date */
+.fm-file-browser-content[data-search-mode='false'] .fm-file-item-content {
+  grid-template-columns: 32px 2fr 1fr 1fr;
+}
+
+/* Search mode: ☐ | Name | Drive | Size | Date  (Status is shown as a pill in Drive) */
+.fm-file-browser-content[data-search-mode='true'] .fm-file-item-content {
+  grid-template-columns: 32px 2fr 1.1fr 1fr 1fr;
+}
+
+/* ───────── Cells ───────── */
 .fm-file-item-content-item {
   display: flex;
   align-items: center;
   justify-content: start;
   gap: 6px;
 
-  &.fm-checkbox {
-    flex-grow: 1;
-  }
-
   & input {
-    accent-color: rgb(237, 129, 49);
+    /* keep the original accent but allow override */
+    accent-color: var(--fm-accent, rgb(237, 129, 49));
   }
 }
 
-.fm-file-item-name {
+/* Align checkbox nicely (no grow) */
+.fm-file-item-content-item.fm-checkbox {
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+/* Name cell — NOT bold */
+.fm-file-item-name,
+.fm-file-item-content-item.fm-name {
+  font-weight: 400; /* ← unbold */
   gap: 8px;
-  font-weight: 700;
-  flex-grow: 2;
 
   & svg {
     width: 20px;
     height: 20px;
-    color: rgb(237, 129, 49);
+    color: var(--fm-accent, #ed8131);
   }
+}
+
+/* Drive cell + pill inside it (used in search mode) */
+.fm-file-item-content-item.fm-drive {
+  gap: 8px;
+  min-width: 160px;
+  max-width: 240px;
+  flex: 0 0 180px;
+  opacity: 0.9;
+}
+.fm-drive-name { opacity: 0.9; }
+
+/* Pills (status inside Drive) */
+.fm-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.fm-pill--active {
+  background: #e0f2fe;
+  color: #075985;
+  border-color: #bae6fd;
+}
+.fm-pill--trash {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* Blue strip on each search result row */
+.fm-file-browser-content[data-search-mode='true'] .fm-file-item-content::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--fm-accent, #2563eb);
+  border-radius: 2px;
 }
 
 .fm-file-item-context-menu {
