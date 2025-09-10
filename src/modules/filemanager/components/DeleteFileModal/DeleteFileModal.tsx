@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom'
 import TrashIcon from 'remixicon-react/DeleteBin6LineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
 
-// MUI v4 imports (keep these exactly if you're on v4)
 import Radio from '@material-ui/core/Radio'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import FormControl from '@material-ui/core/FormControl'
@@ -39,7 +38,6 @@ export function DeleteFileModal({
         <div className="fm-modal-window-body">
           <FormControl component="fieldset">
             <div className="fm-radio-group">
-              {/* Move to Trash */}
               <div className="fm-form-control-label">
                 <FormControlLabel
                   value="trash"
@@ -56,7 +54,6 @@ export function DeleteFileModal({
                 />
               </div>
 
-              {/* Forget */}
               <div className="fm-form-control-label">
                 <FormControlLabel
                   value="forget"
@@ -73,7 +70,6 @@ export function DeleteFileModal({
                 />
               </div>
 
-              {/* Destroy drive */}
               <div className="fm-form-control-label">
                 <FormControlLabel
                   value="destroy"

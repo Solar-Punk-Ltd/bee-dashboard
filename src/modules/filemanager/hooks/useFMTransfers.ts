@@ -35,7 +35,6 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-/** Best-effort safe string */
 const toStringSafe = (v: unknown): string => {
   if (v == null) return ''
 
@@ -99,7 +98,6 @@ const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined 
   return sameName.reduce(latestOf)
 }
 
-/** Wait until FILE_UPLOADED event matches criteria (or timeout). */
 const waitForUploadEvent = (
   manager: FileManager,
   criteria: { name: string; batchId: string; topic?: string },
@@ -147,7 +145,6 @@ const waitForUploadEvent = (
   })
 }
 
-/** Build upload payload for FileManager.upload() */
 const makeUploadInfo = (args: {
   batchId: string
   name: string
@@ -254,7 +251,6 @@ export function useFMTransfers() {
     endTimers.current.set(name, id)
   }, [])
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       timers.current.forEach(id => clearTimeout(id))
@@ -264,7 +260,6 @@ export function useFMTransfers() {
     }
   }, [])
 
-  /** Split helpers to keep complexity down */
   const collectSameDrive = useCallback(
     (batchId: string): FileInfo[] => files.filter(fi => sameDriveAs(fi, batchId)),
     [files],

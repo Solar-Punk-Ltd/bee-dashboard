@@ -1,4 +1,3 @@
-/* ───────── Row container (grid matches header layouts) ───────── */
 .fm-file-item-content {
   position: relative;
   display: grid;
@@ -13,17 +12,14 @@
   &:hover { background-color: #d1d1d1; }
 }
 
-/* Normal mode: ☐ | Name | Size | Date */
 .fm-file-browser-content[data-search-mode='false'] .fm-file-item-content {
   grid-template-columns: 32px 2fr 1fr 1fr;
 }
 
-/* Search mode: ☐ | Name | Drive | Size | Date  (Status is shown as a pill in Drive) */
 .fm-file-browser-content[data-search-mode='true'] .fm-file-item-content {
   grid-template-columns: 32px 2fr 1.1fr 1fr 1fr;
 }
 
-/* ───────── Cells ───────── */
 .fm-file-item-content-item {
   display: flex;
   align-items: center;
@@ -31,22 +27,19 @@
   gap: 6px;
 
   & input {
-    /* keep the original accent but allow override */
     accent-color: var(--fm-accent, rgb(237, 129, 49));
   }
 }
 
-/* Align checkbox nicely (no grow) */
 .fm-file-item-content-item.fm-checkbox {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Name cell — NOT bold */
 .fm-file-item-name,
 .fm-file-item-content-item.fm-name {
-  font-weight: 400; /* ← unbold */
+  font-weight: 400;
   gap: 8px;
 
   & svg {
@@ -56,7 +49,6 @@
   }
 }
 
-/* Drive cell + pill inside it (used in search mode) */
 .fm-file-item-content-item.fm-drive {
   gap: 8px;
   min-width: 160px;
@@ -66,7 +58,6 @@
 }
 .fm-drive-name { opacity: 0.9; }
 
-/* Pills (status inside Drive) */
 .fm-pill {
   display: inline-flex;
   align-items: center;
@@ -88,7 +79,6 @@
   border-color: #fecaca;
 }
 
-/* Blue strip on each search result row */
 .fm-file-browser-content[data-search-mode='true'] .fm-file-item-content::before {
   content: '';
   position: absolute;

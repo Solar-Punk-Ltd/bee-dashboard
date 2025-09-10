@@ -1,33 +1,25 @@
-/* ConfirmModal.scss */
-
-/* Keep the dialog a comfortable size on all screens */
 .fm-modal-container .fm-modal-window {
   width: min(560px, 92vw);
 }
 
-/* Make the header stand out slightly */
 .fm-modal-container .fm-modal-window-header {
   font-weight: 600;
 }
 
-/* Ensure long confirm text is readable and scrolls if needed */
 .fm-modal-container .fm-modal-window-body .fm-modal-white-section {
   max-height: 50vh;
   overflow: auto;
   word-break: break-word;
-  /* small consistent padding if not already provided globally */
   padding: 12px 14px;
   border-radius: 8px;
 }
 
-/* Right-align actions with a small gap */
 .fm-modal-container .fm-modal-window-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-/* Mobile tweaks */
 @media (max-width: 480px) {
   .fm-modal-container .fm-modal-window {
     width: 94vw;

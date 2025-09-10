@@ -11,11 +11,12 @@ import { FileProgressNotification } from '../FileProgressNotification/FileProgre
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
-import { BatchId } from '@ethersphere/bee-js'
+import { Bee, BatchId } from '@ethersphere/bee-js'
 import type { FileInfo, FileManager, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { getUsableStamps } from '../../utils/utils'
 import { useFMSearch } from '../../providers/FMSearchContext'
+import { ReferenceWithHistory } from '@solarpunkltd/file-manager-lib/dist/types/utils/types'
 
 type Point = { x: number; y: number }
 
@@ -43,7 +44,7 @@ const normalizeBatchId = (v: unknown): string => {
   return s.startsWith('0x') ? s.slice(2).toLowerCase() : s.toLowerCase()
 }
 
-const historyKey = (fi: FileInfo): string => toStringSafe((fi.file as any)?.historyRef)
+const historyKey = (fi: FileInfo): string => toStringSafe((fi.file as ReferenceWithHistory)?.historyRef)
 const isTrashed = (fi: FileInfo): boolean => (fi.status as FileStatus | undefined) === 'trashed'
 const toBigIntSafe = (v: unknown): bigint => {
   try {
@@ -81,23 +82,21 @@ export function FileBrowser(): ReactElement {
   const [hasAnyDrive, setHasAnyDrive] = useState(false)
   const [stampLabels, setStampLabels] = useState<Map<string, string>>(new Map())
 
-  // ——— search state
   const { query, scope, includeActive, includeTrashed } = useFMSearch()
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
 
-  // ——— load stamps (for drive names + hasAnyDrive)
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const stamps = (await getUsableStamps(beeApi as any)) as StampLike[]
+      const stamps = (await getUsableStamps(beeApi as Bee)) as StampLike[]
       const drives = stamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
 
       if (mounted) {
         setHasAnyDrive(drives.length > 0)
         const m = new Map<string, string>()
-        for (const s of stamps as any[]) {
-          const id = normalizeBatchId((s.batchID as any) ?? '')
+        for (const s of stamps as StampLike[]) {
+          const id = normalizeBatchId((s.batchID as BatchId) ?? '')
           const lbl = typeof s.label === 'string' && s.label.trim() ? s.label.trim() : `Drive ${id.slice(0, 6)}`
           m.set(id, lbl)
         }
@@ -216,7 +215,6 @@ export function FileBrowser(): ReactElement {
     [currentBatch],
   )
 
-  // Update the top bar title when entering/exiting search mode
   useEffect(() => {
     const title = isSearchMode
       ? `Search results${scope === 'selected' && currentDriveLabel ? ` — ${currentDriveLabel}` : ''}`
@@ -224,11 +222,10 @@ export function FileBrowser(): ReactElement {
     setActualItemView?.(title)
   }, [isSearchMode, scope, currentDriveLabel, setActualItemView])
 
-  // Normal (non-search) list: latest per history/topic within the selected drive, filtered by Trash vs Active via `view`
   const rows = useMemo((): FileInfo[] => {
     if (!currentBatch) return []
     const wanted = normalizeBatchId(currentBatch.batchID)
-    const sameDrive = files.filter(fi => normalizeBatchId(fi.batchId as any) === wanted)
+    const sameDrive = files.filter(fi => normalizeBatchId(fi.batchId as BatchId) === wanted)
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
       const n = fi.name || ''
@@ -278,35 +275,39 @@ export function FileBrowser(): ReactElement {
     return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
   }, [files, currentBatch, view])
 
-  // Search helpers
-  const statusIncluded = (fi: FileInfo): boolean => {
-    const trashed = isTrashed(fi)
+  const statusIncluded = useCallback(
+    (fi: FileInfo): boolean => {
+      const trashed = isTrashed(fi)
 
-    if (trashed && !includeTrashed) return false
+      if (trashed && !includeTrashed) return false
 
-    if (!trashed && !includeActive) return false
+      if (!trashed && !includeActive) return false
 
-    return true
-  }
+      return true
+    },
+    [includeActive, includeTrashed],
+  )
 
-  const matchesQuery = (fi: FileInfo): boolean => {
-    if (!q) return true
-    const name = (fi.name || '').toLowerCase()
-    const mime = (fi.customMetadata?.mime || '').toLowerCase()
-    const topic = String(fi.topic ?? '').toLowerCase()
+  const matchesQuery = useCallback(
+    (fi: FileInfo): boolean => {
+      if (!q) return true
+      const name = (fi.name || '').toLowerCase()
+      const mime = (fi.customMetadata?.mime || '').toLowerCase()
+      const topic = String(fi.topic ?? '').toLowerCase()
 
-    return name.includes(q) || mime.includes(q) || topic.includes(q)
-  }
+      return name.includes(q) || mime.includes(q) || topic.includes(q)
+    },
+    [q],
+  )
 
   const selectedBatchId = useMemo(() => (currentBatch ? normalizeBatchId(currentBatch.batchID) : ''), [currentBatch])
 
-  // Search list: filter by scope + status + query, dedupe to latest per history/topic/name, sort by recency
   const searchRows = useMemo((): FileInfo[] => {
     if (!isSearchMode) return []
 
     const source =
       scope === 'selected' && selectedBatchId
-        ? files.filter(f => normalizeBatchId(f.batchId as any) === selectedBatchId)
+        ? files.filter(f => normalizeBatchId(f.batchId as BatchId) === selectedBatchId)
         : files
 
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
@@ -339,11 +340,10 @@ export function FileBrowser(): ReactElement {
     }
 
     return Array.from(latest.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
-  }, [isSearchMode, scope, selectedBatchId, files, includeActive, includeTrashed, q])
+  }, [isSearchMode, scope, selectedBatchId, files, matchesQuery, statusIncluded])
 
   const listToRender = isSearchMode ? searchRows : rows
 
-  // Empty + body content
   let bodyContent: ReactElement | ReactElement[] = (
     <div className="fm-drop-hint">Select a drive to upload or view its files</div>
   )
@@ -351,7 +351,6 @@ export function FileBrowser(): ReactElement {
   if (!hasAnyDrive) {
     bodyContent = <div className="fm-drop-hint">Create a drive to start using the file manager</div>
   } else if (!isSearchMode) {
-    // normal mode requires a selected drive
     if (!currentBatch) {
       bodyContent = <div className="fm-drop-hint">Select a drive to upload or view its files</div>
     } else if (listToRender.length === 0) {
@@ -372,12 +371,11 @@ export function FileBrowser(): ReactElement {
       ))
     }
   } else {
-    // search mode (works even without selecting a drive if scope=all)
     if (listToRender.length === 0) {
       bodyContent = <div className="fm-drop-hint">No results found.</div>
     } else {
       bodyContent = listToRender.map(fi => {
-        const bid = normalizeBatchId(fi.batchId as any)
+        const bid = normalizeBatchId(fi.batchId as BatchId)
         const driveLabel = stampLabels.get(bid) || bid.slice(0, 6)
 
         return (

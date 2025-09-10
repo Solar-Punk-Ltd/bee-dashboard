@@ -42,7 +42,6 @@ export function Header(): ReactElement {
     return currentBatch.label || toStringSafe(currentBatch.batchID)
   }, [currentBatch])
 
-  // ── filters dropdown state
   const [openFilters, setOpenFilters] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const btnRef = useRef<HTMLButtonElement | null>(null)
@@ -101,7 +100,6 @@ export function Header(): ReactElement {
         )}
       </div>
 
-      {/* ───────── Filters button + dropdown ONLY (no inline chips) ───────── */}
       <div className="fm-header-actions">
         <button
           ref={btnRef}

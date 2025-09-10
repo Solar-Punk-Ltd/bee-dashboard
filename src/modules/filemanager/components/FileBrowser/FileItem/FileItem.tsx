@@ -128,7 +128,6 @@ function sanitizeFileName(s: string) {
   return (s || 'download').replace(/[\\/:*?"<>|]+/g, '_')
 }
 
-/** Minimal surface used by this component; purposely widened for compatibility. */
 type FileManagerLike = {
   download: (fi: FileInfo, paths?: string[]) => Promise<ReadableStream<Uint8Array>[] | Uint8Array[] | unknown>
   listFiles: (fi: FileInfo) => Promise<Array<{ path: string }>>
@@ -465,7 +464,6 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     await Promise.resolve(refreshFiles?.())
   }
 
-  /** Destroy the drive that owns THIS file (use the file’s own stamp when available). */
   const doDestroyDrive = () => {
     const s = makeStampForFile()
 
@@ -474,7 +472,6 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
     setShowDestroyDriveModal(true)
   }
 
-  /** Rename = publish a new version with the same content refs but a new `name`. */
   const doRename = async (newName: string) => {
     if (!fmLike) return
 

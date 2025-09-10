@@ -16,7 +16,6 @@ import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
-/** ====== Safe helpers ====== */
 const HEX_INDEX_BYTES = 8
 const HEX_INDEX_CHARS = HEX_INDEX_BYTES * 2
 
@@ -86,7 +85,6 @@ type BeeAddresses = { publicKey?: string }
 type BeeLike = { getNodeAddresses?: () => Promise<BeeAddresses> }
 type FMWithBee = FileManager & { bee?: BeeLike }
 
-/** ====== Download utilities (typed) ====== */
 type BeeBytes = { toUint8Array: () => Uint8Array }
 const hasToUint8Array = (x: unknown): x is BeeBytes =>
   typeof x === 'object' && x !== null && typeof (x as BeeBytes).toUint8Array === 'function'
@@ -153,7 +151,6 @@ async function normalizeToBlob(part: DownloadPart, mime?: string): Promise<Blob>
   throw new Error('Unsupported downloaded part type')
 }
 
-/** ====== Publishers (typed) ====== */
 async function getCandidatePublishers(fm: FMWithBee, seed: FileInfo): Promise<string[]> {
   const out = new Set<string>()
 
@@ -193,10 +190,8 @@ async function hydrateWithPublishers(
   return fmLike.getVersion(seed, (version as unknown as FeedIndex) || (seed.version as unknown as FeedIndex))
 }
 
-/** ====== Conflict dialog typing ====== */
 type ConflictChoice = { action: 'keep-both' | 'replace' | 'cancel'; newName?: string }
 
-/** ====== Component ====== */
 interface VersionHistoryModalProps {
   fileInfo: FileInfo
   onCancelClick: () => void
@@ -230,10 +225,179 @@ const truncateMiddle = (s: string, max = 42): string => {
   return `${str.slice(0, half)}…${str.slice(-half)}`
 }
 
+function ErrorPanel({ error, debug }: { error: string | null; debug: RestoreDebug | null }) {
+  if (!error) return null
+
+  return (
+    <div className="fm-modal-white-section fm-soft-text">
+      {error}
+      {debug && (
+        <pre
+          style={{
+            marginTop: 8,
+            maxHeight: 220,
+            overflow: 'auto',
+            background: '#111',
+            color: '#eee',
+            padding: 8,
+            borderRadius: 6,
+            fontSize: 11,
+          }}
+        >
+          {JSON.stringify(debug, null, 2)}
+        </pre>
+      )}
+    </div>
+  )
+}
+
+function LoadingPanel({ loading }: { loading: boolean }) {
+  if (!loading) return null
+
+  return <div className="fm-loading">Loading…</div>
+}
+
+function EmptyPanel({ show }: { show: boolean }) {
+  if (!show) return null
+
+  return <div className="fm-empty">No versions found for this file.</div>
+}
+
+function ConflictWarningPanel({ text }: { text: string | null }) {
+  if (!text) return null
+
+  return (
+    <div className="fm-modal-white-section fm-soft-text" style={{ borderLeft: '3px solid var(--fm-accent, #6aa7ff)' }}>
+      {text}
+    </div>
+  )
+}
+
+type RenameConfirmState = {
+  version: FileInfo
+  headName: string
+  targetName: string
+} | null
+
+function RenameConfirmDialog({
+  data,
+  onConfirm,
+  onCancel,
+}: {
+  data: RenameConfirmState
+  onConfirm: () => Promise<void> | void
+  onCancel: () => void
+}) {
+  if (!data) return null
+
+  return (
+    <ConfirmModal
+      title="Restore this version?"
+      message={
+        <>
+          Restoring will rename:&nbsp;
+          <b className="vh-name" title={data.headName}>
+            {truncateMiddle(data.headName, 44)}
+          </b>{' '}
+          →{' '}
+          <b className="vh-name" title={data.targetName}>
+            {truncateMiddle(data.targetName, 44)}
+          </b>
+          .
+        </>
+      }
+      confirmLabel="Restore"
+      cancelLabel="Cancel"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    />
+  )
+}
+
+function VersionsList({
+  versions,
+  headFi,
+  downloadBlob,
+  getVersionBlob,
+  restoreVersion,
+}: {
+  versions: FileInfo[]
+  headFi: FileInfo | null
+  downloadBlob: ReturnType<typeof useFMTransfers>['downloadBlob']
+  getVersionBlob: (fi: FileInfo) => Promise<Blob>
+  restoreVersion: (fi: FileInfo) => Promise<void>
+}) {
+  if (!versions.length) return null
+
+  return (
+    <div className="fm-version-history-list">
+      {versions.map(item => {
+        const vStr = item.version ?? '0'
+        const idx = parseIndex(vStr) ?? BigInt(0)
+        const isCurrent = (parseIndex(headFi?.version) ?? BigInt(0)) === idx
+        const modified = item.timestamp != null ? new Date(item.timestamp).toLocaleString() : '—'
+        const key = `${item.topic?.toString?.() ?? ''}:${toHexIndexStr(idx)}`
+        const willRename = (headFi?.name || '') !== (item.name || '')
+
+        return (
+          <div key={key} className="fm-modal-white-section vh-row">
+            <div className="vh-left">
+              <div className="vh-meta">
+                <span className="vh-chip" title={`Version ${idx.toString()}`}>
+                  v{idx.toString()}
+                </span>
+                {isCurrent && <span className="vh-tag vh-tag--current">Current</span>}
+                <span className="vh-dot">•</span>
+                <span className="vh-meta-item" title={modified}>
+                  <CalendarIcon size="12" /> {modified}
+                </span>
+                <span className="vh-dot">•</span>
+                <span className="vh-meta-item" title="Publisher">
+                  <UserIcon size="12" />
+                </span>
+              </div>
+
+              {willRename && !isCurrent && (
+                <div
+                  className="vh-rename"
+                  title={`Restoring will rename: “${headFi?.name || ''}” → “${item.name || ''}”`}
+                >
+                  Restoring will rename:{' '}
+                  <b className="vh-name" title={headFi?.name || ''}>
+                    {truncateMiddle(headFi?.name || '', 44)}
+                  </b>{' '}
+                  →{' '}
+                  <b className="vh-name" title={item.name || ''}>
+                    {truncateMiddle(item.name || '', 44)}
+                  </b>
+                </div>
+              )}
+            </div>
+
+            <div className="vh-actions">
+              <FMButton
+                label="Download"
+                variant="secondary"
+                icon={<DownloadIcon size="15" />}
+                onClick={() =>
+                  downloadBlob(item.name || 'download', getVersionBlob(item), {
+                    size: item.customMetadata?.size,
+                  })
+                }
+              />
+              {!isCurrent && <FMButton label="Restore" variant="primary" onClick={() => void restoreVersion(item)} />}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryModalProps): ReactElement {
   const { fm, refreshFiles, files, currentBatch } = useFM() as unknown as FMContextLike
-  const fmTyped = (fm || null) as FileManager | null
-  const fmWithBee = (fm || null) as FMWithBee | null
+  const fmTyped: FileManager | null = (fm || null) as FileManager | null
+  const fmWithBee: FMWithBee | null = (fm || null) as FMWithBee | null
 
   const { downloadBlob } = useFMTransfers()
   const [openConflict, conflictPortal] = useUploadConflictDialog()
@@ -245,11 +409,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
   const [error, setError] = useState<string | null>(null)
   const [conflictWarning, setConflictWarning] = useState<string | null>(null)
 
-  const [renameConfirm, setRenameConfirm] = useState<{
-    version: FileInfo
-    headName: string
-    targetName: string
-  } | null>(null)
+  const [renameConfirm, setRenameConfirm] = useState<RenameConfirmState>(null)
 
   const pageSize = 5
   const [currentPage, setCurrentPage] = useState(0)
@@ -270,7 +430,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
   const headIdx = useMemo<bigint>(() => parseIndex(headFi?.version) ?? BigInt(0), [headFi])
   const headTopicStr = useMemo(() => headFi?.topic?.toString?.() ?? '', [headFi])
 
-  /** ====== Enumerate versions (robust) ====== */
   const enumerateAll = useCallback(async (): Promise<FileInfo[]> => {
     if (!fmTyped || !headFi) return []
     const rows: FileInfo[] = []
@@ -326,7 +485,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     return rows
   }, [fmTyped, headFi, headIdx])
 
-  /** ====== Create a Blob for a specific version ====== */
   const getVersionBlob = useCallback(
     async (fi: FileInfo): Promise<Blob> => {
       if (!fmTyped || !fmWithBee) throw new Error('FileManager not available')
@@ -380,7 +538,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     [fmTyped, fmWithBee],
   )
 
-  /** ====== Load list ====== */
   useEffect(() => {
     setCurrentPage(0)
     setError(null)
@@ -409,272 +566,320 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     }
   }, [fmTyped, headFi, enumerateAll])
 
-  /** ====== Utils ====== */
-  const getBatchIdStr = (fi: FileInfo): string | undefined => {
-    if (fi.batchId != null) return String(fi.batchId)
-    const metaBatch = fi.customMetadata?.batchId
+  const getBatchIdStr = useCallback(
+    (fi: FileInfo): string | undefined => {
+      if (fi.batchId != null) return String(fi.batchId)
 
-    if (metaBatch) return String(metaBatch)
+      const metaBatch = fi.customMetadata?.batchId
 
-    if (currentBatch) return currentBatch.batchID.toString()
+      if (metaBatch) return String(metaBatch)
 
-    return undefined
-  }
+      if (currentBatch) return currentBatch.batchID.toString()
 
-  const promptUniqueName = async (
-    initial: string,
-    taken: Set<string>,
-    forbidReplaceMsg: string,
-    maxAttempts = 6,
-  ): Promise<{ cancelled: boolean; name?: string }> => {
-    let proposed = initial
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const choice = (await openConflict({
-        originalName: proposed,
-        existingNames: taken,
-      })) as ConflictChoice
+      return undefined
+    },
+    [currentBatch],
+  )
 
-      if (!choice || choice.action === 'cancel') return { cancelled: true }
+  const [openConflictDialog] = [openConflict]
 
-      if (choice.action === 'keep-both') {
-        const candidate = (choice.newName || '').trim()
+  const promptUniqueName = useCallback(
+    async (
+      initial: string,
+      taken: Set<string>,
+      forbidReplaceMsg: string,
+      maxAttempts = 6,
+    ): Promise<{ cancelled: boolean; name?: string }> => {
+      let proposed = initial
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const choice = (await openConflictDialog({
+          originalName: proposed,
+          existingNames: taken,
+        })) as ConflictChoice
 
-        if (candidate && !taken.has(candidate)) {
-          return { cancelled: false, name: candidate }
+        if (!choice || choice.action === 'cancel') return { cancelled: true }
+
+        if (choice.action === 'keep-both') {
+          const candidate = (choice.newName || '').trim()
+
+          if (candidate && !taken.has(candidate)) {
+            return { cancelled: false, name: candidate }
+          }
+          setConflictWarning('That name is already taken. Please enter a different one.')
+          proposed = candidate || proposed
+        } else {
+          setConflictWarning(forbidReplaceMsg)
         }
-        setConflictWarning('That name is already taken. Please enter a different one.')
-        proposed = candidate || proposed
-      } else {
-        setConflictWarning(forbidReplaceMsg)
       }
-    }
 
-    return { cancelled: true }
-  }
+      return { cancelled: true }
+    },
+    [openConflictDialog],
+  )
 
-  const restoreAcrossHistoryAsCopy = async (versionFi: FileInfo, finalName: string): Promise<boolean> => {
-    if (!fmTyped || !fmWithBee) return false
-    const batchId = getBatchIdStr(versionFi)
+  const restoreAcrossHistoryAsCopy = useCallback(
+    async (versionFi: FileInfo, finalName: string): Promise<boolean> => {
+      if (!fmTyped || !fmWithBee) return false
+      const batchId = getBatchIdStr(versionFi)
 
-    if (!batchId) {
-      setError('Failed to restore: could not resolve drive (stamp) for this file.')
+      if (!batchId) {
+        setError('Failed to restore: could not resolve drive (stamp) for this file.')
 
-      return false
-    }
-    const idx = parseIndex(versionFi.version) ?? BigInt(0)
-    const versionParam = toHexIndexStr(idx)
-    const anchor: FileInfo = { ...versionFi, version: versionParam }
+        return false
+      }
 
-    const hydrated = await hydrateWithPublishers(
-      { getVersion: fmTyped.getVersion.bind(fmTyped) },
-      fmWithBee,
-      anchor,
-      versionParam,
-    )
+      const idx = parseIndex(versionFi.version) ?? BigInt(0)
+      const versionParam = toHexIndexStr(idx)
+      const anchor: FileInfo = { ...versionFi, version: versionParam }
 
-    const ref = hydrated.file?.reference
-    const histRef = hydrated.file?.historyRef
+      const hydrated = await hydrateWithPublishers(
+        { getVersion: fmTyped.getVersion.bind(fmTyped) },
+        fmWithBee,
+        anchor,
+        versionParam,
+      )
 
-    if (!ref || !histRef) {
-      setError('Failed to restore: selected version has no content references.')
+      const ref = hydrated.file?.reference
+      const histRef = hydrated.file?.historyRef
 
-      return false
-    }
+      if (!ref || !histRef) {
+        setError('Failed to restore: selected version has no content references.')
 
-    const payload: FileInfoOptions = {
-      info: {
-        batchId: String(batchId),
-        name: finalName,
-        file: {
-          reference: typeof ref === 'string' ? ref : ref.toString(),
-          historyRef: typeof histRef === 'string' ? histRef : histRef.toString(),
-        },
-        customMetadata: hydrated.customMetadata ?? {},
-      },
-    }
+        return false
+      }
 
-    try {
-      await fmTyped.upload(payload)
-      await Promise.resolve(refreshFiles?.())
-      onCancelClick()
-
-      return true
-    } catch {
-      setError('Failed to restore this version')
-
-      return false
-    }
-  }
-
-  const restoreWithinSameHistory = async (versionFi: FileInfo): Promise<void> => {
-    if (!fmTyped) return
-    const topicStr = safeStr(versionFi.topic) || safeStr(headFi?.topic) || safeStr(fileInfo.topic)
-
-    const HEX40 = /^[0-9a-fA-F]{40}$/
-    const ETH_RE = /^0x[0-9a-fA-F]{40}$/
-    const normalizeOwnerHex = (s: string): string => {
-      const t = s.trim()
-
-      if (ETH_RE.test(t)) return t
-
-      if (HEX40.test(t)) return `0x${t.toLowerCase()}`
-
-      return t
-    }
-
-    const ownerRaw =
-      safeStr(versionFi.owner) ||
-      safeStr(headFi?.owner) ||
-      safeStr((fmTyped as unknown as { owner?: string }).owner) ||
-      safeStr((fmTyped as unknown as { address?: string }).address) ||
-      safeStr((fmTyped as unknown as { signerAddress?: string }).signerAddress)
-
-    const ownerStr = normalizeOwnerHex(ownerRaw)
-
-    const idxHex = toHexIndex(versionFi.version ?? '0') || toHexIndex(0)
-    const fileRef = versionFi.file?.reference
-    const histRef = versionFi.file?.historyRef
-
-    setRestoreDebug({
-      name: versionFi.name,
-      topicStr,
-      ownerRaw,
-      ownerStr,
-      ownerLooksEth: ETH_RE.test(ownerStr),
-      idxRaw: String(versionFi.version ?? ''),
-      idxHex,
-      hasFileRef: Boolean(fileRef),
-      hasHistoryRef: Boolean(histRef),
-      headTopic: safeStr(headFi?.topic),
-      headOwner: safeStr(headFi?.owner),
-    })
-
-    if (!topicStr) {
-      setError('Failed to restore: could not resolve feed topic.')
-
-      return
-    }
-
-    if (!ownerStr || !ETH_RE.test(ownerStr)) {
-      setError('Failed to restore: owner address is not a valid Ethereum address.')
-
-      return
-    }
-
-    if (!fileRef || !histRef) {
-      setError('Failed to restore: missing file reference(s) on the selected version.')
-
-      return
-    }
-
-    const fixed: FileInfo = {
-      ...versionFi,
-      topic: topicStr,
-      owner: ownerStr,
-      version: idxHex,
-    }
-
-    try {
-      await fmTyped.restoreVersion(fixed)
-      await Promise.resolve(refreshFiles?.())
-      onCancelClick()
-    } catch (e) {
-      const msg = String((e as Error).message || e || '')
-      const looksLikeFeedIndexEqualsBug =
-        /uint8ArrayToHex|Bytes\.toHex|FeedIndex\.equals/i.test((e as Error).stack || '') ||
-        /Cannot read properties of undefined \(reading 'toString'\)/i.test(msg)
-
-      if (looksLikeFeedIndexEqualsBug) {
-        const batchId =
-          (versionFi.batchId && String(versionFi.batchId)) ||
-          (headFi?.batchId && String(headFi.batchId)) ||
-          currentBatch?.batchID?.toString()
-
-        if (!batchId) {
-          setError('Failed to restore this version')
-
-          return
-        }
-
-        const payload: FileInfoOptions = {
-          info: {
-            batchId,
-            name: versionFi.name,
-            topic: topicStr,
-            file: {
-              reference:
-                typeof versionFi.file.reference === 'string'
-                  ? versionFi.file.reference
-                  : versionFi.file.reference.toString(),
-              historyRef:
-                typeof versionFi.file.historyRef === 'string'
-                  ? versionFi.file.historyRef
-                  : versionFi.file.historyRef.toString(),
-            },
-            customMetadata: versionFi.customMetadata ?? {},
+      const payload: FileInfoOptions = {
+        info: {
+          batchId: String(batchId),
+          name: finalName,
+          file: {
+            reference: typeof ref === 'string' ? ref : ref.toString(),
+            historyRef: typeof histRef === 'string' ? histRef : histRef.toString(),
           },
-        }
-
-        try {
-          await fmTyped.upload(payload)
-          await Promise.resolve(refreshFiles?.())
-          onCancelClick()
-
-          return
-        } catch {
-          /* fall through */
-        }
+          customMetadata: hydrated.customMetadata ?? {},
+        },
       }
 
-      if (/postage|batch|stamp|insufficient/i.test(msg)) {
-        setError('Failed to restore: need a valid postage stamp on this drive.')
-      } else if (/feed.*not.*found/i.test(msg)) {
-        setError('Failed to restore: feed not found for this owner/topic.')
-      } else if (/has to be defined|version.*defined/i.test(msg)) {
-        setError('Failed to restore: version index was not resolved.')
-      } else {
+      try {
+        await fmTyped.upload(payload)
+        await Promise.resolve(refreshFiles?.())
+        onCancelClick()
+
+        return true
+      } catch {
         setError('Failed to restore this version')
+
+        return false
       }
-    }
-  }
+    },
+    [fmTyped, fmWithBee, getBatchIdStr, refreshFiles, onCancelClick],
+  )
 
-  const restoreVersion = async (versionFi: FileInfo): Promise<void> => {
-    if (!fmTyped) return
+  const restoreWithinSameHistory = useCallback(
+    async (versionFi: FileInfo): Promise<void> => {
+      if (!fmTyped) return
 
-    const targetName = versionFi.name || ''
-    const headName = headFi?.name || ''
-    const headTopic = headTopicStr
+      const resolveOwnerRaw = (): string =>
+        safeStr(versionFi.owner) ||
+        safeStr(headFi?.owner) ||
+        safeStr((fmTyped as unknown as { owner?: string }).owner) ||
+        safeStr((fmTyped as unknown as { address?: string }).address) ||
+        safeStr((fmTyped as unknown as { signerAddress?: string }).signerAddress)
 
-    const batchWanted = currentBatch?.batchID?.toString?.() ?? getBatchIdStr(versionFi)
-    const sameDrive = (files || []).filter(fi => {
-      const b = String(fi.batchId ?? '')
+      const normalizeOwnerHexLocal = (s: string): string => {
+        const HEX40 = /^[0-9a-fA-F]{40}$/
+        const ETH_RE = /^0x[0-9a-fA-F]{40}$/
+        const t = s.trim()
 
-      return Boolean(batchWanted) && b === batchWanted
-    })
+        if (ETH_RE.test(t)) return t
 
-    const nameConflicts = sameDrive.filter(fi => (fi.name || '') === targetName)
-    const otherHistoryConflicts = nameConflicts.filter(fi => (fi.topic?.toString?.() ?? '') !== headTopic)
+        if (HEX40.test(t)) return `0x${t.toLowerCase()}`
 
-    if (targetName && headName && targetName !== headName && otherHistoryConflicts.length === 0) {
-      setRenameConfirm({ version: versionFi, headName, targetName })
+        return t
+      }
 
-      return
-    }
+      const validateInputs = (
+        topicStr: string,
+        ownerStr: string,
+        fileRef?: unknown,
+        histRef?: unknown,
+      ): string | null => {
+        if (!topicStr) return 'Failed to restore: could not resolve feed topic.'
 
-    if (otherHistoryConflicts.length > 0) {
-      const taken = new Set<string>(sameDrive.map(fi => fi.name || ''))
-      const forbidMsg =
-        'Replace is not available because another file with that name belongs to a different history. Please choose “Keep both” and enter a different name.'
-      const res = await promptUniqueName(targetName, taken, forbidMsg, 8)
+        if (!ownerStr || !/^0x[0-9a-fA-F]{40}$/.test(ownerStr)) {
+          return 'Failed to restore: owner address is not a valid Ethereum address.'
+        }
 
-      if (res.cancelled || !res.name) return
-      const ok = await restoreAcrossHistoryAsCopy(versionFi, res.name)
+        if (!fileRef || !histRef) return 'Failed to restore: missing file reference(s) on the selected version.'
 
-      if (ok) return
-    }
+        return null
+      }
 
-    await restoreWithinSameHistory(versionFi)
-  }
+      const shouldUseFallback = (e: unknown): boolean => {
+        const errObj = e as Error
+        const msg = String(errObj?.message || e || '')
+        const stack = errObj?.stack || ''
+
+        return (
+          /uint8ArrayToHex|Bytes\.toHex|FeedIndex\.equals/i.test(stack) ||
+          /Cannot read properties of undefined \(reading 'toString'\)/i.test(msg)
+        )
+      }
+
+      const mapError = (msg: string): string => {
+        if (/postage|batch|stamp|insufficient/i.test(msg)) {
+          return 'Failed to restore: need a valid postage stamp on this drive.'
+        }
+
+        if (/feed.*not.*found/i.test(msg)) return 'Failed to restore: feed not found for this owner/topic.'
+
+        if (/has to be defined|version.*defined/i.test(msg)) {
+          return 'Failed to restore: version index was not resolved.'
+        }
+
+        return 'Failed to restore this version'
+      }
+
+      const buildFallbackPayload = (batchId: string): FileInfoOptions => ({
+        info: {
+          batchId,
+          name: versionFi.name,
+          topic: topicStr,
+          file: {
+            reference:
+              typeof versionFi.file.reference === 'string'
+                ? versionFi.file.reference
+                : versionFi.file.reference.toString(),
+            historyRef:
+              typeof versionFi.file.historyRef === 'string'
+                ? versionFi.file.historyRef
+                : versionFi.file.historyRef.toString(),
+          },
+          customMetadata: versionFi.customMetadata ?? {},
+        },
+      })
+
+      const doRefreshAndClose = async () => {
+        await Promise.resolve(refreshFiles?.())
+        onCancelClick()
+      }
+
+      const topicStr = safeStr(versionFi.topic) || safeStr(headFi?.topic) || safeStr(fileInfo.topic)
+      const ownerRaw = resolveOwnerRaw()
+      const ownerStr = normalizeOwnerHexLocal(ownerRaw)
+      const idxHex = toHexIndex(versionFi.version ?? '0') || toHexIndex(0)
+      const fileRef = versionFi.file?.reference
+      const histRef = versionFi.file?.historyRef
+
+      setRestoreDebug({
+        name: versionFi.name,
+        topicStr,
+        ownerRaw,
+        ownerStr,
+        ownerLooksEth: /^0x[0-9a-fA-F]{40}$/.test(ownerStr),
+        idxRaw: String(versionFi.version ?? ''),
+        idxHex,
+        hasFileRef: Boolean(fileRef),
+        hasHistoryRef: Boolean(histRef),
+        headTopic: safeStr(headFi?.topic),
+        headOwner: safeStr(headFi?.owner),
+      })
+
+      const err = validateInputs(topicStr, ownerStr, fileRef, histRef)
+
+      if (err) {
+        setError(err)
+
+        return
+      }
+
+      const fixed: FileInfo = { ...versionFi, topic: topicStr, owner: ownerStr, version: idxHex }
+
+      try {
+        await fmTyped.restoreVersion(fixed)
+        await doRefreshAndClose()
+
+        return
+      } catch (e) {
+        if (shouldUseFallback(e)) {
+          const batchId =
+            (versionFi.batchId && String(versionFi.batchId)) ||
+            (headFi?.batchId && String(headFi.batchId)) ||
+            currentBatch?.batchID?.toString()
+
+          if (!batchId) {
+            setError('Failed to restore this version')
+
+            return
+          }
+
+          try {
+            await fmTyped.upload(buildFallbackPayload(batchId))
+            await doRefreshAndClose()
+
+            return
+          } catch {
+            // fall through to generic error mapping below
+          }
+        }
+
+        const msg = String((e as Error)?.message || e || '')
+        setError(mapError(msg))
+      }
+    },
+    [fmTyped, headFi, fileInfo, refreshFiles, onCancelClick, currentBatch],
+  )
+
+  const restoreVersion = useCallback(
+    async (versionFi: FileInfo): Promise<void> => {
+      if (!fmTyped) return
+
+      const targetName = versionFi.name || ''
+      const headName = headFi?.name || ''
+      const headTopic = headTopicStr
+
+      const batchWanted = currentBatch?.batchID?.toString?.() ?? getBatchIdStr(versionFi)
+      const sameDrive = (files || []).filter(fi => {
+        const b = String(fi.batchId ?? '')
+
+        return Boolean(batchWanted) && b === batchWanted
+      })
+
+      const nameConflicts = sameDrive.filter(fi => (fi.name || '') === targetName)
+      const otherHistoryConflicts = nameConflicts.filter(fi => (fi.topic?.toString?.() ?? '') !== headTopic)
+
+      if (targetName && headName && targetName !== headName && otherHistoryConflicts.length === 0) {
+        setRenameConfirm({ version: versionFi, headName, targetName })
+
+        return
+      }
+
+      if (otherHistoryConflicts.length > 0) {
+        const taken = new Set<string>(sameDrive.map(fi => fi.name || ''))
+        const forbidMsg =
+          'Replace is not available because another file with that name belongs to a different history. Please choose “Keep both” and enter a different name.'
+        const res = await promptUniqueName(targetName, taken, forbidMsg, 8)
+
+        if (res.cancelled || !res.name) return
+        const ok = await restoreAcrossHistoryAsCopy(versionFi, res.name)
+
+        if (ok) return
+      }
+
+      await restoreWithinSameHistory(versionFi)
+    },
+    [
+      fmTyped,
+      headFi?.name,
+      headTopicStr,
+      currentBatch?.batchID,
+      files,
+      getBatchIdStr,
+      promptUniqueName,
+      restoreAcrossHistoryAsCopy,
+      restoreWithinSameHistory,
+    ],
+  )
 
   const modalTitle = (
     <>
@@ -691,6 +896,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     </>
   )
 
+  const showEmpty = !error && !loading && pageVersions.length === 0
+
   return createPortal(
     <div className="fm-modal-container">
       {conflictPortal}
@@ -701,112 +908,31 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
         </div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {error && (
-            <div className="fm-modal-white-section fm-soft-text">
-              {error}
-              {restoreDebug && (
-                <pre
-                  style={{
-                    marginTop: 8,
-                    maxHeight: 220,
-                    overflow: 'auto',
-                    background: '#111',
-                    color: '#eee',
-                    padding: 8,
-                    borderRadius: 6,
-                    fontSize: 11,
-                  }}
-                >
-                  {JSON.stringify(restoreDebug, null, 2)}
-                </pre>
-              )}
-            </div>
-          )}
+          <ErrorPanel error={error} debug={restoreDebug} />
+          <LoadingPanel loading={Boolean(loading)} />
+          <EmptyPanel show={showEmpty} />
+          <ConflictWarningPanel text={conflictWarning} />
 
-          {!error && loading && <div className="fm-loading">Loading…</div>}
+          <RenameConfirmDialog
+            data={renameConfirm}
+            onConfirm={async () => {
+              if (renameConfirm) {
+                await restoreWithinSameHistory(renameConfirm.version)
+                setRenameConfirm(null)
+              }
+            }}
+            onCancel={() => setRenameConfirm(null)}
+          />
 
-          {!error && !loading && pageVersions.length === 0 && (
-            <div className="fm-empty">No versions found for this file.</div>
-          )}
-
-          {conflictWarning && !error && (
-            <div
-              className="fm-modal-white-section fm-soft-text"
-              style={{ borderLeft: '3px solid var(--fm-accent, #6aa7ff)' }}
-            >
-              {conflictWarning}
-            </div>
-          )}
-
-          {/* ——— LIST ——— */}
-          {!error && !loading && pageVersions.length > 0 && (
-            <div className="fm-version-history-list">
-              {pageVersions.map(item => {
-                const vStr = item.version ?? '0'
-                const idx = parseIndex(vStr) ?? BigInt(0)
-                const isCurrent = (parseIndex(headFi?.version) ?? BigInt(0)) === idx
-                const modified = item.timestamp != null ? new Date(item.timestamp).toLocaleString() : '—'
-                const key = `${item.topic?.toString?.() ?? ''}:${toHexIndexStr(idx)}`
-                const willRename = (headFi?.name || '') !== (item.name || '')
-
-                return (
-                  <div key={key} className="fm-modal-white-section vh-row">
-                    <div className="vh-left">
-                      <div className="vh-meta">
-                        <span className="vh-chip" title={`Version ${idx.toString()}`}>
-                          v{idx.toString()}
-                        </span>
-                        {isCurrent && <span className="vh-tag vh-tag--current">Current</span>}
-                        <span className="vh-dot">•</span>
-                        <span className="vh-meta-item" title={modified}>
-                          <CalendarIcon size="12" /> {modified}
-                        </span>
-                        <span className="vh-dot">•</span>
-                        <span className="vh-meta-item" title="Publisher">
-                          <UserIcon size="12" />
-                        </span>
-                      </div>
-
-                      {willRename && !isCurrent && (
-                        <div
-                          className="vh-rename"
-                          title={`Restoring will rename: “${headFi?.name || ''}” → “${item.name || ''}”`}
-                        >
-                          Restoring will rename:{' '}
-                          <b className="vh-name" title={headFi?.name || ''}>
-                            {truncateMiddle(headFi?.name || '', 44)}
-                          </b>{' '}
-                          →{' '}
-                          <b className="vh-name" title={item.name || ''}>
-                            {truncateMiddle(item.name || '', 44)}
-                          </b>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="vh-actions">
-                      <FMButton
-                        label="Download"
-                        variant="secondary"
-                        icon={<DownloadIcon size="15" />}
-                        onClick={() =>
-                          downloadBlob(item.name || 'download', getVersionBlob(item), {
-                            size: item.customMetadata?.size,
-                          })
-                        }
-                      />
-                      {!isCurrent && (
-                        <FMButton label="Restore" variant="primary" onClick={() => void restoreVersion(item)} />
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          <VersionsList
+            versions={!error && !loading ? pageVersions : []}
+            headFi={headFi}
+            downloadBlob={downloadBlob}
+            getVersionBlob={getVersionBlob}
+            restoreVersion={restoreVersion}
+          />
         </div>
 
-        {/* ——— FOOTER ——— */}
         <div className="fm-modal-window-footer vh-footer">
           <div className="vh-footer-left">
             <FMButton label="Close" variant="secondary" onClick={onCancelClick} />

@@ -8,7 +8,6 @@ import { createPortal } from 'react-dom'
 
 interface RenameFileModalProps {
   currentName: string
-  /** names already taken in the SAME drive by OTHER histories (case-sensitive) */
   takenNames?: Set<string> | string[]
   onCancelClick: () => void
   onProceed: (newName: string) => void | Promise<void>

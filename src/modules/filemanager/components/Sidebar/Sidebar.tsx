@@ -83,7 +83,6 @@ export function Sidebar(): ReactElement {
           />
         )}
 
-        {/* My Drives */}
         <div
           className="fm-sidebar-item"
           onMouseEnter={() => setHovered('my-drives')}
