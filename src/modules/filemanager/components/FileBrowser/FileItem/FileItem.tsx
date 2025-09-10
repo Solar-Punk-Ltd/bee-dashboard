@@ -6,6 +6,7 @@ import { useContextMenu } from '../../../hooks/useContextMenu'
 import { ViewType } from '../../../constants/constants'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
+import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
@@ -241,20 +242,41 @@ function getHeadCandidate(fmObj: any, seed: FileInfo): FileInfo | null {
   }
 }
 
+/** Resolve a batch/stamp id from the file info (prefer file’s own stamp over current drive). */
+function getBatchIdForFile(fi: FileInfo, fallback?: unknown): string | undefined {
+  const anyFi = fi as any
+  const direct =
+    anyFi?.batchId ??
+    anyFi?.batchID ??
+    anyFi?.stampId ??
+    anyFi?.stampID ??
+    anyFi?.file?.batchId ??
+    fi?.customMetadata?.batchId ??
+    fi?.customMetadata?.stampId
+
+  if (direct) return String(direct)
+
+  if (fallback != null) return String((fallback as any).toString?.() ?? fallback)
+
+  return undefined
+}
+
 export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
-  const { fm, refreshFiles } = useFM()
+  const { fm, refreshFiles, currentBatch } = useFM()
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
+  const currentDriveName = currentBatch?.label
 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
   const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const openGetInfo = async () => {
     if (!fm) return
@@ -347,7 +369,6 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
           : ({ ...hydrated, actPublisher: pubs[0] } as FileInfo)
         const { blob } = await fileInfoToBlob(fmLike, withPublisher)
         console.debug('[FM-UI] open:blob:ok', { bytes: blob.size })
-
         const url = URL.createObjectURL(blob)
 
         if (win) {
@@ -397,6 +418,63 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
         }, 0)
       })
     })
+  }
+
+  // ─── file lifecycle actions ──────────────────────────────────────────────────
+  const doTrash = async () => {
+    if (!fm) return
+    await (fm as any).trashFile(fileInfo)
+    await Promise.resolve(refreshFiles?.())
+  }
+
+  const doRecover = async () => {
+    if (!fm) return
+    await (fm as any).recoverFile(fileInfo)
+    await Promise.resolve(refreshFiles?.())
+  }
+
+  const doForget = async () => {
+    if (!fm) return
+    await (fm as any).forgetFile(fileInfo)
+    await Promise.resolve(refreshFiles?.())
+  }
+
+  /** Destroy the drive that owns THIS file (use the file’s own stamp if present). */
+  const doDestroyDrive = async () => {
+    if (!fm) return
+    // Prefer the stamp carried by the file itself, fallback to the currently-selected drive
+    const fallbackBatch = (currentBatch as any)?.batchID
+    const batchId = getBatchIdForFile(fileInfo, fallbackBatch)
+
+    if (!batchId) {
+      console.warn('[FM-UI] No batch/stamp id found for destroyDrive.')
+
+      return
+    }
+
+    // Pick the correct destroy function name exposed by the FM (destroyDrive or destroyVolume)
+    const destroyFn: any = (fm as any)?.destroyDrive || (fm as any)?.destroyVolume
+
+    if (typeof destroyFn !== 'function') {
+      console.warn('[FM-UI] destroyDrive/destroyVolume not available on FileManager.')
+
+      return
+    }
+
+    // Confirm to avoid accidental total data loss for the whole drive
+    const ok = window.confirm(
+      'Destroying this drive will make ALL files on this drive inaccessible. This action is irreversible.\n\nProceed?',
+    )
+
+    if (!ok) return
+
+    try {
+      await destroyFn.call(fm, String(batchId))
+      await Promise.resolve(refreshFiles?.())
+    } catch (e) {
+      console.debug('[FM-UI] destroyDrive:error', String(e))
+      throw e
+    }
   }
 
   useLayoutEffect(() => {
@@ -466,7 +544,13 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
               >
                 Version history
               </div>
-              <div className="fm-context-item red" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item red"
+                onClick={() => {
+                  handleCloseContext()
+                  setShowDeleteModal(true) // choose: Trash / Forget / Destroy drive
+                }}
+              >
                 Delete
               </div>
               <div className="fm-context-item-border" />
@@ -505,13 +589,32 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
               >
                 Version history
               </div>
-              <div className="fm-context-item" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item"
+                onClick={() => {
+                  handleCloseContext()
+                  void doRecover()
+                }}
+              >
                 Restore
               </div>
-              <div className="fm-context-item red" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item red"
+                onClick={() => {
+                  handleCloseContext()
+                  // IMPORTANT: call destroy for the file’s OWN drive stamp (no modal here)
+                  void doDestroyDrive()
+                }}
+              >
                 Destroy
               </div>
-              <div className="fm-context-item red" onClick={handleCloseContext}>
+              <div
+                className="fm-context-item red"
+                onClick={() => {
+                  handleCloseContext()
+                  void doForget()
+                }}
+              >
                 Forget permanently
               </div>
               <div className="fm-context-item-border" />
@@ -535,6 +638,21 @@ export function FileItem({ fileInfo, onDownload }: FileItemProps): ReactElement 
 
       {showVersionHistory && (
         <VersionHistoryModal fileInfo={fileInfo} onCancelClick={() => setShowVersionHistory(false)} />
+      )}
+
+      {showDeleteModal && (
+        <DeleteFileModal
+          name={name}
+          currentDriveName={currentDriveName}
+          onCancelClick={() => setShowDeleteModal(false)}
+          onProceed={async action => {
+            setShowDeleteModal(false)
+
+            if (action === 'trash') await doTrash()
+            else if (action === 'forget') await doForget()
+            else if (action === 'destroy') await doDestroyDrive()
+          }}
+        />
       )}
     </div>
   )

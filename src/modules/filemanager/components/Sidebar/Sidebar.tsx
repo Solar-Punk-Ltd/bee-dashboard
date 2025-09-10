@@ -26,7 +26,7 @@ export function Sidebar(): ReactElement {
   const [isStampCreationInProgress, setIsStampCreationInProgress] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setView } = useView()
+  const { setView, view } = useView()
   const { currentBatch, setCurrentBatch } = useFM()
 
   async function handleCreateDrive(
@@ -54,6 +54,18 @@ export function Sidebar(): ReactElement {
 
   const drives = usableStamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
 
+  // ▶ Auto-select the first drive when none is selected but drives exist
+  useEffect(() => {
+    if (!currentBatch && drives.length > 0) {
+      setCurrentBatch(drives[0])
+      setView(ViewType.File)
+    }
+  }, [currentBatch, drives, setCurrentBatch, setView])
+
+  // Small helper to show a friendly drive name
+  const driveName = (s: PostageBatch) => s.label?.trim() || `Drive ${String(s.batchID).slice(0, 6)}`
+  const isCurrent = (s: PostageBatch) => currentBatch?.batchID.toString() === s.batchID.toString()
+
   return (
     <div className="fm-sidebar">
       <div className="fm-sidebar-content">
@@ -73,6 +85,7 @@ export function Sidebar(): ReactElement {
           />
         )}
 
+        {/* My Drives */}
         <div
           className="fm-sidebar-item"
           onMouseEnter={() => setHovered('my-drives')}
@@ -90,7 +103,7 @@ export function Sidebar(): ReactElement {
 
         {isMyDrivesOpen &&
           drives.map(stamp => {
-            const isSelected = currentBatch?.batchID.toString() === stamp.batchID.toString()
+            const isSelected = isCurrent(stamp) && view === ViewType.File
 
             return (
               <div
@@ -105,6 +118,7 @@ export function Sidebar(): ReactElement {
             )
           })}
 
+        {/* Trash (per drive) */}
         <div
           className="fm-sidebar-item"
           onMouseEnter={() => setHovered('trash')}
@@ -122,12 +136,23 @@ export function Sidebar(): ReactElement {
 
         {isTrashOpen && (
           <div className="fm-drive-items-container fm-drive-items-container-open">
-            <div className="fm-sidebar-item fm-trash-item" onClick={() => setView(ViewType.Trash)}>
-              Drive A Trash
-            </div>
-            <div className="fm-sidebar-item fm-trash-item" onClick={() => setView(ViewType.Trash)}>
-              Drive B Trash
-            </div>
+            {drives.map(stamp => {
+              const selected = isCurrent(stamp) && view === ViewType.Trash
+
+              return (
+                <div
+                  key={`${stamp.batchID.toString()}-trash`}
+                  className={`fm-sidebar-item fm-trash-item${selected ? ' is-selected' : ''}`}
+                  onClick={() => {
+                    setCurrentBatch(stamp)
+                    setView(ViewType.Trash)
+                  }}
+                  title={`${driveName(stamp)} Trash`}
+                >
+                  {driveName(stamp)} Trash
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

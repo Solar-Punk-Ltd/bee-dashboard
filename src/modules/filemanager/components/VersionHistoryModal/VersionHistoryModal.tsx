@@ -518,7 +518,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
 
     return t // return as-is; caller will still validate and show a helpful error
   }
-  
+
   const restoreVersion = async (versionFi: FileInfo) => {
     if (!fm) return
 

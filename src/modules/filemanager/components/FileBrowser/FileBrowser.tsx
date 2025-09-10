@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './FileBrowser.scss'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
@@ -9,9 +9,11 @@ import { NotificationBar } from '../NotificationBar/NotificationBar'
 import { FileTransferType, ViewType } from '../../constants/constants'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../providers/FMFileViewContext'
-import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useFM } from '../../providers/FMContext'
+import { useFMTransfers } from '../../hooks/useFMTransfers'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { Context as SettingsContext } from '../../../../providers/Settings'
+import { getUsableStamps } from '../../utils/utils'
 
 type WithStatus = { status?: string | number | null }
 const hasStatus = (x: unknown): x is WithStatus => typeof x === 'object' && x !== null && 'status' in (x as any)
@@ -36,6 +38,8 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view } = useView()
   const { fm, files, currentBatch, refreshFiles } = useFM()
+  const { beeApi } = useContext(SettingsContext)
+
   const {
     uploadFiles,
     isUploading,
@@ -47,6 +51,24 @@ export function FileBrowser(): ReactElement {
     trackDownload,
     conflictPortal,
   } = useFMTransfers()
+
+  const [hasAnyDrive, setHasAnyDrive] = useState(false)
+
+  // Detect whether any usable drives exist (so we can show the right empty-state message)
+  useEffect(() => {
+    let mounted = true
+    const run = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      const drives = stamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
+
+      if (mounted) setHasAnyDrive(drives.length > 0)
+    }
+    run()
+
+    return () => {
+      mounted = false
+    }
+  }, [beeApi])
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -225,11 +247,27 @@ export function FileBrowser(): ReactElement {
     if (fm && currentBatch) refreshFiles()
   }, [fm, currentBatch, refreshFiles])
 
-  let bodyContent: ReactElement | ReactElement[] = <div className="fm-drop-hint">Select a drive to view its files</div>
+  // ── Empty-state + content rendering rules ───────────────────────────────
+  let bodyContent: ReactElement | ReactElement[] = (
+    <div className="fm-drop-hint">Select a drive to upload or view its files</div>
+  )
 
-  if (currentBatch && rows.length === 0) {
-    bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
-  } else if (currentBatch && rows.length > 0) {
+  if (!hasAnyDrive) {
+    // 1) No stamp/drive exists
+    bodyContent = <div className="fm-drop-hint">Create a drive to start using the file manager</div>
+  } else if (!currentBatch) {
+    // 3) Drives exist but nothing selected (rare, we auto-select; but keep as fallback)
+    bodyContent = <div className="fm-drop-hint">Select a drive to upload or view its files</div>
+  } else if (rows.length === 0) {
+    // 2) Selected drive but empty rows
+    if (view === ViewType.Trash) {
+      bodyContent = (
+        <div className="fm-drop-hint">Files from “{currentDriveLabel}” that are trashed can be viewed here</div>
+      )
+    } else {
+      bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
+    }
+  } else {
     bodyContent = rows.map(fi => (
       <FileItem
         key={`${historyKey(fi) || safeTopic(fi.topic) || fi.name}::${fi.version ?? ''}`}
