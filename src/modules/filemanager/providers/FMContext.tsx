@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
-import { BeeDev, PrivateKey, PostageBatch } from '@ethersphere/bee-js'
+import { Bee, PrivateKey, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
@@ -188,7 +188,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const bee = new BeeDev(apiUrl, { signer })
+    const bee = new Bee(apiUrl, { signer })
 
     ;(async () => {
       try {

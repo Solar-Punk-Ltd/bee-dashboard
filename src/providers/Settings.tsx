@@ -86,7 +86,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   }, [])
 
   useEffect(() => {
-    const url = 'http://localhost:1733'
+    const url = makeHttpUrl(config?.['api-addr'] ?? apiUrl)
     try {
       setBeeApi(new Bee(url))
       sessionStorage.setItem('api_host', url)
