@@ -1,13 +1,20 @@
 import { ReactElement, useMemo, useState, useEffect, useRef } from 'react'
 import SearchIcon from 'remixicon-react/SearchLineIcon'
 import FileIcon from 'remixicon-react/File2LineIcon'
-import FilterIcon from 'remixicon-react/FilterLineIcon' // ← NEW
+import FilterIcon from 'remixicon-react/FilterLineIcon'
 import './Header.scss'
 import { useFMSearch } from '../../providers/FMSearchContext'
 import { useFM } from '../../providers/FMContext'
 import type { BatchId } from '@ethersphere/bee-js'
 
 type CurrentBatch = { batchID: BatchId; label?: string }
+
+// Defaults used to determine “active filters”
+const DEFAULT_FILTERS = {
+  scope: 'selected' as 'selected' | 'all',
+  includeActive: true,
+  includeTrashed: false,
+}
 
 const toStringSafe = (x: unknown): string => {
   if (x == null) return ''
@@ -45,6 +52,21 @@ export function Header(): ReactElement {
   const [openFilters, setOpenFilters] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const btnRef = useRef<HTMLButtonElement | null>(null)
+
+  // Determine if filters differ from defaults
+  const filtersActive = useMemo(() => {
+    return (
+      scope !== DEFAULT_FILTERS.scope ||
+      includeActive !== DEFAULT_FILTERS.includeActive ||
+      includeTrashed !== DEFAULT_FILTERS.includeTrashed
+    )
+  }, [scope, includeActive, includeTrashed])
+
+  const resetFilters = () => {
+    setScope(DEFAULT_FILTERS.scope)
+    setIncludeActive(DEFAULT_FILTERS.includeActive)
+    setIncludeTrashed(DEFAULT_FILTERS.includeTrashed)
+  }
 
   useEffect(() => {
     if (!openFilters) return
@@ -108,10 +130,32 @@ export function Header(): ReactElement {
           aria-haspopup="menu"
           aria-expanded={openFilters}
           onClick={() => setOpenFilters(v => !v)}
-          title="Filters"
+          title={filtersActive ? 'Filters (active)' : 'Filters'}
+          style={{ color: filtersActive ? 'orange' : undefined }}
         >
           <FilterIcon size="16px" />
-          <span>Filters</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            Filters
+            {filtersActive && (
+              <span
+                aria-label="Filters active"
+                title="Filters active"
+                // tiny inline badge, no external CSS
+                style={{
+                  fontWeight: 700,
+                  fontSize: 11,
+                  lineHeight: 1,
+                  padding: '0 4px',
+                  borderRadius: 8,
+                  border: '1px solid orange',
+                  color: 'orange',
+                  marginLeft: 2,
+                }}
+              >
+                !
+              </span>
+            )}
+          </span>
         </button>
 
         {openFilters && (
@@ -147,6 +191,24 @@ export function Header(): ReactElement {
                 <input type="checkbox" checked={includeTrashed} onChange={e => setIncludeTrashed(e.target.checked)} />
                 <span>Trash</span>
               </label>
+            </div>
+
+            <div className="fm-filter-sep" />
+
+            <div className="fm-filter-group" role="group" aria-label="Reset">
+              <button
+                type="button"
+                onClick={resetFilters}
+                title="Reset filters to default"
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #ccc',
+                  cursor: 'pointer',
+                }}
+              >
+                Reset to default
+              </button>
             </div>
           </div>
         )}
