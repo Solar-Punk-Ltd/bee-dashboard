@@ -61,7 +61,7 @@ export function Sidebar(): ReactElement {
 
   useEffect(() => {
     if (fm && !currentDrive) {
-      const drives = fm.getDrives().filter(d => d.name !== ADMIN_STAMP_LABEL)
+      const drives = fm.getDrives().filter(d => !d.isAdmin)
 
       if (drives.length > 0) return
 

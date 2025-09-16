@@ -3,7 +3,7 @@ import { Bee, PrivateKey } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
-import { DriveInfo, ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 const KEY_STORAGE = 'privateKey'
 
@@ -110,7 +110,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
   }, [rescanFromNode])
 
   useEffect(() => {
-    if (!apiUrl) return
+    if (!apiUrl || managerRef.current) return
 
     let pk: PrivateKey
     try {
@@ -127,12 +127,13 @@ export function FMProvider({ children }: { children: ReactNode }) {
     ;(async () => {
       const manager = new FileManagerBase(bee)
       managerRef.current = manager
-      const sync = () => setFiles([...manager.fileInfoList])
+
+      const syncFiles = () => setFiles([...manager.fileInfoList])
 
       manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, success => {
         if (success) {
-          setFiles([...manager.fileInfoList])
-          setDrives(manager.getDrives().filter(d => d.name !== ADMIN_STAMP_LABEL))
+          setDrives(manager.getDrives().filter(d => !d.isAdmin))
+          syncFiles()
           setFm(manager)
         } else {
           // eslint-disable-next-line no-console
@@ -140,18 +141,19 @@ export function FMProvider({ children }: { children: ReactNode }) {
         }
       })
       manager.emitter.on(FileManagerEvents.DRIVE_CREATED, ({ driveInfo }) => {
-        // setDrives(manager.getDrives())
+        // TODO: maybe: setDrives(manager.getDrives())
         setDrives(d => [...d, ...driveInfo])
       })
       manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, ({ drive }) => {
-        // setDrives(manager.getDrives())
+        // TODO: maybe: setDrives(manager.getDrives())
         setDrives(prev => prev.filter(d => d.id !== drive.id))
+        syncFiles()
       })
-      manager.emitter.on(FileManagerEvents.FILE_UPLOADED, sync)
-      manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, sync)
-      manager.emitter.on(FileManagerEvents.FILE_TRASHED, sync)
-      manager.emitter.on(FileManagerEvents.FILE_RECOVERED, sync)
-      manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, sync)
+      manager.emitter.on(FileManagerEvents.FILE_UPLOADED, syncFiles)
+      manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, syncFiles)
+      manager.emitter.on(FileManagerEvents.FILE_TRASHED, syncFiles)
+      manager.emitter.on(FileManagerEvents.FILE_RECOVERED, syncFiles)
+      manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, syncFiles)
 
       await manager.initialize()
     })()
