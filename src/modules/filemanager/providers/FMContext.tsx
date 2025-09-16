@@ -6,43 +6,16 @@ import { Context as SettingsContext } from '../../../providers/Settings'
 
 const KEY_STORAGE = 'privateKey'
 
-function normalizeHexKey(pk: string): string | null {
-  if (!pk) return null
-  const k = pk.startsWith('0x') ? pk.slice(2) : pk
+// function generatePrivateKey(seed: string): string {
+//   const bytes = crypto.getRandomValues(Bytes.fromUtf8(seed).toUint8Array())
 
-  return /^[0-9a-fA-F]{64}$/.test(k) ? `0x${k.toLowerCase()}` : null
-}
-
-function generatePrivateKey(): string {
-  const bytes = new Uint8Array(32)
-  crypto.getRandomValues(bytes)
-
-  return (
-    '0x' +
-    Array.from(bytes)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-  )
-}
-
-function consumePkFromUrl(): string | null {
-  try {
-    const url = new URL(window.location.href)
-    const pk = url.searchParams.get('pk')
-
-    if (!pk) return null
-    const norm = normalizeHexKey(pk)
-    url.searchParams.delete('pk')
-    window.history.replaceState({}, '', url.toString())
-
-    if (!norm) return null
-    localStorage.setItem(KEY_STORAGE, norm)
-
-    return norm
-  } catch {
-    return null
-  }
-}
+//   return (
+//     '0x' +
+//     Array.from(bytes)
+//       .map(b => b.toString(16).padStart(2, '0'))
+//       .join('')
+//   )
+// }
 
 type ViteEnv = { VITE_FM_DEV_PRIVATE_KEY?: string; MODE?: string }
 type CraEnv = { REACT_APP_FM_DEV_PRIVATE_KEY?: string; NODE_ENV?: string }
@@ -71,57 +44,17 @@ function getDevEnvPk(): string | undefined {
   return getViteEnv()?.VITE_FM_DEV_PRIVATE_KEY ?? getCraEnv()?.REACT_APP_FM_DEV_PRIVATE_KEY
 }
 
-function ensurePrivateKey(opts: { devAutogen: boolean }): string | null {
-  const fromUrl = consumePkFromUrl()
+function ensurePrivateKey(opts: { devAutogen: boolean }): PrivateKey {
+  const fromLocalPk = localStorage.getItem(KEY_STORAGE)
 
-  if (fromUrl) return fromUrl
-  const fromLocal = normalizeHexKey(localStorage.getItem(KEY_STORAGE) || '')
+  if (fromLocalPk) return new PrivateKey(fromLocalPk)
 
-  if (fromLocal) return fromLocal
-  const mode = getBuildMode()
-  const devEnv = getDevEnvPk()
+  // TODO: handle privkey
+  const devEnv = getDevEnvPk() || 'TODO'
+  const pk = new PrivateKey(PrivateKey.fromUtf8(devEnv))
+  localStorage.setItem(KEY_STORAGE, pk.toString())
 
-  if (devEnv && mode !== 'production') {
-    const norm = normalizeHexKey(devEnv)
-
-    if (norm) {
-      localStorage.setItem(KEY_STORAGE, norm)
-
-      return norm
-    }
-  }
-
-  if (mode !== 'production' && opts.devAutogen) {
-    const gen = generatePrivateKey()
-    localStorage.setItem(KEY_STORAGE, gen)
-
-    return gen
-  }
-
-  return null
-}
-
-declare global {
-  interface Window {
-    fmExportKey: () => string | null
-    fmExportKeyLink: () => string | null
-    fmImportKey: (pk: string) => string
-  }
-}
-window.fmExportKey = () => localStorage.getItem(KEY_STORAGE)
-window.fmExportKeyLink = () => {
-  const base = window.location.origin + window.location.pathname + window.location.hash.split('?')[0]
-  const pk = localStorage.getItem(KEY_STORAGE)
-
-  return pk ? `${base}?pk=${pk}` : null
-}
-window.fmImportKey = (pk: string) => {
-  const norm = normalizeHexKey(pk)
-
-  if (!norm) throw new Error('Invalid private key')
-  localStorage.setItem(KEY_STORAGE, norm)
-
-  return norm
+  return pk
 }
 
 interface FMContextValue {
@@ -132,6 +65,7 @@ interface FMContextValue {
   refreshFiles: () => void
 }
 
+// TODO: use the exact same convention as in SettingsContext
 export const FMContext = createContext<FMContextValue>({
   fm: null,
   files: [],
@@ -143,6 +77,7 @@ export const FMContext = createContext<FMContextValue>({
   },
 })
 
+// TODO: refactor with drive handling
 function hasLabel(x: unknown): x is { label?: string } {
   return typeof x === 'object' && x !== null && 'label' in (x as Record<string, unknown>)
 }
@@ -177,22 +112,22 @@ export function FMProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!apiUrl) return
-    const raw = ensurePrivateKey({ devAutogen: false })
 
-    if (!raw) return
-
-    let signer: PrivateKey
+    let pk: PrivateKey
     try {
-      signer = new PrivateKey(raw.startsWith('0x') ? raw.slice(2) : raw)
-    } catch {
+      pk = ensurePrivateKey({ devAutogen: false })
+    } catch (err: unknown) {
+      // eslint-disable-next-line no-console
+      console.error('Invalid private key in env:', err)
+
       return
     }
 
-    const bee = new Bee(apiUrl, { signer })
+    const bee = new Bee(apiUrl, { signer: pk })
 
     ;(async () => {
       try {
-        const all = await bee.getAllPostageBatch()
+        const all = await bee.getPostageBatches()
         const firstDrive =
           all.find(s => s.usable && hasLabel(s) && s.label !== 'owner' && s.label !== 'owner-stamp') ??
           all.find(s => s.usable)
@@ -206,6 +141,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
       managerRef.current = manager
       const sync = () => setFiles([...manager.fileInfoList])
 
+      // TODO: handle failed init FILEMANAGER_INITIALIZED === false
       manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, sync)
       manager.emitter.on(FileManagerEvents.FILE_UPLOADED, sync)
       manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, sync)
@@ -213,64 +149,12 @@ export function FMProvider({ children }: { children: ReactNode }) {
       manager.emitter.on(FileManagerEvents.FILE_RECOVERED, sync)
       manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, sync)
 
-      try {
-        await manager.initialize()
-        setFiles([...manager.fileInfoList])
-      } catch {
-        // TODO: Handle the error
-      }
+      await manager.initialize()
+      setFiles([...manager.fileInfoList])
 
       setFm(manager)
     })()
   }, [apiUrl])
-
-  useEffect(() => {
-    const refreshFromNetwork = () => {
-      if (!managerRef.current) return
-      managerRef.current
-        .initialize()
-        .then(() => {
-          if (managerRef.current) setFiles([...managerRef.current.fileInfoList])
-        })
-        .catch(() => undefined)
-    }
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'fm:pulse') refreshFromNetwork()
-    }
-    const onVis = () => {
-      if (document.visibilityState === 'visible') refreshFromNetwork()
-    }
-    const onFocus = () => refreshFromNetwork()
-
-    window.addEventListener('storage', onStorage)
-    document.addEventListener('visibilitychange', onVis)
-    window.addEventListener('focus', onFocus)
-
-    let iv: number | null = null
-    const start = () => {
-      if (iv !== null) return
-      iv = window.setInterval(() => {
-        if (document.visibilityState === 'visible') refreshFromNetwork()
-      }, 15000)
-    }
-    const stop = () => {
-      if (iv !== null) {
-        clearInterval(iv)
-        iv = null
-      }
-    }
-
-    onVis()
-    start()
-
-    return () => {
-      window.removeEventListener('storage', onStorage)
-      document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('focus', onFocus)
-      stop()
-    }
-  }, [])
 
   return (
     <FMContext.Provider value={{ fm, files, currentBatch, setCurrentBatch, refreshFiles }}>

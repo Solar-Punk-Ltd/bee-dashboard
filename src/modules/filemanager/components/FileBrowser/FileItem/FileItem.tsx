@@ -1,8 +1,9 @@
-import { ReactElement, useCallback, useLayoutEffect, useMemo, useState } from 'react'
+import { ReactElement, useCallback, useContext, useLayoutEffect, useMemo, useState } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
+import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { ViewType } from '../../../constants/constants'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
@@ -11,29 +12,19 @@ import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { FileInfo, FileManager, FileInfoOptions, FileStatus } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManager, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
-import { BatchId } from '@ethersphere/bee-js'
+import { BatchId, FeedIndex } from '@ethersphere/bee-js'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import type { PostageBatch } from '@ethersphere/bee-js'
 
 import {
-  formatBytes,
-  sanitizeFileName,
-  parseIndexSafe,
-  indexToHex8,
-  normalizeToBlob,
-  historyKey,
-  getHeadCandidate,
-  getBatchIdForFile,
-  batchIdToString,
+  indexStrToBigint,
   hydrateWithPublishers,
   getCandidatePublishers,
   computeContextMenuPosition,
-  toStr,
+  formatBytes,
 } from '../../../utils/fm'
-
-import type { DownloadPart } from '../../../utils/fm'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -44,24 +35,16 @@ interface FileItemProps {
 
 type BlobWithName = { blob: Blob; fileName: string }
 
-type FMContextLike = {
-  fm: unknown
-  files: FileInfo[]
-  currentBatch: { batchID: { toString(): string }; label?: string } | null
-  refreshFiles: () => void | Promise<void>
-}
-
-type GetInfoFM = Parameters<typeof buildGetInfoGroups>[0]
-
+// TODO: use contextinterface from provider
 export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, refreshFiles, currentBatch, files } = useFM() as unknown as FMContextLike
-  const fmLike = (fm || null) as FileManager | null
+  const { fm, refreshFiles, currentBatch, files } = useFM()
+  const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
 
   const name = fileInfo.name
   const size = formatBytes(fileInfo.customMetadata?.size)
-  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
+  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
   const currentDriveName = currentBatch?.label
   const isTrashedFile = (fileInfo.status as FileStatus) === 'trashed'
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
@@ -74,19 +57,15 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [destroyStamp, setDestroyStamp] = useState<Pick<PostageBatch, 'batchID' | 'label'> | null>(null)
-  const thisHistory = historyKey(fileInfo)
+  // const thisHistory = historyKey(fileInfo)
 
   const makeStampForFile = (): Pick<PostageBatch, 'batchID' | 'label'> | null => {
-    const batchIdStr = getBatchIdForFile(fileInfo, currentBatch?.batchID ?? null)
-
-    if (!batchIdStr) return null
-
-    return { batchID: new BatchId(batchIdStr), label: currentBatch?.label ?? '' }
+    return { batchID: new BatchId(fileInfo.batchId), label: currentBatch?.label ?? '' }
   }
 
   const openGetInfo = async () => {
-    if (!fmLike) return
-    const groups = await buildGetInfoGroups(fm as GetInfoFM, fileInfo)
+    if (!fm) return
+    const groups = await buildGetInfoGroups(fm, fileInfo)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
   }
@@ -94,28 +73,28 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   const takenNames = useMemo(() => {
     if (!currentBatch || !files) return new Set<string>()
     const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(fi => batchIdToString(fi.batchId) === wanted)
+    const sameDrive = files.filter(fi => fi.batchId.toString() === wanted)
     const out = new Set<string>()
     sameDrive.forEach(fi => {
       const n = fi.name || ''
 
       if (!n) return
 
-      if (historyKey(fi) !== thisHistory) out.add(n)
+      if (fi.topic.toString() !== fileInfo.topic.toString()) out.add(n)
     })
 
     return out
-  }, [files, currentBatch, thisHistory])
+  }, [files, currentBatch, fileInfo.topic])
 
   const ensureHead = useCallback(async (manager: FileManager, fi: FileInfo): Promise<FileInfo> => {
-    const cached = getHeadCandidate(manager, fi)
+    // const cached = getHeadCandidate(manager, fi)
+    return await fi
 
-    if (cached) return cached
-    try {
-      return await hydrateWithPublishers(manager, manager, fi)
-    } catch {
-      return fi
-    }
+    // try {
+    //   return await hydrateWithPublishers(manager, manager, fi)
+    // } catch {
+    //   return fi
+    //    }
   }, [])
 
   const fileInfoToBlob = async (manager: FileManager, fi: FileInfo): Promise<BlobWithName> => {
@@ -136,7 +115,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
 
     if (parts.length === 0) throw new Error('No content returned by FileManager.download()')
 
-    const blobs = await Promise.all(parts.map(p => normalizeToBlob(p as DownloadPart, mime)))
+    const blobs = await Promise.all(parts.map(p => normalizeToBlob(p, mime)))
 
     if (blobs.length === 1) return { blob: blobs[0], fileName: baseName }
 
@@ -156,17 +135,21 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   const handleOpen = async () => {
     handleCloseContext()
 
-    if (!fmLike) return
+    if (!fm || !beeApi) return
+
     const win = window.open('', '_blank')
     await runTracked(fileInfo.name || 'open', async () => {
       try {
-        const head = await ensureHead(fmLike, fileInfo)
-        const headIdx = parseIndexSafe(head.version)
-        const anchor: FileInfo = { ...head, version: indexToHex8(headIdx) }
-        const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
-        const pubs = await getCandidatePublishers(fmLike, anchor)
+        const head = await ensureHead(fm, fileInfo)
+        const headIdx = indexStrToBigint(head.version) // TODO: handle version missing
+
+        if (headIdx === undefined) return
+
+        const anchor: FileInfo = { ...head, version: FeedIndex.fromBigInt(headIdx).toString() }
+        const hydrated = await hydrateWithPublishers(beeApi, fm, anchor, anchor.version)
+        const pubs = await getCandidatePublishers(beeApi, fm, anchor)
         const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
-        const { blob } = await fileInfoToBlob(fmLike, withPublisher)
+        const { blob } = await fileInfoToBlob(fm, withPublisher)
         const url = URL.createObjectURL(blob)
 
         if (win) {
@@ -188,21 +171,26 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   const handleDownload = async () => {
     handleCloseContext()
 
-    if (!fmLike) return
+    if (!fm || !beeApi) return
 
-    await runTracked(fileInfo.name || 'download', async () => {
-      const headSeed = await ensureHead(fmLike, fileInfo)
-      const headIdx = parseIndexSafe(headSeed.version)
-      const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
-      const hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
-      const pubs = await getCandidatePublishers(fmLike, anchor)
+    await runTracked(fileInfo.name, async () => {
+      const headSeed = await ensureHead(fm, fileInfo)
+      const headIdx = indexStrToBigint(headSeed.version)
+
+      if (headIdx === undefined) {
+        return
+      }
+
+      const anchor: FileInfo = { ...headSeed, version: headSeed.version }
+      const hydrated = await hydrateWithPublishers(beeApi, fm, anchor, anchor.version)
+      const pubs = await getCandidatePublishers(beeApi, fm, anchor)
       const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
-      const { blob, fileName } = await fileInfoToBlob(fmLike, withPublisher)
+      const { blob, fileName } = await fileInfoToBlob(fm, withPublisher)
 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = sanitizeFileName(fileName)
+      a.download = fileName.replace(/[\\/:*?"<>|]+/g, '_')
       a.rel = 'noopener'
       a.style.display = 'none'
       document.body.appendChild(a)
@@ -217,20 +205,20 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   }
 
   const doTrash = async () => {
-    if (!fmLike) return
-    await fmLike.trashFile(fileInfo)
+    if (!fm) return
+    await fm.trashFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
   const doRecover = async () => {
-    if (!fmLike) return
-    await fmLike.recoverFile(fileInfo)
+    if (!fm) return
+    await fm.recoverFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
   const doForget = async () => {
-    if (!fmLike) return
-    await fmLike.forgetFile(fileInfo)
+    if (!fm) return
+    await fm.forgetFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
   }
 
@@ -243,25 +231,24 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
   }
 
   const doRename = async (newName: string) => {
-    if (!fmLike) return
+    if (!fm || !beeApi) return
 
     if (takenNames.has(newName)) throw new Error('name-taken')
 
-    const batchId = getBatchIdForFile(fileInfo, currentBatch?.batchID)
+    const headSeed = await ensureHead(fm, fileInfo)
+    const headIdx = indexStrToBigint(headSeed.version) // TODO: handle version missing
 
-    if (!batchId) throw new Error('no-batch')
+    if (headIdx === undefined) return
 
-    const headSeed = await ensureHead(fmLike, fileInfo)
-    const headIdx = parseIndexSafe(headSeed.version)
-    const anchor: FileInfo = { ...headSeed, version: indexToHex8(headIdx) }
+    const anchor: FileInfo = { ...headSeed, version: FeedIndex.fromBigInt(headIdx).toString() }
 
     let hydrated = headSeed
     try {
-      hydrated = await hydrateWithPublishers(fmLike, fmLike, anchor, anchor.version)
+      hydrated = await hydrateWithPublishers(beeApi, fm, anchor, anchor.version)
     } catch {
       /* best-effort hydration */
     }
-    const pubs = await getCandidatePublishers(fmLike, anchor)
+    const pubs = await getCandidatePublishers(beeApi, fm, anchor)
     const withPublisher: FileInfo = hydrated.actPublisher ? hydrated : { ...hydrated, actPublisher: pubs[0] ?? '' }
 
     const ref = (withPublisher.file as { reference?: unknown })?.reference
@@ -269,18 +256,17 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
 
     if (!ref || !historyRef) throw new Error('missing-refs')
 
-    const info: FileInfoOptions['info'] = {
-      batchId: String(batchId),
+    const info = {
       name: newName,
       topic: withPublisher.topic,
       file: {
-        reference: toStr(ref),
-        historyRef: toStr(historyRef),
+        reference: ref.toString(),
+        historyRef: historyRef.toString(),
       },
       customMetadata: withPublisher.customMetadata ?? {},
     }
 
-    await fmLike.upload({ info })
+    await fm.upload(driveInfo, { info })
     await Promise.resolve(refreshFiles?.())
   }
 
@@ -375,7 +361,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
                 onClick={() => {
                   handleCloseContext()
                   void (async () => {
-                    const groups = fm ? await buildGetInfoGroups(fm as GetInfoFM, fileInfo) : null
+                    const groups = fm ? await buildGetInfoGroups(fm, fileInfo) : null
 
                     if (groups) {
                       setInfoGroups(groups)
@@ -472,7 +458,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
               const driveId = currentBatch?.batchID?.toString?.()
 
               if (!driveId) return new Set<string>()
-              const sameDrive = (files || []).filter(fi => batchIdToString(fi.batchId) === driveId)
+              const sameDrive = (files || []).filter(fi => fi.batchId.toString() === driveId)
               const names = sameDrive.map(fi => fi?.name || '').filter(n => n && n !== name)
 
               return new Set(names)
@@ -499,9 +485,10 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveLabel }: 
             setShowDestroyDriveModal(false)
             setDestroyStamp(null)
           }}
-          onConfirm={async batchId => {
-            if (!fmLike) return
-            await fmLike.destroyVolume(batchId)
+          onConfirm={async driveInfo => {
+            if (!fm || !beeApi) return
+
+            await fm.destroyDrive(driveInfo)
             await Promise.resolve(refreshFiles?.())
             setShowDestroyDriveModal(false)
             setDestroyStamp(null)

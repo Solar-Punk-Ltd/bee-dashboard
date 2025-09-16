@@ -11,44 +11,24 @@ import { FileProgressNotification } from '../FileProgressNotification/FileProgre
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
-import { Bee, BatchId } from '@ethersphere/bee-js'
-import type { FileInfo, FileManager, FileStatus } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { getUsableStamps } from '../../utils/utils'
 import { useFMSearch } from '../../providers/FMSearchContext'
 
-import { toStr, normalizeBatchId, historyKey, computeContextMenuPosition } from '../../utils/fm'
+import { computeContextMenuPosition, indexStrToBigint } from '../../utils/fm'
 
 type Point = { x: number; y: number }
-
-type CurrentBatch = { batchID: BatchId; label?: string }
-type SettingsValue = { beeApi: unknown }
-type StampLike = { label?: string; batchID?: { toString?: () => string } | string }
-
-// local helper: status check
+// todo: use fileStatus
 const isTrashed = (fi: FileInfo): boolean => (fi.status as FileStatus | undefined) === 'trashed'
-
-// safe bigint parse for version comparison (kept local to avoid over-importing)
-const toBigIntSafe = (v: unknown): bigint => {
-  try {
-    return BigInt(String(v ?? '0'))
-  } catch {
-    return BigInt(0)
-  }
-}
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
 
-  const { files, currentBatch, refreshFiles } = useFM() as {
-    fm: FileManager
-    files: FileInfo[]
-    currentBatch: CurrentBatch | null
-    refreshFiles: () => void
-  }
+  const { files, currentBatch, refreshFiles } = useFM()
 
-  const { beeApi } = useContext(SettingsContext) as SettingsValue
+  const { beeApi } = useContext(SettingsContext)
 
   const {
     uploadFiles,
@@ -72,14 +52,14 @@ export function FileBrowser(): ReactElement {
   useEffect(() => {
     let mounted = true
     ;(async () => {
-      const stamps = (await getUsableStamps(beeApi as Bee)) as StampLike[]
+      const stamps = await getUsableStamps(beeApi)
       const drives = stamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
 
       if (mounted) {
         setHasAnyDrive(drives.length > 0)
         const m = new Map<string, string>()
-        for (const s of stamps as StampLike[]) {
-          const id = normalizeBatchId((s.batchID as BatchId) ?? '')
+        for (const s of stamps) {
+          const id = s.batchID.toString()
           const lbl = typeof s.label === 'string' && s.label.trim() ? s.label.trim() : `Drive ${id.slice(0, 6)}`
           m.set(id, lbl)
         }
@@ -192,7 +172,7 @@ export function FileBrowser(): ReactElement {
   }, [showContext, pos, contextRef])
 
   const currentDriveLabel = useMemo(
-    () => (currentBatch ? currentBatch.label || toStr(currentBatch.batchID) : ''),
+    () => (currentBatch ? currentBatch.label || currentBatch.batchID.toString() : ''),
     [currentBatch],
   )
 
@@ -205,8 +185,8 @@ export function FileBrowser(): ReactElement {
 
   const rows = useMemo((): FileInfo[] => {
     if (!currentBatch) return []
-    const wanted = normalizeBatchId(currentBatch.batchID)
-    const sameDrive = files.filter(fi => normalizeBatchId(fi.batchId as BatchId) === wanted)
+    const wanted = currentBatch.batchID.toString()
+    const sameDrive = files.filter(fi => fi.batchId.toString() === wanted)
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
       const n = fi.name || ''
@@ -219,10 +199,10 @@ export function FileBrowser(): ReactElement {
       const n = fi.name || ''
 
       if (nameCount[n] > 1) return `N:${n}`
-      const hist = historyKey(fi)
+      const hist = fi.file.historyRef.toString()
 
       if (hist) return `H:${hist}`
-      const t = toStr(fi.topic)
+      const t = fi.topic.toString()
 
       if (t) return `T:${t}`
 
@@ -239,8 +219,14 @@ export function FileBrowser(): ReactElement {
 
         return
       }
-      const vi = toBigIntSafe(fi.version)
-      const pi = toBigIntSafe(prev.version)
+
+      // todo: same as lastof or picklatest
+      const vi = indexStrToBigint(fi.version)
+      const pi = indexStrToBigint(prev.version)
+
+      if (vi === undefined || pi === undefined) {
+        return
+      }
 
       if (vi > pi) {
         map.set(key, fi)
@@ -281,23 +267,21 @@ export function FileBrowser(): ReactElement {
     [q],
   )
 
-  const selectedBatchId = useMemo(() => (currentBatch ? normalizeBatchId(currentBatch.batchID) : ''), [currentBatch])
+  const selectedBatchId = useMemo(() => (currentBatch ? currentBatch.batchID.toString() : ''), [currentBatch])
 
   const searchRows = useMemo((): FileInfo[] => {
     if (!isSearchMode) return []
 
     const source =
-      scope === 'selected' && selectedBatchId
-        ? files.filter(f => normalizeBatchId(f.batchId as BatchId) === selectedBatchId)
-        : files
+      scope === 'selected' && selectedBatchId ? files.filter(f => f.batchId.toString() === selectedBatchId) : files
 
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
 
     const keyOf = (fi: FileInfo): string => {
-      const hist = historyKey(fi)
+      const hist = fi.file.historyRef.toString()
 
       if (hist) return `H:${hist}`
-      const t = toStr(fi.topic)
+      const t = fi.topic.toString()
       const n = fi.name || ''
 
       return `T:${t}|N:${n}`
@@ -311,8 +295,11 @@ export function FileBrowser(): ReactElement {
       if (!prev) {
         latest.set(k, fi)
       } else {
-        const a = toBigIntSafe(fi.version)
-        const b = toBigIntSafe(prev.version)
+        const a = indexStrToBigint(fi.version)
+        const b = indexStrToBigint(prev.version)
+
+        // todo: review logic
+        if (a === undefined || b === undefined) continue
 
         if (a > b || (a === b && Number(fi.timestamp || 0) > Number(prev.timestamp || 0))) {
           latest.set(k, fi)
@@ -345,7 +332,7 @@ export function FileBrowser(): ReactElement {
     } else {
       bodyContent = listToRender.map(fi => (
         <FileItem
-          key={`${historyKey(fi) || toStr(fi.topic) || fi.name}::${fi.version ?? ''}`}
+          key={`${fi.file.historyRef.toString() || fi.topic.toString() || fi.name}::${fi.version ?? ''}`}
           fileInfo={fi}
           onDownload={trackDownload}
         />
@@ -356,12 +343,12 @@ export function FileBrowser(): ReactElement {
       bodyContent = <div className="fm-drop-hint">No results found.</div>
     } else {
       bodyContent = listToRender.map(fi => {
-        const bid = normalizeBatchId(fi.batchId as BatchId)
+        const bid = fi.batchId.toString()
         const driveLabel = stampLabels.get(bid) || bid.slice(0, 6)
 
         return (
           <FileItem
-            key={`${historyKey(fi) || toStr(fi.topic) || fi.name}::${fi.version ?? ''}`}
+            key={`${fi.file.historyRef.toString() || fi.topic.toString() || fi.name}::${fi.version ?? ''}`}
             fileInfo={fi}
             onDownload={trackDownload}
             showDriveColumn={true}
