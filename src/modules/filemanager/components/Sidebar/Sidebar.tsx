@@ -13,9 +13,10 @@ import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
 import { ViewType } from '../../constants/constants'
 import { Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { getUsableStamps } from '../../utils/utils'
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
+import { getUsableStamps } from '../../utils/utils'
+import { ADMIN_STAMP_LABEL, DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export function Sidebar(): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
@@ -23,11 +24,11 @@ export function Sidebar(): ReactElement {
   const [isTrashOpen, setIsTrashOpen] = useState(false)
   const [isCreateDriveOpen, setIsCreateDriveOpen] = useState(false)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
-  const [isStampCreationInProgress, setIsStampCreationInProgress] = useState(false)
+  const [isDriveCreationInProgress, setIsDriveCreationInProgress] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { currentBatch, setCurrentBatch } = useFM()
+  const { fm, currentDrive, drives, setCurrentDrive } = useFM()
 
   async function handleCreateDrive(
     size: Size,
@@ -36,11 +37,17 @@ export function Sidebar(): ReactElement {
     encryption: boolean,
     erasureCodeLevel: RedundancyLevel,
   ) {
+    if (!beeApi || !fm) return
+
     try {
-      setIsStampCreationInProgress(true)
-      await beeApi?.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+      setIsDriveCreationInProgress(true)
+      const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+      await fm.createDrive(batchId, label, false, erasureCodeLevel)
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to create drive: ', e)
     } finally {
-      setIsStampCreationInProgress(false)
+      setIsDriveCreationInProgress(false)
     }
   }
 
@@ -50,19 +57,20 @@ export function Sidebar(): ReactElement {
       setUsableStamps([...stamps])
     }
     getStamps()
-  }, [beeApi, isStampCreationInProgress])
-
-  const drives = usableStamps.filter(s => s.label !== 'owner' && s.label !== 'owner-stamp')
+  }, [beeApi, isDriveCreationInProgress])
 
   useEffect(() => {
-    if (!currentBatch && drives.length > 0) {
-      setCurrentBatch(drives[0])
+    if (fm && !currentDrive) {
+      const drives = fm.getDrives().filter(d => d.name !== ADMIN_STAMP_LABEL)
+
+      if (drives.length > 0) return
+
+      setCurrentDrive(drives[0])
       setView(ViewType.File)
     }
-  }, [currentBatch, drives, setCurrentBatch, setView])
+  }, [fm, currentDrive, setCurrentDrive, setView])
 
-  const driveName = (s: PostageBatch) => s.label?.trim() || `Drive ${String(s.batchID).slice(0, 6)}`
-  const isCurrent = (s: PostageBatch) => currentBatch?.batchID.toString() === s.batchID.toString()
+  const isCurrent = (di: DriveInfo) => currentDrive?.id.toString() === di.id.toString()
 
   return (
     <div className="fm-sidebar">
@@ -99,19 +107,22 @@ export function Sidebar(): ReactElement {
         </div>
 
         {isMyDrivesOpen &&
-          drives.map(stamp => {
-            const isSelected = isCurrent(stamp) && view === ViewType.File
+          drives.map(d => {
+            const isSelected = isCurrent(d) && view === ViewType.File
+            const stamp = usableStamps.find(s => s.batchID === d.batchId)
 
             return (
-              <div
-                key={stamp.batchID.toString()}
-                onClick={() => {
-                  setCurrentBatch(stamp)
-                  setView(ViewType.File)
-                }}
-              >
-                <DriveItem stamp={stamp} isSelected={isSelected} />
-              </div>
+              stamp && (
+                <div
+                  key={d.id.toString()}
+                  onClick={() => {
+                    setCurrentDrive(d)
+                    setView(ViewType.File)
+                  }}
+                >
+                  <DriveItem drive={d} stamp={stamp} isSelected={isSelected} />
+                </div>
+              )
             )
           })}
 
@@ -133,20 +144,20 @@ export function Sidebar(): ReactElement {
 
         {isTrashOpen && (
           <div className="fm-drive-items-container fm-drive-items-container-open">
-            {drives.map(stamp => {
-              const selected = isCurrent(stamp) && view === ViewType.Trash
+            {drives.map(d => {
+              const selected = isCurrent(d) && view === ViewType.Trash
 
               return (
                 <div
-                  key={`${stamp.batchID.toString()}-trash`}
+                  key={`${d.id.toString()}-trash`}
                   className={`fm-sidebar-item fm-trash-item${selected ? ' is-selected' : ''}`}
                   onClick={() => {
-                    setCurrentBatch(stamp)
+                    setCurrentDrive(d)
                     setView(ViewType.Trash)
                   }}
-                  title={`${driveName(stamp)} Trash`}
+                  title={`${d.name} Trash`}
                 >
-                  {driveName(stamp)} Trash
+                  {d.name} Trash
                 </div>
               )
             })}
@@ -154,7 +165,7 @@ export function Sidebar(): ReactElement {
         )}
       </div>
 
-      {isStampCreationInProgress && <div className="fm-sidebar-drive-creation">Creating drive…</div>}
+      {isDriveCreationInProgress && <div className="fm-sidebar-drive-creation">Creating drive…</div>}
     </div>
   )
 }

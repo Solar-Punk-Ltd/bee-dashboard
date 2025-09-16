@@ -3,19 +3,17 @@ import '../../styles/global.scss'
 import './DestroyDriveModal.scss'
 import { FMButton } from '../FMButton/FMButton'
 import { createPortal } from 'react-dom'
-import { BatchId, PostageBatch } from '@ethersphere/bee-js'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface DestroyDriveModalProps {
-  stamp: Pick<PostageBatch, 'batchID' | 'label'>
+  drive: DriveInfo
   onCancelClick: () => void
-  onConfirm: (batchId: BatchId) => void | Promise<void>
+  onConfirm: (batchId: string) => void | Promise<void>
 }
 
-export function DestroyDriveModal({ stamp, onCancelClick, onConfirm }: DestroyDriveModalProps): ReactElement {
+export function DestroyDriveModal({ drive, onCancelClick, onConfirm }: DestroyDriveModalProps): ReactElement {
   const [driveNameInput, setDriveNameInput] = useState('')
-  const batchIdStr = stamp.batchID.toString()
-  const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
-  const destroyDriveText = `DESTROY DRIVE ${stamp.label || shortBatchId}`
+  const destroyDriveText = `DESTROY DRIVE ${drive.name}`
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(
@@ -52,7 +50,7 @@ export function DestroyDriveModal({ stamp, onCancelClick, onConfirm }: DestroyDr
             label="Destroy entire drive"
             variant="danger"
             disabled={destroyDriveText !== driveNameInput}
-            onClick={() => onConfirm(stamp.batchID)}
+            onClick={() => onConfirm(drive.batchId.toString())}
           />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>

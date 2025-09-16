@@ -5,28 +5,12 @@ import FilterIcon from 'remixicon-react/FilterLineIcon'
 import './Header.scss'
 import { useFMSearch } from '../../providers/FMSearchContext'
 import { useFM } from '../../providers/FMContext'
-import type { BatchId } from '@ethersphere/bee-js'
-
-type CurrentBatch = { batchID: BatchId; label?: string }
 
 // Defaults used to determine “active filters”
 const DEFAULT_FILTERS = {
   scope: 'selected' as 'selected' | 'all',
   includeActive: true,
   includeTrashed: false,
-}
-
-const toStringSafe = (x: unknown): string => {
-  if (x == null) return ''
-
-  if (typeof x === 'string') return x
-  try {
-    const s = (x as { toString?: () => string }).toString?.() ?? String(x)
-
-    return s !== '[object Object]' ? s : ''
-  } catch {
-    return ''
-  }
 }
 
 export function Header(): ReactElement {
@@ -42,12 +26,11 @@ export function Header(): ReactElement {
     setIncludeTrashed,
   } = useFMSearch()
 
-  const { currentBatch } = useFM() as { currentBatch: CurrentBatch | null }
-  const currentDriveLabel = useMemo(() => {
-    if (!currentBatch) return ''
+  const { currentDrive } = useFM()
 
-    return currentBatch.label || toStringSafe(currentBatch.batchID)
-  }, [currentBatch])
+  const currentDriveName = useMemo(() => {
+    return currentDrive?.name || ''
+  }, [currentDrive])
 
   const [openFilters, setOpenFilters] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -169,8 +152,8 @@ export function Header(): ReactElement {
                   checked={scope === 'selected'}
                   onChange={() => setScope('selected')}
                 />
-                <span title={currentDriveLabel ? `Search in ${currentDriveLabel}` : 'Search in selected drive'}>
-                  Selected{currentDriveLabel ? ` — ${currentDriveLabel}` : ''}
+                <span title={currentDriveName ? `Search in ${currentDriveName}` : 'Search in selected drive'}>
+                  Selected{currentDriveName ? ` — ${currentDriveName}` : ''}
                 </span>
               </label>
               <label className="fm-filter-row">

@@ -3,7 +3,6 @@ import { useFM } from '../providers/FMContext'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { useUploadConflictDialog } from './useUploadConflictDialog'
 import { indexStrToBigint, formatBytes } from '../utils/fm'
-import { DriveInfo } from '@solarpunkltd/file-manager-lib/dist/types/utils/types'
 
 // TODO: use enum states
 export type TransferItem = {
@@ -111,14 +110,12 @@ const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined 
 // }
 
 const makeUploadInfo = (args: {
-  batchId: string
   name: string
   files: File[]
   meta: Record<string, string | number>
   topic?: string
 }): FileInfoOptions => {
   const info = {
-    batchId: args.batchId,
     name: args.name,
     customMetadata: normalizeCustomMetadata(args.meta),
     topic: args.topic,
@@ -131,7 +128,7 @@ const makeUploadInfo = (args: {
 }
 
 export function useFMTransfers() {
-  const { fm, currentBatch, refreshFiles, files } = useFM()
+  const { fm, currentDrive, refreshFiles, files } = useFM()
   // TODO: refactor JSX.Element state
   const [openConflict, conflictPortal] = useUploadConflictDialog() as unknown as [OpenConflictFn, JSX.Element | null]
 
@@ -280,7 +277,7 @@ export function useFMTransfers() {
 
   const uploadFiles = useCallback(
     async (picked: FileList | File[]): Promise<void> => {
-      if (!fm || !currentBatch) return
+      if (!fm || !currentDrive) return
 
       const arr = Array.from(picked)
 
@@ -290,7 +287,7 @@ export function useFMTransfers() {
       const meta = buildUploadMeta(arr)
       const prettySize = formatBytes(meta.size)
 
-      const sameDrive = collectSameDrive(currentBatch.batchID.toString())
+      const sameDrive = collectSameDrive(currentDrive.batchId.toString())
       const { finalName, isReplace, replaceTopic } = await resolveConflict(originalName, sameDrive)
 
       if (finalName.trim().length === 0) return
@@ -298,7 +295,6 @@ export function useFMTransfers() {
       startUploadRamp(finalName, prettySize, isReplace ? 'update' : 'upload')
 
       const info = makeUploadInfo({
-        batchId: currentBatch.batchID.toString(),
         name: finalName,
         files: arr,
         meta,
@@ -308,8 +304,7 @@ export function useFMTransfers() {
       try {
         // await runUpload(fm, info, { name: finalName, batchId: batchIdStr, topic: isReplace ? replaceTopic : undefined })
         // todo: startUploadRamp?}
-        const driveInfo: DriveInfo = {}
-        fm.upload(driveInfo, {
+        fm.upload(currentDrive, {
           ...info,
           onUploadProgress: () => {
             return
@@ -327,7 +322,7 @@ export function useFMTransfers() {
 
       refreshFiles()
     },
-    [fm, currentBatch, collectSameDrive, resolveConflict, startUploadRamp, finishUploadRamp, refreshFiles],
+    [fm, currentDrive, collectSameDrive, resolveConflict, startUploadRamp, finishUploadRamp, refreshFiles],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])

@@ -1,5 +1,4 @@
 import { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
-import { sameTopic } from './head'
 import { Bee } from '@ethersphere/bee-js'
 
 export async function getCandidatePublishers(bee: Bee, fm: FileManagerBase, seed: FileInfo): Promise<string[]> {
@@ -17,7 +16,9 @@ export async function getCandidatePublishers(bee: Bee, fm: FileManagerBase, seed
 
   try {
     const list: FileInfo[] = fm.fileInfoList
-    for (const f of list) if (sameTopic(f, seed) && f.actPublisher) out.add(f.actPublisher.toString())
+    for (const f of list) {
+      if (f.topic.toString() === seed.topic.toString() && f.actPublisher) out.add(f.actPublisher.toString())
+    }
   } catch {
     /* ignore */
   }

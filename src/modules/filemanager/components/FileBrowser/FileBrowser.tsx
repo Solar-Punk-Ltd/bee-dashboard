@@ -26,7 +26,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
 
-  const { files, currentBatch, refreshFiles } = useFM()
+  const { files, currentDrive, refreshFiles } = useFM()
 
   const { beeApi } = useContext(SettingsContext)
 
@@ -171,34 +171,26 @@ export function FileBrowser(): ReactElement {
     })
   }, [showContext, pos, contextRef])
 
-  const currentDriveLabel = useMemo(
-    () => (currentBatch ? currentBatch.label || currentBatch.batchID.toString() : ''),
-    [currentBatch],
-  )
-
   useEffect(() => {
     const title = isSearchMode
-      ? `Search results${scope === 'selected' && currentDriveLabel ? ` — ${currentDriveLabel}` : ''}`
-      : currentDriveLabel
+      ? `Search results${scope === 'selected' && currentDrive?.name ? ` — ${currentDrive.name}` : ''}`
+      : currentDrive?.name || ''
     setActualItemView?.(title)
-  }, [isSearchMode, scope, currentDriveLabel, setActualItemView])
+  }, [isSearchMode, scope, currentDrive, setActualItemView])
 
   const rows = useMemo((): FileInfo[] => {
-    if (!currentBatch) return []
-    const wanted = currentBatch.batchID.toString()
-    const sameDrive = files.filter(fi => fi.batchId.toString() === wanted)
+    if (!currentDrive) return []
+
+    const sameDrive = files.filter(fi => fi.driveId.toString() === currentDrive.id.toString())
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
-      const n = fi.name || ''
-      acc[n] = (acc[n] || 0) + 1
+      acc[fi.name] = (acc[fi.name] || 0) + 1
 
       return acc
     }, {})
 
     const keyOf = (fi: FileInfo): string => {
-      const n = fi.name || ''
-
-      if (nameCount[n] > 1) return `N:${n}`
+      if (nameCount[fi.name] > 1) return `N:${fi.name}`
       const hist = fi.file.historyRef.toString()
 
       if (hist) return `H:${hist}`
@@ -206,7 +198,7 @@ export function FileBrowser(): ReactElement {
 
       if (t) return `T:${t}`
 
-      return `N:${n}`
+      return `N:${fi.name}`
     }
 
     const map = new Map<string, FileInfo>()
@@ -240,7 +232,7 @@ export function FileBrowser(): ReactElement {
     const latest = Array.from(map.values())
 
     return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
-  }, [files, currentBatch, view])
+  }, [files, currentDrive, view])
 
   const statusIncluded = useCallback(
     (fi: FileInfo): boolean => {
@@ -258,7 +250,7 @@ export function FileBrowser(): ReactElement {
   const matchesQuery = useCallback(
     (fi: FileInfo): boolean => {
       if (!q) return true
-      const name = (fi.name || '').toLowerCase()
+      const name = fi.name.toLowerCase()
       const mime = (fi.customMetadata?.mime || '').toLowerCase()
       const topic = String(fi.topic ?? '').toLowerCase()
 
@@ -267,7 +259,7 @@ export function FileBrowser(): ReactElement {
     [q],
   )
 
-  const selectedBatchId = useMemo(() => (currentBatch ? currentBatch.batchID.toString() : ''), [currentBatch])
+  const selectedBatchId = useMemo(() => (currentDrive ? currentDrive.batchId.toString() : ''), [currentDrive])
 
   const searchRows = useMemo((): FileInfo[] => {
     if (!isSearchMode) return []
@@ -282,9 +274,8 @@ export function FileBrowser(): ReactElement {
 
       if (hist) return `H:${hist}`
       const t = fi.topic.toString()
-      const n = fi.name || ''
 
-      return `T:${t}|N:${n}`
+      return `T:${t}|N:${fi.name}`
     }
 
     const latest = new Map<string, FileInfo>()
@@ -319,15 +310,15 @@ export function FileBrowser(): ReactElement {
   if (!hasAnyDrive) {
     bodyContent = <div className="fm-drop-hint">Create a drive to start using the file manager</div>
   } else if (!isSearchMode) {
-    if (!currentBatch) {
+    if (!currentDrive) {
       bodyContent = <div className="fm-drop-hint">Select a drive to upload or view its files</div>
     } else if (listToRender.length === 0) {
       if (view === ViewType.Trash) {
         bodyContent = (
-          <div className="fm-drop-hint">Files from “{currentDriveLabel}” that are trashed can be viewed here</div>
+          <div className="fm-drop-hint">Files from “{currentDrive?.name}” that are trashed can be viewed here</div>
         )
       } else {
-        bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDriveLabel}”</div>
+        bodyContent = <div className="fm-drop-hint">Drag &amp; drop files here into “{currentDrive?.name}”</div>
       }
     } else {
       bodyContent = listToRender.map(fi => (
@@ -352,7 +343,7 @@ export function FileBrowser(): ReactElement {
             fileInfo={fi}
             onDownload={trackDownload}
             showDriveColumn={true}
-            driveLabel={driveLabel}
+            driveName={driveLabel}
           />
         )
       })
@@ -446,7 +437,7 @@ export function FileBrowser(): ReactElement {
             )}
           </div>
 
-          {isDragging && currentBatch && (
+          {isDragging && currentDrive && (
             <div
               className="fm-drag-overlay"
               onDragOver={e => {

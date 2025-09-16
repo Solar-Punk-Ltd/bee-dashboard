@@ -19,7 +19,7 @@ export function RenameFileModal({
   onCancelClick,
   onProceed,
 }: RenameFileModalProps): ReactElement {
-  const [value, setValue] = useState(currentName || '')
+  const [value, setValue] = useState(currentName)
   const [touched, setTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -43,7 +43,7 @@ export function RenameFileModal({
 
     if (!trimmed) return 'Name is required.'
 
-    if (trimmed === (currentName || '')) return 'Enter a different name.'
+    if (trimmed === currentName) return 'Enter a different name.'
 
     if (/[\\/:*?"<>|]+/.test(trimmed)) return 'Name contains invalid characters.'
 
@@ -53,7 +53,7 @@ export function RenameFileModal({
   }, [touched, trimmed, currentName, taken])
 
   const canSubmit =
-    trimmed.length > 0 && trimmed !== (currentName || '') && !/[\\/:*?"<>|]+/.test(trimmed) && !taken.has(trimmed)
+    trimmed.length > 0 && trimmed !== currentName && !/[\\/:*?"<>|]+/.test(trimmed) && !taken.has(trimmed)
 
   const handleSubmit = async () => {
     if (!canSubmit || submitting) {

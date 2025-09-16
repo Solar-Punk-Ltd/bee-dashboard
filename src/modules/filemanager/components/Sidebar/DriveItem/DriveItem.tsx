@@ -12,15 +12,17 @@ import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
 import { ViewType } from '../../../constants/constants'
 import { useView } from '../../../providers/FMFileViewContext'
-import { PostageBatch } from '@ethersphere/bee-js'
 import { useFM } from '../../../providers/FMContext'
+import { PostageBatch } from '@ethersphere/bee-js'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface DriveItemProps {
+  drive: DriveInfo
   stamp: PostageBatch
   isSelected: boolean
 }
 
-export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
+export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
@@ -39,16 +41,12 @@ export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
     setShowContext(false)
   }
 
-  const batchIdStr = stamp.batchID.toString()
-  const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
-  const driveName = stamp.label || shortBatchId
-
   return (
     <div
       className={`fm-drive-item-container${isSelected ? ' fm-drive-item-container-selected' : ''}`}
       onClick={() => {
         setView(ViewType.File)
-        setActualItemView?.(driveName)
+        setActualItemView?.(drive.name)
       }}
     >
       <div
@@ -58,7 +56,7 @@ export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
       >
         <div className="fm-drive-item-header">
           <div className="fm-drive-item-icon">{isHovered ? <DriveFill size="16px" /> : <Drive size="16px" />}</div>
-          <div>{driveName}</div>
+          <div>{drive.name}</div>
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
@@ -106,11 +104,12 @@ export function DriveItem({ stamp, isSelected }: DriveItemProps): ReactElement {
       )}
       {isDestroyDriveModalOpen && (
         <DestroyDriveModal
-          stamp={stamp}
+          drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
-          onConfirm={async batchId => {
+          onConfirm={async () => {
             if (!fm) return
-            await fm.destroyVolume(batchId)
+
+            await fm.destroyDrive(drive)
             await Promise.resolve(refreshFiles?.())
             setIsDestroyDriveModalOpen(false)
           }}

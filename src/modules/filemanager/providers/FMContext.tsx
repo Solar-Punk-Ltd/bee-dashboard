@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
-import { Bee, PrivateKey, PostageBatch } from '@ethersphere/bee-js'
+import { Bee, PrivateKey } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
+import { DriveInfo, ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 
 const KEY_STORAGE = 'privateKey'
 
@@ -60,8 +61,9 @@ function ensurePrivateKey(opts: { devAutogen: boolean }): PrivateKey {
 interface FMContextValue {
   fm: FileManagerBase | null
   files: FileInfo[]
-  currentBatch?: PostageBatch
-  setCurrentBatch: (b: PostageBatch) => void
+  currentDrive?: DriveInfo
+  drives: DriveInfo[]
+  setCurrentDrive: (d: DriveInfo) => void
   refreshFiles: () => void
 }
 
@@ -69,24 +71,21 @@ interface FMContextValue {
 export const FMContext = createContext<FMContextValue>({
   fm: null,
   files: [],
-  setCurrentBatch: () => {
-    throw new Error('setCurrentBatch() called outside FMProvider')
+  drives: [],
+  setCurrentDrive: () => {
+    throw new Error('setCurrentDrive() called outside FMProvider')
   },
   refreshFiles: () => {
     throw new Error('refreshFiles() called outside FMProvider')
   },
 })
 
-// TODO: refactor with drive handling
-function hasLabel(x: unknown): x is { label?: string } {
-  return typeof x === 'object' && x !== null && 'label' in (x as Record<string, unknown>)
-}
-
 export function FMProvider({ children }: { children: ReactNode }) {
   const { apiUrl } = useContext(SettingsContext)
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
-  const [currentBatch, setCurrentBatch] = useState<PostageBatch | undefined>()
+  const [drives, setDrives] = useState<DriveInfo[]>([])
+  const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const managerRef = useRef<FileManagerBase | null>(null)
   const initInFlight = useRef<Promise<void> | null>(null)
 
@@ -126,23 +125,28 @@ export function FMProvider({ children }: { children: ReactNode }) {
     const bee = new Bee(apiUrl, { signer: pk })
 
     ;(async () => {
-      try {
-        const all = await bee.getPostageBatches()
-        const firstDrive =
-          all.find(s => s.usable && hasLabel(s) && s.label !== 'owner' && s.label !== 'owner-stamp') ??
-          all.find(s => s.usable)
-
-        if (firstDrive) setCurrentBatch(firstDrive)
-      } catch {
-        // TODO: Handle the error
-      }
-
       const manager = new FileManagerBase(bee)
       managerRef.current = manager
       const sync = () => setFiles([...manager.fileInfoList])
 
-      // TODO: handle failed init FILEMANAGER_INITIALIZED === false
-      manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, sync)
+      manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, success => {
+        if (success) {
+          setFiles([...manager.fileInfoList])
+          setDrives(manager.getDrives().filter(d => d.name !== ADMIN_STAMP_LABEL))
+          setFm(manager)
+        } else {
+          // eslint-disable-next-line no-console
+          console.error('Failed to initialize FileManager')
+        }
+      })
+      manager.emitter.on(FileManagerEvents.DRIVE_CREATED, ({ driveInfo }) => {
+        // setDrives(manager.getDrives())
+        setDrives(d => [...d, ...driveInfo])
+      })
+      manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, ({ drive }) => {
+        // setDrives(manager.getDrives())
+        setDrives(prev => prev.filter(d => d.id !== drive.id))
+      })
       manager.emitter.on(FileManagerEvents.FILE_UPLOADED, sync)
       manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, sync)
       manager.emitter.on(FileManagerEvents.FILE_TRASHED, sync)
@@ -150,14 +154,11 @@ export function FMProvider({ children }: { children: ReactNode }) {
       manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, sync)
 
       await manager.initialize()
-      setFiles([...manager.fileInfoList])
-
-      setFm(manager)
     })()
   }, [apiUrl])
 
   return (
-    <FMContext.Provider value={{ fm, files, currentBatch, setCurrentBatch, refreshFiles }}>
+    <FMContext.Provider value={{ fm, files, currentDrive, setCurrentDrive, drives, refreshFiles }}>
       {children}
     </FMContext.Provider>
   )
