@@ -13,10 +13,11 @@ import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
 import type { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { getUsableStamps } from '../../utils/utils'
 import { useFMSearch } from '../../providers/FMSearchContext'
 
-import { computeContextMenuPosition, indexStrToBigint } from '../../utils/fm'
+import { getUsableStamps } from '../../utils/bee'
+import { indexStrToBigint } from '../../utils/common'
+import { computeContextMenuPosition } from '../../utils/ui'
 
 type Point = { x: number; y: number }
 // todo: use fileStatus

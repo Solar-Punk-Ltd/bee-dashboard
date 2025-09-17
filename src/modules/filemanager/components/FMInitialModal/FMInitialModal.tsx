@@ -5,7 +5,8 @@ import CircularProgress from '@material-ui/core/CircularProgress'
 import './FMInitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
-import { fmFetchCost, getExpiryDateByLifetime } from '../../utils/utils'
+import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
+import { getExpiryDateByLifetime } from '../../utils/common'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
@@ -17,7 +18,7 @@ interface FMInitialModalProps {
 }
 
 const erasureCodeMarks = Object.entries(RedundancyLevel)
-  .filter(([key, value]) => typeof value === 'number')
+  .filter(([_, value]) => typeof value === 'number')
   .map(([key, value]) => ({
     value: value as number,
     label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(),
@@ -37,30 +38,6 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useFM()
   const currentFetch = useRef<Promise<void> | null>(null)
-
-  const handleCreateDrive = async (
-    size: Size,
-    duration: Duration,
-    label: string,
-    encryption: boolean,
-    erasureCodeLevel: RedundancyLevel,
-  ) => {
-    if (!beeApi || !fm) return
-
-    try {
-      setIsAdminStampCreationInProgress(true)
-      const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
-      await fm.createDrive(batchId, label, true, erasureCodeLevel)
-      setIsAdminStampCreationInProgress(false)
-      handleVisibility(false)
-    } catch (e) {
-      setIsAdminStampCreationInProgress(false)
-      handleVisibility(true)
-      //TODO It needs to be discussed what happens to the error
-      // eslint-disable-next-line no-console
-      console.error('Error creating drive:', e)
-    }
-  }
 
   useEffect(() => {
     const newSizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(false, erasureCodeLevel).values())
@@ -134,13 +111,19 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
             label="Purchase"
             variant="primary"
             disabled={!isCreateEnabled}
-            onClick={() =>
-              handleCreateDrive(
+            onClick={async () =>
+              await handleCreateDrive(
+                beeApi,
+                fm,
                 Size.fromBytes(capacity),
                 Duration.fromEndDate(validityEndDate),
                 ADMIN_STAMP_LABEL,
                 false,
                 erasureCodeLevel,
+                true,
+                setIsAdminStampCreationInProgress,
+                () => handleVisibility(false),
+                () => handleVisibility(true),
               )
             }
           />

@@ -8,7 +8,7 @@ import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
-import { getDaysLeft } from '../../utils/utils'
+import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
 

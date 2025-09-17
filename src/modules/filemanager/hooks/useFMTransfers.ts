@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFM } from '../providers/FMContext'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { useUploadConflictDialog } from './useUploadConflictDialog'
-import { indexStrToBigint, formatBytes } from '../utils/fm'
+import { indexStrToBigint, formatBytes } from '../utils/common'
 
 // TODO: use enum states
 export type TransferItem = {
@@ -64,46 +64,6 @@ const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined 
 
   return sameName.reduce(latestOf)
 }
-
-// const waitForUploadEvent = (
-//   manager: FileManager,
-//   criteria: { name: string; batchId: string; topic?: string },
-//   ms = 90_000,
-// ): Promise<void> => {
-//   return new Promise<void>((resolve, reject) => {
-//     const emitter = manager.emitter as {
-//       on?: (evt: string, cb: (payload: ShareItem | { fileInfo?: FileInfo } | FileInfo) => void) => void
-//       off?: (evt: string, cb: (payload: ShareItem | { fileInfo?: FileInfo } | FileInfo) => void) => void
-//     }
-
-//     if (!emitter?.on) {
-//       resolve()
-
-//       return
-//     }
-
-//     const onUploaded = ({ fileInfo }: { fileInfo: FileInfo }) => {
-//       if (!fileInfo) return
-
-//       const nameOk = fileInfo.name === criteria.name
-//       const batchOk = fileInfo.batchId.toString() === criteria.batchId
-//       const topicOk = criteria.topic ? fileInfo.topic.toString() === criteria.topic : true
-
-//       if (nameOk && batchOk && topicOk) {
-//         clearTimeout(timer)
-//         emitter.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-//         resolve()
-//       }
-//     }
-
-//     const timer = window.setTimeout(() => {
-//       emitter?.off?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-//       reject(new Error('upload event timeout'))
-//     }, ms)
-
-//     emitter.on?.(FileManagerEvents.FILE_UPLOADED, onUploaded)
-//   })
-// }
 
 const makeUploadInfo = (args: {
   name: string

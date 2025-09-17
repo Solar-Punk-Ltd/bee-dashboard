@@ -4,7 +4,8 @@ import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
-import { fmFetchCost, fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
+import { fmFetchCost } from '../../utils/bee'
+import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
@@ -48,23 +49,6 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(value)
     setCapacityIndex(index)
-  }
-
-  const createPostageStamp = async () => {
-    try {
-      if (isCreateEnabled) {
-        onCancelClick()
-        await handleCreateDrive(
-          Size.fromBytes(capacity),
-          Duration.fromEndDate(validityEndDate),
-          label,
-          encryptionEnabled,
-          erasureCodeLevel,
-        )
-      }
-    } catch (e) {
-      //TODO It needs to be discussed what happens to the error
-    }
   }
 
   useEffect(() => {
@@ -152,7 +136,24 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton label="Create drive" variant="primary" disabled={!isCreateEnabled} onClick={createPostageStamp} />
+          <FMButton
+            label="Create drive"
+            variant="primary"
+            disabled={!isCreateEnabled}
+            onClick={async () => {
+              if (isCreateEnabled) {
+                onCancelClick()
+
+                await handleCreateDrive(
+                  Size.fromBytes(capacity),
+                  Duration.fromEndDate(validityEndDate),
+                  label,
+                  encryptionEnabled,
+                  erasureCodeLevel,
+                )
+              }
+            }}
+          />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>

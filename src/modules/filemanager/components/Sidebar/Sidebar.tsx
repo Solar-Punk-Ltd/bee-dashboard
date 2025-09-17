@@ -11,11 +11,11 @@ import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
 import { DriveItem } from './DriveItem/DriveItem'
 import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
 import { ViewType } from '../../constants/constants'
-import { Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
+import { PostageBatch } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
-import { getUsableStamps } from '../../utils/utils'
+import { getUsableStamps, handleCreateDrive } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export function Sidebar(): ReactElement {
@@ -29,28 +29,6 @@ export function Sidebar(): ReactElement {
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
   const { fm, currentDrive, drives, setCurrentDrive } = useFM()
-
-  // TODO: use same helper function for handleCreateDrive: 3 places
-  async function handleCreateDrive(
-    size: Size,
-    duration: Duration,
-    label: string,
-    encryption: boolean,
-    erasureCodeLevel: RedundancyLevel,
-  ) {
-    if (!beeApi || !fm) return
-
-    try {
-      setIsDriveCreationInProgress(true)
-      const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
-      await fm.createDrive(batchId, label, false, erasureCodeLevel)
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to create drive: ', e)
-    } finally {
-      setIsDriveCreationInProgress(false)
-    }
-  }
 
   useEffect(() => {
     const getStamps = async () => {
@@ -86,8 +64,18 @@ export function Sidebar(): ReactElement {
         {isCreateDriveOpen && (
           <CreateDriveModal
             onCancelClick={() => setIsCreateDriveOpen(false)}
-            handleCreateDrive={(size, duration, label, encryption, erasureCodeLevel) =>
-              handleCreateDrive(size, duration, label, encryption, erasureCodeLevel)
+            handleCreateDrive={async (size, duration, label, encryption, erasureCodeLevel) =>
+              await handleCreateDrive(
+                beeApi,
+                fm,
+                size,
+                duration,
+                label,
+                encryption,
+                erasureCodeLevel,
+                false,
+                setIsDriveCreationInProgress,
+              )
             }
           />
         )}

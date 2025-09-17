@@ -11,7 +11,7 @@ import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as BeeContext } from '../../../../providers/Bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
+import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import {
   BatchId,

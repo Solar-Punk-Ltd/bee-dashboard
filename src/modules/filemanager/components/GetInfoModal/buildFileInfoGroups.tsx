@@ -6,7 +6,7 @@ import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
-import { FEED_INDEX_ZERO } from '../../utils/fm'
+import { FEED_INDEX_ZERO } from '../../utils/common'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }

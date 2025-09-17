@@ -8,7 +8,7 @@ import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
-import { indexStrToBigint } from '../../../utils/fm'
+import { indexStrToBigint } from '../../../utils/common'
 import { useFMTransfers } from '../../../hooks/useFMTransfers'
 import { useCallback } from 'react'
 import { useFM } from '../../../providers/FMContext'

@@ -16,7 +16,8 @@ import type { DriveInfo, FileInfo, FileStatus } from '@solarpunkltd/file-manager
 import { useFM } from '../../../providers/FMContext'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
-import { computeContextMenuPosition, formatBytes } from '../../../utils/fm'
+import { formatBytes } from '../../../utils/common'
+import { computeContextMenuPosition } from '../../../utils/ui'
 
 interface FileItemProps {
   fileInfo: FileInfo

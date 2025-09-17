@@ -12,7 +12,7 @@ import { FeedIndex } from '@ethersphere/bee-js'
 import { useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
-import { indexStrToBigint } from '../../utils/fm'
+import { indexStrToBigint } from '../../utils/common'
 import { VersionsList } from './VersionList/VersionList'
 
 // TODO: use enums

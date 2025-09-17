@@ -2,7 +2,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import './NotificationBar.scss'
 import UpIcon from 'remixicon-react/ArrowUpSLineIcon'
 import { ExpiringNotificationModal } from '../ExpiringNotificationModal/ExpiringNotificationModal'
-import { getUsableStamps } from '../../utils/utils'
+import { getUsableStamps } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { PostageBatch } from '@ethersphere/bee-js'
 
@@ -17,9 +17,7 @@ export function NotificationBar(): ReactElement | null {
 
   useEffect(() => {
     const getStamps = async () => {
-      const stamps = await (
-        await getUsableStamps(beeApi)
-      ).filter(stamp => {
+      const stamps = (await getUsableStamps(beeApi)).filter(stamp => {
         return (
           stamp.duration &&
           stamp.duration.toEndDate().getTime() <= Date.now() + NUMBER_OF_DAYS_WARNING * DAYS_TO_MILLISECONDS_MULTIPLIER
@@ -28,7 +26,7 @@ export function NotificationBar(): ReactElement | null {
       setStampsToExpire([...stamps])
     }
     getStamps()
-  }, [beeApi])
+  }, [beeApi, DAYS_TO_MILLISECONDS_MULTIPLIER])
 
   if (!showExpiration) return null
 

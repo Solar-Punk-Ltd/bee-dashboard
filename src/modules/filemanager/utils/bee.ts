@@ -1,17 +1,5 @@
 import { Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
-
-import { MouseEvent } from 'react'
-export function preventDefault(event: MouseEvent) {
-  event.preventDefault()
-}
-
-export function getDaysLeft(expiryDate: Date): number {
-  const now = new Date()
-
-  const diffMs = expiryDate.getTime() - now.getTime()
-
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
-}
+import { FileManagerBase } from '@solarpunkltd/file-manager-lib'
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
   if (!bee) {
@@ -22,45 +10,9 @@ export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> 
     return (await bee.getPostageBatches())
       .filter(s => s.usable)
       .sort((a, b) => (a.label || '').localeCompare(b.label || ''))
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Error getting usable stamps: ', error)
-
+  } catch {
     return []
   }
-}
-
-export const fromBytesConversion = (size: number, metric: string) => {
-  switch (metric) {
-    case 'GB':
-      return size / 1000 / 1000 / 1000
-    case 'MB':
-      return size / 1000 / 1000
-    default:
-      return 0
-  }
-}
-
-const lifetimeAdjustments = new Map<number, (date: Date) => void>([
-  //TODO It needs to be discussed the minimum value for value upgrade
-  [0, date => date.setMinutes(date.getMinutes() + 1)],
-  [1, date => date.setDate(date.getDate() + 7)],
-  [2, date => date.setMonth(date.getMonth() + 1)],
-  [3, date => date.setMonth(date.getMonth() + 3)],
-  [4, date => date.setMonth(date.getMonth() + 6)],
-  [5, date => date.setFullYear(date.getFullYear() + 1)],
-])
-
-export function getExpiryDateByLifetime(lifetimeValue: number, actualValidity?: Date): Date {
-  const now = actualValidity || new Date()
-
-  const adjustDate = lifetimeAdjustments.get(lifetimeValue)
-
-  if (adjustDate) {
-    adjustDate(now)
-  }
-
-  return now
 }
 
 export const fmGetStorageCost = async (
@@ -103,11 +55,40 @@ export const fmFetchCost = async (
     await currentFetch.current
   }
   const fetchPromise = (async () => {
-    const cost = await fmGetStorageCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi)
+    const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
     setCost(cost)
   })()
 
   currentFetch.current = fetchPromise
   await fetchPromise
   currentFetch.current = null
+}
+
+export const handleCreateDrive = async (
+  beeApi: Bee | null,
+  fm: FileManagerBase | null,
+  size: Size,
+  duration: Duration,
+  label: string,
+  encryption: boolean,
+  erasureCodeLevel: RedundancyLevel,
+  isAdmin: boolean,
+  setLoading: (loading: boolean) => void,
+  onSuccess?: () => void,
+  onError?: (error: unknown) => void,
+): Promise<void> => {
+  if (!beeApi || !fm) return
+
+  try {
+    setLoading(true)
+    const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+    await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
+    onSuccess?.()
+  } catch (e) {
+    onError?.(e)
+    // eslint-disable-next-line no-console
+    console.error('Failed to create drive:', e)
+  } finally {
+    setLoading(false)
+  }
 }

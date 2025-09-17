@@ -9,7 +9,7 @@ import Radio from '@material-ui/core/Radio'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import FormControl from '@material-ui/core/FormControl'
 
-import { preventDefault } from '../../utils/utils'
+import { preventDefault } from '../../utils/common'
 
 interface DeleteFileModalProps {
   name: string
