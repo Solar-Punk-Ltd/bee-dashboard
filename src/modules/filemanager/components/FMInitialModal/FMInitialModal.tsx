@@ -29,7 +29,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
-  const [isOwnerStampCreationInProgress, setIsOwnerStampCreationInProgress] = useState(false)
+  const [isAdminStampCreationInProgress, setIsAdminStampCreationInProgress] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
   const { beeApi } = useContext(SettingsContext)
@@ -43,12 +43,12 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
     erasureCodeLevel: RedundancyLevel,
   ) => {
     try {
-      setIsOwnerStampCreationInProgress(true)
+      setIsAdminStampCreationInProgress(true)
       await beeApi?.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
-      setIsOwnerStampCreationInProgress(false)
+      setIsAdminStampCreationInProgress(false)
       handleVisibility(false)
     } catch (e) {
-      setIsOwnerStampCreationInProgress(false)
+      setIsAdminStampCreationInProgress(false)
       handleVisibility(true)
       //TODO It needs to be discussed what happens to the error
       // eslint-disable-next-line no-console
@@ -79,7 +79,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
   }, [lifetimeIndex])
 
-  return isOwnerStampCreationInProgress ? (
+  return isAdminStampCreationInProgress ? (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-initilization-progress-content">
@@ -132,7 +132,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
               handleCreateDrive(
                 Size.fromBytes(capacity),
                 Duration.fromEndDate(validityEndDate),
-                'owner',
+                'admin',
                 false,
                 erasureCodeLevel,
               )

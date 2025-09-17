@@ -1,4 +1,4 @@
-.fm-owner-status-bar-container {
+.fm-admin-status-bar-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7,14 +7,14 @@
   padding: 10px 16px;
 }
 
-.fm-owner-status-bar-left {
+.fm-admin-status-bar-left {
   display: flex;
   align-items: center;
   gap: 16px;
   color: rgb(229, 231, 235);
 }
 
-.fm-owner-status-bar-upgrade-button {
+.fm-admin-status-bar-upgrade-button {
   padding: 6px;
   background-color: rgb(237, 237, 237);
   border-radius: 0px;

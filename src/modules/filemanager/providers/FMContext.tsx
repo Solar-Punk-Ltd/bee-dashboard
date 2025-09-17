@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
-import { Bee, PrivateKey } from '@ethersphere/bee-js'
+import { BeeDev, PrivateKey } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
@@ -67,18 +67,16 @@ interface FMContextValue {
   refreshFiles: () => void
 }
 
-// TODO: use the exact same convention as in SettingsContext
-export const FMContext = createContext<FMContextValue>({
+const initialValues: FMContextValue = {
   fm: null,
   files: [],
+  currentDrive: undefined,
   drives: [],
-  setCurrentDrive: () => {
-    throw new Error('setCurrentDrive() called outside FMProvider')
-  },
-  refreshFiles: () => {
-    throw new Error('refreshFiles() called outside FMProvider')
-  },
-})
+  setCurrentDrive: () => {}, // eslint-disable-line
+  refreshFiles: () => {}, // eslint-disable-line
+}
+
+export const FMContext = createContext<FMContextValue>(initialValues)
 
 export function FMProvider({ children }: { children: ReactNode }) {
   const { apiUrl } = useContext(SettingsContext)
@@ -122,7 +120,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const bee = new Bee(apiUrl, { signer: pk })
+    const bee = new BeeDev(apiUrl, { signer: pk })
 
     ;(async () => {
       const manager = new FileManagerBase(bee)
@@ -142,7 +140,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
       })
       manager.emitter.on(FileManagerEvents.DRIVE_CREATED, ({ driveInfo }) => {
         // TODO: maybe: setDrives(manager.getDrives())
-        setDrives(d => [...d, ...driveInfo])
+        setDrives(d => [...d, driveInfo])
       })
       manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, ({ drive }) => {
         // TODO: maybe: setDrives(manager.getDrives())

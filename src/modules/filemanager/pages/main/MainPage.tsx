@@ -2,7 +2,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import './MainPage.scss'
 import { Header } from '../../components/Header/Header'
 import { Sidebar } from '../../components/Sidebar/Sidebar'
-import { OwnerStatusBar } from '../../components/OwnerStatusBar/OwnerStatusBar'
+import { AdminStatusBar } from '../../components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../components/FileBrowser/FileBrowser'
 import { FMFileViewProvider } from '../../providers/FMFileViewContext'
 import { FMInitialModal } from '../../components/FMInitialModal/FMInitialModal'
@@ -14,21 +14,21 @@ import { FMSearchProvider } from '../../providers/FMSearchContext'
 
 export function MainPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
-  const [ownerStamp, setOwnerStamp] = useState<PostageBatch | undefined>(undefined)
+  const [adminStamp, setAdminStamp] = useState<PostageBatch | undefined>(undefined)
   const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
-      const hasOwnerStamp = stamps.some(stamp => stamp.label === 'owner')
+      const hasAdminStamp = stamps.some(stamp => stamp.label === 'admin')
 
-      if (!hasOwnerStamp) {
+      if (!hasAdminStamp) {
         setShowInitialModal(true)
       } else {
         setShowInitialModal(false)
-        const ownerStamp = stamps.find(stamp => stamp.label === 'owner')
+        const adminStamp = stamps.find(stamp => stamp.label === 'admin')
 
-        if (ownerStamp) setOwnerStamp(ownerStamp)
+        if (adminStamp) setAdminStamp(adminStamp)
       }
     }
     getStamps()
@@ -49,7 +49,7 @@ export function MainPage(): ReactElement {
                 <Sidebar />
                 <FileBrowser />
               </div>
-              <OwnerStatusBar ownerStamp={ownerStamp} />
+              <AdminStatusBar adminStamp={adminStamp} />
             </div>
           </FMFileViewProvider>
         </FMSearchProvider>

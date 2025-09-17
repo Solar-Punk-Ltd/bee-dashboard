@@ -16,7 +16,7 @@ import { Context as SettingsContext } from '../../../../providers/Settings'
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { getUsableStamps } from '../../utils/utils'
-import { ADMIN_STAMP_LABEL, DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export function Sidebar(): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
@@ -109,7 +109,7 @@ export function Sidebar(): ReactElement {
         {isMyDrivesOpen &&
           drives.map(d => {
             const isSelected = isCurrent(d) && view === ViewType.File
-            const stamp = usableStamps.find(s => s.batchID === d.batchId)
+            const stamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString())
 
             return (
               stamp && (
