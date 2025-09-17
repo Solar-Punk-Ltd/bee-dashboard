@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { ReactPortal, useCallback, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { UploadConflictModal } from '../components/UploadConflictModal/UploadConflictModal'
 
@@ -32,7 +32,7 @@ function nextCopyName(originalName: string, taken: Set<string>): string {
 
 export function useUploadConflictDialog(): [
   (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictResult>,
-  JSX.Element | null,
+  ReactPortal | null,
 ] {
   const [req, setReq] = useState<Request | null>(null)
 

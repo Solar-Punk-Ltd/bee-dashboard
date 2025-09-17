@@ -9,6 +9,8 @@ import { fmFetchCost, getExpiryDateByLifetime } from '../../utils/utils'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
+import { useFM } from '../../providers/FMContext'
+import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 
 interface FMInitialModalProps {
   handleVisibility: (isVisible: boolean) => void
@@ -33,6 +35,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
   const { beeApi } = useContext(SettingsContext)
+  const { fm } = useFM()
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCreateDrive = async (
@@ -42,9 +45,12 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
     encryption: boolean,
     erasureCodeLevel: RedundancyLevel,
   ) => {
+    if (!beeApi || !fm) return
+
     try {
       setIsAdminStampCreationInProgress(true)
-      await beeApi?.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+      const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+      await fm.createDrive(batchId, label, true, erasureCodeLevel)
       setIsAdminStampCreationInProgress(false)
       handleVisibility(false)
     } catch (e) {
@@ -73,7 +79,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [validityEndDate, beeApi])
+  }, [validityEndDate, beeApi, capacity, erasureCodeLevel, lifetimeIndex])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -132,7 +138,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
               handleCreateDrive(
                 Size.fromBytes(capacity),
                 Duration.fromEndDate(validityEndDate),
-                'admin',
+                ADMIN_STAMP_LABEL,
                 false,
                 erasureCodeLevel,
               )

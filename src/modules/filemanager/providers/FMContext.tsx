@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
-import { BeeDev, PrivateKey } from '@ethersphere/bee-js'
+import { BeeDev, Identifier, PrivateKey } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
@@ -52,7 +52,7 @@ function ensurePrivateKey(opts: { devAutogen: boolean }): PrivateKey {
 
   // TODO: handle privkey
   const devEnv = getDevEnvPk() || 'TODO'
-  const pk = new PrivateKey(PrivateKey.fromUtf8(devEnv))
+  const pk = new PrivateKey(Identifier.fromString(devEnv))
   localStorage.setItem(KEY_STORAGE, pk.toString())
 
   return pk

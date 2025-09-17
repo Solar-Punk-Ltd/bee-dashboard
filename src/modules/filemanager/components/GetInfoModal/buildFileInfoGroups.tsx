@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react'
 import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
-import type { GetGranteesResult } from '@ethersphere/bee-js'
+import { GetGranteesResult } from '@ethersphere/bee-js'
 
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
+import { FEED_INDEX_ZERO } from '../../utils/fm'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }
@@ -52,14 +53,14 @@ const truncateMiddle = (s?: string, start = 10, end = 8) => {
 }
 
 const fmtDate = (ts?: number) => {
-  if (!Number.isFinite(ts as number) || !ts) return dash
+  if (ts === undefined || !Number.isFinite(ts)) return dash
   try {
     return new Date(ts).toLocaleString()
   } catch {
     return dash
   }
 }
-
+// TODO: use enum
 const statusLabel = (s: unknown) => {
   if (s == null) return 'active'
 
@@ -72,7 +73,7 @@ const statusLabel = (s: unknown) => {
 
 async function getCreatedTs(fm: FileManagerBase, fi: FileInfo): Promise<number | undefined> {
   try {
-    const v0 = await fm.getVersion(fi, '0')
+    const v0 = await fm.getVersion(fi, FEED_INDEX_ZERO.toString())
 
     return v0.timestamp
   } catch {

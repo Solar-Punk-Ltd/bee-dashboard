@@ -1,3 +1,5 @@
+import { FeedIndex } from '@ethersphere/bee-js'
+
 export const indexStrToBigint = (indexStr?: string): bigint | undefined => {
   if (!indexStr) {
     return undefined
@@ -33,3 +35,5 @@ export const formatBytes = (v?: string | number): string | undefined => {
 
   return `${val.toFixed(1)} ${units[i]}`
 }
+
+export const FEED_INDEX_ZERO = FeedIndex.fromBigInt(BigInt(0))

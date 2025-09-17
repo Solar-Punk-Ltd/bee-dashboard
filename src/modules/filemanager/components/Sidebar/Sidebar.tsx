@@ -30,6 +30,7 @@ export function Sidebar(): ReactElement {
   const { setView, view } = useView()
   const { fm, currentDrive, drives, setCurrentDrive } = useFM()
 
+  // TODO: use same helper function for handleCreateDrive: 3 places
   async function handleCreateDrive(
     size: Size,
     duration: Duration,

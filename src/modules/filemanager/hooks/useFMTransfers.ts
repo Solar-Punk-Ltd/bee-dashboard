@@ -13,10 +13,6 @@ export type TransferItem = {
   kind?: 'upload' | 'update' | 'download'
 }
 
-type ConflictChoice = { action: 'cancel' } | { action: 'keep-both'; newName: string } | { action: 'replace' }
-
-type OpenConflictFn = (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictChoice>
-
 type UploadMeta = Record<string, string | number>
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
@@ -129,8 +125,7 @@ const makeUploadInfo = (args: {
 
 export function useFMTransfers() {
   const { fm, currentDrive, refreshFiles, files } = useFM()
-  // TODO: refactor JSX.Element state
-  const [openConflict, conflictPortal] = useUploadConflictDialog() as unknown as [OpenConflictFn, JSX.Element | null]
+  const [openConflict, conflictPortal] = useUploadConflictDialog()
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const timers = useRef<Map<string, number>>(new Map())
@@ -232,7 +227,7 @@ export function useFMTransfers() {
     async (
       originalName: string,
       sameDrive: FileInfo[],
-    ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string }> => {
+    ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string; replaceHistory?: string }> => {
       const taken = new Set(sameDrive.map(fi => fi.name))
 
       if (!taken.has(originalName)) {
@@ -248,9 +243,13 @@ export function useFMTransfers() {
       }
 
       const latest = pickLatestByName(sameDrive, originalName)
-      const topic = latest ? latest.topic.toString() : undefined
 
-      return { finalName: originalName, isReplace: true, replaceTopic: topic }
+      return {
+        finalName: originalName,
+        isReplace: true,
+        replaceTopic: latest?.topic.toString(),
+        replaceHistory: latest?.file.historyRef.toString(),
+      }
     },
     [openConflict],
   )
@@ -288,7 +287,7 @@ export function useFMTransfers() {
       const prettySize = formatBytes(meta.size)
 
       const sameDrive = collectSameDrive(currentDrive.batchId.toString())
-      const { finalName, isReplace, replaceTopic } = await resolveConflict(originalName, sameDrive)
+      const { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(originalName, sameDrive)
 
       if (finalName.trim().length === 0) return
 
@@ -302,14 +301,19 @@ export function useFMTransfers() {
       })
 
       try {
-        // await runUpload(fm, info, { name: finalName, batchId: batchIdStr, topic: isReplace ? replaceTopic : undefined })
         // todo: startUploadRamp?}
-        fm.upload(currentDrive, {
-          ...info,
-          onUploadProgress: () => {
-            return
+        fm.upload(
+          currentDrive,
+          {
+            ...info,
+            onUploadProgress: () => {
+              return
+            },
           },
-        })
+          {
+            actHistoryAddress: replaceHistory,
+          },
+        )
       } catch {
         clearTimer(finalName)
         clearEndTimer(finalName)

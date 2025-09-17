@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useLayoutEffect, useMemo, useState } from 'react'
+import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
@@ -33,6 +33,17 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
   const { fm, refreshFiles, currentDrive, files } = useFM()
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
+
+  // Track if component is mounted to prevent state updates on unmounted component
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
@@ -331,20 +342,41 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
       )}
 
       {showGetInfoModal && infoGroups && (
-        <GetInfoModal name={fileInfo.name} properties={infoGroups} onCancelClick={() => setShowGetInfoModal(false)} />
+        <GetInfoModal
+          name={fileInfo.name}
+          properties={infoGroups}
+          onCancelClick={() => {
+            if (isMountedRef.current) {
+              setShowGetInfoModal(false)
+            }
+          }}
+        />
       )}
 
       {showVersionHistory && (
-        <VersionHistoryModal fileInfo={fileInfo} onCancelClick={() => setShowVersionHistory(false)} />
+        <VersionHistoryModal
+          fileInfo={fileInfo}
+          onCancelClick={() => {
+            if (isMountedRef.current) {
+              setShowVersionHistory(false)
+            }
+          }}
+        />
       )}
 
       {showDeleteModal && (
         <DeleteFileModal
           name={fileInfo.name}
           currentDriveName={currentDrive.name}
-          onCancelClick={() => setShowDeleteModal(false)}
+          onCancelClick={() => {
+            if (isMountedRef.current) {
+              setShowDeleteModal(false)
+            }
+          }}
           onProceed={async action => {
-            setShowDeleteModal(false)
+            if (isMountedRef.current) {
+              setShowDeleteModal(false)
+            }
 
             if (action === 'trash') await doTrash()
             else if (action === 'forget') await doForget()
@@ -361,11 +393,18 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
 
             return new Set(names)
           })()}
-          onCancelClick={() => setShowRenameModal(false)}
+          onCancelClick={() => {
+            if (isMountedRef.current) {
+              setShowRenameModal(false)
+            }
+          }}
           onProceed={async newName => {
             try {
               await doRename(newName)
-              setShowRenameModal(false)
+
+              if (isMountedRef.current) {
+                setShowRenameModal(false)
+              }
             } catch {
               /* keep modal open on error */
             }
@@ -377,15 +416,19 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
         <DestroyDriveModal
           drive={destroyDrive}
           onCancelClick={() => {
-            setShowDestroyDriveModal(false)
-            setDestroyDrive(null)
+            if (isMountedRef.current) {
+              setShowDestroyDriveModal(false)
+              setDestroyDrive(null)
+            }
           }}
           onConfirm={async () => {
             await fm.destroyDrive(currentDrive)
             await Promise.resolve(refreshFiles?.())
 
-            setShowDestroyDriveModal(false)
-            setDestroyDrive(null)
+            if (isMountedRef.current) {
+              setShowDestroyDriveModal(false)
+              setDestroyDrive(null)
+            }
           }}
         />
       )}

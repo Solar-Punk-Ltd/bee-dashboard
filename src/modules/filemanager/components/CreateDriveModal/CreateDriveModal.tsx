@@ -27,7 +27,7 @@ interface CreateDriveModalProps {
     label: string,
     encryption: boolean,
     erasureCodeLevel: RedundancyLevel,
-  ) => void
+  ) => Promise<void>
 }
 
 export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDriveModalProps): ReactElement {
@@ -78,7 +78,7 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
     )
 
     setCapacity(newSizes[capacityIndex])
-  }, [encryptionEnabled, erasureCodeLevel])
+  }, [encryptionEnabled, erasureCodeLevel, capacityIndex])
 
   useEffect(() => {
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
@@ -91,7 +91,7 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, label])
+  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
