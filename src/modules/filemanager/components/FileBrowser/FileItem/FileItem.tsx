@@ -17,6 +17,7 @@ import { useFM } from '../../../providers/FMContext'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
 import { formatBytes } from '../../../utils/common'
+import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 
 interface FileItemProps {
@@ -25,8 +26,6 @@ interface FileItemProps {
   showDriveColumn?: boolean
   driveName?: string
 }
-
-type BlobWithName = { blob: Blob; fileName: string }
 
 // TODO: use contextinterface from provider
 export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: FileItemProps): ReactElement {
@@ -80,45 +79,34 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  const fileInfoToBlob = (): Promise<BlobWithName> => {
-    if (!fm) throw new Error('FileManager not initialized')
-
-    return new Promise<BlobWithName>((resolve, reject) => {
-      return
-    })
-  }
-
-  const runTracked = (label: string, task: () => Promise<void>) =>
-    (typeof onDownload === 'function' ? onDownload : (_: string, t: () => Promise<void>) => t())(label, task, {
-      size: fileInfo.customMetadata?.size,
-    })
-
   const handleOpen = async () => {
     handleCloseContext()
 
     if (!fm || !beeApi) return
 
-    const win = window.open('', '_blank')
-
-    await runTracked(fileInfo.name, async () => {
-      try {
-        const { blob } = await fileInfoToBlob()
-        const url = URL.createObjectURL(blob)
-
-        if (win) {
-          win.location.href = url
-          setTimeout(() => URL.revokeObjectURL(url), 30000)
-        } else {
-          const popup = window.open(url, '_blank')
-
-          if (!popup) return
-          setTimeout(() => URL.revokeObjectURL(url), 30000)
-        }
-      } catch {
-        win?.close()
-        throw new Error('Open failed')
-      }
+    await startDownloadingQueue(fm, [fileInfo], () => {
+      // eslint-disable-next-line no-console
+      console.log('TODO downloading: ', fileInfo.name)
     })
+
+    // const win = window.open('', '_blank')
+
+    // try {
+    //   const url = URL.createObjectURL(blob)
+
+    //   if (win) {
+    //     win.location.href = url
+    //     setTimeout(() => URL.revokeObjectURL(url), 30000)
+    //   } else {
+    //     const popup = window.open(url, '_blank')
+
+    //     if (!popup) return
+    //     setTimeout(() => URL.revokeObjectURL(url), 30000)
+    //   }
+    // } catch {
+    //   win?.close()
+    //   throw new Error('Open failed')
+    // }
   }
 
   const handleDownload = async () => {
@@ -126,22 +114,9 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
 
     if (!fm || !beeApi) return
 
-    await runTracked(fileInfo.name, async () => {
-      const { blob } = await fileInfoToBlob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = fileInfo.name.replace(/[\\/:*?"<>|]+/g, '_')
-      a.rel = 'noopener'
-      a.style.display = 'none'
-      document.body.appendChild(a)
-      requestAnimationFrame(() => {
-        a.click()
-        setTimeout(() => {
-          a.remove()
-          URL.revokeObjectURL(url)
-        }, 0)
-      })
+    await startDownloadingQueue(fm, [fileInfo], () => {
+      // eslint-disable-next-line no-console
+      console.log('TODO downloading: ', fileInfo.name)
     })
   }
 

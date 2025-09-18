@@ -323,11 +323,7 @@ export function FileBrowser(): ReactElement {
       }
     } else {
       bodyContent = listToRender.map(fi => (
-        <FileItem
-          key={`${fi.file.historyRef.toString() || fi.topic.toString() || fi.name}::${fi.version ?? ''}`}
-          fileInfo={fi}
-          onDownload={trackDownload}
-        />
+        <FileItem key={`${fi.name}::${fi.version ?? ''}`} fileInfo={fi} onDownload={trackDownload} />
       ))
     }
   } else {
@@ -340,7 +336,7 @@ export function FileBrowser(): ReactElement {
 
         return (
           <FileItem
-            key={`${fi.file.historyRef.toString() || fi.topic.toString() || fi.name}::${fi.version ?? ''}`}
+            key={`${fi.name}::${fi.version ?? ''}`}
             fileInfo={fi}
             onDownload={trackDownload}
             showDriveColumn={true}

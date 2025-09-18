@@ -346,40 +346,12 @@ export function useFMTransfers() {
     }
   }, [])
 
-  const downloadBlob = useCallback(
-    async (name: string, blobPromise: Promise<Blob>, opts?: { size?: string }) => {
-      return await trackDownload(
-        name,
-        async () => {
-          const blob = await blobPromise
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = name
-          a.rel = 'noopener'
-          a.style.display = 'none'
-          document.body.appendChild(a)
-          requestAnimationFrame(() => {
-            a.click()
-            setTimeout(() => {
-              a.remove()
-              URL.revokeObjectURL(url)
-            }, 0)
-          })
-        },
-        opts,
-      )
-    },
-    [trackDownload],
-  )
-
   return {
     uploadFiles,
     isUploading,
     uploadCount,
     uploadItems,
     trackDownload, // processStreams + downloadTodisk
-    downloadBlob, // TODO: use as downloadTodisk fallback
     isDownloading,
     downloadCount,
     downloadItems,

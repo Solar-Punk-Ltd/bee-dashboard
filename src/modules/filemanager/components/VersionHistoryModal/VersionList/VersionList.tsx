@@ -8,10 +8,9 @@ import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
-import { indexStrToBigint } from '../../../utils/common'
-import { useFMTransfers } from '../../../hooks/useFMTransfers'
-import { useCallback } from 'react'
 import { useFM } from '../../../providers/FMContext'
+import { indexStrToBigint } from '../../../utils/common'
+import { startDownloadingQueue } from 'src/modules/filemanager/utils/download'
 
 const truncateMiddle = (s: string, max = 42): string => {
   const str = String(s)
@@ -22,31 +21,16 @@ const truncateMiddle = (s: string, max = 42): string => {
   return `${str.slice(0, half)}…${str.slice(-half)}`
 }
 
-export function VersionsList({
-  versions,
-  headFi,
-  restoreVersion,
-}: {
+interface VersionListProps {
   versions: FileInfo[]
   headFi: FileInfo
   restoreVersion: (fi: FileInfo) => Promise<void>
-}) {
+}
+
+export function VersionsList({ versions, headFi, restoreVersion }: VersionListProps) {
   const { fm } = useFM()
 
-  const { downloadBlob } = useFMTransfers()
-  // TODO: this shall use the same download as in useFMTransfers
-  const getVersionBlob = useCallback(
-    (fi: FileInfo): Promise<Blob> => {
-      if (!fm) throw new Error('FileManager not initialized')
-
-      return new Promise<Blob>((resolve, reject) => {
-        return
-      })
-    },
-    [fm],
-  )
-
-  if (!versions.length) return null
+  if (!versions.length || !fm) return null
 
   return (
     <div className="fm-version-history-list">
@@ -98,8 +82,9 @@ export function VersionsList({
                 variant="secondary"
                 icon={<DownloadIcon size="15" />}
                 onClick={() =>
-                  downloadBlob(item.name, getVersionBlob(item), {
-                    size: item.customMetadata?.size,
+                  startDownloadingQueue(fm, [item], () => {
+                    // eslint-disable-next-line no-console
+                    console.log('TODO downloading: ', item.name)
                   })
                 }
               />
