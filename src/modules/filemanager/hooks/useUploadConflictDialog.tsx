@@ -2,12 +2,17 @@ import { ReactPortal, useCallback, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { UploadConflictModal } from '../components/UploadConflictModal/UploadConflictModal'
 
-export type ConflictResult = { action: 'keep-both'; newName: string } | { action: 'replace' } | { action: 'cancel' }
+export enum ConflictAction {
+  KeepBoth = 'keep-both',
+  Replace = 'replace',
+  Cancel = 'cancel',
+}
+export type ConflictChoice = { action: ConflictAction; newName?: string }
 
 type Request = {
   originalName: string
   existingNames: Set<string>
-  resolve: (r: ConflictResult) => void
+  resolve: (r: ConflictChoice) => void
 }
 
 function splitExt(name: string): { base: string; ext: string } {
@@ -18,6 +23,7 @@ function splitExt(name: string): { base: string; ext: string } {
   return { base: name.slice(0, dot), ext: name.slice(dot) }
 }
 
+// TODO: why do we need the whole array of same names? just the length should and the name should be enough
 function nextCopyName(originalName: string, taken: Set<string>): string {
   const { base, ext } = splitExt(originalName)
   let n = 1
@@ -31,7 +37,7 @@ function nextCopyName(originalName: string, taken: Set<string>): string {
 }
 
 export function useUploadConflictDialog(): [
-  (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictResult>,
+  (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictChoice>,
   ReactPortal | null,
 ] {
   const [req, setReq] = useState<Request | null>(null)
@@ -48,17 +54,17 @@ export function useUploadConflictDialog(): [
         onKeepBoth={(newName: string) => {
           const { resolve } = req
           setReq(null)
-          resolve({ action: 'keep-both', newName })
+          resolve({ action: ConflictAction.KeepBoth, newName })
         }}
         onReplace={() => {
           const { resolve } = req
           setReq(null)
-          resolve({ action: 'replace' })
+          resolve({ action: ConflictAction.Replace })
         }}
         onCancel={() => {
           const { resolve } = req
           setReq(null)
-          resolve({ action: 'cancel' })
+          resolve({ action: ConflictAction.Cancel })
         }}
       />,
       modalRoot,
@@ -66,10 +72,10 @@ export function useUploadConflictDialog(): [
   }, [req])
 
   const open = useCallback(
-    async (args: { originalName: string; existingNames: Set<string> | string[] }): Promise<ConflictResult> => {
+    async (args: { originalName: string; existingNames: Set<string> | string[] }): Promise<ConflictChoice> => {
       const existing = Array.isArray(args.existingNames) ? new Set(args.existingNames) : args.existingNames
 
-      return await new Promise<ConflictResult>(resolve => {
+      return await new Promise<ConflictChoice>(resolve => {
         setReq({ originalName: args.originalName, existingNames: existing, resolve })
       })
     },

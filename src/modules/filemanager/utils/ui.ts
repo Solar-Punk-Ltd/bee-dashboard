@@ -1,5 +1,4 @@
-type Point = { x: number; y: number }
-type Dir = 'down' | 'up'
+import { Point, Dir } from './common'
 
 export function computeContextMenuPosition(args: {
   clickPos: Point
@@ -13,12 +12,12 @@ export function computeContextMenuPosition(args: {
   const left = Math.max(margin, Math.min(pos.x, viewport.w - rect.width - margin))
   const vh = viewport.h
   let top = pos.y
-  let dir: Dir = 'down'
+  let dir: Dir = Dir.Down
   const midY = containerRect ? containerRect.top + containerRect.height / 2 : viewport.h * 0.5
 
   if (pos.y > midY || pos.y + rect.height + margin > vh) {
     top = Math.max(margin, pos.y - rect.height)
-    dir = 'up'
+    dir = Dir.Up
   } else {
     top = Math.max(margin, Math.min(pos.y, vh - rect.height - margin))
   }

@@ -9,14 +9,12 @@ import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 import { useFM } from '../../providers/FMContext'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FeedIndex } from '@ethersphere/bee-js'
-import { useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
+import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { indexStrToBigint } from '../../utils/common'
 import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
 
-// TODO: use enums
-type ConflictChoice = { action: 'keep-both' | 'replace' | 'cancel'; newName?: string }
 const pageSize = 5
 
 type RenameConfirmState = {
@@ -142,15 +140,21 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
     ): Promise<{ cancelled: boolean; name?: string }> => {
       let proposed = initial
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const choice = (await openConflict({
+        const choice = await openConflict({
           originalName: proposed,
           existingNames: taken,
-        })) as ConflictChoice
+        })
 
-        if (!choice || choice.action === 'cancel') return { cancelled: true }
+        if (!choice || choice.action === ConflictAction.Cancel) return { cancelled: true }
 
-        if (choice.action === 'keep-both') {
-          const candidate = (choice.newName || '').trim()
+        if (choice.action === ConflictAction.KeepBoth) {
+          if (!choice.newName || choice.newName.length === 0) {
+            setConflictWarning('Empty new name. Please enter one.')
+
+            return { cancelled: false }
+          }
+
+          const candidate = choice.newName.trim()
 
           if (candidate && !taken.has(candidate)) {
             return { cancelled: false, name: candidate }

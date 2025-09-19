@@ -83,3 +83,9 @@ export const formatBytes = (v?: string | number): string | undefined => {
 }
 
 export const isTrashed = (fi: FileInfo): boolean => fi.status === FileStatus.Trashed
+
+export type Point = { x: number; y: number }
+export enum Dir {
+  Down = 'down',
+  Up = 'up',
+}

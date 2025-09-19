@@ -16,7 +16,7 @@ import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
-import { formatBytes, isTrashed } from '../../../utils/common'
+import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/constants'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
@@ -51,7 +51,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
   const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
   const [safePos, setSafePos] = useState(pos)
-  const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
+  const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
   const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
@@ -82,7 +82,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
 
   // TODO: handleOpen, is it different from download?
   // TODO: multiple downloads []: File[]
-  const handleDownload = async () => {
+  const handleDownload = useCallback(async () => {
     handleCloseContext()
 
     if (!fm || !beeApi) return
@@ -91,44 +91,149 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     const expectedSize = size ? Number(size) : undefined
 
     await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(size), expectedSize))
-  }
+  }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
-  const doTrash = async () => {
+  const doTrash = useCallback(async () => {
     if (!fm) return
     await fm.trashFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
-  }
+  }, [fm, fileInfo, refreshFiles])
 
-  const doRecover = async () => {
+  const doRecover = useCallback(async () => {
     if (!fm) return
     await fm.recoverFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
-  }
+  }, [fm, fileInfo, refreshFiles])
 
-  const doForget = async () => {
+  const doForget = useCallback(async () => {
     if (!fm) return
     await fm.forgetFile(fileInfo)
     await Promise.resolve(refreshFiles?.())
-  }
+  }, [fm, fileInfo, refreshFiles])
 
-  const showDestroyDrive = () => {
+  const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
-  }
+  }, [currentDrive])
+
   // TODO: rename shall call the same upload with progress: but different name with info.file.ref and .history already filled with the previous values
-  const doRename = async (newName: string) => {
-    if (!fm || !beeApi || !currentDrive) return
+  const doRename = useCallback(
+    async (newName: string) => {
+      if (!fm || !beeApi || !currentDrive) return
 
-    if (takenNames.has(newName)) throw new Error('name-taken')
+      if (takenNames.has(newName)) throw new Error('name-taken')
 
-    await fm.upload(currentDrive, {
-      info: {
-        ...fileInfo,
-        name: newName,
-      },
-    })
-    await Promise.resolve(refreshFiles?.())
-  }
+      await fm.upload(currentDrive, {
+        info: {
+          ...fileInfo,
+          name: newName,
+        },
+      })
+      await Promise.resolve(refreshFiles?.())
+    },
+    [fm, beeApi, currentDrive, takenNames, fileInfo, refreshFiles],
+  )
+
+  const renderContextMenuItems = useCallback(() => {
+    const commonItems = (
+      <>
+        <div className="fm-context-item" onClick={handleDownload}>
+          View / Open
+        </div>
+        <div className="fm-context-item" onClick={handleDownload}>
+          Download
+        </div>
+      </>
+    )
+
+    const getInfoItem = (
+      <div
+        className="fm-context-item"
+        onClick={() => {
+          handleCloseContext()
+          openGetInfo()
+        }}
+      >
+        Get info
+      </div>
+    )
+
+    if (view === ViewType.File) {
+      return (
+        <>
+          {commonItems}
+          <div
+            className="fm-context-item"
+            onClick={() => {
+              handleCloseContext()
+              setShowRenameModal(true)
+            }}
+          >
+            Rename
+          </div>
+          <div className="fm-context-item-border" />
+          <div
+            className="fm-context-item"
+            onClick={() => {
+              handleCloseContext()
+              setShowVersionHistory(true)
+            }}
+          >
+            Version history
+          </div>
+          <div
+            className="fm-context-item red"
+            onClick={() => {
+              handleCloseContext()
+              setShowDeleteModal(true)
+            }}
+          >
+            Delete
+          </div>
+          <div className="fm-context-item-border" />
+          {getInfoItem}
+        </>
+      )
+    }
+
+    // Trash view
+    return (
+      <>
+        {commonItems}
+        <div className="fm-context-item-border" />
+        <div
+          className="fm-context-item"
+          onClick={() => {
+            handleCloseContext()
+            doRecover()
+          }}
+        >
+          Restore
+        </div>
+        <div
+          className="fm-context-item red"
+          onClick={() => {
+            handleCloseContext()
+            setDestroyDrive(currentDrive || null)
+            setShowDestroyDriveModal(true)
+          }}
+        >
+          Destroy
+        </div>
+        <div
+          className="fm-context-item red"
+          onClick={() => {
+            handleCloseContext()
+            doForget()
+          }}
+        >
+          Forget permanently
+        </div>
+        <div className="fm-context-item-border" />
+        {getInfoItem}
+      </>
+    )
+  }, [view, handleDownload, handleCloseContext, openGetInfo, doRecover, doForget, currentDrive])
 
   useLayoutEffect(() => {
     if (!showContext) return
@@ -183,110 +288,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
           onMouseDown={e => e.stopPropagation()}
           onClick={e => e.stopPropagation()}
         >
-          {view === ViewType.File ? (
-            <ContextMenu>
-              <div className="fm-context-item" onClick={handleDownload}>
-                View / Open
-              </div>
-              <div className="fm-context-item" onClick={handleDownload}>
-                Download
-              </div>
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
-                  setShowRenameModal(true)
-                }}
-              >
-                Rename
-              </div>
-              <div className="fm-context-item-border" />
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
-                  setShowVersionHistory(true)
-                }}
-              >
-                Version history
-              </div>
-              <div
-                className="fm-context-item red"
-                onClick={() => {
-                  handleCloseContext()
-                  setShowDeleteModal(true)
-                }}
-              >
-                Delete
-              </div>
-              <div className="fm-context-item-border" />
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
-                  ;(async () => {
-                    const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
-
-                    if (groups) {
-                      setInfoGroups(groups)
-                      setShowGetInfoModal(true)
-                    }
-                  })()
-                }}
-              >
-                Get info
-              </div>
-            </ContextMenu>
-          ) : (
-            <ContextMenu>
-              <div className="fm-context-item" onClick={handleDownload}>
-                View / Open
-              </div>
-              <div className="fm-context-item" onClick={handleDownload}>
-                Download
-              </div>
-              <div className="fm-context-item-border" />
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
-                  doRecover()
-                }}
-              >
-                Restore
-              </div>
-              <div
-                className="fm-context-item red"
-                onClick={() => {
-                  handleCloseContext()
-
-                  setDestroyDrive(currentDrive)
-                  setShowDestroyDriveModal(true)
-                }}
-              >
-                Destroy
-              </div>
-              <div
-                className="fm-context-item red"
-                onClick={() => {
-                  handleCloseContext()
-                  doForget()
-                }}
-              >
-                Forget permanently
-              </div>
-              <div className="fm-context-item-border" />
-              <div
-                className="fm-context-item"
-                onClick={() => {
-                  handleCloseContext()
-                  openGetInfo()
-                }}
-              >
-                Get info
-              </div>
-            </ContextMenu>
-          )}
+          <ContextMenu>{renderContextMenuItems()}</ContextMenu>
         </div>
       )}
 
@@ -380,8 +382,8 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
               setDestroyDrive(null)
             }
           }}
-          onConfirm={async () => {
-            await fm.destroyDrive(currentDrive)
+          doDestroy={async () => {
+            await fm.destroyDrive(destroyDrive)
             await Promise.resolve(refreshFiles?.())
 
             if (isMountedRef.current) {

@@ -8,10 +8,10 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 interface DestroyDriveModalProps {
   drive: DriveInfo
   onCancelClick: () => void
-  onConfirm: (batchId: string) => void | Promise<void>
+  doDestroy: () => void | Promise<void>
 }
 
-export function DestroyDriveModal({ drive, onCancelClick, onConfirm }: DestroyDriveModalProps): ReactElement {
+export function DestroyDriveModal({ drive, onCancelClick, doDestroy }: DestroyDriveModalProps): ReactElement {
   const [driveNameInput, setDriveNameInput] = useState('')
   const destroyDriveText = `DESTROY DRIVE ${drive.name}`
   const modalRoot = document.querySelector('.fm-main') || document.body
@@ -50,7 +50,7 @@ export function DestroyDriveModal({ drive, onCancelClick, onConfirm }: DestroyDr
             label="Destroy entire drive"
             variant="danger"
             disabled={destroyDriveText !== driveNameInput}
-            onClick={() => onConfirm(drive.batchId.toString())}
+            onClick={() => doDestroy()}
           />
           <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>

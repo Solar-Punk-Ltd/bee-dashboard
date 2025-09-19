@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useFM } from '../providers/FMContext'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
-import { useUploadConflictDialog } from './useUploadConflictDialog'
+import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { indexStrToBigint, formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/constants'
 
@@ -36,33 +36,6 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   if (path) meta.path = path
 
   return meta
-}
-// TODO: check for other latest checks and refactor
-const latestOf = (a: FileInfo, b: FileInfo): FileInfo => {
-  const av = indexStrToBigint(a.version)
-  const bv = indexStrToBigint(b.version)
-
-  if (av === undefined) {
-    return b
-  }
-
-  if (bv === undefined) {
-    return a
-  }
-
-  if (av === bv) {
-    return Number(a.timestamp || 0) >= Number(b.timestamp || 0) ? a : b
-  }
-
-  return av > bv ? a : b
-}
-// TODO: what is this? refactor
-const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined => {
-  const sameName = rows.filter(f => f.name === name)
-
-  if (!sameName.length) return undefined
-
-  return sameName.reduce(latestOf)
 }
 
 const makeUploadInfo = (args: {
@@ -125,33 +98,33 @@ export function useFMTransfers() {
     (id: string): FileInfo[] => files.filter(fi => fi.driveId.toString() === id),
     [files],
   )
-  // TODO: refactor conflict resolution and use enum
+  // TODO: find the history of the same name -> can taken.length be > 1?
   const resolveConflict = useCallback(
     async (
       originalName: string,
       sameDrive: FileInfo[],
     ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string; replaceHistory?: string }> => {
-      const taken = new Set(sameDrive.map(fi => fi.name))
+      const taken = sameDrive.filter(fi => fi.name === originalName)
 
-      if (!taken.has(originalName)) {
+      if (!taken.length) {
         return { finalName: originalName, isReplace: false }
       }
 
-      const choice = await openConflict({ originalName, existingNames: taken })
+      const choice = await openConflict({ originalName, existingNames: taken.map(fi => fi.name) })
 
-      if (choice.action === 'cancel') return { finalName: originalName, isReplace: false }
-
-      if (choice.action === 'keep-both') {
-        return { finalName: choice.newName.trim(), isReplace: false }
+      if (choice.action === ConflictAction.Cancel) {
+        return { finalName: originalName, isReplace: false }
       }
 
-      const latest = pickLatestByName(sameDrive, originalName)
+      if (choice.action === ConflictAction.KeepBoth) {
+        return { finalName: choice.newName?.trim() || '', isReplace: false }
+      }
 
       return {
         finalName: originalName,
         isReplace: true,
-        replaceTopic: latest?.topic.toString(),
-        replaceHistory: latest?.file.historyRef.toString(),
+        replaceTopic: taken[0].topic.toString(),
+        replaceHistory: taken[0].file.historyRef.toString(),
       }
     },
     [openConflict],
@@ -171,6 +144,8 @@ export function useFMTransfers() {
 
       const sameDrive = collectSameDrive(currentDrive.id.toString())
       const { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(originalName, sameDrive)
+
+      if (isReplace && (!replaceHistory || !replaceTopic)) return
 
       if (finalName.trim().length === 0) return
 
@@ -195,7 +170,7 @@ export function useFMTransfers() {
             onUploadProgress: progressCallback,
           },
           {
-            actHistoryAddress: replaceHistory,
+            actHistoryAddress: isReplace ? replaceHistory : undefined,
           },
         )
       } catch {

@@ -14,10 +14,8 @@ import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFMSearch } from '../../providers/FMSearchContext'
 
-import { indexStrToBigint, isTrashed } from '../../utils/common'
+import { indexStrToBigint, isTrashed, Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
-
-type Point = { x: number; y: number }
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -36,7 +34,7 @@ export function FileBrowser(): ReactElement {
   const { query, scope, includeActive, includeTrashed } = useFMSearch()
 
   const [safePos, setSafePos] = useState<Point>(pos as Point)
-  const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
+  const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
   const [isDragging, setIsDragging] = useState(false)
   const dragCounter = useRef(0)
@@ -46,7 +44,6 @@ export function FileBrowser(): ReactElement {
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
-  const selectedBatchId = useMemo(() => (currentDrive ? currentDrive.batchId.toString() : ''), [currentDrive])
 
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
@@ -161,7 +158,7 @@ export function FileBrowser(): ReactElement {
         menuRect: rect,
         viewport: { w: vw, h: vh },
         margin: 8,
-        containerRect, // pass the rect; util will compute midY itself
+        containerRect,
       })
 
       setSafePos(sp)
@@ -275,7 +272,9 @@ export function FileBrowser(): ReactElement {
     if (!isSearchMode) return []
 
     const source =
-      scope === 'selected' && selectedBatchId ? files.filter(f => f.batchId.toString() === selectedBatchId) : files
+      scope === 'selected' && currentDrive
+        ? files.filter(f => f.driveId.toString() === currentDrive.id.toString())
+        : files
 
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
 
@@ -309,7 +308,7 @@ export function FileBrowser(): ReactElement {
     }
 
     return Array.from(latest.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
-  }, [isSearchMode, scope, selectedBatchId, files, matchesQuery, statusIncluded])
+  }, [isSearchMode, scope, currentDrive, files, matchesQuery, statusIncluded])
 
   const listToRender = isSearchMode ? searchRows : rows
 
@@ -344,8 +343,6 @@ export function FileBrowser(): ReactElement {
 
     return renderFileList(listToRender, true)
   }, [drives, isSearchMode, currentDrive, view, listToRender, renderEmptyState, renderFileList])
-
-  const mainContent = useMemo(() => renderMainContent(), [renderMainContent])
 
   return (
     <>
@@ -402,7 +399,7 @@ export function FileBrowser(): ReactElement {
             onContextMenu={handleFileBrowserContextMenu}
             onClick={handleCloseContext}
           >
-            {mainContent}
+            {renderMainContent()}
 
             {showContext && (
               <div

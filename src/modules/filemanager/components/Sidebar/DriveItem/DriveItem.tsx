@@ -106,7 +106,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
         <DestroyDriveModal
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
-          onConfirm={async () => {
+          doDestroy={async () => {
             if (!fm) return
 
             await fm.destroyDrive(drive)
