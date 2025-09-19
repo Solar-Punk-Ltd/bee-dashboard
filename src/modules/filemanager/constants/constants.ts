@@ -8,7 +8,6 @@ export enum FileTransferType {
 
 export enum TransferStatus {
   Uploading = 'uploading',
-  Finalizing = 'finalizing',
   Done = 'done',
   Error = 'error',
 }

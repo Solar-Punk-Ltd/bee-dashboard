@@ -74,13 +74,15 @@ export function FileBrowser(): ReactElement {
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
         const key = `${fi.name}::${fi.version ?? ''}`
 
-        if (showDriveColumn) {
-          return (
-            <FileItem key={key} fileInfo={fi} onDownload={trackDownload} showDriveColumn={true} driveName={driveName} />
-          )
-        }
-
-        return <FileItem key={key} fileInfo={fi} onDownload={trackDownload} driveName={driveName} />
+        return (
+          <FileItem
+            key={key}
+            fileInfo={fi}
+            onDownload={trackDownload}
+            showDriveColumn={showDriveColumn}
+            driveName={driveName}
+          />
+        )
       })
     },
     [trackDownload, drives],

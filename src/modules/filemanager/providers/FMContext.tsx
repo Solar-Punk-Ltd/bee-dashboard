@@ -163,7 +163,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
     </FMContext.Provider>
   )
 }
-
+// TODO: rename: useFmContext
 export function useFM(): FMContextValue {
   return useContext(FMContext)
 }

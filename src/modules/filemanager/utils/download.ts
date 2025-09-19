@@ -180,7 +180,7 @@ export const startDownloadingQueue = async (
       const info = fileHandles[i].info
       const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
 
-      downloadToDisk(dataStreams, info, fileHandles[i].handle, onDownloadProgress)
+      await downloadToDisk(dataStreams, info, fileHandles[i].handle, onDownloadProgress)
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console

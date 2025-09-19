@@ -23,13 +23,12 @@ import { computeContextMenuPosition } from '../../../utils/ui'
 
 interface FileItemProps {
   fileInfo: FileInfo
-  onDownload?: (name: string, task: () => Promise<void>, opts?: { size?: string }) => Promise<void>
+  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
   showDriveColumn?: boolean
   driveName: string
 }
 
 // TODO: use contextinterface from provider
-// TODO: proper onDownload
 export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentDrive, files } = useFM()
@@ -81,45 +80,17 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  const handleOpen = async () => {
-    handleCloseContext()
-
-    if (!fm || !beeApi) return
-
-    await startDownloadingQueue(fm, [fileInfo], () => {
-      // eslint-disable-next-line no-console
-      console.log('TODO downloading: ', fileInfo.name)
-    })
-
-    // const win = window.open('', '_blank')
-
-    // try {
-    //   const url = URL.createObjectURL(blob)
-
-    //   if (win) {
-    //     win.location.href = url
-    //     setTimeout(() => URL.revokeObjectURL(url), 30000)
-    //   } else {
-    //     const popup = window.open(url, '_blank')
-
-    //     if (!popup) return
-    //     setTimeout(() => URL.revokeObjectURL(url), 30000)
-    //   }
-    // } catch {
-    //   win?.close()
-    //   throw new Error('Open failed')
-    // }
-  }
-
+  // TODO: handleOpen, is it different from download?
+  // TODO: multiple downloads []: File[]
   const handleDownload = async () => {
     handleCloseContext()
 
     if (!fm || !beeApi) return
 
-    await startDownloadingQueue(fm, [fileInfo], () => {
-      // eslint-disable-next-line no-console
-      console.log('TODO downloading: ', fileInfo.name)
-    })
+    const size = fileInfo.customMetadata?.size
+    const expectedSize = size ? Number(size) : undefined
+
+    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(size), expectedSize))
   }
 
   const doTrash = async () => {
@@ -144,7 +115,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }
-
+  // TODO: rename shall call the same upload with progress: but different name with info.file.ref and .history already filled with the previous values
   const doRename = async (newName: string) => {
     if (!fm || !beeApi || !currentDrive) return
 
@@ -214,7 +185,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
         >
           {view === ViewType.File ? (
             <ContextMenu>
-              <div className="fm-context-item" onClick={handleOpen}>
+              <div className="fm-context-item" onClick={handleDownload}>
                 View / Open
               </div>
               <div className="fm-context-item" onClick={handleDownload}>
@@ -268,7 +239,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
             </ContextMenu>
           ) : (
             <ContextMenu>
-              <div className="fm-context-item" onClick={handleOpen}>
+              <div className="fm-context-item" onClick={handleDownload}>
                 View / Open
               </div>
               <div className="fm-context-item" onClick={handleDownload}>
