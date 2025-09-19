@@ -11,15 +11,13 @@ import { FileProgressNotification } from '../FileProgressNotification/FileProgre
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
-import type { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
+import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFMSearch } from '../../providers/FMSearchContext'
 
-import { indexStrToBigint } from '../../utils/common'
+import { indexStrToBigint, isTrashed } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 
 type Point = { x: number; y: number }
-// todo: use fileStatus
-const isTrashed = (fi: FileInfo): boolean => (fi.status as FileStatus | undefined) === 'trashed'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -28,7 +26,6 @@ export function FileBrowser(): ReactElement {
   const {
     uploadFiles,
     isUploading,
-    uploadCount,
     uploadItems,
     isDownloading,
     downloadCount,
@@ -454,7 +451,7 @@ export function FileBrowser(): ReactElement {
             label="Uploading files"
             type={FileTransferType.Upload}
             open={isUploading}
-            count={uploadCount}
+            count={uploadItems.length}
             items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
           />
           <FileProgressNotification

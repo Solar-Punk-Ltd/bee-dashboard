@@ -9,13 +9,14 @@ import Radio from '@material-ui/core/Radio'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import FormControl from '@material-ui/core/FormControl'
 
+import { FileAction } from '../../constants/constants'
 import { preventDefault } from '../../utils/common'
 
 interface DeleteFileModalProps {
   name: string
   currentDriveName?: string
   onCancelClick: () => void
-  onProceed: (action: 'trash' | 'forget' | 'destroy') => void
+  onProceed: (action: FileAction) => void
 }
 
 export function DeleteFileModal({
@@ -24,7 +25,7 @@ export function DeleteFileModal({
   onCancelClick,
   onProceed,
 }: DeleteFileModalProps): ReactElement {
-  const [value, setValue] = useState<'trash' | 'forget' | 'destroy'>('trash')
+  const [value, setValue] = useState<FileAction>(FileAction.Trash)
 
   const modalRoot = document.querySelector('.fm-main') || document.body
 
@@ -40,8 +41,8 @@ export function DeleteFileModal({
             <div className="fm-radio-group">
               <div className="fm-form-control-label">
                 <FormControlLabel
-                  value="trash"
-                  control={<Radio checked={value === 'trash'} onChange={() => setValue('trash')} />}
+                  value={FileAction.Trash}
+                  control={<Radio checked={value === FileAction.Trash} onChange={() => setValue(FileAction.Trash)} />}
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Move to Trash</div>
@@ -56,8 +57,8 @@ export function DeleteFileModal({
 
               <div className="fm-form-control-label">
                 <FormControlLabel
-                  value="forget"
-                  control={<Radio checked={value === 'forget'} onChange={() => setValue('forget')} />}
+                  value={FileAction.Forget}
+                  control={<Radio checked={value === FileAction.Forget} onChange={() => setValue(FileAction.Forget)} />}
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Forget</div>
@@ -72,8 +73,10 @@ export function DeleteFileModal({
 
               <div className="fm-form-control-label">
                 <FormControlLabel
-                  value="destroy"
-                  control={<Radio checked={value === 'destroy'} onChange={() => setValue('destroy')} />}
+                  value={FileAction.Destroy}
+                  control={
+                    <Radio checked={value === FileAction.Destroy} onChange={() => setValue(FileAction.Destroy)} />
+                  }
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">

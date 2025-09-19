@@ -1,6 +1,6 @@
 import { MouseEvent } from 'react'
 
-import { FeedIndex } from '@ethersphere/bee-js'
+import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 export function preventDefault(event: MouseEvent) {
   event.preventDefault()
 }
@@ -82,4 +82,4 @@ export const formatBytes = (v?: string | number): string | undefined => {
   return `${val.toFixed(1)} ${units[i]}`
 }
 
-export const FEED_INDEX_ZERO = FeedIndex.fromBigInt(BigInt(0))
+export const isTrashed = (fi: FileInfo): boolean => fi.status === FileStatus.Trashed

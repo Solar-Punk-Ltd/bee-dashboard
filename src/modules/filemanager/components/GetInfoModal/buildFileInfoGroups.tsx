@@ -1,12 +1,13 @@
 import type { ReactElement } from 'react'
-import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
+import { FileStatus, FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { GetGranteesResult } from '@ethersphere/bee-js'
 
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
-import { FEED_INDEX_ZERO, indexStrToBigint } from '../../utils/common'
+import { indexStrToBigint } from '../../utils/common'
+import { FEED_INDEX_ZERO } from '../../constants/constants'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }
@@ -52,16 +53,6 @@ const fmtDate = (ts?: number) => {
     return dash
   }
 }
-// TODO: use enum
-const statusLabel = (s: unknown) => {
-  if (s == null) return 'active'
-
-  if (typeof s === 'string') return s
-
-  if (typeof s === 'number') return s === 0 ? 'active' : 'trashed'
-
-  return String(s)
-}
 
 async function getCreatedTs(fm: FileManagerBase, fi: FileInfo): Promise<number | undefined> {
   try {
@@ -101,7 +92,6 @@ function buildGeneralGroup(
   size?: number | string,
   path?: string,
   fileCount?: string,
-  status?: string | number,
 ): FilePropertyGroup {
   return {
     title: 'General',
@@ -124,7 +114,7 @@ function buildGeneralGroup(
         raw: fi.topic.toString(),
       },
       { key: 'ver', label: 'Versions', value: ((indexStrToBigint(fi.version) ?? BigInt(0)) + BigInt(1)).toString() },
-      { key: 'status', label: 'Status', value: statusLabel(status) },
+      { key: 'status', label: 'Status', value: !fi.status ? FileStatus.Active : fi.status },
     ],
   }
 }
@@ -203,7 +193,7 @@ export async function buildGetInfoGroups(
   const [createdTs, granteeCount] = await Promise.all([getCreatedTs(fm, fi), getGranteeCount(fm, fi)])
 
   return [
-    buildGeneralGroup(fi, mime, size, path, fileCount, fi.status),
+    buildGeneralGroup(fi, mime, size, path, fileCount),
     buildDatesGroup(createdTs, fi.timestamp, expires),
     buildAccessGroup(fi, granteeCount),
     buildStorageGroup(fi, driveName),

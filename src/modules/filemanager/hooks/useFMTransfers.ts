@@ -3,14 +3,14 @@ import { useFM } from '../providers/FMContext'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { useUploadConflictDialog } from './useUploadConflictDialog'
 import { indexStrToBigint, formatBytes } from '../utils/common'
+import { FileTransferType, TransferStatus } from '../constants/constants'
 
-// TODO: use enum states
 export type TransferItem = {
   name: string
   size?: string
   percent: number
-  status: 'uploading' | 'finalizing' | 'done' | 'error'
-  kind?: 'upload' | 'update' | 'download'
+  status: TransferStatus
+  kind?: FileTransferType
 }
 
 type UploadMeta = Record<string, string | number>
@@ -90,8 +90,7 @@ export function useFMTransfers() {
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const timers = useRef<Map<string, number>>(new Map())
   const endTimers = useRef<Map<string, number>>(new Map())
-  const isUploading = uploadItems.some(i => i.status !== 'done' && i.status !== 'error')
-  const uploadCount = uploadItems.length
+  const isUploading = uploadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
 
   const clearTimer = (name: string): void => {
     const id = timers.current.get(name)
@@ -111,44 +110,49 @@ export function useFMTransfers() {
   }
 
   // TODO: use onUploadProgress instead or together
-  const startUploadRamp = useCallback((name: string, size?: string, kind: 'upload' | 'update' = 'upload'): void => {
-    setUploadItems(prev => {
-      const idx = prev.findIndex(p => p.name === name)
-      const base: TransferItem = { name, size, percent: 0, status: 'uploading', kind }
+  const startUploadRamp = useCallback(
+    (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload): void => {
+      setUploadItems(prev => {
+        const idx = prev.findIndex(p => p.name === name)
+        const base: TransferItem = { name, size, percent: 0, status: TransferStatus.Uploading, kind }
 
-      if (idx === -1) return [...prev, base]
-      const copy = [...prev]
-      copy[idx] = base
+        if (idx === -1) return [...prev, base]
+        const copy = [...prev]
+        copy[idx] = base
 
-      return copy
-    })
-    clearTimer(name)
-    clearEndTimer(name)
+        return copy
+      })
+      clearTimer(name)
+      clearEndTimer(name)
 
-    const begin = Date.now()
-    const DURATION = 1500
-    const tick = () => {
-      const t = Math.min(1, (Date.now() - begin) / DURATION)
-      const p = Math.floor(t * 75)
-      setUploadItems(prev =>
-        prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, p), kind } : it)),
-      )
+      const begin = Date.now()
+      const DURATION = 1500
+      const tick = () => {
+        const t = Math.min(1, (Date.now() - begin) / DURATION)
+        const p = Math.floor(t * 75)
+        setUploadItems(prev =>
+          prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, p), kind } : it)),
+        )
 
-      if (t < 1) {
-        const id = window.setTimeout(tick, 60)
-        timers.current.set(name, id)
-      } else {
-        timers.current.delete(name)
+        if (t < 1) {
+          const id = window.setTimeout(tick, 60)
+          timers.current.set(name, id)
+        } else {
+          timers.current.delete(name)
+        }
       }
-    }
-    const id = window.setTimeout(tick, 0)
-    timers.current.set(name, id)
-  }, [])
+      const id = window.setTimeout(tick, 0)
+      timers.current.set(name, id)
+    },
+    [],
+  )
   // TODO: use onUploadProgress and incorporate into the timers
   const finishUploadRamp = useCallback((name: string): void => {
     clearTimer(name)
     setUploadItems(prev =>
-      prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, 75), status: 'finalizing' } : it)),
+      prev.map(it =>
+        it.name === name ? { ...it, percent: Math.max(it.percent, 75), status: TransferStatus.Finalizing } : it,
+      ),
     )
     const begin = Date.now()
     const DURATION = 700
@@ -162,7 +166,9 @@ export function useFMTransfers() {
         endTimers.current.set(name, id)
       } else {
         endTimers.current.delete(name)
-        setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, percent: 100, status: 'done' } : it)))
+        setUploadItems(prev =>
+          prev.map(it => (it.name === name ? { ...it, percent: 100, status: TransferStatus.Done } : it)),
+        )
       }
     }
     const id = window.setTimeout(endTick, 60)
@@ -214,26 +220,6 @@ export function useFMTransfers() {
     [openConflict],
   )
 
-  // file
-  // file -> file (1)
-  // file (1) -> file (2)
-
-  // const runUpload = useCallback(
-  //   async (manager: FileManager, info: FileInfoOptions, wait: { name: string; batchId: string; topic?: string }) => {
-  //     // manager.emitter.on(FileManagerEvents.FILE_UPLOADED, onUploaded())
-
-  //     const uploadPromise = manager.upload(info, { onUploadProgress: () => {} })
-
-  //     // TODO: review timeout values
-  //     // const withTimeout = <T>(p: Promise<T>, ms: number) =>
-  //     //   Promise.race<T>([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('upload timeout')), ms))])
-  //     // const eventP = waitForUploadEvent(manager, wait, 90_000)
-
-  //     // await Promise.race([withTimeout(uploadPromise, 90_000), eventP])
-  //   },
-  //   [],
-  // )
-
   const uploadFiles = useCallback(
     async (picked: FileList | File[]): Promise<void> => {
       if (!fm || !currentDrive) return
@@ -251,7 +237,7 @@ export function useFMTransfers() {
 
       if (finalName.trim().length === 0) return
 
-      startUploadRamp(finalName, prettySize, isReplace ? 'update' : 'upload')
+      startUploadRamp(finalName, prettySize, isReplace ? FileTransferType.Update : FileTransferType.Upload)
 
       const info = makeUploadInfo({
         name: finalName,
@@ -261,7 +247,7 @@ export function useFMTransfers() {
       })
 
       try {
-        // todo: startUploadRamp?}
+        // todo: startUploadRamp
         fm.upload(
           currentDrive,
           {
@@ -277,7 +263,7 @@ export function useFMTransfers() {
       } catch {
         clearTimer(finalName)
         clearEndTimer(finalName)
-        setUploadItems(prev => prev.map(it => (it.name === finalName ? { ...it, status: 'error' } : it)))
+        setUploadItems(prev => prev.map(it => (it.name === finalName ? { ...it, status: TransferStatus.Error } : it)))
 
         return
       }
@@ -291,13 +277,19 @@ export function useFMTransfers() {
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
   const downloadTimer = useRef<number | null>(null)
-  const isDownloading = downloadItems.some(i => i.status !== 'done' && i.status !== 'error')
+  const isDownloading = downloadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
   const downloadCount = downloadItems.length
 
   const trackDownload = useCallback(async (name: string, task: () => Promise<void>, opts?: { size?: string }) => {
     // TODO: status: uploading in downloads?
     setDownloadItems(prev => {
-      const row: TransferItem = { name, size: opts?.size, percent: 1, status: 'uploading', kind: 'download' }
+      const row: TransferItem = {
+        name,
+        size: opts?.size,
+        percent: 1,
+        status: TransferStatus.Uploading,
+        kind: FileTransferType.Download,
+      }
       const idx = prev.findIndex(p => p.name === name)
 
       if (idx === -1) return [...prev, row]
@@ -334,7 +326,11 @@ export function useFMTransfers() {
         setDownloadItems(prev => prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, p) } : it)))
 
         if (t < 1) window.setTimeout(endTick, 60)
-        else setDownloadItems(prev => prev.map(it => (it.name === name ? { ...it, percent: 100, status: 'done' } : it)))
+        else {
+          setDownloadItems(prev =>
+            prev.map(it => (it.name === name ? { ...it, percent: 100, status: TransferStatus.Done } : it)),
+          )
+        }
       }
       endTick()
     } catch {
@@ -342,14 +338,13 @@ export function useFMTransfers() {
         clearTimeout(downloadTimer.current)
         downloadTimer.current = null
       }
-      setDownloadItems(prev => prev.map(it => (it.name === name ? { ...it, status: 'error' } : it)))
+      setDownloadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
     }
   }, [])
 
   return {
     uploadFiles,
     isUploading,
-    uploadCount,
     uploadItems,
     trackDownload, // processStreams + downloadTodisk
     isDownloading,

@@ -4,12 +4,13 @@ import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { FileTransferType, TransferBarColor } from '../../constants/constants'
+import { formatBytes } from '../../utils/common'
 
 type ProgressItem = {
   name: string
   percent?: number
   size?: string
-  kind?: 'upload' | 'update' | 'download'
+  kind?: FileTransferType
 }
 
 interface FileProgressWindowProps {
@@ -17,22 +18,6 @@ interface FileProgressWindowProps {
   items?: ProgressItem[]
   type: FileTransferType
   onCancelClick: () => void
-}
-
-function prettySize(s?: string): string {
-  const n = Number(s)
-
-  if (!Number.isFinite(n) || n < 0) return '—'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const
-  let val = n
-  let i = 0
-  while (val >= 1024 && i < units.length - 1) {
-    val /= 1024
-    i++
-  }
-  const num = i === 0 ? Math.round(val) : Number(val.toFixed(val < 10 ? 1 : 0))
-
-  return `${num} ${units[i]}`
 }
 
 export function FileProgressWindow({
@@ -48,39 +33,21 @@ export function FileProgressWindow({
       ? items
       : Array.from({ length: count }, (_, i) => ({ name: `Pending file ${i + 1}`, percent: 0, size: '' }))
 
-  const topNoun =
-    type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload'
+  const getTransferInfo = (item: ProgressItem, pct?: number) => {
+    const transferType = item?.kind ?? type
+    const capitalizedType = transferType.charAt(0).toUpperCase() + transferType.slice(1)
 
-  const statusText = (it: ProgressItem, pct?: number): string => {
-    if (pct === 100) return 'Done'
-    const k =
-      it.kind ??
-      (type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload')
-
-    if (k === 'download') return 'Downloading…'
-
-    if (k === 'update') return 'Updating…'
-
-    return 'Uploading…'
-  }
-
-  const barColorFor = (it: ProgressItem): TransferBarColor => {
-    const k =
-      it.kind ??
-      (type === FileTransferType.Download ? 'download' : type === FileTransferType.Update ? 'update' : 'upload')
-
-    if (k === 'download') return TransferBarColor.Download
-
-    if (k === 'update') return TransferBarColor.Update
-
-    return TransferBarColor.Upload
+    return {
+      statusText: pct === 100 ? 'Done' : `${capitalizedType}ing…`,
+      barColor: TransferBarColor[capitalizedType as keyof typeof TransferBarColor],
+    }
   }
 
   return (
     <div className="fm-file-progress-window">
       <div className="fm-file-progress-window-header">
         <div className="fm-emphasized-text">
-          {count} {topNoun}
+          {count} {type}
           {count === 1 ? '' : 's'}
         </div>
         <div className="fm-file-progress-window-header-close" onClick={onCancelClick} role="button" aria-label="Close">
@@ -90,6 +57,7 @@ export function FileProgressWindow({
 
       {rows.map(file => {
         const pct = typeof file.percent === 'number' ? Math.max(0, Math.min(100, Math.floor(file.percent))) : undefined
+        const transferInfo = getTransferInfo(file, pct)
 
         return (
           <div className="fm-file-progress-window-file-item" key={file.name}>
@@ -115,15 +83,15 @@ export function FileProgressWindow({
                 value={typeof pct === 'number' ? pct : 0}
                 width="100%"
                 backgroundColor="rgb(229, 231, 235)"
-                color={barColorFor(file)}
+                color={transferInfo.barColor}
               />
 
               <div
                 className="fm-file-progress-window-file-item-footer"
                 style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center' }}
               >
-                <div>{prettySize(file.size)}</div>
-                <div>{statusText(file, pct)}</div>
+                <div>{formatBytes(file.size) ?? '—'}</div>
+                <div>{transferInfo.statusText}</div>
               </div>
             </div>
           </div>

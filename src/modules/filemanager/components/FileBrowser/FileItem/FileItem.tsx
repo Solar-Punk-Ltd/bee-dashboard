@@ -12,11 +12,12 @@ import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../GetInfoModal/buildFileInfoGroups'
 import type { FilePropertyGroup } from '../../GetInfoModal/buildFileInfoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
-import type { DriveInfo, FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFM } from '../../../providers/FMContext'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
-import { formatBytes } from '../../../utils/common'
+import { formatBytes, isTrashed } from '../../../utils/common'
+import { FileAction } from '../../../constants/constants'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 
@@ -28,6 +29,7 @@ interface FileItemProps {
 }
 
 // TODO: use contextinterface from provider
+// TODO: proper onDownload
 export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentDrive, files } = useFM()
@@ -47,7 +49,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
 
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
-  const isTrashedFile = (fileInfo.status as FileStatus) === 'trashed'
+  const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<'down' | 'up'>('down')
@@ -138,7 +140,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     await Promise.resolve(refreshFiles?.())
   }
 
-  const doDestroyDrive = () => {
+  const showDestroyDrive = () => {
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }
@@ -349,14 +351,24 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
               setShowDeleteModal(false)
             }
           }}
-          onProceed={async action => {
+          onProceed={action => {
             if (isMountedRef.current) {
               setShowDeleteModal(false)
             }
 
-            if (action === 'trash') await doTrash()
-            else if (action === 'forget') await doForget()
-            else if (action === 'destroy') await doDestroyDrive()
+            switch (action) {
+              case FileAction.Trash:
+                doTrash()
+                break
+              case FileAction.Forget:
+                doForget()
+                break
+              case FileAction.Destroy:
+                showDestroyDrive()
+                break
+              default:
+                break
+            }
           }}
         />
       )}
