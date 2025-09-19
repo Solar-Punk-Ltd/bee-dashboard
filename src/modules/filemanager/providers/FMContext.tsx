@@ -37,10 +37,6 @@ function getCraEnv(): CraEnv | undefined {
   }
 }
 
-function getBuildMode(): string {
-  return getViteEnv()?.MODE ?? getCraEnv()?.NODE_ENV ?? ''
-}
-
 function getDevEnvPk(): string | undefined {
   return getViteEnv()?.VITE_FM_DEV_PRIVATE_KEY ?? getCraEnv()?.REACT_APP_FM_DEV_PRIVATE_KEY
 }

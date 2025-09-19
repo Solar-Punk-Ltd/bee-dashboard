@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useFM } from '../providers/FMContext'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
-import { indexStrToBigint, formatBytes } from '../utils/common'
+import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/constants'
 
 export type TransferItem = {

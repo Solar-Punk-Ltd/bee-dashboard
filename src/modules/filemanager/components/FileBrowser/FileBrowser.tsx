@@ -1,8 +1,8 @@
-import { ReactElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import './FileBrowser.scss'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
-import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
-import { FileItem } from './FileItem/FileItem'
+import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
+import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
@@ -11,10 +11,11 @@ import { FileProgressNotification } from '../FileProgressNotification/FileProgre
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
-import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useFMSearch } from '../../providers/FMSearchContext'
+import { useFileFiltering } from '../../hooks/useFileFiltering'
+import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 
-import { indexStrToBigint, isTrashed, Point, Dir } from '../../utils/common'
+import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 
 export function FileBrowser(): ReactElement {
@@ -36,54 +37,28 @@ export function FileBrowser(): ReactElement {
   const [safePos, setSafePos] = useState<Point>(pos as Point)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
-  const [isDragging, setIsDragging] = useState(false)
-  const dragCounter = useRef(0)
-
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
 
-  const renderEmptyState = useCallback((): ReactElement => {
-    if (drives.length === 0) {
-      return <div className="fm-drop-hint">Create a drive to start using the file manager</div>
-    }
+  const { listToRender } = useFileFiltering({
+    files,
+    currentDrive: currentDrive || null,
+    view,
+    isSearchMode,
+    query: q,
+    scope,
+    includeActive,
+    includeTrashed,
+  })
 
-    if (!currentDrive) {
-      return <div className="fm-drop-hint">Select a drive to upload or view its files</div>
-    }
-
-    if (view === ViewType.Trash) {
-      return (
-        <div className="fm-drop-hint">
-          Files from &quot;{currentDrive?.name}&quot; that are trashed can be viewed here
-        </div>
-      )
-    }
-
-    return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
-  }, [drives, currentDrive, view])
-
-  const renderFileList = useCallback(
-    (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
-      return filesToRender.map(fi => {
-        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
-        const key = `${fi.name}::${fi.version ?? ''}`
-
-        return (
-          <FileItem
-            key={key}
-            fileInfo={fi}
-            onDownload={trackDownload}
-            showDriveColumn={showDriveColumn}
-            driveName={driveName}
-          />
-        )
-      })
-    },
-    [trackDownload, drives],
-  )
+  const { isDragging, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, handleOverlayDrop } =
+    useDragAndDrop({
+      onFilesDropped: uploadFiles,
+      currentDrive: currentDrive || null,
+    })
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
@@ -93,47 +68,6 @@ export function FileBrowser(): ReactElement {
   }
 
   const onContextUploadFile = () => fileInputRef.current?.click()
-
-  const hasFilesDT = (dt: DataTransfer | null): boolean => {
-    if (!dt) return false
-
-    if (dt.types && Array.from(dt.types).includes('Files')) return true
-
-    if (dt.items && Array.from(dt.items).some(i => i.kind === 'file')) return true
-
-    return false
-  }
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFilesDT(e.dataTransfer)) return
-    e.preventDefault()
-
-    if (dragCounter.current++ === 0) setIsDragging(true)
-  }
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFilesDT(e.dataTransfer)) return
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-  }
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFilesDT(e.dataTransfer)) return
-    e.preventDefault()
-    dragCounter.current = Math.max(0, dragCounter.current - 1)
-
-    if (dragCounter.current === 0) setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!hasFilesDT(e.dataTransfer)) return
-    e.preventDefault()
-    const droppedFiles = e.dataTransfer?.files ?? null
-    dragCounter.current = 0
-    setIsDragging(false)
-
-    if (droppedFiles && droppedFiles.length) uploadFiles(droppedFiles)
-  }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
@@ -173,177 +107,6 @@ export function FileBrowser(): ReactElement {
     setActualItemView?.(title)
   }, [isSearchMode, scope, currentDrive, setActualItemView])
 
-  const handleOverlayDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDragging(false)
-      dragCounter.current = 0
-      const dropped = e.dataTransfer?.files
-
-      if (dropped && dropped.length) uploadFiles(dropped)
-    },
-    [uploadFiles],
-  )
-
-  const statusIncluded = useCallback(
-    (fi: FileInfo): boolean => {
-      const trashed = isTrashed(fi)
-
-      if (trashed && !includeTrashed) return false
-
-      if (!trashed && !includeActive) return false
-
-      return true
-    },
-    [includeActive, includeTrashed],
-  )
-
-  const matchesQuery = useCallback(
-    (fi: FileInfo): boolean => {
-      if (!q) return true
-      const name = fi.name.toLowerCase()
-      const mime = (fi.customMetadata?.mime || '').toLowerCase()
-      const topic = String(fi.topic ?? '').toLowerCase()
-
-      return name.includes(q) || mime.includes(q) || topic.includes(q)
-    },
-    [q],
-  )
-
-  // TODO: refactor
-  const rows = useMemo((): FileInfo[] => {
-    if (!currentDrive) return []
-
-    const sameDrive = files.filter(fi => fi.driveId.toString() === currentDrive.id.toString())
-
-    const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
-      acc[fi.name] = (acc[fi.name] || 0) + 1
-
-      return acc
-    }, {})
-
-    const keyOf = (fi: FileInfo): string => {
-      if (nameCount[fi.name] > 1) return `N:${fi.name}`
-      const hist = fi.file.historyRef.toString()
-
-      if (hist) return `H:${hist}`
-      const t = fi.topic.toString()
-
-      if (t) return `T:${t}`
-
-      return `N:${fi.name}`
-    }
-
-    const map = new Map<string, FileInfo>()
-    sameDrive.forEach(fi => {
-      const key = keyOf(fi)
-      const prev = map.get(key)
-
-      if (!prev) {
-        map.set(key, fi)
-
-        return
-      }
-
-      // todo: same as lastof or picklatest
-      const vi = indexStrToBigint(fi.version)
-      const pi = indexStrToBigint(prev.version)
-
-      if (vi === undefined || pi === undefined) {
-        return
-      }
-
-      if (vi > pi) {
-        map.set(key, fi)
-
-        return
-      }
-
-      if (vi === pi && Number(fi.timestamp || 0) > Number(prev.timestamp || 0)) map.set(key, fi)
-    })
-
-    const latest = Array.from(map.values())
-
-    return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
-  }, [files, currentDrive, view])
-
-  const searchRows = useMemo((): FileInfo[] => {
-    if (!isSearchMode) return []
-
-    const source =
-      scope === 'selected' && currentDrive
-        ? files.filter(f => f.driveId.toString() === currentDrive.id.toString())
-        : files
-
-    const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
-
-    const keyOf = (fi: FileInfo): string => {
-      const hist = fi.file.historyRef.toString()
-
-      if (hist) return `H:${hist}`
-      const t = fi.topic.toString()
-
-      return `T:${t}|N:${fi.name}`
-    }
-
-    const latest = new Map<string, FileInfo>()
-    for (const fi of filtered) {
-      const k = keyOf(fi)
-      const prev = latest.get(k)
-
-      if (!prev) {
-        latest.set(k, fi)
-      } else {
-        const a = indexStrToBigint(fi.version)
-        const b = indexStrToBigint(prev.version)
-
-        // todo: review logic
-        if (a === undefined || b === undefined) continue
-
-        if (a > b || (a === b && Number(fi.timestamp || 0) > Number(prev.timestamp || 0))) {
-          latest.set(k, fi)
-        }
-      }
-    }
-
-    return Array.from(latest.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
-  }, [isSearchMode, scope, currentDrive, files, matchesQuery, statusIncluded])
-
-  const listToRender = isSearchMode ? searchRows : rows
-
-  const renderMainContent = useCallback((): ReactElement | ReactElement[] => {
-    if (drives.length === 0) {
-      return renderEmptyState()
-    }
-
-    if (!isSearchMode) {
-      if (!currentDrive) {
-        return <div className="fm-drop-hint">Select a drive to upload or view its files</div>
-      }
-
-      if (listToRender.length === 0) {
-        if (view === ViewType.Trash) {
-          return (
-            <div className="fm-drop-hint">
-              Files from &quot;{currentDrive?.name}&quot; that are trashed can be viewed here
-            </div>
-          )
-        }
-
-        return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
-      }
-
-      return renderFileList(listToRender)
-    }
-
-    if (listToRender.length === 0) {
-      return <div className="fm-drop-hint">No results found.</div>
-    }
-
-    return renderFileList(listToRender, true)
-  }, [drives, isSearchMode, currentDrive, view, listToRender, renderEmptyState, renderFileList])
-
   return (
     <>
       {conflictPortal}
@@ -359,47 +122,20 @@ export function FileBrowser(): ReactElement {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <div className="fm-file-browser-content-header">
-            <div className="fm-file-browser-content-header-item fm-checkbox">
-              <input type="checkbox" />
-            </div>
-
-            <div className="fm-file-browser-content-header-item fm-name">
-              Name
-              <div className="fm-file-browser-content-header-item-icon">
-                <DownIcon size="16px" />
-              </div>
-            </div>
-
-            {isSearchMode && (
-              <div className="fm-file-browser-content-header-item fm-drive">
-                Drive
-                <div className="fm-file-browser-content-header-item-icon">
-                  <DownIcon size="16px" />
-                </div>
-              </div>
-            )}
-
-            <div className="fm-file-browser-content-header-item fm-size">
-              Size
-              <div className="fm-file-browser-content-header-item-icon">
-                <DownIcon size="16px" />
-              </div>
-            </div>
-
-            <div className="fm-file-browser-content-header-item fm-date-mod">
-              Date mod.
-              <div className="fm-file-browser-content-header-item-icon">
-                <DownIcon size="16px" />
-              </div>
-            </div>
-          </div>
+          <FileBrowserHeader isSearchMode={isSearchMode} />
           <div
             className="fm-file-browser-content-body"
             onContextMenu={handleFileBrowserContextMenu}
             onClick={handleCloseContext}
           >
-            {renderMainContent()}
+            <FileBrowserContent
+              listToRender={listToRender}
+              drives={drives}
+              currentDrive={currentDrive || null}
+              view={view}
+              isSearchMode={isSearchMode}
+              trackDownload={trackDownload}
+            />
 
             {showContext && (
               <div

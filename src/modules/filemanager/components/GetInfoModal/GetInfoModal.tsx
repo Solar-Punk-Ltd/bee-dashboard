@@ -5,18 +5,7 @@ import { createPortal } from 'react-dom'
 import InfoIcon from 'remixicon-react/InformationLineIcon'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
 
-interface FileProperty {
-  key: string
-  label: string
-  value: string
-  raw?: string
-}
-
-interface FilePropertyGroup {
-  title: string
-  icon?: ReactElement
-  properties: FileProperty[]
-}
+import type { FileProperty, FilePropertyGroup } from '../../utils/infoGroups'
 
 interface GetInfoModalProps {
   name: string
