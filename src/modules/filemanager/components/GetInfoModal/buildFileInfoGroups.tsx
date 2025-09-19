@@ -6,7 +6,7 @@ import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
-import { FEED_INDEX_ZERO } from '../../utils/common'
+import { FEED_INDEX_ZERO, indexStrToBigint } from '../../utils/common'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }
@@ -17,14 +17,6 @@ type KnownCustomMeta = Record<string, string> & {
   path?: string
   fileCount?: string
   expiresAt?: string
-}
-
-type FileInfoExtra = {
-  owner?: string
-  actPublisher?: string
-  batchId?: string | { toString(): string }
-  redundancyLevel?: number
-  status?: string | number
 }
 
 const dash = '—'
@@ -93,11 +85,7 @@ function extractGranteeCount(r: GetGranteesResult): number {
   return 0
 }
 
-export async function getGranteeCount(
-  fm: Pick<FileManagerBase, 'getGrantees'>,
-  fi: FileInfo,
-): Promise<number | undefined> {
-  if (!fm.getGrantees) return undefined
+export async function getGranteeCount(fm: FileManagerBase, fi: FileInfo): Promise<number | undefined> {
   try {
     const result = await fm.getGrantees(fi)
 
@@ -126,16 +114,16 @@ function buildGeneralGroup(
       {
         key: 'hash',
         label: 'Swarm hash',
-        value: fi.file?.reference ? truncateMiddle(String(fi.file.reference)) : dash,
-        raw: fi.file?.reference ? String(fi.file.reference) : undefined,
+        value: truncateMiddle(fi.file.reference.toString()),
+        raw: fi.file.reference.toString(),
       },
       {
         key: 'topic',
         label: 'Topic',
-        value: fi.topic ? truncateMiddle(String(fi.topic)) : dash,
-        raw: fi.topic ? String(fi.topic) : undefined,
+        value: truncateMiddle(fi.topic.toString()),
+        raw: fi.topic.toString(),
       },
-      { key: 'ver', label: 'Versions', value: (BigInt(fi.version ?? '0') + BigInt(1)).toString() },
+      { key: 'ver', label: 'Versions', value: ((indexStrToBigint(fi.version) ?? BigInt(0)) + BigInt(1)).toString() },
       { key: 'status', label: 'Status', value: statusLabel(status) },
     ],
   }
@@ -148,17 +136,13 @@ function buildDatesGroup(createdTs?: number, modifiedTs?: number, expires?: stri
     properties: [
       { key: 'created', label: 'Created', value: fmtDate(createdTs) },
       { key: 'modified', label: 'Modified', value: fmtDate(modifiedTs) },
-      { key: 'accessed', label: 'Last Accessed', value: '—' },
-      { key: 'expires', label: 'Expires', value: expires ?? '—' },
+      { key: 'accessed', label: 'Last Accessed', value: dash },
+      { key: 'expires', label: 'Expires', value: expires ?? dash },
     ],
   }
 }
 
-function buildAccessGroup(fi: FileInfo & FileInfoExtra, granteeCount?: number): FilePropertyGroup {
-  const owner = fi.owner
-  const actPublisher = fi.actPublisher
-  const historyRef = fi.file?.historyRef
-
+function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGroup {
   return {
     title: 'Access & Permissions',
     icon: <AccessIcon size="14px" color="rgb(237, 129, 49)" />,
@@ -166,31 +150,28 @@ function buildAccessGroup(fi: FileInfo & FileInfoExtra, granteeCount?: number): 
       {
         key: 'owner',
         label: 'Owner',
-        value: owner ? truncateMiddle(String(owner), 12, 8) : '—',
-        raw: owner ? String(owner) : undefined,
+        value: truncateMiddle(fi.owner.toString(), 12, 8),
+        raw: fi.owner.toString(),
       },
       { key: 'shared', label: 'Sharing', value: fi.shared ? 'Shared' : 'Private' },
-      { key: 'grantees', label: 'Grantees', value: granteeCount != null ? `${granteeCount}` : '—' },
+      { key: 'grantees', label: 'Grantees', value: granteeCount != null ? `${granteeCount}` : dash },
       {
         key: 'actpub',
         label: 'ACT Publisher',
-        value: actPublisher ? truncateMiddle(String(actPublisher), 12, 8) : '—',
-        raw: actPublisher ? String(actPublisher) : undefined,
+        value: truncateMiddle(fi.actPublisher.toString(), 12, 8),
+        raw: fi.actPublisher.toString(),
       },
       {
         key: 'historyRef',
         label: 'ACT History',
-        value: historyRef ? truncateMiddle(String(historyRef)) : '—',
-        raw: historyRef ? String(historyRef) : undefined,
+        value: truncateMiddle(fi.file.historyRef.toString(), 12, 8),
+        raw: fi.file.historyRef.toString(),
       },
     ],
   }
 }
 
-function buildStorageGroup(fi: FileInfo & FileInfoExtra, driveLabel?: string): FilePropertyGroup {
-  const batchId = fi.batchId
-  const redundancyLevel = fi.redundancyLevel
-
+function buildStorageGroup(fi: FileInfo, driveName: string): FilePropertyGroup {
   return {
     title: 'Storage',
     icon: <HardDriveIcon size="14px" color="rgb(237, 129, 49)" />,
@@ -198,11 +179,11 @@ function buildStorageGroup(fi: FileInfo & FileInfoExtra, driveLabel?: string): F
       {
         key: 'batch',
         label: 'Batch ID',
-        value: batchId ? truncateMiddle(String(batchId), 12, 10) : '—',
-        raw: batchId ? String(batchId) : undefined,
+        value: truncateMiddle(fi.batchId.toString(), 12, 10),
+        raw: fi.batchId.toString(),
       },
-      { key: 'drive', label: 'Drive', value: driveLabel ?? '—' },
-      { key: 'redundancy', label: 'Redundancy', value: redundancyLevel != null ? String(redundancyLevel) : '—' },
+      { key: 'drive', label: 'Drive', value: driveName },
+      { key: 'redundancy', label: 'Redundancy', value: fi.redundancyLevel?.toString() ?? dash },
     ],
   }
 }
@@ -210,7 +191,7 @@ function buildStorageGroup(fi: FileInfo & FileInfoExtra, driveLabel?: string): F
 export async function buildGetInfoGroups(
   fm: FileManagerBase,
   fi: FileInfo,
-  opts?: { driveLabel?: string },
+  driveName: string,
 ): Promise<FilePropertyGroup[]> {
   const cm = fi.customMetadata as KnownCustomMeta | undefined
   const size = cm?.size
@@ -220,12 +201,11 @@ export async function buildGetInfoGroups(
   const expires = cm?.expiresAt
 
   const [createdTs, granteeCount] = await Promise.all([getCreatedTs(fm, fi), getGranteeCount(fm, fi)])
-  const fiExtra = fi as FileInfo & FileInfoExtra
 
   return [
-    buildGeneralGroup(fi, mime, size, path, fileCount, fiExtra.status),
+    buildGeneralGroup(fi, mime, size, path, fileCount, fi.status),
     buildDatesGroup(createdTs, fi.timestamp, expires),
-    buildAccessGroup(fiExtra, granteeCount),
-    buildStorageGroup(fiExtra, opts?.driveLabel),
+    buildAccessGroup(fi, granteeCount),
+    buildStorageGroup(fi, driveName),
   ]
 }

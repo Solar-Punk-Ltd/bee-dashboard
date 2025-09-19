@@ -8,7 +8,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 
 export function NotificationBar(): ReactElement | null {
   const [showExpiringModal, setShowExpiringModal] = useState(false)
-  const [stampsToExpire, setStampsToExpire] = useState([] as PostageBatch[])
+  const [stampsToExpire, setStampsToExpire] = useState<PostageBatch[]>([])
   const { beeApi } = useContext(SettingsContext)
 
   const showExpiration = stampsToExpire.length > 0

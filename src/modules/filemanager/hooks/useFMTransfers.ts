@@ -56,7 +56,7 @@ const latestOf = (a: FileInfo, b: FileInfo): FileInfo => {
 
   return av > bv ? a : b
 }
-
+// TODO: what is this? refactor
 const pickLatestByName = (rows: FileInfo[], name: string): FileInfo | undefined => {
   const sameName = rows.filter(f => f.name === name)
 

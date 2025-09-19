@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect } from 'react'
+import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
@@ -24,7 +24,7 @@ interface FileItemProps {
   fileInfo: FileInfo
   onDownload?: (name: string, task: () => Promise<void>, opts?: { size?: string }) => Promise<void>
   showDriveColumn?: boolean
-  driveName?: string
+  driveName: string
 }
 
 // TODO: use contextinterface from provider
@@ -59,13 +59,13 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
 
-  const openGetInfo = async () => {
+  const openGetInfo = useCallback(async () => {
     if (!fm) return
 
-    const groups = await buildGetInfoGroups(fm, fileInfo)
+    const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
-  }
+  }, [fm, fileInfo, driveName])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
@@ -251,8 +251,8 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
                 className="fm-context-item"
                 onClick={() => {
                   handleCloseContext()
-                  void (async () => {
-                    const groups = fm ? await buildGetInfoGroups(fm, fileInfo) : null
+                  ;(async () => {
+                    const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
 
                     if (groups) {
                       setInfoGroups(groups)
@@ -277,7 +277,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
                 className="fm-context-item"
                 onClick={() => {
                   handleCloseContext()
-                  void doRecover()
+                  doRecover()
                 }}
               >
                 Restore
@@ -297,7 +297,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
                 className="fm-context-item red"
                 onClick={() => {
                   handleCloseContext()
-                  void doForget()
+                  doForget()
                 }}
               >
                 Forget permanently
@@ -307,7 +307,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
                 className="fm-context-item"
                 onClick={() => {
                   handleCloseContext()
-                  void openGetInfo()
+                  openGetInfo()
                 }}
               >
                 Get info

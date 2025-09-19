@@ -38,6 +38,13 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useFM()
   const currentFetch = useRef<Promise<void> | null>(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     const newSizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(false, erasureCodeLevel).values())
@@ -47,14 +54,28 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
 
   useEffect(() => {
     if (validityEndDate.getTime() > new Date().getTime()) {
-      fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
+      fmFetchCost(
+        capacity,
+        validityEndDate,
+        false,
+        erasureCodeLevel,
+        beeApi,
+        (cost: string) => {
+          if (isMountedRef.current) {
+            setCost(cost)
+          }
+        },
+        currentFetch,
+      )
 
-      if (lifetimeIndex >= 0) {
+      if (lifetimeIndex >= 0 && isMountedRef.current) {
         setIsCreateEnabled(true)
       }
     } else {
-      setCost('0')
-      setIsCreateEnabled(false)
+      if (isMountedRef.current) {
+        setCost('0')
+        setIsCreateEnabled(false)
+      }
     }
   }, [validityEndDate, beeApi, capacity, erasureCodeLevel, lifetimeIndex])
 
@@ -121,9 +142,21 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
                 false,
                 erasureCodeLevel,
                 true,
-                setIsAdminStampCreationInProgress,
-                () => handleVisibility(false),
-                () => handleVisibility(true),
+                (loading: boolean) => {
+                  if (isMountedRef.current) {
+                    setIsAdminStampCreationInProgress(loading)
+                  }
+                },
+                () => {
+                  if (isMountedRef.current) {
+                    handleVisibility(false)
+                  }
+                },
+                () => {
+                  if (isMountedRef.current) {
+                    handleVisibility(true)
+                  }
+                },
               )
             }
           />

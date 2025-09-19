@@ -13,7 +13,7 @@ import { useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { indexStrToBigint } from '../../utils/common'
-import { VersionsList } from './VersionList/VersionList'
+import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
 
 // TODO: use enums
 type ConflictChoice = { action: 'keep-both' | 'replace' | 'cancel'; newName?: string }
@@ -23,15 +23,6 @@ type RenameConfirmState = {
   version: FileInfo
   headName: string
   targetName: string
-}
-
-const truncateMiddle = (s: string, max = 42): string => {
-  const str = String(s)
-
-  if (str.length <= max) return str
-  const half = Math.floor((max - 1) / 2)
-
-  return `${str.slice(0, half)}…${str.slice(-half)}`
 }
 
 interface VersionHistoryModalProps {
@@ -244,7 +235,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
             <>
               Version history –{' '}
               <span className="vh-title" title={fileInfo.name}>
-                {truncateMiddle(fileInfo.name, 56)}
+                {truncateNameMiddle(fileInfo.name, 56)}
               </span>
               {fileInfo && (
                 <span
@@ -282,11 +273,11 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
                 <>
                   Restoring will rename:&nbsp;
                   <b className="vh-name" title={renameConfirm.headName}>
-                    {truncateMiddle(renameConfirm.headName, 44)}
+                    {truncateNameMiddle(renameConfirm.headName, 44)}
                   </b>{' '}
                   →{' '}
                   <b className="vh-name" title={renameConfirm.targetName}>
-                    {truncateMiddle(renameConfirm.targetName, 44)}
+                    {truncateNameMiddle(renameConfirm.targetName, 44)}
                   </b>
                   .
                 </>

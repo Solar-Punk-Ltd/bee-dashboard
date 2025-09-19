@@ -98,7 +98,7 @@ export function Sidebar(): ReactElement {
         {isMyDrivesOpen &&
           drives.map(d => {
             const isSelected = isCurrent(d) && view === ViewType.File
-            const stamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString())
+            const stamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString() && !d.isAdmin)
 
             return (
               stamp && (

@@ -11,6 +11,7 @@ import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
+import { useFM } from '../../providers/FMContext'
 
 interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
@@ -20,6 +21,7 @@ interface ExpiringNotificationModalProps {
 export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>()
+  const { drives } = useFM()
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(
@@ -31,7 +33,7 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
         <div>The following drives will expire soon. Extend them to keep your data accessible.</div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {stamps.map((stamp, index) => {
+          {stamps.map(stamp => {
             const daysLeft = getDaysLeft(stamp.duration.toEndDate())
             let daysClass = ''
 
@@ -82,8 +84,12 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
         </div>
       </div>
       {showUpgradeDriveModal && actualStamp && (
-        //TODO The stamps[0] is just for mock purpose, it needs to implemented correctly
-        <UpgradeDriveModal stamp={actualStamp} onCancelClick={onCancelClick} containerColor="none" />
+        <UpgradeDriveModal
+          stamp={actualStamp}
+          onCancelClick={onCancelClick}
+          containerColor="none"
+          drive={drives.find(d => d.id.toString() === actualStamp.batchID.toString())}
+        />
       )}
     </div>,
     modalRoot,

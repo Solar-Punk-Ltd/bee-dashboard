@@ -54,13 +54,29 @@ export const fmFetchCost = async (
   if (currentFetch.current) {
     await currentFetch.current
   }
+
+  let isCurrentFetch = true
+
   const fetchPromise = (async () => {
-    const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
-    setCost(cost)
+    try {
+      const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
+
+      if (isCurrentFetch) {
+        setCost(cost)
+      }
+    } catch (error) {
+      if (isCurrentFetch) {
+        setCost('0')
+      }
+      // eslint-disable-next-line no-console
+      console.error('Failed to fetch storage cost:', error)
+    }
   })()
 
   currentFetch.current = fetchPromise
   await fetchPromise
+
+  isCurrentFetch = false
   currentFetch.current = null
 }
 

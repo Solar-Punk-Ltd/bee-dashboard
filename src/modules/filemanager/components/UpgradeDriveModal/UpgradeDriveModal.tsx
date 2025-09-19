@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
@@ -23,14 +23,21 @@ import {
   Size,
   Utils,
 } from '@ethersphere/bee-js'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
+  drive?: DriveInfo
   onCancelClick: () => void
   containerColor?: string
 }
 
-export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: UpgradeDriveModalProps): ReactElement {
+export function UpgradeDriveModal({
+  stamp,
+  onCancelClick,
+  containerColor,
+  drive,
+}: UpgradeDriveModalProps): ReactElement {
   const { nodeAddresses, walletBalance } = useContext(BeeContext)
   const [capacity, setCapacity] = useState(Size.fromBytes(0))
   const [capacityExtensionCost, setCapacityExtensionCost] = useState('')
@@ -54,41 +61,44 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
     setCapacityIndex(index)
   }
 
-  const handleCostCalculation = async (
-    batchId: BatchId,
-    capacity: Size,
-    duration: Duration,
-    options: BeeRequestOptions | undefined,
-    encryption: boolean,
-    erasureCodeLevel: RedundancyLevel,
-    isCapacityExtensionSet: boolean,
-    isDurationExtensionSet: boolean,
-  ) => {
-    const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, undefined, false, mockedErasureCodeLevel)
-    const costText = cost ? cost.toSignificantDigits(2) : '0'
+  const handleCostCalculation = useCallback(
+    async (
+      batchId: BatchId,
+      capacity: Size,
+      duration: Duration,
+      options: BeeRequestOptions | undefined,
+      encryption: boolean,
+      erasureCodeLevel: RedundancyLevel,
+      isCapacityExtensionSet: boolean,
+      isDurationExtensionSet: boolean,
+    ) => {
+      const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, undefined, false, mockedErasureCodeLevel)
+      const costText = cost ? cost.toSignificantDigits(2) : '0'
 
-    if (isCapacityExtensionSet && isDurationExtensionSet) {
-      setDurationExtensionCost('')
-      setCapacityExtensionCost('')
-      setExtensionCost(costText)
-    } else if (!isCapacityExtensionSet && isDurationExtensionSet) {
-      setCapacityExtensionCost('0')
-      setDurationExtensionCost(costText)
-      setExtensionCost(costText)
-    } else if (isCapacityExtensionSet && !isDurationExtensionSet) {
-      setDurationExtensionCost('0')
-      setCapacityExtensionCost(costText)
-      setExtensionCost(costText)
-    } else {
-      setDurationExtensionCost('0')
-      setCapacityExtensionCost('0')
-      setExtensionCost('0')
-    }
-  }
+      if (isCapacityExtensionSet && isDurationExtensionSet) {
+        setDurationExtensionCost('')
+        setCapacityExtensionCost('')
+        setExtensionCost(costText)
+      } else if (!isCapacityExtensionSet && isDurationExtensionSet) {
+        setCapacityExtensionCost('0')
+        setDurationExtensionCost(costText)
+        setExtensionCost(costText)
+      } else if (isCapacityExtensionSet && !isDurationExtensionSet) {
+        setDurationExtensionCost('0')
+        setCapacityExtensionCost(costText)
+        setExtensionCost(costText)
+      } else {
+        setDurationExtensionCost('0')
+        setCapacityExtensionCost('0')
+        setExtensionCost('0')
+      }
+    },
+    [beeApi, mockedErasureCodeLevel],
+  )
 
   useEffect(() => {
-    const fetchSizes = async () => {
-      const sizes = Array.from(await Utils.getStampEffectiveBytesBreakpoints(false, mockedErasureCodeLevel).values())
+    const fetchSizes = () => {
+      const sizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(false, mockedErasureCodeLevel).values())
 
       const capacityValues = capacityBreakpoints[mockedEncryption][mockedErasureCodeLevel]
       const fromIndex = capacityValues.findIndex(item => item.batchDepth === stamp.depth)
@@ -106,7 +116,7 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
     }
 
     fetchSizes()
-  }, [])
+  }, [mockedErasureCodeLevel, stamp.depth, stamp.size])
 
   useEffect(() => {
     let isCapacitySet = false
@@ -141,11 +151,19 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
       )
     }
     fetchExtensionCost()
-  }, [capacity, validityEndDate])
+  }, [
+    capacity,
+    validityEndDate,
+    capacityIndex,
+    handleCostCalculation,
+    lifetimeIndex,
+    stamp.batchID,
+    mockedErasureCodeLevel,
+  ])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
-  }, [lifetimeIndex])
+  }, [lifetimeIndex, stamp.duration])
 
   const batchIdStr = stamp.batchID.toString()
   const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
@@ -154,7 +172,7 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
     <div className={`fm-modal-container${containerColor === 'none' ? ' fm-modal-container-no-bg' : ''}`}>
       <div className="fm-modal-window fm-upgrade-drive-modal">
         <div className="fm-modal-window-header">
-          <DriveIcon size="18px" /> Upgrade {stamp?.label || shortBatchId}
+          <DriveIcon size="18px" /> Upgrade {drive?.name || stamp?.label || shortBatchId}
         </div>
         <div>Choose extension period and additional storage for your drive.</div>
         <div className="fm-modal-window-body">
@@ -222,7 +240,7 @@ export function UpgradeDriveModal({ stamp, onCancelClick, containerColor }: Upgr
 
           <div className="fm-modal-white-section">
             <div className="fm-emphasized-text">Summary</div>
-            <div>Drive: {stamp?.label || shortBatchId}</div>
+            <div>Drive: {drive?.name || stamp?.label || shortBatchId}</div>
             <div>
               Additional storage:{' '}
               {capacity.toBytes() === 0

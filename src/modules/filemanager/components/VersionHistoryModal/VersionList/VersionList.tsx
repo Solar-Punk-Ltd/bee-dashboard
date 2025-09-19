@@ -12,7 +12,7 @@ import { useFM } from '../../../providers/FMContext'
 import { indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from 'src/modules/filemanager/utils/download'
 
-const truncateMiddle = (s: string, max = 42): string => {
+export const truncateNameMiddle = (s: string, max = 42): string => {
   const str = String(s)
 
   if (str.length <= max) return str
@@ -66,11 +66,11 @@ export function VersionsList({ versions, headFi, restoreVersion }: VersionListPr
                 <div className="vh-rename" title={`Restoring will rename: “${headFi.name}” → “${item.name}”`}>
                   Restoring will rename:{' '}
                   <b className="vh-name" title={headFi.name}>
-                    {truncateMiddle(headFi.name || '', 44)}
+                    {truncateNameMiddle(headFi.name, 44)}
                   </b>{' '}
                   →{' '}
                   <b className="vh-name" title={item.name}>
-                    {truncateMiddle(item.name, 44)}
+                    {truncateNameMiddle(item.name, 44)}
                   </b>
                 </div>
               )}
