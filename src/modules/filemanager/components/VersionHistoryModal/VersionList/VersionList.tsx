@@ -10,7 +10,7 @@ import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { useFM } from '../../../providers/FMContext'
 import { indexStrToBigint } from '../../../utils/common'
-import { startDownloadingQueue } from 'src/modules/filemanager/utils/download'
+import { startDownloadingQueue } from '../../../utils/download'
 
 export const truncateNameMiddle = (s: string, max = 42): string => {
   const str = String(s)
