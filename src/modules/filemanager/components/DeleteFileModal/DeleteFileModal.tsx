@@ -13,7 +13,8 @@ import { FileAction } from '../../constants/constants'
 import { preventDefault } from '../../utils/common'
 
 interface DeleteFileModalProps {
-  name: string
+  name?: string
+  names?: string[]
   currentDriveName?: string
   onCancelClick: () => void
   onProceed: (action: FileAction) => void
@@ -21,6 +22,7 @@ interface DeleteFileModalProps {
 
 export function DeleteFileModal({
   name,
+  names,
   currentDriveName,
   onCancelClick,
   onProceed,
@@ -28,15 +30,28 @@ export function DeleteFileModal({
   const [value, setValue] = useState<FileAction>(FileAction.Trash)
 
   const modalRoot = document.querySelector('.fm-main') || document.body
+  const isBulk = Array.isArray(names) && names.length > 0
+  const count = isBulk ? names!.length : 1
+  const headerText = isBulk ? `Delete ${count} file${count > 1 ? 's' : ''}?` : `Delete ${name}?`
+  const subjectNoun = isBulk ? 'selected file(s)' : 'this file'
 
   return createPortal(
     <div className="fm-modal-container">
       <div className="fm-modal-window fm-delete-file-modal">
         <div className="fm-modal-window-header">
-          <TrashIcon /> <span className="fm-main-font-color">Delete {name}?</span>
+          <TrashIcon /> <span className="fm-main-font-color">{headerText}</span>
         </div>
 
         <div className="fm-modal-window-body">
+          {isBulk && (
+            <ul className="fm-delete-file-modal-list">
+              {names!.map(n => (
+                <li key={n} className="fm-delete-file-modal-list-item" title={n}>
+                  {n}
+                </li>
+              ))}
+            </ul>
+          )}
           <FormControl component="fieldset">
             <div className="fm-radio-group">
               <div className="fm-form-control-label">
@@ -47,8 +62,8 @@ export function DeleteFileModal({
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Move to Trash</div>
                       <div onClick={preventDefault}>
-                        Moves this file to the trash. It will still take up space on {currentDriveName ?? 'this drive'}{' '}
-                        and expire along with it. You can restore it later.
+                        Moves {subjectNoun} to the trash. It will still take up space on{' '}
+                        {currentDriveName ?? 'this drive'} and expire along with it. You can restore it later.
                       </div>
                     </div>
                   }
@@ -63,7 +78,7 @@ export function DeleteFileModal({
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Forget</div>
                       <div onClick={preventDefault}>
-                        Removes this file from your view. The data will remain on Swarm until{' '}
+                        Removes {subjectNoun} from your view. The data will remain on Swarm until{' '}
                         {currentDriveName ?? 'the drive'} expires. This action cannot be easily undone.
                       </div>
                     </div>
@@ -80,7 +95,8 @@ export function DeleteFileModal({
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">
-                        Destroy entire drive {currentDriveName ? `‘${currentDriveName}’` : ''} to delete this file
+                        Destroy entire drive {currentDriveName ? `‘${currentDriveName}’` : ''} to delete this{' '}
+                        {subjectNoun}
                       </div>
                       <div className="fm-red-font" onClick={preventDefault}>
                         <AlertIcon size="14px" className="fm-alert-icon-inline" />

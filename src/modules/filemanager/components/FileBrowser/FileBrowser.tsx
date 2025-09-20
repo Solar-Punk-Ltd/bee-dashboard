@@ -6,7 +6,7 @@ import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
-import { FileTransferType, ViewType } from '../../constants/constants'
+import { FileAction, FileTransferType, ViewType } from '../../constants/constants'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../providers/FMFileViewContext'
 import { useFM } from '../../providers/FMContext'
@@ -14,6 +14,9 @@ import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useFMSearch } from '../../providers/FMSearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { useDragAndDrop } from '../../hooks/useDragAndDrop'
+import { useFMBulkActions } from '../../hooks/useFMBulkActions'
+import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
+import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -32,13 +35,18 @@ export function FileBrowser(): ReactElement {
     trackDownload,
     conflictPortal,
   } = useFMTransfers()
+
   const { query, scope, includeActive, includeTrashed } = useFMSearch()
 
   const [safePos, setSafePos] = useState<Point>(pos as Point)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
+
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
+  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -54,6 +62,11 @@ export function FileBrowser(): ReactElement {
     includeTrashed,
   })
 
+  const bulk = useFMBulkActions({
+    listToRender,
+    trackDownload,
+  })
+
   const { isDragging, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, handleOverlayDrop } =
     useDragAndDrop({
       onFilesDropped: uploadFiles,
@@ -67,7 +80,9 @@ export function FileBrowser(): ReactElement {
     e.target.value = ''
   }
 
-  const onContextUploadFile = () => fileInputRef.current?.click()
+  const onContextUploadFile = () => {
+    bulk.fileInputRef.current?.click() ?? legacyUploadRef.current?.click()
+  }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
@@ -110,7 +125,9 @@ export function FileBrowser(): ReactElement {
   return (
     <>
       {conflictPortal}
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
+      <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} />
+      <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
+
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
         <FileBrowserTopBar />
         <div
@@ -122,7 +139,7 @@ export function FileBrowser(): ReactElement {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <FileBrowserHeader isSearchMode={isSearchMode} />
+          <FileBrowserHeader isSearchMode={isSearchMode} bulk={bulk} />
           <div
             className="fm-file-browser-content-body"
             onContextMenu={handleFileBrowserContextMenu}
@@ -135,6 +152,17 @@ export function FileBrowser(): ReactElement {
               view={view}
               isSearchMode={isSearchMode}
               trackDownload={trackDownload}
+              selectedIds={bulk.selectedIds}
+              onToggleSelected={bulk.toggleOne}
+              idOf={bulk.idOf}
+              bulkSelectedCount={bulk.selectedCount}
+              onBulk={{
+                download: () => bulk.bulkDownload(bulk.selectedFiles),
+                restore: () => bulk.bulkRestore(bulk.selectedFiles),
+                forget: () => bulk.bulkForget(bulk.selectedFiles),
+                destroy: () => setShowDestroyDriveModal(true),
+                delete: () => setShowBulkDeleteModal(true),
+              }}
             />
 
             {showContext && (
@@ -144,7 +172,30 @@ export function FileBrowser(): ReactElement {
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
               >
-                {view === ViewType.Trash ? (
+                {bulk.selectedFiles.length > 1 ? (
+                  <ContextMenu>
+                    <div className="fm-context-item" onClick={() => bulk.bulkDownload(bulk.selectedFiles)}>
+                      Download
+                    </div>
+                    {view === ViewType.File ? (
+                      <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
+                        Delete…
+                      </div>
+                    ) : (
+                      <>
+                        <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
+                          Restore
+                        </div>
+                        <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
+                          Destroy
+                        </div>
+                        <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
+                          Forget permanently
+                        </div>
+                      </>
+                    )}
+                  </ContextMenu>
+                ) : view === ViewType.Trash ? (
                   <ContextMenu>
                     <div className="fm-context-item">Empty trash</div>
                   </ContextMenu>
@@ -178,6 +229,36 @@ export function FileBrowser(): ReactElement {
             >
               <div className="fm-drag-text">Drop file(s) to upload</div>
             </div>
+          )}
+
+          {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
+            <DeleteFileModal
+              names={bulk.selectedFiles.map(f => f.name)}
+              currentDriveName={currentDrive?.name}
+              onCancelClick={() => setShowBulkDeleteModal(false)}
+              onProceed={async action => {
+                setShowBulkDeleteModal(false)
+
+                if (action === FileAction.Trash) {
+                  await bulk.bulkTrash(bulk.selectedFiles)
+                } else if (action === FileAction.Forget) {
+                  await bulk.bulkForget(bulk.selectedFiles)
+                } else if (action === FileAction.Destroy) {
+                  setShowDestroyDriveModal(true)
+                }
+              }}
+            />
+          )}
+
+          {showDestroyDriveModal && currentDrive && (
+            <DestroyDriveModal
+              drive={currentDrive}
+              onCancelClick={() => setShowDestroyDriveModal(false)}
+              doDestroy={async () => {
+                await bulk.destroyCurrentDrive(currentDrive)
+                setShowDestroyDriveModal(false)
+              }}
+            />
           )}
         </div>
 

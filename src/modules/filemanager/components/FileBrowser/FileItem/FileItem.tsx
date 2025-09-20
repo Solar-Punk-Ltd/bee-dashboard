@@ -26,18 +26,34 @@ interface FileItemProps {
   onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
   showDriveColumn?: boolean
   driveName: string
+  selected?: boolean
+  onToggleSelected?: (fi: FileInfo, checked: boolean) => void
+  bulkSelectedCount?: number
+  onBulk: {
+    download?: () => void
+    restore?: () => void
+    forget?: () => void
+    destroy?: () => void
+    delete?: () => void
+  }
 }
 
-// TODO: use contextinterface from provider
-export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: FileItemProps): ReactElement {
+export function FileItem({
+  fileInfo,
+  onDownload,
+  showDriveColumn,
+  driveName,
+  selected = false,
+  onToggleSelected,
+  bulkSelectedCount,
+  onBulk,
+}: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentDrive, files } = useFM()
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
 
-  // Track if component is mounted to prevent state updates on unmounted component
   const isMountedRef = useRef(true)
-
   useEffect(() => {
     isMountedRef.current = true
 
@@ -50,6 +66,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
   const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
+
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
@@ -62,7 +79,6 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
 
   const openGetInfo = useCallback(async () => {
     if (!fm) return
-
     const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
@@ -86,11 +102,9 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
     handleCloseContext()
 
     if (!fm || !beeApi) return
-
-    const size = fileInfo.customMetadata?.size
-    const expectedSize = size ? Number(size) : undefined
-
-    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(size), expectedSize))
+    const rawSize = fileInfo.customMetadata?.size
+    const expectedSize = rawSize ? Number(rawSize) : undefined
+    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
   const doTrash = useCallback(async () => {
@@ -122,118 +136,156 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
       if (!fm || !beeApi || !currentDrive) return
 
       if (takenNames.has(newName)) throw new Error('name-taken')
-
       await fm.upload(currentDrive, {
-        info: {
-          ...fileInfo,
-          name: newName,
-        },
+        info: { ...fileInfo, name: newName },
       })
       await Promise.resolve(refreshFiles?.())
     },
     [fm, beeApi, currentDrive, takenNames, fileInfo, refreshFiles],
   )
 
+  const MenuItem = ({
+    disabled,
+    danger,
+    onClick,
+    children,
+  }: {
+    disabled?: boolean
+    danger?: boolean
+    onClick?: () => void
+    children: React.ReactNode
+  }) => (
+    <div
+      className={`fm-context-item${danger ? ' red' : ''}`}
+      aria-disabled={disabled ? 'true' : 'false'}
+      style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+      onClick={disabled ? undefined : onClick}
+    >
+      {children}
+    </div>
+  )
+
+  const isBulk = (bulkSelectedCount ?? 0) > 1
+
   const renderContextMenuItems = useCallback(() => {
-    const commonItems = (
-      <>
-        <div className="fm-context-item" onClick={handleDownload}>
-          View / Open
-        </div>
-        <div className="fm-context-item" onClick={handleDownload}>
-          Download
-        </div>
-      </>
+    const viewItem = (
+      <MenuItem disabled={isBulk} onClick={handleDownload}>
+        View / Open
+      </MenuItem>
+    )
+
+    const downloadItem = isBulk ? (
+      <MenuItem onClick={onBulk.download}>Download</MenuItem>
+    ) : (
+      <MenuItem onClick={handleDownload}>Download</MenuItem>
     )
 
     const getInfoItem = (
-      <div
-        className="fm-context-item"
+      <MenuItem
+        disabled={isBulk}
         onClick={() => {
           handleCloseContext()
           openGetInfo()
         }}
       >
         Get info
-      </div>
+      </MenuItem>
     )
 
     if (view === ViewType.File) {
       return (
         <>
-          {commonItems}
-          <div
-            className="fm-context-item"
+          {viewItem}
+          {downloadItem}
+          <MenuItem
+            disabled={isBulk}
             onClick={() => {
               handleCloseContext()
               setShowRenameModal(true)
             }}
           >
             Rename
-          </div>
+          </MenuItem>
           <div className="fm-context-item-border" />
-          <div
-            className="fm-context-item"
+          <MenuItem
+            disabled={isBulk}
             onClick={() => {
               handleCloseContext()
               setShowVersionHistory(true)
             }}
           >
             Version history
-          </div>
-          <div
-            className="fm-context-item red"
+          </MenuItem>
+          <MenuItem
+            danger
             onClick={() => {
               handleCloseContext()
-              setShowDeleteModal(true)
+
+              if (isBulk) onBulk.delete?.()
+              else setShowDeleteModal(true)
             }}
           >
             Delete
-          </div>
+          </MenuItem>
           <div className="fm-context-item-border" />
           {getInfoItem}
         </>
       )
     }
 
-    // Trash view
     return (
       <>
-        {commonItems}
+        {viewItem}
+        {downloadItem}
         <div className="fm-context-item-border" />
-        <div
-          className="fm-context-item"
-          onClick={() => {
-            handleCloseContext()
-            doRecover()
-          }}
-        >
-          Restore
-        </div>
-        <div
-          className="fm-context-item red"
-          onClick={() => {
-            handleCloseContext()
-            setDestroyDrive(currentDrive || null)
-            setShowDestroyDriveModal(true)
-          }}
-        >
-          Destroy
-        </div>
-        <div
-          className="fm-context-item red"
-          onClick={() => {
-            handleCloseContext()
-            doForget()
-          }}
-        >
-          Forget permanently
-        </div>
+        {isBulk ? (
+          <>
+            <MenuItem danger onClick={onBulk.restore}>
+              Restore
+            </MenuItem>
+            <MenuItem danger onClick={onBulk.destroy}>
+              Destroy
+            </MenuItem>
+            <MenuItem danger onClick={onBulk.forget}>
+              Forget permanently
+            </MenuItem>
+          </>
+        ) : (
+          <>
+            <MenuItem
+              danger
+              onClick={() => {
+                handleCloseContext()
+                doRecover()
+              }}
+            >
+              Restore
+            </MenuItem>
+            <MenuItem
+              danger
+              onClick={() => {
+                handleCloseContext()
+                setShowDestroyDriveModal(true)
+              }}
+            >
+              Destroy
+            </MenuItem>
+            <MenuItem
+              danger
+              onClick={() => {
+                handleCloseContext()
+                doForget()
+              }}
+            >
+              Forget permanently
+            </MenuItem>
+          </>
+        )}
         <div className="fm-context-item-border" />
         {getInfoItem}
       </>
     )
-  }, [view, handleDownload, handleCloseContext, openGetInfo, doRecover, doForget, currentDrive])
+  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, doForget, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return
@@ -259,7 +311,12 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
   return (
     <div className="fm-file-item-content" onContextMenu={handleContextMenu} onClick={handleCloseContext}>
       <div className="fm-file-item-content-item fm-checkbox">
-        <input type="checkbox" />
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={e => onToggleSelected?.(fileInfo, e.target.checked)}
+          onClick={e => e.stopPropagation()}
+        />
       </div>
 
       <div className="fm-file-item-content-item fm-name">
@@ -297,9 +354,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
           name={fileInfo.name}
           properties={infoGroups}
           onCancelClick={() => {
-            if (isMountedRef.current) {
-              setShowGetInfoModal(false)
-            }
+            if (isMountedRef.current) setShowGetInfoModal(false)
           }}
         />
       )}
@@ -308,9 +363,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
         <VersionHistoryModal
           fileInfo={fileInfo}
           onCancelClick={() => {
-            if (isMountedRef.current) {
-              setShowVersionHistory(false)
-            }
+            if (isMountedRef.current) setShowVersionHistory(false)
           }}
         />
       )}
@@ -320,15 +373,10 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
           name={fileInfo.name}
           currentDriveName={currentDrive.name}
           onCancelClick={() => {
-            if (isMountedRef.current) {
-              setShowDeleteModal(false)
-            }
+            if (isMountedRef.current) setShowDeleteModal(false)
           }}
           onProceed={action => {
-            if (isMountedRef.current) {
-              setShowDeleteModal(false)
-            }
-
+            if (isMountedRef.current) setShowDeleteModal(false)
             switch (action) {
               case FileAction.Trash:
                 doTrash()
@@ -345,6 +393,7 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
           }}
         />
       )}
+
       {showRenameModal && (
         <RenameFileModal
           currentName={fileInfo.name}
@@ -355,17 +404,13 @@ export function FileItem({ fileInfo, onDownload, showDriveColumn, driveName }: F
             return new Set(names)
           })()}
           onCancelClick={() => {
-            if (isMountedRef.current) {
-              setShowRenameModal(false)
-            }
+            if (isMountedRef.current) setShowRenameModal(false)
           }}
           onProceed={async newName => {
             try {
               await doRename(newName)
 
-              if (isMountedRef.current) {
-                setShowRenameModal(false)
-              }
+              if (isMountedRef.current) setShowRenameModal(false)
             } catch {
               /* keep modal open on error */
             }

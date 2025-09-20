@@ -1,7 +1,10 @@
-import { ReactElement, useCallback, Fragment } from 'react'
+import { ReactElement, useCallback } from 'react'
 import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/constants'
+
+const defaultId = (fi: FileInfo): string =>
+  fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -14,6 +17,17 @@ interface FileBrowserContentProps {
     size?: string,
     expectedSize?: number,
   ) => (progress: number, isDownloading: boolean) => void
+  selectedIds?: Set<string>
+  onToggleSelected?: (fi: FileInfo, checked: boolean) => void
+  idOf?: (fi: FileInfo) => string
+  bulkSelectedCount?: number
+  onBulk: {
+    download?: () => void
+    restore?: () => void
+    forget?: () => void
+    destroy?: () => void
+    delete?: () => void
+  }
 }
 
 export function FileBrowserContent({
@@ -23,6 +37,11 @@ export function FileBrowserContent({
   view,
   isSearchMode,
   trackDownload,
+  selectedIds,
+  onToggleSelected,
+  idOf,
+  bulkSelectedCount,
+  onBulk,
 }: FileBrowserContentProps): ReactElement {
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
@@ -57,11 +76,15 @@ export function FileBrowserContent({
             onDownload={trackDownload}
             showDriveColumn={showDriveColumn}
             driveName={driveName}
+            selected={Boolean(selectedIds?.has((idOf ?? defaultId)(fi)))}
+            onToggleSelected={onToggleSelected}
+            bulkSelectedCount={bulkSelectedCount}
+            onBulk={onBulk}
           />
         )
       })
     },
-    [trackDownload, drives],
+    [trackDownload, drives, selectedIds, onToggleSelected, idOf],
   )
 
   if (drives.length === 0) {
@@ -94,3 +117,5 @@ export function FileBrowserContent({
 
   return <>{renderFileList(listToRender, true)}</>
 }
+
+export default FileBrowserContent
