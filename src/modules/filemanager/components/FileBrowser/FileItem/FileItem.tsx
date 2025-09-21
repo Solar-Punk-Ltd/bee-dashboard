@@ -20,6 +20,7 @@ import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/constants'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
+import { openOrDownload } from '../../../utils/view'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -107,6 +108,13 @@ export function FileItem({
     await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
+  const handleOpen = useCallback(async () => {
+    handleCloseContext()
+
+    if (!fm || !beeApi) return
+    await openOrDownload(beeApi.url, fm, fileInfo)
+  }, [handleCloseContext, fm, beeApi, fileInfo])
+
   const doTrash = useCallback(async () => {
     if (!fm) return
     await fm.trashFile(fileInfo)
@@ -169,7 +177,7 @@ export function FileItem({
 
   const renderContextMenuItems = useCallback(() => {
     const viewItem = (
-      <MenuItem disabled={isBulk} onClick={handleDownload}>
+      <MenuItem disabled={isBulk} onClick={handleOpen}>
         View / Open
       </MenuItem>
     )
@@ -319,7 +327,7 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name">
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={handleOpen}>
         <GetIconElement icon={fileInfo.name} />
         {fileInfo.name}
       </div>
