@@ -141,15 +141,31 @@ export function FileItem({
   // TODO: rename shall call the same upload with progress: but different name with info.file.ref and .history already filled with the previous values
   const doRename = useCallback(
     async (newName: string) => {
-      if (!fm || !beeApi || !currentDrive) return
+      if (!fm || !currentDrive) return
 
       if (takenNames.has(newName)) throw new Error('name-taken')
-      await fm.upload(currentDrive, {
-        info: { ...fileInfo, name: newName },
-      })
+
+      await fm.upload(
+        currentDrive,
+        {
+          info: {
+            name: newName,
+            topic: fileInfo.topic,
+            file: {
+              reference: fileInfo.file.reference,
+              historyRef: fileInfo.file.historyRef,
+            },
+            customMetadata: fileInfo.customMetadata,
+          },
+        },
+        {
+          actHistoryAddress: fileInfo.file.historyRef,
+        },
+      )
+
       await Promise.resolve(refreshFiles?.())
     },
-    [fm, beeApi, currentDrive, takenNames, fileInfo, refreshFiles],
+    [fm, currentDrive, fileInfo, takenNames, refreshFiles],
   )
 
   const MenuItem = ({
