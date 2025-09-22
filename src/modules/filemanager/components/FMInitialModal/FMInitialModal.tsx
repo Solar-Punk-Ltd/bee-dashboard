@@ -132,7 +132,7 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
             label="Purchase"
             variant="primary"
             disabled={!isCreateEnabled}
-            onClick={async () =>
+            onClick={async () => {
               await handleCreateDrive(
                 beeApi,
                 fm,
@@ -158,7 +158,8 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
                   }
                 },
               )
-            }
+              window.location.reload()
+            }}
           />
         </div>
       </div>

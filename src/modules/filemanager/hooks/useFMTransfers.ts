@@ -12,7 +12,6 @@ export type TransferItem = {
   status: TransferStatus
   kind?: FileTransferType
 }
-
 type UploadMeta = Record<string, string | number>
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
@@ -130,6 +129,68 @@ export function useFMTransfers() {
     [openConflict],
   )
 
+  const uploadOne = async (file: File) => {
+    if (!fm || !currentDrive) return
+
+    // Per-file meta
+    const meta = buildUploadMeta([file])
+    const prettySize = formatBytes(meta.size)
+
+    // Resolve conflict per file
+    const sameDrive = collectSameDrive(currentDrive.id.toString())
+    const { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
+
+    if (isReplace && (!replaceHistory || !replaceTopic)) return
+
+    if (finalName.trim().length === 0) return
+
+    const progressCallback = trackUploadProgress(
+      finalName,
+      prettySize,
+      isReplace ? FileTransferType.Update : FileTransferType.Upload,
+    )
+
+    const info = makeUploadInfo({
+      name: finalName,
+      files: [file], // <-- single file only
+      meta,
+      topic: isReplace ? replaceTopic : undefined,
+    })
+
+    try {
+      await fm.upload(
+        currentDrive,
+        {
+          ...info,
+          onUploadProgress: progressCallback,
+        },
+        {
+          actHistoryAddress: isReplace ? replaceHistory : undefined,
+        },
+      )
+    } catch {
+      setUploadItems(prev => prev.map(it => (it.name === finalName ? { ...it, status: TransferStatus.Error } : it)))
+    }
+  }
+
+  const uploadSequential = useCallback(
+    async (picked: FileList | File[]): Promise<void> => {
+      if (!fm || !currentDrive) return
+      const arr = Array.from(picked)
+
+      if (arr.length === 0) return
+
+      // Queue: upload sequentially, each as its own FileInfo
+      for (const f of arr) {
+        // eslint-disable-next-line no-await-in-loop
+        await uploadOne(f)
+      }
+
+      refreshFiles()
+    },
+    [fm, currentDrive, refreshFiles, collectSameDrive, resolveConflict],
+  )
+
   const uploadFiles = useCallback(
     async (picked: FileList | File[]): Promise<void> => {
       if (!fm || !currentDrive) return
@@ -234,8 +295,20 @@ export function useFMTransfers() {
     return onProgress
   }
 
+  const dismissUpload = (name: string) => {
+    setUploadItems(prev => prev.filter(it => it.name !== name))
+  }
+
+  const dismissDownload = (name: string) => {
+    setDownloadItems(prev => prev.filter(it => it.name !== name))
+  }
+
+  const dismissAllUploads = () => setUploadItems([])
+  const dismissAllDownloads = () => setDownloadItems([])
+
   return {
     uploadFiles,
+    uploadSequential,
     isUploading,
     uploadItems,
     trackDownload,
@@ -243,5 +316,9 @@ export function useFMTransfers() {
     downloadCount,
     downloadItems,
     conflictPortal,
+    dismissUpload,
+    dismissDownload,
+    dismissAllUploads,
+    dismissAllDownloads,
   }
 }

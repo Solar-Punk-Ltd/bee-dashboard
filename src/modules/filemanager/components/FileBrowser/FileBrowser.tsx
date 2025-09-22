@@ -26,6 +26,7 @@ export function FileBrowser(): ReactElement {
   const { view, setActualItemView } = useView()
   const { files, currentDrive, refreshFiles, drives } = useFM()
   const {
+    uploadSequential,
     uploadFiles,
     isUploading,
     uploadItems,
@@ -34,6 +35,10 @@ export function FileBrowser(): ReactElement {
     downloadItems,
     trackDownload,
     conflictPortal,
+    dismissUpload,
+    dismissDownload,
+    dismissAllUploads,
+    dismissAllDownloads,
   } = useFMTransfers()
 
   const { query, scope, includeActive, includeTrashed } = useFMSearch()
@@ -69,14 +74,14 @@ export function FileBrowser(): ReactElement {
 
   const { isDragging, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, handleOverlayDrop } =
     useDragAndDrop({
-      onFilesDropped: uploadFiles,
+      onFilesDropped: uploadSequential,
       currentDrive: currentDrive || null,
     })
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
 
-    if (f && f.length) uploadFiles(f)
+    if (f && f.length) uploadSequential(f)
     e.target.value = ''
   }
 
@@ -269,6 +274,8 @@ export function FileBrowser(): ReactElement {
             open={isUploading}
             count={uploadItems.length}
             items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
+            onRowClose={name => dismissUpload(name)}
+            onCloseAll={() => dismissAllUploads()}
           />
           <FileProgressNotification
             label="Downloading files"
@@ -276,6 +283,8 @@ export function FileBrowser(): ReactElement {
             open={isDownloading}
             count={downloadCount}
             items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
+            onRowClose={name => dismissDownload(name)}
+            onCloseAll={() => dismissAllDownloads()}
           />
           <NotificationBar />
         </div>
