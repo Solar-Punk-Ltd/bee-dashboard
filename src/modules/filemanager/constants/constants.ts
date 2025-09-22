@@ -23,6 +23,12 @@ export enum ViewType {
   Trash = 'trash',
 }
 
+export enum ActionTag {
+  Trashed = 'trashed',
+  Recovered = 'recovered',
+  Restored = 'restored',
+}
+
 export const desiredLifetimeOptions = [
   { value: 0, label: 'Select a value' },
   { value: 1, label: '1 week' },

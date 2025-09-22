@@ -117,13 +117,29 @@ export function FileItem({
 
   const doTrash = useCallback(async () => {
     if (!fm) return
-    await fm.trashFile(fileInfo)
+    const withMeta = {
+      ...fileInfo,
+      customMetadata: {
+        ...(fileInfo.customMetadata ?? {}),
+        lifecycle: 'Trashed',
+        lifecycleAt: new Date().toISOString(),
+      },
+    }
+    await fm.trashFile(withMeta as FileInfo)
     await Promise.resolve(refreshFiles?.())
   }, [fm, fileInfo, refreshFiles])
 
   const doRecover = useCallback(async () => {
     if (!fm) return
-    await fm.recoverFile(fileInfo)
+    const withMeta = {
+      ...fileInfo,
+      customMetadata: {
+        ...(fileInfo.customMetadata ?? {}),
+        lifecycle: 'Recovered',
+        lifecycleAt: new Date().toISOString(),
+      },
+    }
+    await fm.recoverFile(withMeta as FileInfo)
     await Promise.resolve(refreshFiles?.())
   }, [fm, fileInfo, refreshFiles])
 

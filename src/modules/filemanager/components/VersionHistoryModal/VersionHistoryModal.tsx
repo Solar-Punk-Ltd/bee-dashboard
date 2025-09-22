@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
 import { useFM } from '../../providers/FMContext'
+import { FileStatus } from '@solarpunkltd/file-manager-lib'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FeedIndex } from '@ethersphere/bee-js'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
@@ -14,6 +15,7 @@ import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { indexStrToBigint } from '../../utils/common'
 import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
+import { ActionTag } from '../../constants/constants'
 
 const pageSize = 5
 
@@ -183,7 +185,31 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
       }
 
       try {
-        await fm.restoreVersion(versionFi)
+        const restoredFrom = indexStrToBigint(versionFi.version)
+
+        const srcLifecycleRaw = (versionFi.customMetadata?.lifecycle || '').trim().toLowerCase()
+        const srcLifecycle: ActionTag | undefined =
+          srcLifecycleRaw === ActionTag.Trashed || srcLifecycleRaw === ActionTag.Recovered
+            ? (srcLifecycleRaw as ActionTag)
+            : undefined
+
+        const srcLifecycleAt =
+          versionFi.customMetadata?.lifecycleAt ||
+          (versionFi.timestamp ? new Date(versionFi.timestamp).toISOString() : undefined)
+
+        const withMeta: FileInfo = {
+          ...versionFi,
+          customMetadata: {
+            ...(versionFi.customMetadata ?? {}),
+            lifecycle: ActionTag.Restored,
+            lifecycleFrom: restoredFrom !== undefined ? `v${restoredFrom}` : '',
+            lifecycleAt: new Date().toISOString(),
+            restoredFromLifecycle: srcLifecycle ?? '',
+            restoredFromLifecycleAt: srcLifecycleAt ?? '',
+          },
+        }
+
+        await fm.restoreVersion(withMeta)
         doRefreshAndClose()
       } catch (e) {
         const msg = (e as Error)?.message || JSON.stringify(e)
