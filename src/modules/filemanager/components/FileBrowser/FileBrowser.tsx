@@ -86,7 +86,8 @@ export function FileBrowser(): ReactElement {
   }
 
   const onContextUploadFile = () => {
-    bulk.fileInputRef.current?.click() ?? legacyUploadRef.current?.click()
+    const el = bulk.fileInputRef.current || legacyUploadRef.current
+    el?.click()
   }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
