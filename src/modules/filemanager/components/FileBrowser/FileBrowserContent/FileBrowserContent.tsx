@@ -63,11 +63,14 @@ export function FileBrowserContent({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
+  const defaultId = (fi: FileInfo): string =>
+    fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
+
   const renderFileList = useCallback(
     (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
       return filesToRender.map(fi => {
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
-        const key = `${fi.name}::${fi.version ?? ''}`
+        const key = `${(idOf ?? defaultId)(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
 
         return (
           <FileItem
@@ -84,7 +87,7 @@ export function FileBrowserContent({
         )
       })
     },
-    [trackDownload, drives, selectedIds, onToggleSelected, idOf],
+    [trackDownload, drives, selectedIds, onToggleSelected, idOf, bulkSelectedCount, onBulk],
   )
 
   if (drives.length === 0) {

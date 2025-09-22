@@ -127,6 +127,12 @@ export function FileBrowser(): ReactElement {
     setActualItemView?.(title)
   }, [isSearchMode, scope, currentDrive, setActualItemView])
 
+  useEffect(() => {
+    if (!isSearchMode) {
+      bulk.clearAll()
+    }
+  }, [isSearchMode])
+
   return (
     <>
       {conflictPortal}
@@ -144,13 +150,14 @@ export function FileBrowser(): ReactElement {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <FileBrowserHeader isSearchMode={isSearchMode} bulk={bulk} />
+          <FileBrowserHeader key={isSearchMode ? 'hdr-search' : 'hdr-normal'} isSearchMode={isSearchMode} bulk={bulk} />
           <div
             className="fm-file-browser-content-body"
             onContextMenu={handleFileBrowserContextMenu}
             onClick={handleCloseContext}
           >
             <FileBrowserContent
+              key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={listToRender}
               drives={drives}
               currentDrive={currentDrive || null}
