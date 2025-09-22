@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
-import { BeeDev, Identifier, PrivateKey } from '@ethersphere/bee-js'
+import { BeeDev, PrivateKey } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from '../../../providers/Settings'
@@ -7,51 +7,14 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 const KEY_STORAGE = 'privateKey'
 
-// function generatePrivateKey(seed: string): string {
-//   const bytes = crypto.getRandomValues(Bytes.fromUtf8(seed).toUint8Array())
-
-//   return (
-//     '0x' +
-//     Array.from(bytes)
-//       .map(b => b.toString(16).padStart(2, '0'))
-//       .join('')
-//   )
-// }
-
-type ViteEnv = { VITE_FM_DEV_PRIVATE_KEY?: string; MODE?: string }
-type CraEnv = { REACT_APP_FM_DEV_PRIVATE_KEY?: string; NODE_ENV?: string }
-
-function getViteEnv(): ViteEnv | undefined {
-  try {
-    return (import.meta as unknown as { env?: ViteEnv }).env
-  } catch {
-    return undefined
-  }
-}
-
-function getCraEnv(): CraEnv | undefined {
-  try {
-    return (process as unknown as { env?: CraEnv }).env
-  } catch {
-    return undefined
-  }
-}
-
-function getDevEnvPk(): string | undefined {
-  return getViteEnv()?.VITE_FM_DEV_PRIVATE_KEY ?? getCraEnv()?.REACT_APP_FM_DEV_PRIVATE_KEY
-}
-
-function ensurePrivateKey(opts: { devAutogen: boolean }): PrivateKey {
+function ensurePrivateKey(): PrivateKey {
   const fromLocalPk = localStorage.getItem(KEY_STORAGE)
 
-  if (fromLocalPk) return new PrivateKey(fromLocalPk)
+  if (!fromLocalPk) {
+    throw new Error(`Missing private key in localStorage under key "${KEY_STORAGE}".`)
+  }
 
-  // TODO: handle privkey
-  const devEnv = getDevEnvPk() || 'TODO'
-  const pk = new PrivateKey(Identifier.fromString(devEnv))
-  localStorage.setItem(KEY_STORAGE, pk.toString())
-
-  return pk
+  return new PrivateKey(fromLocalPk)
 }
 
 interface FMContextValue {
@@ -108,10 +71,10 @@ export function FMProvider({ children }: { children: ReactNode }) {
 
     let pk: PrivateKey
     try {
-      pk = ensurePrivateKey({ devAutogen: false })
+      pk = ensurePrivateKey()
     } catch (err: unknown) {
       // eslint-disable-next-line no-console
-      console.error('Invalid private key in env:', err)
+      console.error('Private key error:', err)
 
       return
     }
@@ -159,6 +122,7 @@ export function FMProvider({ children }: { children: ReactNode }) {
     </FMContext.Provider>
   )
 }
+
 // TODO: rename: useFmContext
 export function useFM(): FMContextValue {
   return useContext(FMContext)
