@@ -26,7 +26,6 @@ export function FileBrowser(): ReactElement {
   const { view, setActualItemView } = useView()
   const { files, currentDrive, refreshFiles, drives } = useFM()
   const {
-    uploadSequential,
     uploadFiles,
     isUploading,
     uploadItems,
@@ -46,7 +45,6 @@ export function FileBrowser(): ReactElement {
   const [safePos, setSafePos] = useState<Point>(pos as Point)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
 
@@ -74,14 +72,14 @@ export function FileBrowser(): ReactElement {
 
   const { isDragging, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, handleOverlayDrop } =
     useDragAndDrop({
-      onFilesDropped: uploadSequential,
+      onFilesDropped: uploadFiles,
       currentDrive: currentDrive || null,
     })
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
 
-    if (f && f.length) uploadSequential(f)
+    if (f && f.length) uploadFiles(f)
     e.target.value = ''
   }
 

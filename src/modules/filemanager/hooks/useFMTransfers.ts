@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useFM } from '../providers/FMContext'
-import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileInfo, FileInfoOptions, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/constants'
@@ -56,7 +56,7 @@ const makeUploadInfo = (args: {
 }
 
 export function useFMTransfers() {
-  const { fm, currentDrive, refreshFiles, files } = useFM()
+  const { fm, currentDrive, files } = useFM()
   const [openConflict, conflictPortal] = useUploadConflictDialog()
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
@@ -129,120 +129,81 @@ export function useFMTransfers() {
     [openConflict],
   )
 
-  const uploadOne = async (file: File) => {
-    if (!fm || !currentDrive) return
-
-    // Per-file meta
-    const meta = buildUploadMeta([file])
-    const prettySize = formatBytes(meta.size)
-
-    // Resolve conflict per file
-    const sameDrive = collectSameDrive(currentDrive.id.toString())
-    const { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
-
-    if (isReplace && (!replaceHistory || !replaceTopic)) return
-
-    if (finalName.trim().length === 0) return
-
-    const progressCallback = trackUploadProgress(
-      finalName,
-      prettySize,
-      isReplace ? FileTransferType.Update : FileTransferType.Upload,
-    )
-
-    const info = makeUploadInfo({
-      name: finalName,
-      files: [file], // <-- single file only
-      meta,
-      topic: isReplace ? replaceTopic : undefined,
-    })
-
-    try {
-      await fm.upload(
-        currentDrive,
-        {
-          ...info,
-          onUploadProgress: progressCallback,
-        },
-        {
-          actHistoryAddress: isReplace ? replaceHistory : undefined,
-        },
-      )
-    } catch {
-      setUploadItems(prev => prev.map(it => (it.name === finalName ? { ...it, status: TransferStatus.Error } : it)))
-    }
-  }
-
-  const uploadSequential = useCallback(
-    async (picked: FileList | File[]): Promise<void> => {
-      if (!fm || !currentDrive) return
-      const arr = Array.from(picked)
-
-      if (arr.length === 0) return
-
-      // Queue: upload sequentially, each as its own FileInfo
-      for (const f of arr) {
-        // eslint-disable-next-line no-await-in-loop
-        await uploadOne(f)
-      }
-
-      refreshFiles()
-    },
-    [fm, currentDrive, refreshFiles, collectSameDrive, resolveConflict],
-  )
-
   const uploadFiles = useCallback(
-    async (picked: FileList | File[]): Promise<void> => {
+    (picked: FileList | File[]): void => {
       if (!fm || !currentDrive) return
 
-      const arr = Array.from(picked)
+      const manager = fm as FileManagerBase
+      const drive = currentDrive as DriveInfo
 
-      if (arr.length === 0) return
+      const filesArr = Array.from(picked)
 
-      const originalName = arr[0].name
-      const meta = buildUploadMeta(arr)
-      const prettySize = formatBytes(meta.size)
+      if (filesArr.length === 0) return
 
-      const sameDrive = collectSameDrive(currentDrive.id.toString())
-      const { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(originalName, sameDrive)
-
-      if (isReplace && (!replaceHistory || !replaceTopic)) return
-
-      if (finalName.trim().length === 0) return
-
-      const progressCallback = trackUploadProgress(
-        finalName,
-        prettySize,
-        isReplace ? FileTransferType.Update : FileTransferType.Upload,
-      )
-
-      const info = makeUploadInfo({
-        name: finalName,
-        files: arr,
-        meta,
-        topic: isReplace ? replaceTopic : undefined,
-      })
-
-      try {
-        await fm.upload(
-          currentDrive,
-          {
-            ...info,
-            onUploadProgress: progressCallback,
-          },
-          {
-            actHistoryAddress: isReplace ? replaceHistory : undefined,
-          },
-        )
-      } catch {
-        setUploadItems(prev => prev.map(it => (it.name === finalName ? { ...it, status: TransferStatus.Error } : it)))
-
-        return
+      function markError(name: string) {
+        setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
       }
 
-      refreshFiles()
+      async function processOne(file: File, reservedNames: Set<string>) {
+        const meta = buildUploadMeta([file])
+        const prettySize = formatBytes(meta.size)
+        const sameDrive = collectSameDrive(drive.id.toString())
+
+        let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
+        finalName = finalName ?? ''
+
+        const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+        const invalidName = !finalName || finalName.trim().length === 0
+
+        if (invalidCombo || invalidName) return
+
+        if (reservedNames.has(finalName)) {
+          const retry = await resolveConflict(finalName, sameDrive)
+          finalName = retry.finalName ?? ''
+          isReplace = retry.isReplace
+          replaceTopic = retry.replaceTopic
+          replaceHistory = retry.replaceHistory
+
+          const retryInvalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+          const retryInvalidName = !finalName || finalName.trim().length === 0
+
+          if (retryInvalidCombo || retryInvalidName) return
+        }
+
+        reservedNames.add(finalName)
+
+        const progressCallback = trackUploadProgress(
+          finalName,
+          prettySize,
+          isReplace ? FileTransferType.Update : FileTransferType.Upload,
+        )
+
+        const info = makeUploadInfo({
+          name: finalName,
+          files: [file],
+          meta,
+          topic: isReplace ? replaceTopic : undefined,
+        })
+
+        void manager
+          .upload(
+            drive,
+            { ...info, onUploadProgress: progressCallback },
+            { actHistoryAddress: isReplace ? replaceHistory : undefined },
+          )
+          .catch(() => markError(finalName))
+      }
+
+      async function processAll() {
+        const reservedNames = new Set<string>()
+        for (const file of filesArr) {
+          await processOne(file, reservedNames)
+        }
+      }
+
+      void processAll()
     },
-    [fm, currentDrive, collectSameDrive, resolveConflict, refreshFiles],
+    [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
@@ -254,7 +215,6 @@ export function useFMTransfers() {
     size?: string,
     expectedSize?: number,
   ): ((bytesDownloaded: number, isDownloading: boolean) => void) => {
-    // TODO: status: uploading in downloads?
     setDownloadItems(prev => {
       const row: TransferItem = {
         name,
@@ -308,7 +268,6 @@ export function useFMTransfers() {
 
   return {
     uploadFiles,
-    uploadSequential,
     isUploading,
     uploadItems,
     trackDownload,
