@@ -1,7 +1,7 @@
 import { ReactElement, useMemo, useState } from 'react'
 import './UploadConflictModal.scss'
 import '../../styles/global.scss'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import WarningIcon from 'remixicon-react/ErrorWarningLineIcon'
 
 interface Props {
@@ -47,7 +47,7 @@ export function UploadConflictModal({ filename, suggestedName, onKeepBoth, onRep
                   placeholder={suggestedName}
                 />
               </div>
-              <FMButton
+              <Button
                 label="Keep both"
                 variant="secondary"
                 onClick={() => isNameValid && onKeepBoth(customName.trim())}
@@ -62,14 +62,14 @@ export function UploadConflictModal({ filename, suggestedName, onKeepBoth, onRep
               <div className="fm-conflict-option-sub">
                 Replace the existing file by uploading this as a new version of “{filename}”.
               </div>
-              <FMButton label="Replace" variant="primary" onClick={onReplace} />
+              <Button label="Replace" variant="primary" onClick={onReplace} />
             </div>
           </div>
         </div>
 
         <div className="fm-modal-window-footer">
           <div className="fm-expiring-notification-modal-footer-one-button">
-            <FMButton label="Cancel" variant="secondary" onClick={onCancel} />
+            <Button label="Cancel" variant="secondary" onClick={onCancel} />
           </div>
         </div>
       </div>

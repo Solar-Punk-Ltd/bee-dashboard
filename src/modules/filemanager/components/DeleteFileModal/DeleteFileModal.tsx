@@ -1,6 +1,6 @@
 import { ReactElement, useState } from 'react'
 import './DeleteFileModal.scss'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import TrashIcon from 'remixicon-react/DeleteBin6LineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
@@ -9,7 +9,7 @@ import Radio from '@material-ui/core/Radio'
 import FormControlLabel from '@material-ui/core/FormControlLabel'
 import FormControl from '@material-ui/core/FormControl'
 
-import { FileAction } from '../../constants/constants'
+import { FileAction } from '../../constants/fileTransfer'
 import { preventDefault } from '../../utils/common'
 
 interface DeleteFileModalProps {
@@ -111,8 +111,8 @@ export function DeleteFileModal({
         </div>
 
         <div className="fm-modal-window-footer">
-          <FMButton label="Proceed" variant="primary" onClick={() => onProceed(value)} />
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button label="Proceed" variant="primary" onClick={() => onProceed(value)} />
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
     </div>,

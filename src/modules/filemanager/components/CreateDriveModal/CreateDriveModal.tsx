@@ -3,12 +3,12 @@ import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
 import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
-import { desiredLifetimeOptions } from '../../constants/constants'
+import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { FMSlider } from '../FMSlider/FMSlider'
+import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
 
 const erasureCodeMarks = Object.entries(RedundancyLevel)
@@ -139,7 +139,7 @@ export function CreateDriveModal({
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton
+          <Button
             label="Create drive"
             variant="primary"
             disabled={!isCreateEnabled}
@@ -163,7 +163,7 @@ export function CreateDriveModal({
               }
             }}
           />
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
     </div>

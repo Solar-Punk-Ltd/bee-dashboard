@@ -1,7 +1,7 @@
 import { ReactElement } from 'react'
 import '../../styles/global.scss'
 import './ConfirmModal.scss'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 
 interface ConfirmModalProps {
@@ -31,8 +31,8 @@ export function ConfirmModal({
           <div className="fm-modal-white-section">{message}</div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton label={cancelLabel} variant="secondary" onClick={onCancel} />
-          <FMButton label={confirmLabel} variant="primary" onClick={() => void onConfirm()} />
+          <Button label={cancelLabel} variant="secondary" onClick={onCancel} />
+          <Button label={confirmLabel} variant="primary" onClick={() => void onConfirm()} />
         </div>
       </div>
     </div>,

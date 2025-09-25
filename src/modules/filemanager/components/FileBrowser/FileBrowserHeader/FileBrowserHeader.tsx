@@ -1,10 +1,10 @@
 import { ReactElement } from 'react'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
-import { useFMBulkActions } from '../../../hooks/useFMBulkActions'
+import { useBulkActions } from '../../../hooks/useBulkActions'
 
 interface FileBrowserHeaderProps {
   isSearchMode: boolean
-  bulk: ReturnType<typeof useFMBulkActions>
+  bulk: ReturnType<typeof useBulkActions>
 }
 
 export function FileBrowserHeader({ isSearchMode, bulk }: FileBrowserHeaderProps): ReactElement {

@@ -2,14 +2,14 @@ import { ReactElement, useCallback, useContext, useEffect, useState } from 'reac
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import DatabaseIcon from 'remixicon-react/Database2LineIcon'
 import WalletIcon from 'remixicon-react/Wallet3LineIcon'
 import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
-import { desiredLifetimeOptions } from '../../constants/constants'
+import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as BeeContext } from '../../../../providers/Bee'
 import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
@@ -264,7 +264,7 @@ export function UpgradeDriveModal({
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton
+          <Button
             label="Confirm upgrade"
             variant="primary"
             disabled={extensionCost === '0'}
@@ -282,7 +282,7 @@ export function UpgradeDriveModal({
               onCancelClick()
             }}
           />
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
     </div>,

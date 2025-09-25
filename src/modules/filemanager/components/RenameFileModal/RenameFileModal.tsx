@@ -2,7 +2,7 @@ import { ReactElement, useEffect, useMemo, useRef, useState } from 'react'
 import '../../styles/global.scss'
 import './RenameFileModal.scss'
 
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import EditIcon from 'remixicon-react/EditLineIcon'
 import { createPortal } from 'react-dom'
 
@@ -117,8 +117,8 @@ export function RenameFileModal({
         </div>
 
         <div className="fm-modal-window-footer fm-space-between">
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
-          <FMButton
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button
             label="Rename"
             variant="primary"
             onClick={() => void handleSubmit()}

@@ -4,7 +4,7 @@ import ArrowDownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
-import { FileTransferType, TransferBarColor, TransferStatus } from '../../constants/constants'
+import { FileTransferType, TransferBarColor, TransferStatus } from '../../constants/fileTransfer'
 import { formatBytes } from '../../utils/common'
 
 type ProgressItem = {

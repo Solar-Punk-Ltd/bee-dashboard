@@ -7,11 +7,11 @@ import './DriveItem.scss'
 import { ProgressBar } from '../../ProgressBar/ProgressBar'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
-import { FMButton } from '../../FMButton/FMButton'
+import { Button } from '../../Button/Button'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
-import { ViewType } from '../../../constants/constants'
-import { useView } from '../../../providers/FMFileViewContext'
+import { ViewType } from '../../../constants/fileTransfer'
+import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
@@ -97,7 +97,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
             document.body,
           )}
 
-        <FMButton label="Upgrade" variant="primary" size="small" onClick={() => setIsUpgradeDriveModalOpen(true)} />
+        <Button label="Upgrade" variant="primary" size="small" onClick={() => setIsUpgradeDriveModalOpen(true)} />
       </div>
       {isUpgradeDriveModalOpen && (
         <UpgradeDriveModal stamp={stamp} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} drive={drive} />

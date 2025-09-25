@@ -2,18 +2,18 @@ import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
 import { Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import CircularProgress from '@material-ui/core/CircularProgress'
-import './FMInitialModal.scss'
+import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
 import { getExpiryDateByLifetime } from '../../utils/common'
-import { desiredLifetimeOptions } from '../../constants/constants'
+import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { FMSlider } from '../FMSlider/FMSlider'
+import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 
-interface FMInitialModalProps {
+interface InitialModalProps {
   handleVisibility: (isVisible: boolean) => void
   setAdminStamp: (stamp: PostageBatch | undefined) => void
 }
@@ -28,7 +28,7 @@ const erasureCodeMarks = Object.entries(RedundancyLevel)
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
-export function FMInitialModal({ handleVisibility, setAdminStamp }: FMInitialModalProps): ReactElement {
+export function InitialModal({ handleVisibility, setAdminStamp }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
@@ -90,7 +90,7 @@ export function FMInitialModal({ handleVisibility, setAdminStamp }: FMInitialMod
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-initilization-progress-content">
-          <div>Your registration is being created...</div>
+          <div>Your admin drive is being created...</div>
 
           <CircularProgress size={18} />
         </div>
@@ -100,7 +100,7 @@ export function FMInitialModal({ handleVisibility, setAdminStamp }: FMInitialMod
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
-        <div>You are now initializing the file manager and to do this you need to register.</div>
+        <div>You are now initializing the file manager</div>
         <div className="fm-modal-window-body">
           <div className="fm-modal-window-input-container">
             <CustomDropdown
@@ -131,7 +131,7 @@ export function FMInitialModal({ handleVisibility, setAdminStamp }: FMInitialMod
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton
+          <Button
             label="Purchase"
             variant="primary"
             disabled={!isCreateEnabled}

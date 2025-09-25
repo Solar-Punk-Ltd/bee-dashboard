@@ -2,7 +2,7 @@ import { ReactElement, useEffect, useMemo, useState, useCallback, useContext } f
 import './VersionHistoryModal.scss'
 import '../../styles/global.scss'
 
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
@@ -14,7 +14,8 @@ import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { indexStrToBigint } from '../../utils/common'
 import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
-import { ActionTag } from '../../constants/constants'
+import { ActionTag } from '../../constants/fileTransfer'
+import { useTransfers } from '../../hooks/useTransfers'
 
 const pageSize = 5
 
@@ -31,6 +32,8 @@ interface VersionHistoryModalProps {
 
 export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryModalProps): ReactElement {
   const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
+
+  const { trackDownload } = useTransfers()
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body
@@ -325,22 +328,23 @@ export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryM
             versions={!error && !loading ? pageVersions : []}
             headFi={fileInfo}
             restoreVersion={restoreVersion}
+            onDownload={trackDownload}
           />
         </div>
 
         <div className="fm-modal-window-footer vh-footer">
           <div className="vh-footer-left">
-            <FMButton label="Close" variant="secondary" onClick={onCancelClick} />
+            <Button label="Close" variant="secondary" onClick={onCancelClick} />
           </div>
           <div className="vh-footer-right">
             <span className="vh-page">
               Page {Math.min(currentPage + 1, totalPages)} / {totalPages} · total {totalVersionsCount}
             </span>
             {currentPage > 0 && (
-              <FMButton label="Previous" variant="secondary" onClick={() => setCurrentPage(p => p - 1)} />
+              <Button label="Previous" variant="secondary" onClick={() => setCurrentPage(p => p - 1)} />
             )}
             {currentPage + 1 < totalPages && (
-              <FMButton label="Next" variant="primary" onClick={() => setCurrentPage(p => p + 1)} />
+              <Button label="Next" variant="primary" onClick={() => setCurrentPage(p => p + 1)} />
             )}
           </div>
         </div>

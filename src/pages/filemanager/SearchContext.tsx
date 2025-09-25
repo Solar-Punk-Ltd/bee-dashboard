@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useRef, useState, ReactNode } from 
 
 type Scope = 'selected' | 'all'
 
-export interface FMSearchState {
+export interface SearchState {
   query: string
   scope: Scope
   includeActive: boolean
@@ -14,9 +14,9 @@ export interface FMSearchState {
   setIncludeTrashed: (v: boolean) => void
 }
 
-const Ctx = createContext<FMSearchState | undefined>(undefined)
+const Ctx = createContext<SearchState | undefined>(undefined)
 
-export function FMSearchProvider({ children }: { children: ReactNode }) {
+export function SearchProvider({ children }: { children: ReactNode }) {
   const [query, _setQuery] = useState('')
   const [scope, setScope] = useState<Scope>('all')
   const [includeActive, setIncludeActive] = useState(true)
@@ -52,7 +52,7 @@ export function FMSearchProvider({ children }: { children: ReactNode }) {
     setQuery('')
   }
 
-  const value = useMemo<FMSearchState>(
+  const value = useMemo<SearchState>(
     () => ({
       query,
       scope,
@@ -70,10 +70,10 @@ export function FMSearchProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 
-export function useFMSearch(): FMSearchState {
+export function useSearch(): SearchState {
   const v = useContext(Ctx)
 
-  if (!v) throw new Error('useFMSearch must be used within FMSearchProvider')
+  if (!v) throw new Error('useFMSearch must be used within SearchProvider')
 
   return v
 }

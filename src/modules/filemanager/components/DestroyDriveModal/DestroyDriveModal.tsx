@@ -1,7 +1,7 @@
 import { ReactElement, useState } from 'react'
 import '../../styles/global.scss'
 import './DestroyDriveModal.scss'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
@@ -46,13 +46,13 @@ export function DestroyDriveModal({ drive, onCancelClick, doDestroy }: DestroyDr
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton
+          <Button
             label="Destroy entire drive"
             variant="danger"
             disabled={destroyDriveText !== driveNameInput}
             onClick={() => doDestroy()}
           />
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
     </div>,

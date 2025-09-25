@@ -4,20 +4,20 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { ViewType } from '../../../constants/constants'
+import { ViewType } from '../../../constants/fileTransfer'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
 import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
-import { useView } from '../../../providers/FMFileViewContext'
+import { useView } from '../../../../../pages/filemanager/ViewContext'
 import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
-import { FileAction } from '../../../constants/constants'
+import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
@@ -97,7 +97,6 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  // TODO: handleOpen, is it different from download?
   // TODO: multiple downloads []: File[]
   const handleDownload = useCallback(async () => {
     handleCloseContext()
@@ -108,6 +107,7 @@ export function FileItem({
     await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
+  // TODO: handleOpen, is it different from download?
   const handleOpen = useCallback(async () => {
     handleCloseContext()
 

@@ -2,7 +2,7 @@ import { ReactElement, useState } from 'react'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
@@ -64,7 +64,7 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
                   </div>
                   <div className={daysClass}>{daysLeft} days left</div>
                   <div className="fm-expiring-notification-modal-section-right-button">
-                    <FMButton
+                    <Button
                       label="Upgrade"
                       variant="primary"
                       onClick={() => {
@@ -80,7 +80,7 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
         </div>
         <div className="fm-modal-window-footer">
           <div className="fm-expiring-notification-modal-footer-one-button">
-            <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+            <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { formatBytes } from '../utils/common'
 
 type IdGetter = (fi: FileInfo) => string
 
-export function useFMBulkActions(opts: {
+export function useBulkActions(opts: {
   listToRender: FileInfo[]
   idGetter?: IdGetter
   trackDownload: (
@@ -16,6 +16,7 @@ export function useFMBulkActions(opts: {
   ) => (bytesDownloaded: number, isDownloading: boolean) => void
 }) {
   const { listToRender, trackDownload } = opts
+  // TODO: what is this?
   const idOf: IdGetter =
     opts.idGetter ??
     ((fi: FileInfo) => fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId}:${fi.name}`)

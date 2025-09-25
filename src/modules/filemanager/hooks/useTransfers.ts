@@ -1,9 +1,9 @@
 import { useCallback, useState, useContext } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
-import type { DriveInfo, FileInfo, FileInfoOptions, FileManagerBase } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
-import { FileTransferType, TransferStatus } from '../constants/constants'
+import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 
 export type TransferItem = {
   name: string
@@ -55,7 +55,7 @@ const makeUploadInfo = (args: {
   }
 }
 
-export function useFMTransfers() {
+export function useTransfers() {
   const { fm, currentDrive, files } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
 
@@ -131,11 +131,6 @@ export function useFMTransfers() {
 
   const uploadFiles = useCallback(
     (picked: FileList | File[]): void => {
-      if (!fm || !currentDrive) return
-
-      const manager = fm as FileManagerBase
-      const drive = currentDrive as DriveInfo
-
       const filesArr = Array.from(picked)
 
       if (filesArr.length === 0) return
@@ -145,9 +140,11 @@ export function useFMTransfers() {
       }
 
       async function processOne(file: File, reservedNames: Set<string>) {
+        if (!fm || !currentDrive) return
+
         const meta = buildUploadMeta([file])
         const prettySize = formatBytes(meta.size)
-        const sameDrive = collectSameDrive(drive.id.toString())
+        const sameDrive = collectSameDrive(currentDrive.id.toString())
 
         let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
         finalName = finalName ?? ''
@@ -185,13 +182,11 @@ export function useFMTransfers() {
           topic: isReplace ? replaceTopic : undefined,
         })
 
-        void manager
-          .upload(
-            drive,
-            { ...info, onUploadProgress: progressCallback },
-            { actHistoryAddress: isReplace ? replaceHistory : undefined },
-          )
-          .catch(() => markError(finalName))
+        fm.upload(
+          currentDrive,
+          { ...info, onUploadProgress: progressCallback },
+          { actHistoryAddress: isReplace ? replaceHistory : undefined },
+        ).catch(() => markError(finalName))
       }
 
       async function processAll() {
@@ -208,13 +203,12 @@ export function useFMTransfers() {
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
   const isDownloading = downloadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
-  const downloadCount = downloadItems.length
 
   const trackDownload = (
     name: string,
     size?: string,
     expectedSize?: number,
-  ): ((bytesDownloaded: number, isDownloading: boolean) => void) => {
+  ): ((bytesDownloaded: number, downloadingFlag: boolean) => void) => {
     setDownloadItems(prev => {
       const row: TransferItem = {
         name,
@@ -232,7 +226,7 @@ export function useFMTransfers() {
       return out
     })
 
-    const onProgress = (bytesDownloaded: number, isDownloading: boolean) => {
+    const onProgress = (bytesDownloaded: number, downloadingFlag: boolean) => {
       let percent = 0
 
       if (expectedSize && expectedSize > 0) {
@@ -243,15 +237,13 @@ export function useFMTransfers() {
         prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, percent) } : it)),
       )
 
-      if (!isDownloading) {
+      if (!downloadingFlag) {
         setDownloadItems(prev =>
           prev.map(it => (it.name === name ? { ...it, percent: 100, status: TransferStatus.Done } : it)),
         )
       }
     }
 
-    // TODO: if error needed?
-    // setDownloadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
     return onProgress
   }
 
@@ -272,7 +264,6 @@ export function useFMTransfers() {
     uploadItems,
     trackDownload,
     isDownloading,
-    downloadCount,
     downloadItems,
     conflictPortal,
     dismissUpload,

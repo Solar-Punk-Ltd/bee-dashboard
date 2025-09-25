@@ -1,25 +1,25 @@
 import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext } from 'react'
 import './FileBrowser.scss'
-import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
 import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
-import { FileAction, FileTransferType, ViewType } from '../../constants/constants'
+import { FileAction, FileTransferType, ViewType } from '../../constants/fileTransfer'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
-import { useView } from '../../providers/FMFileViewContext'
+import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
-import { useFMTransfers } from '../../hooks/useFMTransfers'
-import { useFMSearch } from '../../providers/FMSearchContext'
+import { useTransfers } from '../../hooks/useTransfers'
+import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { useDragAndDrop } from '../../hooks/useDragAndDrop'
-import { useFMBulkActions } from '../../hooks/useFMBulkActions'
+import { useBulkActions } from '../../hooks/useBulkActions'
 import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
+import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -30,7 +30,6 @@ export function FileBrowser(): ReactElement {
     isUploading,
     uploadItems,
     isDownloading,
-    downloadCount,
     downloadItems,
     trackDownload,
     conflictPortal,
@@ -38,9 +37,9 @@ export function FileBrowser(): ReactElement {
     dismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
-  } = useFMTransfers()
+  } = useTransfers()
 
-  const { query, scope, includeActive, includeTrashed } = useFMSearch()
+  const { query, scope, includeActive, includeTrashed } = useSearch()
 
   const [safePos, setSafePos] = useState<Point>(pos as Point)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
@@ -65,7 +64,7 @@ export function FileBrowser(): ReactElement {
     includeTrashed,
   })
 
-  const bulk = useFMBulkActions({
+  const bulk = useBulkActions({
     listToRender,
     trackDownload,
   })
@@ -287,7 +286,7 @@ export function FileBrowser(): ReactElement {
             label="Downloading files"
             type={FileTransferType.Download}
             open={isDownloading}
-            count={downloadCount}
+            count={downloadItems.length}
             items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
             onRowClose={name => dismissDownload(name)}
             onCloseAll={() => dismissAllDownloads()}

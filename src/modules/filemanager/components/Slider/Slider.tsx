@@ -1,5 +1,5 @@
 import { ReactElement, useState } from 'react'
-import './FMSlider.scss'
+import './Slider.scss'
 import Slider from '@material-ui/core/Slider'
 import { makeStyles } from '@material-ui/core/styles'
 

@@ -3,7 +3,7 @@ import SearchIcon from 'remixicon-react/SearchLineIcon'
 import FileIcon from 'remixicon-react/File2LineIcon'
 import FilterIcon from 'remixicon-react/FilterLineIcon'
 import './Header.scss'
-import { useFMSearch } from '../../providers/FMSearchContext'
+import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
 
 // Defaults used to determine “active filters”
@@ -24,7 +24,7 @@ export function Header(): ReactElement {
     setIncludeActive,
     includeTrashed,
     setIncludeTrashed,
-  } = useFMSearch()
+  } = useSearch()
 
   const { currentDrive } = useContext(FMContext)
 

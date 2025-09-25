@@ -3,8 +3,8 @@ import { Header } from '../../modules/filemanager/components/Header/Header'
 import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
-import { FMFileViewProvider } from '../../modules/filemanager/providers/FMFileViewContext'
-import { FMInitialModal } from '../../modules/filemanager/components/FMInitialModal/FMInitialModal'
+import { ViewProvider } from './ViewContext'
+import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { Context as FMContext } from '../../providers/FileManager'
 import { getUsableStamps } from '../../modules/filemanager/utils/bee'
 import { Context as SettingsContext } from '../../providers/Settings'
@@ -92,7 +92,7 @@ export function FileManagerContent(): ReactElement {
   if (showInitialModal) {
     return (
       <div className="fm-main">
-        <FMInitialModal
+        <InitialModal
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
           setAdminStamp={setAdminStamp}
         />
@@ -101,7 +101,7 @@ export function FileManagerContent(): ReactElement {
   }
 
   return (
-    <FMFileViewProvider>
+    <ViewProvider>
       <div className="fm-main">
         <Header />
         <div className="fm-main-content">
@@ -110,6 +110,6 @@ export function FileManagerContent(): ReactElement {
         </div>
         <AdminStatusBar adminStamp={adminStamp} />
       </div>
-    </FMFileViewProvider>
+    </ViewProvider>
   )
 }

@@ -2,7 +2,7 @@ import './VersionList.scss'
 import '../../../styles/global.scss'
 import { memo, useState, useCallback, useContext } from 'react'
 
-import { FMButton } from '../../FMButton/FMButton'
+import { Button } from '../../Button/Button'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
@@ -10,9 +10,11 @@ import DownloadIcon from 'remixicon-react/Download2LineIcon'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { Context as FMContext } from '../../../../../providers/FileManager'
-import { indexStrToBigint } from '../../../utils/common'
+import { formatBytes, indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
-import { ActionTag } from '../../../constants/constants'
+import { ActionTag } from '../../../constants/fileTransfer'
+import { Context as SettingsContext } from '../../../../../providers/Settings'
+import { useContextMenu } from 'src/modules/filemanager/hooks/useContextMenu'
 
 export const truncateNameMiddle = (s: string, max = 42): string => {
   const str = String(s)
@@ -26,6 +28,7 @@ export const truncateNameMiddle = (s: string, max = 42): string => {
 interface VersionListProps {
   versions: FileInfo[]
   headFi: FileInfo
+  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
   restoreVersion: (fi: FileInfo) => Promise<void>
 }
 
@@ -339,13 +342,13 @@ const RowFull = memo(
 
         {!collapsed && (
           <div className="vh-actions">
-            <FMButton
+            <Button
               label="Download"
               variant="secondary"
               icon={<DownloadIcon size="15" />}
               onClick={() => fmDownload(item)}
             />
-            {!isCurrent && <FMButton label="Restore" variant="primary" onClick={() => void onRestore(item)} />}
+            {!isCurrent && <Button label="Restore" variant="primary" onClick={() => void onRestore(item)} />}
           </div>
         )}
       </div>
@@ -403,8 +406,11 @@ const VersionRow = memo(({ item, headFi, isCurrent, fmDownload, onRestore, colla
 
 VersionRow.displayName = 'VersionRow'
 
-export function VersionsList({ versions, headFi, restoreVersion }: VersionListProps) {
+export function VersionsList({ versions, headFi, restoreVersion, onDownload }: VersionListProps) {
+  const { handleCloseContext } = useContextMenu<HTMLDivElement>()
+
   const { fm } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const toggle = useCallback((key: string, fi: FileInfo) => {
@@ -418,12 +424,16 @@ export function VersionsList({ versions, headFi, restoreVersion }: VersionListPr
   }, [])
 
   // TODO: use same download as in file list
-  const fmDownload = useCallback(
-    (fi: FileInfo) => {
-      if (!fm) return
-      startDownloadingQueue(fm, [fi])
+  const handleDownload = useCallback(
+    async (fileInfo: FileInfo) => {
+      handleCloseContext()
+
+      if (!fm || !beeApi) return
+      const rawSize = fileInfo.customMetadata?.size
+      const expectedSize = rawSize ? Number(rawSize) : undefined
+      await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
     },
-    [fm],
+    [handleCloseContext, fm, beeApi, onDownload],
   )
 
   if (!versions.length || !fm) return null
@@ -446,7 +456,7 @@ export function VersionsList({ versions, headFi, restoreVersion }: VersionListPr
             item={item}
             headFi={headFi}
             isCurrent={Boolean(isCurrent)}
-            fmDownload={fmDownload}
+            fmDownload={() => handleDownload(item)}
             onRestore={restoreVersion}
             collapsed={collapsed}
             onToggle={() => toggle(key, item)}

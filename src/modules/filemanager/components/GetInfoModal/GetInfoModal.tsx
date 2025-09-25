@@ -1,6 +1,6 @@
 import { ReactElement, useState } from 'react'
 import './GetInfoModal.scss'
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import InfoIcon from 'remixicon-react/InformationLineIcon'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
@@ -68,7 +68,7 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
 
         <div className="fm-modal-window-footer">
           <div className="fm-get-info-modal-footer-one-button">
-            <FMButton label="Close" variant="secondary" onClick={onCancelClick} />
+            <Button label="Close" variant="secondary" onClick={onCancelClick} />
           </div>
         </div>
       </div>
