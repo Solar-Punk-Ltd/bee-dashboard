@@ -1,10 +1,10 @@
-import { ReactElement, useMemo, useState, useEffect, useRef } from 'react'
+import { ReactElement, useMemo, useState, useEffect, useRef, useContext } from 'react'
 import SearchIcon from 'remixicon-react/SearchLineIcon'
 import FileIcon from 'remixicon-react/File2LineIcon'
 import FilterIcon from 'remixicon-react/FilterLineIcon'
 import './Header.scss'
 import { useFMSearch } from '../../providers/FMSearchContext'
-import { useFM } from '../../providers/FMContext'
+import { Context as FMContext } from '../../../../providers/FileManager'
 
 // Defaults used to determine “active filters”
 const DEFAULT_FILTERS = {
@@ -26,7 +26,7 @@ export function Header(): ReactElement {
     setIncludeTrashed,
   } = useFMSearch()
 
-  const { currentDrive } = useFM()
+  const { currentDrive } = useContext(FMContext)
 
   const currentDriveName = useMemo(() => {
     return currentDrive?.name || ''
@@ -36,7 +36,6 @@ export function Header(): ReactElement {
   const menuRef = useRef<HTMLDivElement | null>(null)
   const btnRef = useRef<HTMLButtonElement | null>(null)
 
-  // Determine if filters differ from defaults
   const filtersActive = useMemo(() => {
     return (
       scope !== DEFAULT_FILTERS.scope ||

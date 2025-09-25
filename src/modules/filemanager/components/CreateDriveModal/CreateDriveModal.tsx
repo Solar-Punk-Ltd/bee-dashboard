@@ -4,11 +4,12 @@ import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { FMButton } from '../FMButton/FMButton'
-import { fmFetchCost } from '../../utils/bee'
+import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
 import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
+import { Context as FMContext } from '../../../../providers/FileManager'
 
 const erasureCodeMarks = Object.entries(RedundancyLevel)
   .filter(([key, value]) => typeof value === 'number')
@@ -22,28 +23,30 @@ const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
-  handleCreateDrive: (
-    size: Size,
-    duration: Duration,
-    label: string,
-    encryption: boolean,
-    erasureCodeLevel: RedundancyLevel,
-  ) => Promise<void>
+  onDriveCreated: () => void
+  onCreationStarted: () => void
+  onCreationError: () => void
 }
 
-export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDriveModalProps): ReactElement {
+export function CreateDriveModal({
+  onCancelClick,
+  onDriveCreated,
+  onCreationStarted,
+  onCreationError,
+}: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [label, setLabel] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(-1)
-  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  const [encryptionEnabled] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
 
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const { beeApi } = useContext(SettingsContext)
+  const { fm } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {
@@ -141,15 +144,21 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
             variant="primary"
             disabled={!isCreateEnabled}
             onClick={async () => {
-              if (isCreateEnabled) {
+              if (isCreateEnabled && fm && beeApi) {
                 onCancelClick()
 
                 await handleCreateDrive(
+                  beeApi,
+                  fm,
                   Size.fromBytes(capacity),
                   Duration.fromEndDate(validityEndDate),
                   label,
                   encryptionEnabled,
                   erasureCodeLevel,
+                  false,
+                  () => onCreationStarted(),
+                  () => onDriveCreated(),
+                  () => onCreationError(),
                 )
               }
             }}

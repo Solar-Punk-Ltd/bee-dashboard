@@ -14,8 +14,8 @@ import { ViewType } from '../../constants/constants'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { useView } from '../../providers/FMFileViewContext'
-import { useFM } from '../../providers/FMContext'
-import { getUsableStamps, handleCreateDrive } from '../../utils/bee'
+import { Context as FMContext } from '../../../../providers/FileManager'
+import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export function Sidebar(): ReactElement {
@@ -28,26 +28,36 @@ export function Sidebar(): ReactElement {
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { fm, currentDrive, drives, setCurrentDrive } = useFM()
+  const { fm, currentDrive, drives, setCurrentDrive, refreshDrives } = useContext(FMContext)
 
   useEffect(() => {
+    let isMounted = true
+
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
-      setUsableStamps([...stamps])
+
+      if (isMounted) {
+        setUsableStamps([...stamps])
+      }
     }
-    getStamps()
-  }, [beeApi, isDriveCreationInProgress])
+
+    if (beeApi) {
+      getStamps()
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [beeApi, drives])
 
   useEffect(() => {
     if (fm && !currentDrive) {
-      const drives = fm.getDrives().filter(d => !d.isAdmin)
-
-      if (drives.length > 0) return
+      if (drives.length === 0) return
 
       setCurrentDrive(drives[0])
       setView(ViewType.File)
     }
-  }, [fm, currentDrive, setCurrentDrive, setView])
+  }, [fm, drives, currentDrive, setCurrentDrive, setView])
 
   const isCurrent = (di: DriveInfo) => currentDrive?.id.toString() === di.id.toString()
 
@@ -64,19 +74,13 @@ export function Sidebar(): ReactElement {
         {isCreateDriveOpen && (
           <CreateDriveModal
             onCancelClick={() => setIsCreateDriveOpen(false)}
-            handleCreateDrive={async (size, duration, label, encryption, erasureCodeLevel) =>
-              await handleCreateDrive(
-                beeApi,
-                fm,
-                size,
-                duration,
-                label,
-                encryption,
-                erasureCodeLevel,
-                false,
-                setIsDriveCreationInProgress,
-              )
-            }
+            onDriveCreated={() => {
+              setIsCreateDriveOpen(false)
+              setIsDriveCreationInProgress(false)
+              refreshDrives()
+            }}
+            onCreationStarted={() => setIsDriveCreationInProgress(true)}
+            onCreationError={() => setIsDriveCreationInProgress(false)}
           />
         )}
 

@@ -15,10 +15,6 @@ interface UseDragAndDropReturn {
   handleOverlayDrop: (e: React.DragEvent<HTMLDivElement>) => void
 }
 
-/**
- * Custom hook for handling file drag and drop functionality
- * Manages drag state and provides event handlers for drag operations
- */
 export function useDragAndDrop({ onFilesDropped, currentDrive }: UseDragAndDropProps): UseDragAndDropReturn {
   const [isDragging, setIsDragging] = useState(false)
   const dragCounter = useRef(0)

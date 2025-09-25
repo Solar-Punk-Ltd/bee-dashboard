@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext } from 'react'
 import './FileBrowser.scss'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
@@ -9,7 +9,7 @@ import { NotificationBar } from '../NotificationBar/NotificationBar'
 import { FileAction, FileTransferType, ViewType } from '../../constants/constants'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../providers/FMFileViewContext'
-import { useFM } from '../../providers/FMContext'
+import { Context as FMContext } from '../../../../providers/FileManager'
 import { useFMTransfers } from '../../hooks/useFMTransfers'
 import { useFMSearch } from '../../providers/FMSearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
@@ -24,7 +24,7 @@ import { computeContextMenuPosition } from '../../utils/ui'
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
-  const { files, currentDrive, refreshFiles, drives } = useFM()
+  const { files, currentDrive, refreshFiles, drives } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,

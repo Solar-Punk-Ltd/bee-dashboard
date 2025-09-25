@@ -1,6 +1,6 @@
 import './VersionList.scss'
 import '../../../styles/global.scss'
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useCallback, useContext } from 'react'
 
 import { FMButton } from '../../FMButton/FMButton'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
@@ -9,7 +9,7 @@ import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
-import { useFM } from '../../../providers/FMContext'
+import { Context as FMContext } from '../../../../../providers/FileManager'
 import { indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
 import { ActionTag } from '../../../constants/constants'
@@ -404,7 +404,7 @@ const VersionRow = memo(({ item, headFi, isCurrent, fmDownload, onRestore, colla
 VersionRow.displayName = 'VersionRow'
 
 export function VersionsList({ versions, headFi, restoreVersion }: VersionListProps) {
-  const { fm } = useFM()
+  const { fm } = useContext(FMContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const toggle = useCallback((key: string, fi: FileInfo) => {
@@ -417,13 +417,11 @@ export function VersionsList({ versions, headFi, restoreVersion }: VersionListPr
     })
   }, [])
 
+  // TODO: use same download as in file list
   const fmDownload = useCallback(
     (fi: FileInfo) => {
       if (!fm) return
-      startDownloadingQueue(fm, [fi], () => {
-        // eslint-disable-next-line no-console
-        console.log('TODO downloading: ', fi.name)
-      })
+      startDownloadingQueue(fm, [fi])
     },
     [fm],
   )

@@ -15,7 +15,10 @@ export function NotificationBar(): ReactElement | null {
   const NUMBER_OF_DAYS_WARNING = 7
   const DAYS_TO_MILLISECONDS_MULTIPLIER = 24 * 60 * 60 * 1000
 
+  // TODO: map between drive and stamp, show only drives that are expiring
   useEffect(() => {
+    let isMounted = true
+
     const getStamps = async () => {
       const stamps = (await getUsableStamps(beeApi)).filter(stamp => {
         return (
@@ -23,9 +26,17 @@ export function NotificationBar(): ReactElement | null {
           stamp.duration.toEndDate().getTime() <= Date.now() + NUMBER_OF_DAYS_WARNING * DAYS_TO_MILLISECONDS_MULTIPLIER
         )
       })
-      setStampsToExpire([...stamps])
+
+      if (isMounted) {
+        setStampsToExpire([...stamps])
+      }
     }
+
     getStamps()
+
+    return () => {
+      isMounted = false
+    }
   }, [beeApi, DAYS_TO_MILLISECONDS_MULTIPLIER])
 
   if (!showExpiration) return null

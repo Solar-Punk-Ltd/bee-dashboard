@@ -1,6 +1,6 @@
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
-import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import './FMInitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
@@ -10,11 +10,12 @@ import { getExpiryDateByLifetime } from '../../utils/common'
 import { desiredLifetimeOptions } from '../../constants/constants'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../FMSlider/FMSlider'
-import { useFM } from '../../providers/FMContext'
+import { Context as FMContext } from '../../../../providers/FileManager'
 import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 
 interface FMInitialModalProps {
   handleVisibility: (isVisible: boolean) => void
+  setAdminStamp: (stamp: PostageBatch | undefined) => void
 }
 
 const erasureCodeMarks = Object.entries(RedundancyLevel)
@@ -27,7 +28,7 @@ const erasureCodeMarks = Object.entries(RedundancyLevel)
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
-export function FMInitialModal({ handleVisibility }: FMInitialModalProps): ReactElement {
+export function FMInitialModal({ handleVisibility, setAdminStamp }: FMInitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
@@ -35,8 +36,10 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
   const [isAdminStampCreationInProgress, setIsAdminStampCreationInProgress] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
+
   const { beeApi } = useContext(SettingsContext)
-  const { fm } = useFM()
+  const { fm, refreshDrives } = useContext(FMContext)
+
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
 
@@ -147,8 +150,10 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
                     setIsAdminStampCreationInProgress(loading)
                   }
                 },
-                () => {
+                (batch?: PostageBatch) => {
                   if (isMountedRef.current) {
+                    setAdminStamp(batch)
+                    refreshDrives()
                     handleVisibility(false)
                   }
                 },
@@ -158,7 +163,6 @@ export function FMInitialModal({ handleVisibility }: FMInitialModalProps): React
                   }
                 },
               )
-              window.location.reload()
             }}
           />
         </div>

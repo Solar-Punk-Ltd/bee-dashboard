@@ -27,7 +27,7 @@ import { GiftCardFund } from './pages/top-up/GiftCardFund'
 import { GiftCardTopUpIndex } from './pages/top-up/GiftCardTopUpIndex'
 import { Swap } from './pages/top-up/Swap'
 import { Context as SettingsContext } from './providers/Settings'
-import { MainPage as FileManager } from './modules/filemanager/pages/main/MainPage'
+import { FileManagerPage } from './pages/filemanager/FileManager'
 
 export enum ROUTES {
   INFO = '/',
@@ -76,7 +76,7 @@ const BaseRouter = (): ReactElement => {
     <Routes>
       <Route path={ROUTES.UPLOAD_IN_PROGRESS} element={<Upload />} />
       <Route path={ROUTES.UPLOAD} element={<UploadLander />} />
-      <Route path={ROUTES.FILEMANAGER} element={<FileManager />} />
+      <Route path={ROUTES.FILEMANAGER} element={<FileManagerPage />} />
       <Route path={ROUTES.DOWNLOAD} element={<Download />} />
       <Route path={ROUTES.HASH} element={<Share />} />
       <Route path={ROUTES.SETTINGS} element={<Settings />} />

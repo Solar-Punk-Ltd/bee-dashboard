@@ -13,7 +13,7 @@ import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
 import { useView } from '../../../providers/FMFileViewContext'
 import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
-import { useFM } from '../../../providers/FMContext'
+import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
@@ -50,7 +50,7 @@ export function FileItem({
   onBulk,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, refreshFiles, currentDrive, files } = useFM()
+  const { fm, refreshFiles, currentDrive, files } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
 

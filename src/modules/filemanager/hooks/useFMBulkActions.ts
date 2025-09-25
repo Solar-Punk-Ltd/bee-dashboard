@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState, useContext } from 'react'
 import type { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { useFM } from '../providers/FMContext'
+import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes } from '../utils/common'
 
@@ -20,7 +20,7 @@ export function useFMBulkActions(opts: {
     opts.idGetter ??
     ((fi: FileInfo) => fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId}:${fi.name}`)
 
-  const { fm, refreshFiles, currentDrive } = useFM()
+  const { fm, refreshFiles } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const allIds = useMemo(() => listToRender.map(idOf), [listToRender])

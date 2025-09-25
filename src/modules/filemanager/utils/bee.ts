@@ -90,7 +90,7 @@ export const handleCreateDrive = async (
   erasureCodeLevel: RedundancyLevel,
   isAdmin: boolean,
   setLoading: (loading: boolean) => void,
-  onSuccess?: () => void,
+  onSuccess?: (batch?: PostageBatch) => void,
   onError?: (error: unknown) => void,
 ): Promise<void> => {
   if (!beeApi || !fm) return
@@ -99,7 +99,8 @@ export const handleCreateDrive = async (
     setLoading(true)
     const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
-    onSuccess?.()
+    const batch = await beeApi.getPostageBatch(batchId)
+    onSuccess?.(batch)
   } catch (e) {
     onError?.(e)
     // eslint-disable-next-line no-console

@@ -11,7 +11,8 @@ import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
-import { useFM } from '../../providers/FMContext'
+import { useContext } from 'react'
+import { Context as FMContext } from '../../../../providers/FileManager'
 
 interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
@@ -21,7 +22,7 @@ interface ExpiringNotificationModalProps {
 export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>()
-  const { drives } = useFM()
+  const { drives } = useContext(FMContext)
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(

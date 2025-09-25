@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useMemo, useState, useCallback } from 'react'
+import { ReactElement, useEffect, useMemo, useState, useCallback, useContext } from 'react'
 import './VersionHistoryModal.scss'
 import '../../styles/global.scss'
 
@@ -6,8 +6,7 @@ import { FMButton } from '../FMButton/FMButton'
 import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
-import { useFM } from '../../providers/FMContext'
-import { FileStatus } from '@solarpunkltd/file-manager-lib'
+import { Context as FMContext } from '../../../../providers/FileManager'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FeedIndex } from '@ethersphere/bee-js'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
@@ -31,7 +30,7 @@ interface VersionHistoryModalProps {
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryModalProps): ReactElement {
-  const { fm, refreshFiles, files, currentDrive } = useFM()
+  const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body

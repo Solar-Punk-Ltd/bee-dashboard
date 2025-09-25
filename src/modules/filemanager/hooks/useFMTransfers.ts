@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react'
-import { useFM } from '../providers/FMContext'
+import { useCallback, useState, useContext } from 'react'
+import { Context as FMContext } from '../../../providers/FileManager'
 import type { DriveInfo, FileInfo, FileInfoOptions, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
@@ -56,7 +56,7 @@ const makeUploadInfo = (args: {
 }
 
 export function useFMTransfers() {
-  const { fm, currentDrive, files } = useFM()
+  const { fm, currentDrive, files } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
