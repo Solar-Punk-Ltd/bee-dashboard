@@ -348,7 +348,7 @@ const RowFull = memo(
               icon={<DownloadIcon size="15" />}
               onClick={() => fmDownload(item)}
             />
-            {!isCurrent && <Button label="Restore" variant="primary" onClick={() => void onRestore(item)} />}
+            {!isCurrent && <Button label="Restore" variant="primary" onClick={() => onRestore(item)} />}
           </div>
         )}
       </div>

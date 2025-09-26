@@ -129,6 +129,7 @@ export function FileBrowser(): ReactElement {
     if (!isSearchMode) {
       bulk.clearAll()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode])
 
   return (
@@ -182,48 +183,58 @@ export function FileBrowser(): ReactElement {
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
               >
-                {bulk.selectedFiles.length > 1 ? (
-                  <ContextMenu>
-                    <div className="fm-context-item" onClick={() => bulk.bulkDownload(bulk.selectedFiles)}>
-                      Download
-                    </div>
-                    {view === ViewType.File ? (
-                      <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
-                        Delete…
+                {(() => {
+                  if (bulk.selectedFiles.length > 1) {
+                    return (
+                      <ContextMenu>
+                        <div className="fm-context-item" onClick={() => bulk.bulkDownload(bulk.selectedFiles)}>
+                          Download
+                        </div>
+                        {view === ViewType.File ? (
+                          <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
+                            Delete…
+                          </div>
+                        ) : (
+                          <>
+                            <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
+                              Restore
+                            </div>
+                            <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
+                              Destroy
+                            </div>
+                            <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
+                              Forget permanently
+                            </div>
+                          </>
+                        )}
+                      </ContextMenu>
+                    )
+                  }
+
+                  if (view === ViewType.Trash) {
+                    return (
+                      <ContextMenu>
+                        <div className="fm-context-item">Empty trash</div>
+                      </ContextMenu>
+                    )
+                  }
+
+                  return (
+                    <ContextMenu>
+                      <div className="fm-context-item">New folder</div>
+                      <div className="fm-context-item" onClick={onContextUploadFile}>
+                        Upload file
                       </div>
-                    ) : (
-                      <>
-                        <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
-                          Restore
-                        </div>
-                        <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
-                          Destroy
-                        </div>
-                        <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
-                          Forget permanently
-                        </div>
-                      </>
-                    )}
-                  </ContextMenu>
-                ) : view === ViewType.Trash ? (
-                  <ContextMenu>
-                    <div className="fm-context-item">Empty trash</div>
-                  </ContextMenu>
-                ) : (
-                  <ContextMenu>
-                    <div className="fm-context-item">New folder</div>
-                    <div className="fm-context-item" onClick={onContextUploadFile}>
-                      Upload file
-                    </div>
-                    <div className="fm-context-item">Upload folder</div>
-                    <div className="fm-context-item-border" />
-                    <div className="fm-context-item">Paste</div>
-                    <div className="fm-context-item-border" />
-                    <div className="fm-context-item" onClick={() => refreshFiles?.()}>
-                      Refresh
-                    </div>
-                  </ContextMenu>
-                )}
+                      <div className="fm-context-item">Upload folder</div>
+                      <div className="fm-context-item-border" />
+                      <div className="fm-context-item">Paste</div>
+                      <div className="fm-context-item-border" />
+                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                        Refresh
+                      </div>
+                    </ContextMenu>
+                  )
+                })()}
               </div>
             )}
           </div>

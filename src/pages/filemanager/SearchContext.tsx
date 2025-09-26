@@ -64,7 +64,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       setIncludeActive,
       setIncludeTrashed,
     }),
-    [query, scope, includeActive, includeTrashed],
+    [query, scope, includeActive, includeTrashed, clear, setQuery],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

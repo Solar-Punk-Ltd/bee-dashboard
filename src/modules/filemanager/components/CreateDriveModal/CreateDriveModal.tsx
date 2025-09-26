@@ -145,6 +145,7 @@ export function CreateDriveModal({
             disabled={!isCreateEnabled}
             onClick={async () => {
               if (isCreateEnabled && fm && beeApi) {
+                onCreationStarted()
                 onCancelClick()
 
                 await handleCreateDrive(
@@ -156,7 +157,8 @@ export function CreateDriveModal({
                   encryptionEnabled,
                   erasureCodeLevel,
                   false,
-                  () => onCreationStarted(),
+                  null,
+                  undefined,
                   () => onDriveCreated(),
                   () => onCreationError(),
                 )

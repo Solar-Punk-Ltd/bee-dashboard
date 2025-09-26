@@ -27,7 +27,7 @@ import { GiftCardFund } from './pages/top-up/GiftCardFund'
 import { GiftCardTopUpIndex } from './pages/top-up/GiftCardTopUpIndex'
 import { Swap } from './pages/top-up/Swap'
 import { Context as SettingsContext } from './providers/Settings'
-import { FileManagerPage } from './pages/filemanager/FileManager'
+import { FileManagerPage } from './pages/filemanager'
 
 export enum ROUTES {
   INFO = '/',

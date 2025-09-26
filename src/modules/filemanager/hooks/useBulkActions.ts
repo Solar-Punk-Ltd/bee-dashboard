@@ -16,18 +16,22 @@ export function useBulkActions(opts: {
   ) => (bytesDownloaded: number, isDownloading: boolean) => void
 }) {
   const { listToRender, trackDownload } = opts
-  // TODO: what is this?
-  const idOf: IdGetter =
-    opts.idGetter ??
-    ((fi: FileInfo) => fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId}:${fi.name}`)
+
+  // TODO: refactor idOf
+  const idOf: IdGetter = useMemo(
+    () =>
+      opts.idGetter ??
+      ((fi: FileInfo) => fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId}:${fi.name}`),
+    [opts.idGetter],
+  )
 
   const { fm, refreshFiles } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const allIds = useMemo(() => listToRender.map(idOf), [listToRender])
+  const allIds = useMemo(() => listToRender.map(idOf), [listToRender, idOf])
   const selectedCount = useMemo(() => allIds.filter(id => selectedIds.has(id)).length, [allIds, selectedIds])
-  const allChecked = allIds.length > 0 && selectedCount === allIds.length
-  const someChecked = selectedCount > 0 && !allChecked
+  const allChecked = useMemo(() => allIds.length > 0 && selectedCount === allIds.length, [allIds.length, selectedCount])
+  const someChecked = useMemo(() => selectedCount > 0 && !allChecked, [selectedCount, allChecked])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const selectedFiles = useMemo(
@@ -111,27 +115,46 @@ export function useBulkActions(opts: {
     [fm, refreshFiles, clearAll],
   )
 
-  return {
-    // selection
-    selectedIds,
-    setSelectedIds,
-    selectedFiles,
-    selectedCount,
-    allChecked,
-    someChecked,
-    toggleOne,
-    selectAll,
-    clearAll,
-    // file input (for bulk upload)
-    fileInputRef,
-    bulkUploadFromPicker,
-    // actions
-    bulkDownload,
-    bulkTrash,
-    bulkRestore,
-    bulkForget,
-    destroyCurrentDrive,
-    // helpers
-    idOf,
-  }
+  return useMemo(
+    () => ({
+      // selection
+      selectedIds,
+      setSelectedIds,
+      selectedFiles,
+      selectedCount,
+      allChecked,
+      someChecked,
+      toggleOne,
+      selectAll,
+      clearAll,
+      // file input (for bulk upload)
+      fileInputRef,
+      bulkUploadFromPicker,
+      // actions
+      bulkDownload,
+      bulkTrash,
+      bulkRestore,
+      bulkForget,
+      destroyCurrentDrive,
+      // helpers
+      idOf,
+    }),
+    [
+      selectedIds,
+      selectedFiles,
+      selectedCount,
+      allChecked,
+      someChecked,
+      toggleOne,
+      selectAll,
+      clearAll,
+      bulkUploadFromPicker,
+      bulkDownload,
+      bulkTrash,
+      bulkRestore,
+      bulkForget,
+      destroyCurrentDrive,
+      idOf,
+    ],
+  )
 }

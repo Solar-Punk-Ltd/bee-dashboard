@@ -1,0 +1,76 @@
+/* eslint-disable no-console */
+import { ReactElement, useContext, useEffect, useState } from 'react'
+import './FileManager.scss'
+import { SearchProvider } from './SearchContext'
+import { ViewProvider } from './ViewContext'
+import { Header } from '../../modules/filemanager/components/Header/Header'
+import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
+import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
+import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
+import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
+import { Context as FMContext } from '../../providers/FileManager'
+
+export function FileManagerPage(): ReactElement {
+  const [showInitialModal, setShowInitialModal] = useState(false)
+
+  const { fm, adminDrive, initializationError, adminStamp, getStoredState } = useContext(FMContext)
+
+  useEffect(() => {
+    if (!fm) {
+      const storedState = getStoredState()
+      setShowInitialModal(!storedState)
+    }
+  }, [fm, getStoredState])
+
+  if (initializationError) {
+    return (
+      <div className="fm-main">
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            gap: '16px',
+          }}
+        >
+          <div>Failed to initialize File Manager</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (showInitialModal) {
+    return (
+      <div className="fm-main">
+        <InitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
+      </div>
+    )
+  }
+
+  if (!fm) {
+    return (
+      <div className="fm-main">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          FileManager not initialized
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <SearchProvider>
+      <ViewProvider>
+        <div className="fm-main">
+          <Header />
+          <div className="fm-main-content">
+            <Sidebar />
+            <FileBrowser />
+          </div>
+          {adminStamp && adminDrive && <AdminStatusBar adminStamp={adminStamp} adminDrive={adminDrive} />}
+        </div>
+      </ViewProvider>
+    </SearchProvider>
+  )
+}

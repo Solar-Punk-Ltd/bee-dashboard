@@ -1,4 +1,4 @@
-import { Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
+import { BatchId, Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import { FileManagerBase } from '@solarpunkltd/file-manager-lib'
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
@@ -89,23 +89,36 @@ export const handleCreateDrive = async (
   encryption: boolean,
   erasureCodeLevel: RedundancyLevel,
   isAdmin: boolean,
-  setLoading: (loading: boolean) => void,
+  existingBatch: PostageBatch | null,
+  setLoading?: (loading: boolean) => void,
   onSuccess?: (batch?: PostageBatch) => void,
   onError?: (error: unknown) => void,
 ): Promise<void> => {
-  if (!beeApi || !fm) return
+  if (!beeApi || !fm) {
+    return
+  }
 
   try {
-    setLoading(true)
-    const batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+    setLoading?.(true)
+
+    let batchId: BatchId
+    let batch: PostageBatch
+
+    if (!existingBatch) {
+      batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+
+      batch = await beeApi.getPostageBatch(batchId)
+    } else {
+      batchId = existingBatch.batchID
+      batch = existingBatch
+    }
+
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
-    const batch = await beeApi.getPostageBatch(batchId)
+
     onSuccess?.(batch)
   } catch (e) {
     onError?.(e)
-    // eslint-disable-next-line no-console
-    console.error('Failed to create drive:', e)
   } finally {
-    setLoading(false)
+    setLoading?.(false)
   }
 }

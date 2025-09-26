@@ -107,7 +107,7 @@ export function FileItem({
     await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
-  // TODO: handleOpen, is it different from download?
+  // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
   const handleOpen = useCallback(async () => {
     handleCloseContext()
 
@@ -325,7 +325,7 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, doForget, onBulk])
+  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, doForget, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return

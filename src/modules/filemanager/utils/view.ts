@@ -56,11 +56,6 @@ const IMAGE_HTML = (u: string) =>
     <img style="max-width:100%;max-height:100vh" src="${u}" />
   </body></html>`
 
-const TEXT_HTML = (u: string) =>
-  // Let browser handle it natively (keeps monospace, selection, find, etc.)
-  // PDFs also render natively in most browsers.
-  u
-
 const VIEWERS: Viewer[] = [
   {
     name: 'video',
@@ -149,9 +144,7 @@ export async function openOrDownload(
 
     viewer.render(win, url, mime, pick)
   } catch (e) {
-    try {
-      win.close()
-    } catch {}
+    win.close()
     downloadByName(href, pick)
   }
 }
