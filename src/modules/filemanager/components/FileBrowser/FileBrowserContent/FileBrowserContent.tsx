@@ -1,7 +1,11 @@
-import { ReactElement, useCallback } from 'react'
+import { ReactElement, useCallback, useState } from 'react'
 import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/constants'
+import { Folder } from '@material-ui/icons'
+import { FolderFileItem } from '../FileItem/FolderFileItem'
+import { useView } from 'src/modules/filemanager/providers/FMFileViewContext'
+import FolderSubItems from './FolderSubItems'
 
 const defaultId = (fi: FileInfo): string =>
   fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
@@ -43,6 +47,9 @@ export function FileBrowserContent({
   bulkSelectedCount,
   onBulk,
 }: FileBrowserContentProps): ReactElement {
+  const { folderView, setFolderView } = useView()
+  const [showFolderFileItems, setShowFolderFileItems] = useState(false)
+  const [folderFileItems, setFolderFileItems] = useState<{ path: string; ref: string }[] | null>(null)
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
       return <div className="fm-drop-hint">Create a drive to start using the file manager</div>
@@ -66,8 +73,14 @@ export function FileBrowserContent({
   const defaultId = (fi: FileInfo): string =>
     fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
 
-  const renderFileList = useCallback(
-    (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
+  const handleFolderItemDoubleClick = (folderFileItems: { path: string; ref: string }[] | null, name: string) => {
+    setFolderView(true)
+    setFolderFileItems(folderFileItems)
+    setShowFolderFileItems(true)
+  }
+
+  const renderFileList = (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
+    if (!folderView) {
       return filesToRender.map(fi => {
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
         const key = `${(idOf ?? defaultId)(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
@@ -83,12 +96,16 @@ export function FileBrowserContent({
             onToggleSelected={onToggleSelected}
             bulkSelectedCount={bulkSelectedCount}
             onBulk={onBulk}
+            folderItemDoubleClick={(folderFileItems: { path: string; ref: string }[] | null, name: string) =>
+              handleFolderItemDoubleClick(folderFileItems, name)
+            }
           />
         )
       })
-    },
-    [trackDownload, drives, selectedIds, onToggleSelected, idOf, bulkSelectedCount, onBulk],
-  )
+    } else {
+      return folderFileItems ? <FolderSubItems items={folderFileItems} /> : null
+    }
+  }
 
   if (drives.length === 0) {
     return renderEmptyState()

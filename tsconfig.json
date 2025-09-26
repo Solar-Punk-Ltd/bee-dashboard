@@ -1,15 +1,11 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-     "paths": {
-       "@ethersphere/bee-js": ["node_modules/@ethersphere/bee-js"]
-     },
+    "paths": {
+      "@ethersphere/bee-js": ["node_modules/@ethersphere/bee-js"]
+    },
     "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -24,7 +20,5 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src", "src/modules/filemanager/fm-global.d.ts"]
 }

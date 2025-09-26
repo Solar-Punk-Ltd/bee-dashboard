@@ -12,7 +12,7 @@ export type TransferItem = {
   status: TransferStatus
   kind?: FileTransferType
 }
-type UploadMeta = Record<string, string | number>
+type UploadMeta = Record<string, string | number | File[]>
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   const out: Record<string, string> = {}
@@ -21,7 +21,7 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta => {
+const buildUploadMeta = (files: File[] | FileList, path?: string, folderUpload = false): UploadMeta => {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -29,7 +29,8 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   const meta: UploadMeta = {
     size: String(totalSize),
     fileCount: String(arr.length),
-    mime: primary?.type || 'application/octet-stream',
+    mime: folderUpload ? 'folder' : primary?.type || 'application/octet-stream',
+    files: arr,
   }
 
   if (path) meta.path = path
@@ -40,7 +41,7 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
 const makeUploadInfo = (args: {
   name: string
   files: File[]
-  meta: Record<string, string | number>
+  meta: Record<string, string | number | File[]>
   topic?: string
 }): FileInfoOptions => {
   const info = {
@@ -130,7 +131,7 @@ export function useFMTransfers() {
   )
 
   const uploadFiles = useCallback(
-    (picked: FileList | File[]): void => {
+    (picked: FileList | File[], folderUpload = false, folderName = ''): void => {
       if (!fm || !currentDrive) return
 
       const manager = fm as FileManagerBase
@@ -146,7 +147,7 @@ export function useFMTransfers() {
 
       async function processOne(file: File, reservedNames: Set<string>) {
         const meta = buildUploadMeta([file])
-        const prettySize = formatBytes(meta.size)
+        const prettySize = typeof meta.size === 'string' || typeof meta.size === 'number' ? formatBytes(meta.size) : '0'
         const sameDrive = collectSameDrive(drive.id.toString())
 
         let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
@@ -194,6 +195,40 @@ export function useFMTransfers() {
           .catch(() => markError(finalName))
       }
 
+      async function processFolder() {
+        const meta = buildUploadMeta(filesArr, undefined, true)
+        const prettySize = typeof meta.size === 'string' || typeof meta.size === 'number' ? formatBytes(meta.size) : '0'
+        const sameDrive = collectSameDrive(drive.id.toString())
+
+        // eslint-disable-next-line prefer-const
+        let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(folderName, sameDrive)
+        finalName = finalName ?? ''
+
+        const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+        const invalidName = !finalName || finalName.trim().length === 0
+
+        if (invalidCombo || invalidName) return
+
+        const progressCallback = trackUploadProgress(
+          finalName,
+          prettySize,
+          isReplace ? FileTransferType.Update : FileTransferType.Upload,
+        )
+
+        const info = makeUploadInfo({
+          name: finalName,
+          files: filesArr,
+          meta,
+          topic: isReplace ? replaceTopic : undefined,
+        })
+
+        void manager.upload(
+          drive,
+          { ...info, onUploadProgress: progressCallback },
+          { actHistoryAddress: isReplace ? replaceHistory : undefined },
+        )
+      }
+
       async function processAll() {
         const reservedNames = new Set<string>()
         for (const file of filesArr) {
@@ -201,7 +236,8 @@ export function useFMTransfers() {
         }
       }
 
-      void processAll()
+      if (folderUpload) void processFolder()
+      else void processAll()
     },
     [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems],
   )

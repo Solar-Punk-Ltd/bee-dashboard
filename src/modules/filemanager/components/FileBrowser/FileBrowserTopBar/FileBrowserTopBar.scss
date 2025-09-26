@@ -7,11 +7,19 @@
   padding: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
   color: rgb(255, 255, 255);
   font-weight: 700;
 }
 
-.fm-file-browser-container[data-search-mode="true"] .fm-file-browser-top-bar {
+.fm-file-browser-container[data-search-mode='true'] .fm-file-browser-top-bar {
   background-color: rgb(37, 99, 235);
+}
+
+.fm-file-browser-top-bar-item {
+  cursor: pointer;
+  padding: 0px 10px;
+  border-radius: 8px;
+  &:hover {
+    background-color: rgb(228, 173, 132);
+  }
 }

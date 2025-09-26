@@ -21,6 +21,7 @@ import { FileAction } from '../../../constants/constants'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
+import { folder } from 'jszip'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -37,6 +38,7 @@ interface FileItemProps {
     destroy?: () => void
     delete?: () => void
   }
+  folderItemDoubleClick: (folderFileItems: { path: string; ref: string }[] | null, fileName: string) => void
 }
 
 export function FileItem({
@@ -48,6 +50,7 @@ export function FileItem({
   onToggleSelected,
   bulkSelectedCount,
   onBulk,
+  folderItemDoubleClick,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentDrive, files } = useFM()
@@ -67,6 +70,7 @@ export function FileItem({
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
   const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
+  const { viewFolders, setViewFolders } = useView()
 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
@@ -78,11 +82,26 @@ export function FileItem({
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
 
+  //TODO Handle name change
   const openGetInfo = useCallback(async () => {
     if (!fm) return
     const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
+  }, [fm, fileInfo, driveName])
+
+  const handleOpenFolder = useCallback(async () => {
+    if (!fm) return
+    const list = await fm.listFiles(fileInfo)
+    const paths = Object.keys(list)
+    const refs = Object.values(list)
+
+    const result = paths.map((path, index) => ({
+      path,
+      ref: refs[index],
+    }))
+
+    return result
   }, [fm, fileInfo, driveName])
 
   const takenNames = useMemo(() => {
@@ -108,12 +127,21 @@ export function FileItem({
     await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
-  const handleOpen = useCallback(async () => {
+  const handleOpen = async () => {
     handleCloseContext()
 
     if (!fm || !beeApi) return
+
+    if (fileInfo?.customMetadata?.mime === 'folder') {
+      setViewFolders([...viewFolders, fileInfo.name])
+      const fileDatas = await handleOpenFolder()
+      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
+
+      return
+    }
+
     await openOrDownload(beeApi.url, fm, fileInfo)
-  }, [handleCloseContext, fm, beeApi, fileInfo])
+  }
 
   const doTrash = useCallback(async () => {
     if (!fm) return
@@ -349,7 +377,14 @@ export function FileItem({
   }
 
   return (
-    <div className="fm-file-item-content" onContextMenu={handleContextMenu} onClick={handleCloseContext}>
+    <div
+      className="fm-file-item-content"
+      onContextMenu={handleContextMenu}
+      onDoubleClick={() => {
+        handleOpen()
+      }}
+      onClick={handleCloseContext}
+    >
       <div className="fm-file-item-content-item fm-checkbox">
         <input
           type="checkbox"
@@ -359,8 +394,8 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={handleOpen}>
-        <GetIconElement icon={fileInfo.name} />
+      <div className="fm-file-item-content-item fm-name">
+        <GetIconElement type={fileInfo?.customMetadata?.mime ? fileInfo?.customMetadata?.mime : ''} />
         {fileInfo.name}
       </div>
 

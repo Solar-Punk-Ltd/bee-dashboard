@@ -98,7 +98,7 @@ export function FileProgressWindow({
         return (
           <div className="fm-file-progress-window-file-item" key={`${file.name}`}>
             <div className="fm-file-progress-window-file-type-icon">
-              <GetIconElement size="14" icon={file.name} color="black" />
+              <GetIconElement size="14" type={file.name} color="black" />
             </div>
 
             <div className="fm-file-progress-window-file-datas">
