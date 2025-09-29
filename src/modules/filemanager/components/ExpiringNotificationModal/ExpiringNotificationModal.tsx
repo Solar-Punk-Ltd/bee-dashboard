@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react'
+import { ReactElement, useState } from 'react'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 
@@ -11,28 +11,23 @@ import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
-import { useContext } from 'react'
-import { Context as FMContext } from '../../../../providers/FileManager'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
+  drives: DriveInfo[]
   onCancelClick: () => void
 }
 // TODO: create an icon for the admin drive to distinguish it from the others
-export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNotificationModalProps): ReactElement {
+export function ExpiringNotificationModal({
+  stamps,
+  drives,
+  onCancelClick,
+}: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | undefined>(undefined)
   const [actualDrive, setActualDrive] = useState<DriveInfo | undefined>(undefined)
-  const { drives, adminDrive } = useContext(FMContext)
   const modalRoot = document.querySelector('.fm-main') || document.body
-
-  useEffect(() => {
-    if (!actualStamp) return
-
-    const drive = drives.find(d => d.id.toString() === actualStamp.batchID.toString())
-    setActualDrive(drive)
-  }, [drives, actualStamp])
 
   if (stamps.length === 0) return <></>
 
@@ -46,14 +41,12 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
           {stamps.map(stamp => {
-            const isDriveStamp =
-              drives.some(d => d.batchId.toString() === stamp?.batchID.toString()) ||
-              adminDrive?.batchId.toString() === stamp.batchID.toString()
-
-            if (!isDriveStamp) return null
-
             const daysLeft = getDaysLeft(stamp.duration.toEndDate())
             let daysClass = ''
+
+            const drive = drives.find(d => d.batchId.toString() === stamp.batchID.toString())
+
+            if (!drive) return null
 
             if (daysLeft < 10) {
               daysClass = 'fm-red-font'
@@ -85,8 +78,9 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
                       label="Upgrade"
                       variant="primary"
                       onClick={() => {
-                        setShowUpgradeDriveModal(true)
                         setActualStamp(stamp)
+                        setActualDrive(drive)
+                        setShowUpgradeDriveModal(true)
                       }}
                     />
                   </div>
