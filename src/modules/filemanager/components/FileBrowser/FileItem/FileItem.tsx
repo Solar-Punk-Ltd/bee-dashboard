@@ -64,7 +64,7 @@ export function FileItem({
   }, [])
 
   const size = formatBytes(fileInfo.customMetadata?.size)
-  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
+  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
   const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
 
@@ -97,7 +97,6 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  // TODO: multiple downloads []: File[]
   const handleDownload = useCallback(async () => {
     handleCloseContext()
 
@@ -154,7 +153,6 @@ export function FileItem({
     setShowDestroyDriveModal(true)
   }, [currentDrive])
 
-  // TODO: rename shall call the same upload with progress: but different name with info.file.ref and .history already filled with the previous values
   const doRename = useCallback(
     async (newName: string) => {
       if (!fm || !currentDrive) return

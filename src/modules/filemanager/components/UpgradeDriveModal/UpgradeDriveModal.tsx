@@ -27,10 +27,13 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
-  drive?: DriveInfo
+  drive: DriveInfo
   onCancelClick: () => void
   containerColor?: string
 }
+
+const defaultErasureCodeLevel = RedundancyLevel.OFF
+const encryption_off = 'ENCRYPTION_OFF'
 
 export function UpgradeDriveModal({
   stamp,
@@ -51,11 +54,6 @@ export function UpgradeDriveModal({
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const [extensionCost, setExtensionCost] = useState('0')
 
-  // TODO: Mocked erasure code level, the erasure codel should be fetched from stamp metadata
-  const mockedErasureCodeLevel = RedundancyLevel.OFF
-  // TODO: Flag for a mocked encryption, the encryption setting should be fetched from stamp metadata
-  const mockedEncryption = 'ENCRYPTION_OFF'
-
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(Size.fromBytes(value))
     setCapacityIndex(index)
@@ -72,7 +70,7 @@ export function UpgradeDriveModal({
       isCapacityExtensionSet: boolean,
       isDurationExtensionSet: boolean,
     ) => {
-      const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, undefined, false, mockedErasureCodeLevel)
+      const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
       const costText = cost ? cost.toSignificantDigits(2) : '0'
 
       if (isCapacityExtensionSet && isDurationExtensionSet) {
@@ -93,14 +91,14 @@ export function UpgradeDriveModal({
         setExtensionCost('0')
       }
     },
-    [beeApi, mockedErasureCodeLevel],
+    [beeApi],
   )
 
   useEffect(() => {
     const fetchSizes = () => {
-      const sizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(false, mockedErasureCodeLevel).values())
+      const sizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(false, defaultErasureCodeLevel).values())
 
-      const capacityValues = capacityBreakpoints[mockedEncryption][mockedErasureCodeLevel]
+      const capacityValues = capacityBreakpoints[encryption_off][defaultErasureCodeLevel]
       const fromIndex = capacityValues.findIndex(item => item.batchDepth === stamp.depth)
 
       const newSizes = sizes.slice(fromIndex + 1)
@@ -116,7 +114,7 @@ export function UpgradeDriveModal({
     }
 
     fetchSizes()
-  }, [mockedErasureCodeLevel, stamp.depth, stamp.size])
+  }, [stamp.depth, stamp.size])
 
   useEffect(() => {
     let isCapacitySet = false
@@ -145,21 +143,13 @@ export function UpgradeDriveModal({
         duration,
         undefined,
         false,
-        mockedErasureCodeLevel,
+        defaultErasureCodeLevel,
         isCapacitySet,
         isDurationSet,
       )
     }
     fetchExtensionCost()
-  }, [
-    capacity,
-    validityEndDate,
-    capacityIndex,
-    handleCostCalculation,
-    lifetimeIndex,
-    stamp.batchID,
-    mockedErasureCodeLevel,
-  ])
+  }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, lifetimeIndex, stamp.batchID])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
@@ -277,7 +267,7 @@ export function UpgradeDriveModal({
                   : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()),
                 undefined,
                 false,
-                mockedErasureCodeLevel,
+                defaultErasureCodeLevel,
               )
               onCancelClick()
             }}

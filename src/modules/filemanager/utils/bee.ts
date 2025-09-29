@@ -21,7 +21,7 @@ export const fmGetStorageCost = async (
   encryption: boolean,
   erasureCodeLevel: RedundancyLevel,
   beeApi: Bee | null,
-): Promise<string> => {
+): Promise<string | undefined> => {
   try {
     if (Size.fromBytes(capacity).toGigabytes() >= 0 && validityEndDate.getTime() >= new Date().getTime()) {
       const cost = await beeApi?.getStorageCost(
@@ -32,13 +32,12 @@ export const fmGetStorageCost = async (
         erasureCodeLevel,
       )
 
-      return cost ? cost.toSignificantDigits(2) : '0'
+      return cost ? cost.toSignificantDigits(2) : undefined
     }
 
-    return '0'
+    return undefined
   } catch (e) {
-    //TODO It needs to be discussed what happens to the error
-    return '0'
+    return undefined
   }
 }
 
@@ -58,18 +57,10 @@ export const fmFetchCost = async (
   let isCurrentFetch = true
 
   const fetchPromise = (async () => {
-    try {
-      const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
+    const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
 
-      if (isCurrentFetch) {
-        setCost(cost)
-      }
-    } catch (error) {
-      if (isCurrentFetch) {
-        setCost('0')
-      }
-      // eslint-disable-next-line no-console
-      console.error('Failed to fetch storage cost:', error)
+    if (isCurrentFetch) {
+      setCost(cost ?? '0')
     }
   })()
 

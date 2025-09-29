@@ -85,6 +85,7 @@ interface FileInfoWithHandle {
 }
 
 async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> {
+  const defaultDownloadFolder = 'downloads'
   const fileHandles: FileInfoWithHandle[] = []
 
   for (let i = 0; i < infoList.length; i++) {
@@ -96,7 +97,7 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handle = (await (window as any).showSaveFilePicker({
         suggestedName: name,
-        startIn: 'downloads', // TODO: customize startIn option
+        startIn: defaultDownloadFolder,
         types: [
           {
             accept: {
@@ -106,7 +107,6 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
         ],
       })) as FileSystemFileHandle
     } catch (error: unknown) {
-      // User canceled the file picker
       if ((error as Error).name === 'AbortError') {
         return
       }
@@ -132,8 +132,8 @@ async function downloadToDisk(
 ): Promise<void> {
   try {
     for (const stream of streams) {
+      // Fallback for browsers that do not support the File System Access API
       if (!fileHandle) {
-        // Fallback for browsers that do not support the File System Access API
         const blob = await streamToBlob(
           stream,
           info.customMetadata?.mimeType || 'application/octet-stream',

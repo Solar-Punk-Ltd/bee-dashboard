@@ -27,7 +27,7 @@ interface CreateDriveModalProps {
   onCreationStarted: () => void
   onCreationError: () => void
 }
-
+// TODO: select existing batch id or create a new one - just like in InitialModal
 export function CreateDriveModal({
   onCancelClick,
   onDriveCreated,

@@ -7,7 +7,7 @@ import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileStatus, FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { formatBytes, indexStrToBigint } from '../../../utils/common'
@@ -69,6 +69,7 @@ function defaultCollapsed(fi: FileInfo): boolean {
 
   return (
     raw === ActionTag.Trashed ||
+    fi.status === FileStatus.Trashed ||
     raw === ActionTag.Restored ||
     raw === ActionTag.Recovered ||
     hasSecondaryTrashOrRecovered(fi)
@@ -423,7 +424,6 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
     })
   }, [])
 
-  // TODO: use same download as in file list
   const handleDownload = useCallback(
     async (fileInfo: FileInfo) => {
       handleCloseContext()
