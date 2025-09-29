@@ -9,7 +9,7 @@ interface SubItemProps {
   type: 'file' | 'folder'
 }
 
-function handleDoubleClick(name: string, type: 'file' | 'folder', reference: string, beeApi: Bee): Promise<void> {
+function handleDoubleClick(name: string, type: 'file' | 'folder', reference: string, beeApi: Bee): void {
   if (type === 'folder') {
     // eslint-disable-next-line no-console
     console.log(`Folder opened: ${name}`)
