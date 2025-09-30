@@ -184,6 +184,16 @@ export function FileBrowser(): ReactElement {
                 data-drop={dropDir}
               >
                 {(() => {
+                  if (drives.length === 0) {
+                    return (
+                      <ContextMenu>
+                        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                          Refresh
+                        </div>
+                      </ContextMenu>
+                    )
+                  }
+
                   if (bulk.selectedFiles.length > 1) {
                     return (
                       <ContextMenu>
