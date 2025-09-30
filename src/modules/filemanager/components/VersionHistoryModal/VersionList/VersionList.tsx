@@ -414,15 +414,24 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
   const { beeApi } = useContext(SettingsContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
-  const toggle = useCallback((key: string, fi: FileInfo) => {
-    setExpanded(prev => {
-      const next = { ...prev }
-      const hasValue = Object.prototype.hasOwnProperty.call(next, key)
-      next[key] = hasValue ? !next[key] : defaultCollapsed(fi)
+  const toggle = useCallback(
+    (key: string, fi: FileInfo) => {
+      setExpanded(prev => {
+        const next = { ...prev }
+        const hasValue = Object.prototype.hasOwnProperty.call(next, key)
 
-      return next
-    })
-  }, [])
+        if (hasValue) {
+          next[key] = !next[key]
+        } else {
+          const isLatest = indexStrToBigint(fi.version) === indexStrToBigint(headFi.version)
+          next[key] = isLatest
+        }
+
+        return next
+      })
+    },
+    [headFi],
+  )
 
   const handleDownload = useCallback(
     async (fileInfo: FileInfo) => {
@@ -447,8 +456,11 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
 
         const key = `${item.topic.toString()}:${idx.toString()}`
         const hasExplicit = Object.prototype.hasOwnProperty.call(expanded, key)
-        const collapsed = hasExplicit ? !expanded[key] : defaultCollapsed(item)
+
         const isCurrent = indexStrToBigint(headFi.version) === idx
+        const defaultCollapsed = !isCurrent
+
+        const collapsed = hasExplicit ? !expanded[key] : defaultCollapsed
 
         return (
           <VersionRow
