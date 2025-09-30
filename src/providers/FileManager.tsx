@@ -155,6 +155,14 @@ export function Provider({ children }: Props) {
           const tmpAdminDrive = allDrives.find(d => d.isAdmin) || null
           setAdminDrive(tmpAdminDrive)
 
+          if (tmpAdminDrive && beeApi) {
+            ;(async () => {
+              const usableStamps = await getUsableStamps(beeApi)
+              const match = usableStamps.find(s => s.batchID.toString() === tmpAdminDrive.batchId.toString()) || null
+              setAdminStamp(match)
+            })()
+          }
+
           if (tmpAdminDrive && !getStoredState()) {
             setStoredState({
               adminDriveId: tmpAdminDrive.id.toString(),
@@ -177,18 +185,30 @@ export function Provider({ children }: Props) {
       }
 
       manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
-      manager.emitter.on(FileManagerEvents.DRIVE_CREATED, ({ driveInfo }: { driveInfo: DriveInfo }) => {
+      manager.emitter.on(FileManagerEvents.DRIVE_CREATED, async ({ driveInfo }: { driveInfo: DriveInfo }) => {
         if (driveInfo.isAdmin) {
+          setAdminDrive(driveInfo)
+
           setStoredState({
             adminDriveId: driveInfo.id.toString(),
             adminDriveName: driveInfo.name,
             adminBatchId: driveInfo.batchId.toString(),
           })
+
+          if (beeApi) {
+            const usableStamps = await getUsableStamps(beeApi)
+            const match = usableStamps.find(s => s.batchID.toString() === driveInfo.batchId.toString()) || null
+            setAdminStamp(match)
+          }
         }
 
         setDrives(manager.getDrives().filter(d => !d.isAdmin))
       })
       manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, ({ driveInfo }) => {
+        if (driveInfo?.isAdmin) {
+          setAdminDrive(null)
+          setAdminStamp(null)
+        }
         setDrives(manager.getDrives().filter(d => !d.isAdmin))
         syncFiles()
       })
@@ -206,7 +226,7 @@ export function Provider({ children }: Props) {
         return false
       }
     },
-    [apiUrl],
+    [apiUrl, beeApi],
   )
   useEffect(() => {
     if (!apiUrl || !beeApi) return

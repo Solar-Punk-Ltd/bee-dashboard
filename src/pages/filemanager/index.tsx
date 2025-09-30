@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import './FileManager.scss'
 import { SearchProvider } from './SearchContext'
@@ -53,11 +52,13 @@ export function FileManagerPage(): ReactElement {
     return (
       <div className="fm-main">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          FileManager not initialized
+          File Manager not initialized
         </div>
       </div>
     )
   }
+
+  const adminBarLoading = !adminStamp || !adminDrive
 
   return (
     <SearchProvider>
@@ -68,7 +69,8 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-          {adminStamp && adminDrive && <AdminStatusBar adminStamp={adminStamp} adminDrive={adminDrive} />}
+
+          <AdminStatusBar adminStamp={adminStamp ?? null} adminDrive={adminDrive ?? null} loading={adminBarLoading} />
         </div>
       </ViewProvider>
     </SearchProvider>
