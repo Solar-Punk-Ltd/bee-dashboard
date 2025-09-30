@@ -22,6 +22,14 @@ interface DriveItemProps {
   isSelected: boolean
 }
 
+const formatUsedGB = (n: number): string => {
+  if (n === 0) return '0'
+
+  if (n < 1) return Number(n.toPrecision(3)).toString()
+
+  return n.toFixed(2)
+}
+
 export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactElement {
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
@@ -60,8 +68,17 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
-            Capacity <ProgressBar value={stamp.usage * 100} width="64px" />{' '}
-            {stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()} GB / {stamp.size.toGigabytes()} GB
+            {(() => {
+              const usedGB = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
+              const totalGB = stamp.size.toGigabytes()
+
+              return (
+                <>
+                  Capacity <ProgressBar value={stamp.usage * 100} width="64px" /> {formatUsedGB(usedGB)} GB /{' '}
+                  {totalGB.toFixed(2)} GB
+                </>
+              )
+            })()}
           </div>
           <div className="fm-drive-item-capacity">Expiry date: {stamp.duration.toEndDate().toLocaleDateString()}</div>
         </div>
