@@ -72,3 +72,8 @@
 }
 .fm-eta { font-size: 12px; opacity: .8; }
 .fm-file-subtext { line-height: 1.2; }
+
+.fm-file-progress-window-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

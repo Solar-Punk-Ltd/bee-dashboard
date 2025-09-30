@@ -7,7 +7,7 @@ import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import UserIcon from 'remixicon-react/UserLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
 
-import { FileStatus, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { formatBytes, indexStrToBigint } from '../../../utils/common'
@@ -62,18 +62,6 @@ function hasSecondaryTrashOrRecovered(fi: FileInfo): boolean {
   const src = (fi.customMetadata?.restoredFromLifecycle || '').trim().toLowerCase()
 
   return src === ActionTag.Trashed || src === ActionTag.Recovered
-}
-
-function defaultCollapsed(fi: FileInfo): boolean {
-  const raw = readLifecycleRaw(fi)
-
-  return (
-    raw === ActionTag.Trashed ||
-    fi.status === FileStatus.Trashed ||
-    raw === ActionTag.Restored ||
-    raw === ActionTag.Recovered ||
-    hasSecondaryTrashOrRecovered(fi)
-  )
 }
 
 function isMinimizable(fi: FileInfo): boolean {
