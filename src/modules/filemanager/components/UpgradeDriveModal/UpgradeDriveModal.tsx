@@ -232,6 +232,9 @@ export function UpgradeDriveModal({
             <div className="fm-emphasized-text">Summary</div>
             <div>Drive: {drive?.name || stamp?.label || shortBatchId}</div>
             <div>
+              BatchId: {shortBatchId} ({stamp?.label})
+            </div>
+            <div>
               Additional storage:{' '}
               {capacity.toBytes() === 0
                 ? 'Not selected'

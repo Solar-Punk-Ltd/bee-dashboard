@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { FileStatus, FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
-import { GetGranteesResult } from '@ethersphere/bee-js'
+import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
 
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
@@ -126,7 +126,6 @@ function buildDatesGroup(createdTs?: number, modifiedTs?: number, expires?: stri
     properties: [
       { key: 'created', label: 'Created', value: fmtDate(createdTs) },
       { key: 'modified', label: 'Modified', value: fmtDate(modifiedTs) },
-      { key: 'accessed', label: 'Last Accessed', value: dash },
       { key: 'expires', label: 'Expires', value: expires ?? dash },
     ],
   }
@@ -161,7 +160,11 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
   }
 }
 
-function buildStorageGroup(fi: FileInfo, driveName: string): FilePropertyGroup {
+function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch): FilePropertyGroup {
+  const stampValue = stamp
+    ? truncateMiddle(fi.batchId.toString(), 4, 4) + ' (' + stamp.label + ')'
+    : truncateMiddle(fi.batchId.toString(), 12, 8)
+
   return {
     title: 'Storage',
     icon: <HardDriveIcon size="14px" color="rgb(237, 129, 49)" />,
@@ -169,7 +172,7 @@ function buildStorageGroup(fi: FileInfo, driveName: string): FilePropertyGroup {
       {
         key: 'batch',
         label: 'Batch ID',
-        value: truncateMiddle(fi.batchId.toString(), 12, 10),
+        value: stampValue,
         raw: fi.batchId.toString(),
       },
       { key: 'drive', label: 'Drive', value: driveName },
@@ -182,13 +185,14 @@ export async function buildGetInfoGroups(
   fm: FileManagerBase,
   fi: FileInfo,
   driveName: string,
+  stamp?: PostageBatch,
 ): Promise<FilePropertyGroup[]> {
   const cm = fi.customMetadata as KnownCustomMeta | undefined
   const size = cm?.size
   const mime = cm?.mime
-  const path = cm?.path
+  const path = cm?.path || driveName // TODO: set exact subpath
   const fileCount = cm?.fileCount
-  const expires = cm?.expiresAt
+  const expires = cm?.expiresAt || stamp?.duration.toEndDate().toLocaleDateString()
 
   const [createdTs, granteeCount] = await Promise.all([getCreatedTs(fm, fi), getGranteeCount(fm, fi)])
 
@@ -196,6 +200,6 @@ export async function buildGetInfoGroups(
     buildGeneralGroup(fi, mime, size, path, fileCount),
     buildDatesGroup(createdTs, fi.timestamp, expires),
     buildAccessGroup(fi, granteeCount),
-    buildStorageGroup(fi, driveName),
+    buildStorageGroup(fi, driveName, stamp),
   ]
 }

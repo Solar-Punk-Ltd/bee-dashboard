@@ -21,6 +21,8 @@ import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
+import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -50,18 +52,32 @@ export function FileItem({
   onBulk,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, refreshFiles, currentDrive, files } = useContext(FMContext)
+  const { fm, refreshFiles, currentDrive, files, drives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
+  const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
 
   const isMountedRef = useRef(true)
   useEffect(() => {
     isMountedRef.current = true
 
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      const driveStamp = stamps.find(s =>
+        drives.some(d => d.batchId.toString() === s.batchID.toString() && d.id === fileInfo.driveId),
+      )
+
+      if (isMountedRef.current) {
+        setDriveStamp(driveStamp)
+      }
+    }
+
+    getStamps()
+
     return () => {
       isMountedRef.current = false
     }
-  }, [])
+  }, [beeApi, drives, fileInfo.driveId])
 
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
@@ -80,10 +96,10 @@ export function FileItem({
 
   const openGetInfo = useCallback(async () => {
     if (!fm) return
-    const groups = await buildGetInfoGroups(fm, fileInfo, driveName)
+    const groups = await buildGetInfoGroups(fm, fileInfo, driveName, driveStamp)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
-  }, [fm, fileInfo, driveName])
+  }, [fm, fileInfo, driveName, driveStamp])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
@@ -466,12 +482,17 @@ export function FileItem({
             }
           }}
           doDestroy={async () => {
-            await fm.destroyDrive(destroyDrive)
-            await Promise.resolve(refreshFiles?.())
+            try {
+              await fm.destroyDrive(destroyDrive)
+              await Promise.resolve(refreshFiles?.())
 
-            if (isMountedRef.current) {
-              setShowDestroyDriveModal(false)
-              setDestroyDrive(null)
+              if (isMountedRef.current) {
+                setShowDestroyDriveModal(false)
+                setDestroyDrive(null)
+              }
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error('Error destroying drive:', error)
             }
           }}
         />

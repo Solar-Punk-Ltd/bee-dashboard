@@ -24,7 +24,7 @@ import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
-  const { files, currentDrive, refreshFiles, drives } = useContext(FMContext)
+  const { files, currentDrive, refreshFiles, drives, fm } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -276,8 +276,15 @@ export function FileBrowser(): ReactElement {
               drive={currentDrive}
               onCancelClick={() => setShowDestroyDriveModal(false)}
               doDestroy={async () => {
-                await bulk.destroyCurrentDrive(currentDrive)
-                setShowDestroyDriveModal(false)
+                if (!fm || !currentDrive) return
+                try {
+                  await fm.destroyDrive(currentDrive)
+                  await Promise.resolve(refreshFiles?.())
+                  setShowDestroyDriveModal(false)
+                } catch (error) {
+                  // eslint-disable-next-line no-console
+                  console.error('Error destroying drive:', error)
+                }
               }}
             />
           )}

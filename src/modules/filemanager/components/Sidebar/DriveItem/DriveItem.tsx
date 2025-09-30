@@ -79,9 +79,6 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
               }}
             >
               <ContextMenu>
-                <div className="fm-context-item" onClick={handleCloseContext}>
-                  Rename
-                </div>
                 <div
                   className="fm-context-item red"
                   onClick={() => {
@@ -109,9 +106,14 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
           doDestroy={async () => {
             if (!fm) return
 
-            await fm.destroyDrive(drive)
-            await Promise.resolve(refreshFiles?.())
-            setIsDestroyDriveModalOpen(false)
+            try {
+              await fm.destroyDrive(drive)
+              await Promise.resolve(refreshFiles?.())
+              setIsDestroyDriveModalOpen(false)
+            } catch (error) {
+              // eslint-disable-next-line no-console
+              console.error('Error destroying drive:', error)
+            }
           }}
         />
       )}

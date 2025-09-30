@@ -105,16 +105,6 @@ export function useBulkActions(opts: {
     [fm, refreshFiles, clearAll],
   )
 
-  const destroyCurrentDrive = useCallback(
-    async (drive?: DriveInfo | null) => {
-      if (!fm || !drive) return
-      await fm.destroyDrive(drive)
-      await Promise.resolve(refreshFiles?.())
-      clearAll()
-    },
-    [fm, refreshFiles, clearAll],
-  )
-
   return useMemo(
     () => ({
       // selection
@@ -135,7 +125,6 @@ export function useBulkActions(opts: {
       bulkTrash,
       bulkRestore,
       bulkForget,
-      destroyCurrentDrive,
       // helpers
       idOf,
     }),
@@ -153,7 +142,6 @@ export function useBulkActions(opts: {
       bulkTrash,
       bulkRestore,
       bulkForget,
-      destroyCurrentDrive,
       idOf,
     ],
   )

@@ -3,9 +3,6 @@ import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/fileTransfer'
 
-const defaultId = (fi: FileInfo): string =>
-  fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
-
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
   drives: DriveInfo[]
