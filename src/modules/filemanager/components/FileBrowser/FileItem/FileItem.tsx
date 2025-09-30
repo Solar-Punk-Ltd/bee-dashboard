@@ -15,6 +15,7 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
+import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
@@ -93,6 +94,7 @@ export function FileItem({
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
+  const [confirmForget, setConfirmForget] = useState(false)
 
   const openGetInfo = useCallback(async () => {
     if (!fm) return
@@ -328,7 +330,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                doForget()
+                setConfirmForget(true)
               }}
             >
               Forget permanently
@@ -339,7 +341,7 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, doForget, onBulk])
+  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return
@@ -437,7 +439,7 @@ export function FileItem({
                 doTrash()
                 break
               case FileAction.Forget:
-                doForget()
+                setConfirmForget(true)
                 break
               case FileAction.Destroy:
                 showDestroyDrive()
@@ -469,6 +471,29 @@ export function FileItem({
             } catch {
               /* keep modal open on error */
             }
+          }}
+        />
+      )}
+
+      {confirmForget && (
+        <ConfirmModal
+          title="Forget permanently?"
+          message={
+            <>
+              This removes <b title={fileInfo.name}>{fileInfo.name}</b> from your view.
+              <br />
+              The data remains on Swarm until the drive expires.
+            </>
+          }
+          confirmLabel="Forget"
+          cancelLabel="Cancel"
+          onConfirm={async () => {
+            await doForget()
+
+            if (isMountedRef.current) setConfirmForget(false)
+          }}
+          onCancel={() => {
+            if (isMountedRef.current) setConfirmForget(false)
           }}
         />
       )}

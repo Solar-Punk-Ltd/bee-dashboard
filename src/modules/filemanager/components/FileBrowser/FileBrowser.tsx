@@ -16,6 +16,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
 import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
+import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -49,6 +50,7 @@ export function FileBrowser(): ReactElement {
 
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
+  const [confirmBulkForget, setConfirmBulkForget] = useState(false)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -273,11 +275,32 @@ export function FileBrowser(): ReactElement {
                 if (action === FileAction.Trash) {
                   await bulk.bulkTrash(bulk.selectedFiles)
                 } else if (action === FileAction.Forget) {
-                  await bulk.bulkForget(bulk.selectedFiles)
+                  setConfirmBulkForget(true)
                 } else if (action === FileAction.Destroy) {
                   setShowDestroyDriveModal(true)
                 }
               }}
+            />
+          )}
+
+          {confirmBulkForget && (
+            <ConfirmModal
+              title="Forget permanently?"
+              message={
+                <>
+                  This removes <b>{bulk.selectedFiles.length}</b> file
+                  {bulk.selectedFiles.length > 1 ? 's' : ''} from your view.
+                  <br />
+                  The data remains on Swarm until the drive expires.
+                </>
+              }
+              confirmLabel="Forget"
+              cancelLabel="Cancel"
+              onConfirm={async () => {
+                await bulk.bulkForget(bulk.selectedFiles)
+                setConfirmBulkForget(false)
+              }}
+              onCancel={() => setConfirmBulkForget(false)}
             />
           )}
 
