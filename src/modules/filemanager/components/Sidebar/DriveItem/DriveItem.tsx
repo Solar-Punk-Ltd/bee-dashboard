@@ -28,7 +28,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const { fm, refreshFiles } = useContext(FMContext)
 
-  const { showContext, pos, contextRef, setPos, handleCloseContext, setShowContext } = useContextMenu<HTMLDivElement>()
+  const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
   const { setView, setActualItemView } = useView()
 

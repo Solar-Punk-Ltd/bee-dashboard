@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useContext } from 'react'
-import type { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes } from '../utils/common'

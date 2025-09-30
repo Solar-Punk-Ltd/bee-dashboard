@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useRef, useState, ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, ReactNode, useCallback } from 'react'
 
 type Scope = 'selected' | 'all'
 
@@ -25,32 +25,35 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const preSearchState = useRef<{ scope: Scope; includeActive: boolean; includeTrashed: boolean } | null>(null)
   const inSearch = useRef(false)
 
-  const setQuery = (q: string) => {
-    const trimmed = q.trim()
+  const setQuery = useCallback(
+    (q: string) => {
+      const trimmed = q.trim()
 
-    if (!inSearch.current && trimmed.length > 0) {
-      preSearchState.current = { scope, includeActive, includeTrashed }
-      inSearch.current = true
-    }
-
-    if (inSearch.current && trimmed.length === 0) {
-      const prev = preSearchState.current
-
-      if (prev) {
-        setScope(prev.scope)
-        setIncludeActive(prev.includeActive)
-        setIncludeTrashed(prev.includeTrashed)
+      if (!inSearch.current && trimmed.length > 0) {
+        preSearchState.current = { scope, includeActive, includeTrashed }
+        inSearch.current = true
       }
-      preSearchState.current = null
-      inSearch.current = false
-    }
 
-    _setQuery(q)
-  }
+      if (inSearch.current && trimmed.length === 0) {
+        const prev = preSearchState.current
 
-  const clear = () => {
+        if (prev) {
+          setScope(prev.scope)
+          setIncludeActive(prev.includeActive)
+          setIncludeTrashed(prev.includeTrashed)
+        }
+        preSearchState.current = null
+        inSearch.current = false
+      }
+
+      _setQuery(q)
+    },
+    [scope, includeActive, includeTrashed],
+  )
+
+  const clear = useCallback(() => {
     setQuery('')
-  }
+  }, [setQuery])
 
   const value = useMemo<SearchState>(
     () => ({

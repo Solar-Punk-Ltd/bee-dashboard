@@ -31,7 +31,7 @@ export function DeleteFileModal({
 
   const modalRoot = document.querySelector('.fm-main') || document.body
   const isBulk = Array.isArray(names) && names.length > 0
-  const count = isBulk ? names!.length : 1
+  const count = isBulk ? names.length : 1
   const headerText = isBulk ? `Delete ${count} file${count > 1 ? 's' : ''}?` : `Delete ${name}?`
   const subjectNoun = isBulk ? 'selected file(s)' : 'this file'
 
@@ -45,7 +45,7 @@ export function DeleteFileModal({
         <div className="fm-modal-window-body">
           {isBulk && (
             <ul className="fm-delete-file-modal-list">
-              {names!.map(n => (
+              {names.map(n => (
                 <li key={n} className="fm-delete-file-modal-list-item" title={n}>
                   {n}
                 </li>
