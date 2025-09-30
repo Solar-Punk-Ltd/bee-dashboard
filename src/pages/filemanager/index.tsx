@@ -11,7 +11,6 @@ import { Context as FMContext } from '../../providers/FileManager'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
-
   const { fm, adminDrive, initializationError, adminStamp, getStoredState } = useContext(FMContext)
 
   useEffect(() => {
@@ -24,17 +23,8 @@ export function FileManagerPage(): ReactElement {
   if (initializationError) {
     return (
       <div className="fm-main">
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
-            gap: '16px',
-          }}
-        >
-          <div>Failed to initialize File Manager</div>
+        <div className="fm-loading">
+          <div className="fm-loading-title">Failed to initialize File Manager</div>
         </div>
       </div>
     )
@@ -51,8 +41,10 @@ export function FileManagerPage(): ReactElement {
   if (!fm) {
     return (
       <div className="fm-main">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          File Manager not initialized
+        <div className="fm-loading" aria-live="polite">
+          <div className="fm-spinner" aria-hidden="true" />
+          <div className="fm-loading-title">File manager loading…</div>
+          <div className="fm-loading-subtitle">Please wait a few seconds</div>
         </div>
       </div>
     )
@@ -69,7 +61,6 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-
           <AdminStatusBar adminStamp={adminStamp ?? null} adminDrive={adminDrive ?? null} loading={adminBarLoading} />
         </div>
       </ViewProvider>

@@ -119,7 +119,6 @@ export function Sidebar(): ReactElement {
             )
           })}
 
-        {/* Trash (per drive) */}
         <div
           className="fm-sidebar-item"
           onMouseEnter={() => setHovered('trash')}

@@ -132,7 +132,6 @@ export function FileProgressWindow({
 
             <div className="fm-file-progress-window-file-datas">
               <div className="fm-file-progress-window-file-item-header">
-                {/* NAME + DRIVE on a second line to ensure drive always shows */}
                 <div className="fm-file-progress-window-name" title={uiName}>
                   <div className="fm-file-progress-window-name-text">{uiName}</div>
                   {file.driveName && (
