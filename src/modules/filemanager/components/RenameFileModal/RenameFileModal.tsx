@@ -24,6 +24,15 @@ export function RenameFileModal({
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 0)
 
@@ -65,7 +74,7 @@ export function RenameFileModal({
       setSubmitting(true)
       await onProceed(trimmed)
     } finally {
-      setSubmitting(false)
+      if (isMountedRef.current) setSubmitting(false)
     }
   }
 
