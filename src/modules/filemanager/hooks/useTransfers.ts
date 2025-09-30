@@ -5,13 +5,21 @@ import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDial
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 
+const SAMPLE_WINDOW_MS = 500
+const ETA_SMOOTHING = 0.3
+
 export type TransferItem = {
   name: string
   size?: string
   percent: number
   status: TransferStatus
   kind?: FileTransferType
+  driveName?: string
+  startedAt?: number
+  etaSec?: number
+  elapsedSec?: number
 }
+
 type UploadMeta = Record<string, string | number>
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
@@ -62,36 +70,94 @@ export function useTransfers() {
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const isUploading = uploadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
 
-  const trackUploadProgress = (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
-    setUploadItems(prev => {
-      const idx = prev.findIndex(p => p.name === name)
-      const base: TransferItem = { name, size, percent: 0, status: TransferStatus.Uploading, kind }
+  const trackUploadProgress = useCallback(
+    (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
+      const driveName = currentDrive?.name
+      const startedAt = Date.now()
 
-      if (idx === -1) return [...prev, base]
-      const copy = [...prev]
-      copy[idx] = base
+      let lastTs = startedAt
+      let lastProcessed = 0
+      let lastEta: number | undefined
 
-      return copy
-    })
+      setUploadItems(prev => {
+        const idx = prev.findIndex(p => p.name === name)
+        const base: TransferItem = {
+          name,
+          size,
+          percent: 0,
+          status: TransferStatus.Uploading,
+          kind,
+          driveName,
+          startedAt,
+          etaSec: undefined,
+          elapsedSec: undefined,
+        }
 
-    const onProgress = (progress: { total: number; processed: number }) => {
-      if (progress.total > 0) {
-        const percent = Math.floor((progress.processed / progress.total) * 100)
+        if (idx === -1) return [...prev, base]
+        const copy = [...prev]
+        copy[idx] = base
 
-        setUploadItems(prev =>
-          prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, percent), kind } : it)),
-        )
+        return copy
+      })
 
-        if (progress.processed >= progress.total) {
+      const onProgress = (progress: { total: number; processed: number }) => {
+        if (progress.total > 0) {
+          const now = Date.now()
+          const pct = Math.floor((progress.processed / progress.total) * 100)
+
+          let etaSec: number | undefined
+          const dt = (now - lastTs) / 1000
+
+          if (dt >= SAMPLE_WINDOW_MS / 1000) {
+            const dBytes = Math.max(0, progress.processed - lastProcessed)
+            const instSpeed = dBytes > 0 && dt > 0 ? dBytes / dt : 0
+            const remaining = Math.max(0, progress.total - progress.processed)
+            const rawEta = instSpeed > 0 ? remaining / instSpeed : undefined
+
+            const avgDt = (now - startedAt) / 1000
+            const avgSpeed = avgDt > 0 && progress.processed > 0 ? progress.processed / avgDt : 0
+            const avgEta = avgSpeed > 0 ? remaining / avgSpeed : undefined
+
+            const freshEta = rawEta ?? avgEta
+
+            if (typeof freshEta === 'number') {
+              etaSec = typeof lastEta === 'number' ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
+              lastEta = etaSec
+            }
+
+            lastTs = now
+            lastProcessed = progress.processed
+          } else {
+            etaSec = lastEta
+          }
+
           setUploadItems(prev =>
-            prev.map(it => (it.name === name ? { ...it, percent: 100, status: TransferStatus.Done } : it)),
+            prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, pct), kind, etaSec } : it)),
           )
+
+          if (progress.processed >= progress.total) {
+            const finishedAt = Date.now()
+            setUploadItems(prev =>
+              prev.map(it =>
+                it.name === name
+                  ? {
+                      ...it,
+                      percent: 100,
+                      status: TransferStatus.Done,
+                      etaSec: 0,
+                      elapsedSec: Math.round((finishedAt - (it.startedAt || startedAt)) / 1000), // NEW
+                    }
+                  : it,
+              ),
+            )
+          }
         }
       }
-    }
 
-    return onProgress
-  }
+      return onProgress
+    },
+    [currentDrive?.name],
+  )
 
   const collectSameDrive = useCallback(
     (id: string): FileInfo[] => files.filter(fi => fi.driveId.toString() === id),
@@ -198,7 +264,7 @@ export function useTransfers() {
 
       void processAll()
     },
-    [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems],
+    [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
@@ -209,39 +275,109 @@ export function useTransfers() {
     size?: string,
     expectedSize?: number,
   ): ((bytesDownloaded: number, downloadingFlag: boolean) => void) => {
+    const driveName = currentDrive?.name
+
     setDownloadItems(prev => {
       const row: TransferItem = {
         name,
-        size: size,
+        size,
         percent: 0,
         status: TransferStatus.Uploading,
         kind: FileTransferType.Download,
+        driveName,
+        startedAt: undefined,
+        etaSec: undefined,
+        elapsedSec: undefined,
       }
       const idx = prev.findIndex(p => p.name === name)
 
       if (idx === -1) return [...prev, row]
       const out = [...prev]
-      out[idx] = row
+      out[idx] = { ...row, startedAt: prev[idx].startedAt ?? row.startedAt }
 
       return out
     })
 
+    let startedAt: number | undefined
+    let lastTs: number | undefined
+    let lastBytes = 0
+    let lastEta: number | undefined
+
     const onProgress = (bytesDownloaded: number, downloadingFlag: boolean) => {
       let percent = 0
 
-      if (expectedSize && expectedSize > 0) {
-        percent = Math.floor((bytesDownloaded / expectedSize) * 100)
-      }
+      setDownloadItems(prev => {
+        const now = Date.now()
 
-      setDownloadItems(prev =>
-        prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, percent) } : it)),
-      )
+        if (!startedAt) {
+          startedAt = now
+          lastTs = now
+        }
 
-      if (!downloadingFlag) {
-        setDownloadItems(prev =>
-          prev.map(it => (it.name === name ? { ...it, percent: 100, status: TransferStatus.Done } : it)),
-        )
-      }
+        let etaSec: number | undefined
+        const out = prev.map(it => {
+          if (it.name !== name) return it
+
+          const rowStarted = it.startedAt ?? startedAt
+          const safeStarted = rowStarted ?? now
+
+          if (expectedSize && expectedSize > 0) {
+            percent = Math.floor((bytesDownloaded / expectedSize) * 100)
+
+            const tsRef = lastTs ?? safeStarted
+            const dt = (now - tsRef) / 1000
+
+            if (dt >= SAMPLE_WINDOW_MS / 1000) {
+              const dBytes = Math.max(0, bytesDownloaded - lastBytes)
+              const instSpeed = dBytes > 0 && dt > 0 ? dBytes / dt : 0
+              const remaining = Math.max(0, expectedSize - bytesDownloaded)
+              const rawEta = instSpeed > 0 ? remaining / instSpeed : undefined
+
+              const avgDt = (now - safeStarted) / 1000
+              const avgSpeed = avgDt > 0 && bytesDownloaded > 0 ? bytesDownloaded / avgDt : 0
+              const avgEta = avgSpeed > 0 ? remaining / avgSpeed : undefined
+
+              const freshEta = rawEta ?? avgEta
+
+              if (typeof freshEta === 'number') {
+                etaSec =
+                  typeof lastEta === 'number' ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
+                lastEta = etaSec
+              }
+
+              lastTs = now
+              lastBytes = bytesDownloaded
+            } else {
+              etaSec = lastEta
+            }
+          }
+
+          return {
+            ...it,
+            percent: Math.max(it.percent, percent),
+            etaSec,
+            startedAt: rowStarted ?? startedAt,
+          }
+        })
+
+        if (!downloadingFlag) {
+          const finishedAt = Date.now()
+
+          return out.map(it =>
+            it.name === name
+              ? {
+                  ...it,
+                  percent: 100,
+                  status: TransferStatus.Done,
+                  etaSec: 0,
+                  elapsedSec: typeof it.startedAt === 'number' ? Math.round((finishedAt - it.startedAt) / 1000) : 0,
+                }
+              : it,
+          )
+        }
+
+        return out
+      })
     }
 
     return onProgress

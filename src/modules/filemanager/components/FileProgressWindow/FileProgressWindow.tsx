@@ -5,7 +5,6 @@ import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { FileTransferType, TransferBarColor, TransferStatus } from '../../constants/fileTransfer'
-import { formatBytes } from '../../utils/common'
 
 type ProgressItem = {
   name: string
@@ -13,6 +12,9 @@ type ProgressItem = {
   size?: string
   kind?: FileTransferType
   status?: TransferStatus
+  driveName?: string
+  etaSec?: number
+  elapsedSec?: number
 }
 
 interface FileProgressWindowProps {
@@ -22,6 +24,26 @@ interface FileProgressWindowProps {
   onCancelClick: () => void
   onRowClose?: (name: string) => void
   onCloseAll?: () => void
+}
+
+const formatEta = (sec?: number) => {
+  if (sec === undefined || sec === null) return ''
+
+  if (sec <= 0) return 'Done'
+  const s = Math.ceil(sec)
+  const mm = Math.floor(s / 60)
+  const ss = s % 60
+
+  return mm > 0 ? `${mm}m ${ss}s left` : `${ss}s left`
+}
+
+const formatDuration = (sec?: number) => {
+  if (sec === undefined || sec === null) return ''
+  const s = Math.max(0, Math.round(sec))
+  const mm = Math.floor(s / 60)
+  const ss = s % 60
+
+  return mm > 0 ? `${mm}m ${ss}s` : `${ss}s`
 }
 
 export function FileProgressWindow({
@@ -41,9 +63,12 @@ export function FileProgressWindow({
   const getTransferInfo = (item: ProgressItem, pct?: number) => {
     const transferType = item?.kind ?? type
     const cap = transferType.charAt(0).toUpperCase() + transferType.slice(1)
+    let verb = `${cap}ing`
+
+    if (cap.toLowerCase() === 'update') verb = 'Updating'
 
     return {
-      statusText: pct === 100 ? 'Done' : `${cap}ing…`,
+      statusText: pct === 100 || item.status === TransferStatus.Done ? 'Done' : `${verb}…`,
       barColor: TransferBarColor[cap as keyof typeof TransferBarColor],
     }
   }
@@ -68,9 +93,7 @@ export function FileProgressWindow({
             aria-label="Dismiss all"
             type="button"
             disabled={!allDone}
-            onClick={() => {
-              onCloseAll?.()
-            }}
+            onClick={() => onCloseAll?.()}
           >
             <CloseIcon size="16" />
           </button>
@@ -87,39 +110,43 @@ export function FileProgressWindow({
       </div>
 
       {rows.map(file => {
-        // round & clamp
         const pctNum = Number.isFinite(file.percent)
           ? Math.max(0, Math.min(100, Math.round(file.percent as number)))
           : undefined
 
         const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
         const transferInfo = getTransferInfo(file, pctNum)
+        const uiName = file.name
+
+        let centerText = ''
+
+        if (!isComplete && typeof file.etaSec === 'number') centerText = formatEta(file.etaSec)
+        else if (isComplete && typeof file.elapsedSec === 'number') centerText = formatDuration(file.elapsedSec)
+        const centerDisplay = centerText || '\u00A0'
 
         return (
           <div className="fm-file-progress-window-file-item" key={`${file.name}`}>
             <div className="fm-file-progress-window-file-type-icon">
-              <GetIconElement size="14" icon={file.name} color="black" />
+              <GetIconElement size="14" icon={uiName} color="black" />
             </div>
 
             <div className="fm-file-progress-window-file-datas">
-              <div
-                className="fm-file-progress-window-file-item-header"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto auto',
-                  alignItems: 'center',
-                  gap: 8,
-                  minWidth: 0,
-                }}
-              >
-                <div
-                  title={file.name}
-                  style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {file.name}
+              <div className="fm-file-progress-window-file-item-header">
+                {/* NAME + DRIVE on a second line to ensure drive always shows */}
+                <div className="fm-file-progress-window-name" title={uiName}>
+                  <div className="fm-file-progress-window-name-text">{uiName}</div>
+                  {file.driveName && (
+                    <div className="fm-drive-line">
+                      <span className="fm-drive-chip" title={`Drive: ${file.driveName}`}>
+                        {file.driveName}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                <div aria-live="polite">{typeof pctNum === 'number' ? `${pctNum}%` : ''}</div>
+                <div className="fm-file-progress-window-percent" aria-live="polite">
+                  {typeof pctNum === 'number' ? `${pctNum}%` : ''}
+                </div>
 
                 <button
                   className="fm-file-progress-window-row-close"
@@ -141,12 +168,10 @@ export function FileProgressWindow({
                 color={transferInfo.barColor}
               />
 
-              <div
-                className="fm-file-progress-window-file-item-footer"
-                style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center' }}
-              >
-                <div>{formatBytes(file.size) ?? '—'}</div>
-                <div>{transferInfo.statusText}</div>
+              <div className="fm-file-progress-window-file-item-footer">
+                <div className="fm-file-progress-window-size">{file.size || '—'}</div>
+                <div className="fm-file-progress-window-center">{centerDisplay}</div>
+                <div className="fm-file-progress-window-status">{transferInfo.statusText}</div>
               </div>
             </div>
           </div>

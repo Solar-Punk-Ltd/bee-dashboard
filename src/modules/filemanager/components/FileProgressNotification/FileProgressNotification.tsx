@@ -5,7 +5,16 @@ import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import { FileProgressWindow } from '../FileProgressWindow/FileProgressWindow'
 import { FileTransferType, TransferStatus } from '../../constants/fileTransfer'
 
-type ProgressItem = { name: string; percent?: number; size?: string; kind?: FileTransferType; status?: TransferStatus }
+type ProgressItem = {
+  name: string
+  size?: string
+  percent?: number
+  kind?: FileTransferType
+  status?: TransferStatus
+  driveName?: string
+  etaSec?: number
+  elapsedSec?: number
+}
 
 interface FileProgressNotificationProps {
   label?: string

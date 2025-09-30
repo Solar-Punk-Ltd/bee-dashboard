@@ -28,12 +28,18 @@ type RenameConfirmState = {
 interface VersionHistoryModalProps {
   fileInfo: FileInfo
   onCancelClick: () => void
+  onDownload?: (
+    name: string,
+    size?: string,
+    expectedSize?: number,
+  ) => (progress: number, isDownloading: boolean) => void
 }
 
-export function VersionHistoryModal({ fileInfo, onCancelClick }: VersionHistoryModalProps): ReactElement {
+export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
   const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
 
-  const { trackDownload } = useTransfers()
+  const localTransfers = useTransfers()
+  const trackDownload = onDownload ?? localTransfers.trackDownload
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body

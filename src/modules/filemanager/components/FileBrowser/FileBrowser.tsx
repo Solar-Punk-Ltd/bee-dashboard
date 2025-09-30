@@ -306,7 +306,7 @@ export function FileBrowser(): ReactElement {
             type={FileTransferType.Upload}
             open={isUploading}
             count={uploadItems.length}
-            items={uploadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
+            items={uploadItems}
             onRowClose={name => dismissUpload(name)}
             onCloseAll={() => dismissAllUploads()}
           />
@@ -315,7 +315,7 @@ export function FileBrowser(): ReactElement {
             type={FileTransferType.Download}
             open={isDownloading}
             count={downloadItems.length}
-            items={downloadItems.map(i => ({ name: i.name, percent: i.percent, size: i.size, kind: i.kind }))}
+            items={downloadItems}
             onRowClose={name => dismissDownload(name)}
             onCloseAll={() => dismissAllDownloads()}
           />

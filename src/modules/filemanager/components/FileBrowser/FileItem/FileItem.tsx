@@ -419,6 +419,7 @@ export function FileItem({
           onCancelClick={() => {
             if (isMountedRef.current) setShowVersionHistory(false)
           }}
+          onDownload={onDownload}
         />
       )}
 
