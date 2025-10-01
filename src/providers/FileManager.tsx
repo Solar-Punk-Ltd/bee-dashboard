@@ -195,7 +195,7 @@ export function Provider({ children }: Props) {
             adminBatchId: driveInfo.batchId.toString(),
           })
 
-          if (beeApi) {
+          if (beeApi && !adminStamp) {
             const usableStamps = await getUsableStamps(beeApi)
             const match = usableStamps.find(s => s.batchID.toString() === driveInfo.batchId.toString()) || null
             setAdminStamp(match)
@@ -226,7 +226,7 @@ export function Provider({ children }: Props) {
         return false
       }
     },
-    [apiUrl, beeApi],
+    [apiUrl, beeApi, adminStamp],
   )
   useEffect(() => {
     if (!apiUrl || !beeApi) return

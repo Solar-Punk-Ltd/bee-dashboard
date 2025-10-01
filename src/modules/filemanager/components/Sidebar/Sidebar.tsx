@@ -20,7 +20,7 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export function Sidebar(): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
-  const [isMyDrivesOpen, setIsMyDriveOpen] = useState(false)
+  const [isMyDrivesOpen, setIsMyDriveOpen] = useState(true)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
   const [isCreateDriveOpen, setIsCreateDriveOpen] = useState(false)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])

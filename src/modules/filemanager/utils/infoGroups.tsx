@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { ReactElement } from 'react'
 import { FileStatus, FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
@@ -7,7 +8,7 @@ import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import { indexStrToBigint } from './common'
-import { FEED_INDEX_ZERO } from '../constants/common'
+import { FEED_INDEX_ZERO, erasureCodeMarks } from '../constants/common'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }
@@ -39,7 +40,7 @@ const formatBytes = (bytes?: number | string) => {
   return `${v.toFixed(1)} ${units[i]}`
 }
 
-const truncateMiddle = (s?: string, start = 10, end = 8) => {
+const truncateMiddle = (s?: string, start = 8, end = 8) => {
   if (!s) return dash
 
   return s.length <= start + end + 3 ? s : `${s.slice(0, start)}...${s.slice(-end)}`
@@ -107,12 +108,6 @@ function buildGeneralGroup(
         value: truncateMiddle(fi.file.reference.toString()),
         raw: fi.file.reference.toString(),
       },
-      {
-        key: 'topic',
-        label: 'Topic',
-        value: truncateMiddle(fi.topic.toString()),
-        raw: fi.topic.toString(),
-      },
       { key: 'ver', label: 'Versions', value: ((indexStrToBigint(fi.version) ?? BigInt(0)) + BigInt(1)).toString() },
       { key: 'status', label: 'Status', value: !fi.status ? FileStatus.Active : fi.status },
     ],
@@ -139,7 +134,7 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
       {
         key: 'owner',
         label: 'Owner',
-        value: truncateMiddle(fi.owner.toString(), 12, 8),
+        value: truncateMiddle(fi.owner.toString()),
         raw: fi.owner.toString(),
       },
       { key: 'shared', label: 'Sharing', value: fi.shared ? 'Shared' : 'Private' },
@@ -147,13 +142,19 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
       {
         key: 'actpub',
         label: 'ACT Publisher',
-        value: truncateMiddle(fi.actPublisher.toString(), 12, 8),
+        value: truncateMiddle(fi.actPublisher.toString()),
         raw: fi.actPublisher.toString(),
+      },
+      {
+        key: 'topic',
+        label: 'Topic',
+        value: truncateMiddle(fi.topic.toString()),
+        raw: fi.topic.toString(),
       },
       {
         key: 'historyRef',
         label: 'ACT History',
-        value: truncateMiddle(fi.file.historyRef.toString(), 12, 8),
+        value: truncateMiddle(fi.file.historyRef.toString()),
         raw: fi.file.historyRef.toString(),
       },
     ],
@@ -162,8 +163,13 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
 
 function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch): FilePropertyGroup {
   const stampValue = stamp
-    ? truncateMiddle(fi.batchId.toString(), 4, 4) + ' (' + stamp.label + ')'
-    : truncateMiddle(fi.batchId.toString(), 12, 8)
+    ? stamp.label + ' (' + truncateMiddle(fi.batchId.toString(), 4, 4) + ')'
+    : truncateMiddle(fi.batchId.toString())
+
+  const redundancyLabel =
+    fi.redundancyLevel !== undefined
+      ? erasureCodeMarks.find(mark => mark.value === fi.redundancyLevel)?.label ?? fi.redundancyLevel.toString()
+      : dash
 
   return {
     title: 'Storage',
@@ -176,7 +182,7 @@ function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch
         raw: fi.batchId.toString(),
       },
       { key: 'drive', label: 'Drive', value: driveName },
-      { key: 'redundancy', label: 'Redundancy', value: fi.redundancyLevel?.toString() ?? dash },
+      { key: 'redundancy', label: 'Redundancy', value: redundancyLabel },
     ],
   }
 }

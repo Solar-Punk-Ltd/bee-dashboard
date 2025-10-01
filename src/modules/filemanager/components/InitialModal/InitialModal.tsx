@@ -8,6 +8,7 @@ import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
 import { getExpiryDateByLifetime } from '../../utils/common'
+import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
@@ -18,13 +19,6 @@ import { ProgressBar } from '../ProgressBar/ProgressBar'
 interface InitialModalProps {
   handleVisibility: (isVisible: boolean) => void
 }
-
-const erasureCodeMarks = Object.entries(RedundancyLevel)
-  .filter(([_, value]) => typeof value === 'number')
-  .map(([key, value]) => ({
-    value: value as number,
-    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(),
-  }))
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))

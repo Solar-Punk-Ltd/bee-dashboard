@@ -21,10 +21,13 @@ import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
+import { getUsableStamps } from '../../utils/bee'
+import { Context as SettingsContext } from '../../../../providers/Settings'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
+  const { beeApi } = useContext(SettingsContext)
   const { files, currentDrive, refreshFiles, drives, fm } = useContext(FMContext)
   const {
     uploadFiles,
@@ -311,7 +314,13 @@ export function FileBrowser(): ReactElement {
               doDestroy={async () => {
                 if (!fm || !currentDrive) return
                 try {
-                  await fm.destroyDrive(currentDrive)
+                  const stamp = (await getUsableStamps(beeApi)).find(
+                    s => s.batchID.toString() === currentDrive.batchId.toString(),
+                  )
+
+                  if (!stamp) throw new Error('Postage stamp for the current drive not found')
+
+                  await fm.destroyDrive(currentDrive, stamp)
                   await Promise.resolve(refreshFiles?.())
                   setShowDestroyDriveModal(false)
                 } catch (error) {

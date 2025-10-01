@@ -465,11 +465,11 @@ export function FileItem({
           }}
           onProceed={async newName => {
             try {
-              await doRename(newName)
-
               if (isMountedRef.current) setShowRenameModal(false)
+
+              await doRename(newName)
             } catch {
-              /* keep modal open on error */
+              if (isMountedRef.current) setShowRenameModal(true)
             }
           }}
         />
@@ -509,7 +509,13 @@ export function FileItem({
           }}
           doDestroy={async () => {
             try {
-              await fm.destroyDrive(destroyDrive)
+              const stamp = (await getUsableStamps(beeApi)).find(
+                s => s.batchID.toString() === destroyDrive.batchId.toString(),
+              )
+
+              if (!stamp) throw new Error('Postage stamp for the current drive not found')
+
+              await fm.destroyDrive(destroyDrive, stamp)
               await Promise.resolve(refreshFiles?.())
 
               if (isMountedRef.current) {

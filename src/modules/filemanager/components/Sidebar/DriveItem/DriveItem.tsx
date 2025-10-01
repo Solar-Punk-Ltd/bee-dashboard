@@ -1,4 +1,4 @@
-import { ReactElement, useState, useContext } from 'react'
+import { ReactElement, useState, useContext, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Drive from 'remixicon-react/HardDrive2LineIcon'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
@@ -15,6 +15,8 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -35,10 +37,18 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const { fm, refreshFiles } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
+  const isMountedRef = useRef(true)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
   const { setView, setActualItemView } = useView()
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   function handleMenuClick(e: React.MouseEvent) {
     setShowContext(true)
@@ -121,15 +131,22 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
           doDestroy={async () => {
-            if (!fm) return
+            if (!fm || !beeApi) return
 
             try {
-              await fm.destroyDrive(drive)
+              const stamp = (await getUsableStamps(beeApi)).find(s => s.batchID.toString() === drive.batchId.toString())
+
+              if (!stamp) throw new Error('Postage stamp for the current drive not found')
+
+              await fm.destroyDrive(drive, stamp)
               await Promise.resolve(refreshFiles?.())
-              setIsDestroyDriveModalOpen(false)
             } catch (error) {
               // eslint-disable-next-line no-console
               console.error('Error destroying drive:', error)
+            } finally {
+              if (isMountedRef.current) {
+                setIsDestroyDriveModalOpen(false)
+              }
             }
           }}
         />
