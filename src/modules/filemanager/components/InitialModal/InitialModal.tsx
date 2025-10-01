@@ -89,9 +89,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
         selectedBatch,
         setIsAdminStampCreationInProgress,
         handleNewAdminDriveSuccess,
-        () => {
-          // Error handling - no need to set loading state here as it's handled centrally
-        },
       )
     },
     [beeApi, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleNewAdminDriveSuccess],

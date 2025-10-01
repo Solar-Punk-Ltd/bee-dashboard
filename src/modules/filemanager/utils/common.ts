@@ -89,3 +89,7 @@ export enum Dir {
   Down = 'down',
   Up = 'up',
 }
+
+export function getFileId(fi: FileInfo): string {
+  return fi.topic.toString()
+}

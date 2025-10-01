@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useState, useMemo } from 'react'
 
 import './AdminStatusBar.scss'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
@@ -8,26 +8,25 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 
 interface AdminStatusBarProps {
-  adminStamp?: PostageBatch | null
-  adminDrive?: DriveInfo | null
-  loading?: boolean
+  adminStamp: PostageBatch | null
+  adminDrive: DriveInfo | null
+  loading: boolean
 }
-
+// TODO: refresh admin drive and stamp info after upload, new drive etc.
 export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusBarProps): ReactElement {
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
 
-  const capacityPct = (() => {
-    if (!adminStamp) return 0
-    try {
-      return Math.max(0, Math.min(100, adminStamp.usage * 100))
-    } catch {
-      return 0
-    }
-  })()
+  const capacityPct = useMemo(() => (adminStamp ? Math.max(0, Math.min(100, adminStamp.usage * 100)) : 0), [adminStamp])
 
-  const usedGb = adminStamp ? (adminStamp.size.toGigabytes() - adminStamp.remainingSize.toGigabytes()).toFixed(1) : '—'
-  const totalGb = adminStamp ? adminStamp.size.toGigabytes().toFixed(1) : '—'
-  const expiresAt = adminStamp ? adminStamp.duration.toEndDate().toLocaleDateString() : '—'
+  const usedGb = useMemo(
+    () => (adminStamp ? (adminStamp.size.toGigabytes() - adminStamp.remainingSize.toGigabytes()).toFixed(1) : '—'),
+    [adminStamp],
+  )
+  const totalGb = useMemo(() => (adminStamp ? adminStamp.size.toGigabytes().toFixed(1) : '—'), [adminStamp])
+  const expiresAt = useMemo(
+    () => (adminStamp ? adminStamp.duration.toEndDate().toLocaleDateString() : '—'),
+    [adminStamp],
+  )
 
   const blurCls = loading ? ' is-loading' : ''
 

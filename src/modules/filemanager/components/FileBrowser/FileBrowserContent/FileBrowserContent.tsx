@@ -2,6 +2,7 @@ import { ReactElement, useCallback } from 'react'
 import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/fileTransfer'
+import { getFileId } from '../../../utils/common'
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -16,7 +17,6 @@ interface FileBrowserContentProps {
   ) => (progress: number, isDownloading: boolean) => void
   selectedIds?: Set<string>
   onToggleSelected?: (fi: FileInfo, checked: boolean) => void
-  idOf?: (fi: FileInfo) => string
   bulkSelectedCount?: number
   onBulk: {
     download?: () => void
@@ -36,7 +36,6 @@ export function FileBrowserContent({
   trackDownload,
   selectedIds,
   onToggleSelected,
-  idOf,
   bulkSelectedCount,
   onBulk,
 }: FileBrowserContentProps): ReactElement {
@@ -60,14 +59,11 @@ export function FileBrowserContent({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
-  const defaultId = (fi: FileInfo): string =>
-    fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId?.toString?.()}:${fi.name}`
-
   const renderFileList = useCallback(
     (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
       return filesToRender.map(fi => {
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
-        const key = `${(idOf ?? defaultId)(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
+        const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
 
         return (
           <FileItem
@@ -76,7 +72,7 @@ export function FileBrowserContent({
             onDownload={trackDownload}
             showDriveColumn={showDriveColumn}
             driveName={driveName}
-            selected={Boolean(selectedIds?.has((idOf ?? defaultId)(fi)))}
+            selected={Boolean(selectedIds?.has(getFileId(fi)))}
             onToggleSelected={onToggleSelected}
             bulkSelectedCount={bulkSelectedCount}
             onBulk={onBulk}
@@ -84,7 +80,7 @@ export function FileBrowserContent({
         )
       })
     },
-    [trackDownload, drives, selectedIds, onToggleSelected, idOf, bulkSelectedCount, onBulk],
+    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk],
   )
 
   if (drives.length === 0) {

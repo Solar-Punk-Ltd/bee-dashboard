@@ -22,7 +22,7 @@ import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
-import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { getUsableStamps, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
@@ -170,7 +170,7 @@ export function FileItem({
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }, [currentDrive])
-
+  // TODO: do rename upload progress
   const doRename = useCallback(
     async (newName: string) => {
       if (!fm || !currentDrive) return
@@ -466,7 +466,6 @@ export function FileItem({
           onProceed={async newName => {
             try {
               if (isMountedRef.current) setShowRenameModal(false)
-
               await doRename(newName)
             } catch {
               if (isMountedRef.current) setShowRenameModal(true)
@@ -508,24 +507,23 @@ export function FileItem({
             }
           }}
           doDestroy={async () => {
-            try {
-              const stamp = (await getUsableStamps(beeApi)).find(
-                s => s.batchID.toString() === destroyDrive.batchId.toString(),
-              )
+            await handleDestroyDrive(
+              beeApi,
+              fm,
+              destroyDrive,
+              () => {
+                refreshFiles?.()
 
-              if (!stamp) throw new Error('Postage stamp for the current drive not found')
-
-              await fm.destroyDrive(destroyDrive, stamp)
-              await Promise.resolve(refreshFiles?.())
-
-              if (isMountedRef.current) {
-                setShowDestroyDriveModal(false)
-                setDestroyDrive(null)
-              }
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error('Error destroying drive:', error)
-            }
+                if (isMountedRef.current) {
+                  setShowDestroyDriveModal(false)
+                  setDestroyDrive(null)
+                }
+              },
+              error => {
+                // eslint-disable-next-line no-console
+                console.error('Error destroying drive:', error)
+              },
+            )
           }}
         />
       )}

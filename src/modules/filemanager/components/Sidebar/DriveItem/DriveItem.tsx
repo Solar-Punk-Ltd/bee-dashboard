@@ -15,7 +15,7 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface DriveItemProps {
@@ -175,23 +175,26 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
           doDestroy={async () => {
-            if (!fm || !beeApi) return
+            await handleDestroyDrive(
+              beeApi,
+              fm,
+              drive,
+              () => {
+                refreshDrives?.()
 
-            try {
-              const stamp = (await getUsableStamps(beeApi)).find(s => s.batchID.toString() === drive.batchId.toString())
+                if (isMountedRef.current) {
+                  setIsDestroyDriveModalOpen(false)
+                }
+              },
+              error => {
+                // eslint-disable-next-line no-console
+                console.error('Error destroying drive:', error)
 
-              if (!stamp) throw new Error('Postage stamp for the current drive not found')
-
-              await fm.destroyDrive(drive, stamp)
-              await Promise.resolve(refreshDrives?.())
-            } catch (error) {
-              // eslint-disable-next-line no-console
-              console.error('Error destroying drive:', error)
-            } finally {
-              if (isMountedRef.current) {
-                setIsDestroyDriveModalOpen(false)
-              }
-            }
+                if (isMountedRef.current) {
+                  setIsDestroyDriveModalOpen(false)
+                }
+              },
+            )
           }}
         />
       )}

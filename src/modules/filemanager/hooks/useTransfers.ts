@@ -120,8 +120,8 @@ export function useTransfers() {
 
             const freshEta = rawEta ?? avgEta
 
-            if (typeof freshEta === 'number') {
-              etaSec = typeof lastEta === 'number' ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
+            if (freshEta !== undefined) {
+              etaSec = lastEta !== undefined ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
               lastEta = etaSec
             }
 
@@ -339,9 +339,8 @@ export function useTransfers() {
 
               const freshEta = rawEta ?? avgEta
 
-              if (typeof freshEta === 'number') {
-                etaSec =
-                  typeof lastEta === 'number' ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
+              if (freshEta !== undefined) {
+                etaSec = lastEta !== undefined ? (1 - ETA_SMOOTHING) * lastEta + ETA_SMOOTHING * freshEta : freshEta
                 lastEta = etaSec
               }
 
@@ -370,7 +369,7 @@ export function useTransfers() {
                   percent: 100,
                   status: TransferStatus.Done,
                   etaSec: 0,
-                  elapsedSec: typeof it.startedAt === 'number' ? Math.round((finishedAt - it.startedAt) / 1000) : 0,
+                  elapsedSec: it.startedAt !== undefined ? Math.round((finishedAt - it.startedAt) / 1000) : 0,
                 }
               : it,
           )

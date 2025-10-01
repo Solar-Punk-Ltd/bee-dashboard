@@ -50,8 +50,6 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  const adminBarLoading = !adminStamp || !adminDrive
-
   return (
     <SearchProvider>
       <ViewProvider>
@@ -61,7 +59,7 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-          <AdminStatusBar adminStamp={adminStamp ?? null} adminDrive={adminDrive ?? null} loading={adminBarLoading} />
+          <AdminStatusBar adminStamp={adminStamp} adminDrive={adminDrive} loading={!adminStamp || !adminDrive} />
         </div>
       </ViewProvider>
     </SearchProvider>

@@ -2,13 +2,10 @@ import { useCallback, useMemo, useRef, useState, useContext } from 'react'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
-import { formatBytes } from '../utils/common'
-
-type IdGetter = (fi: FileInfo) => string
+import { formatBytes, getFileId } from '../utils/common'
 
 export function useBulkActions(opts: {
   listToRender: FileInfo[]
-  idGetter?: IdGetter
   trackDownload: (
     name: string,
     size?: string,
@@ -17,42 +14,31 @@ export function useBulkActions(opts: {
 }) {
   const { listToRender, trackDownload } = opts
 
-  // TODO: refactor idOf
-  const idOf: IdGetter = useMemo(
-    () =>
-      opts.idGetter ??
-      ((fi: FileInfo) => fi.file?.historyRef?.toString?.() || fi.topic?.toString?.() || `${fi.driveId}:${fi.name}`),
-    [opts.idGetter],
-  )
-
   const { fm, refreshFiles } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const allIds = useMemo(() => listToRender.map(idOf), [listToRender, idOf])
+  const allIds = useMemo(() => listToRender.map(getFileId), [listToRender])
   const selectedCount = useMemo(() => allIds.filter(id => selectedIds.has(id)).length, [allIds, selectedIds])
   const allChecked = useMemo(() => allIds.length > 0 && selectedCount === allIds.length, [allIds.length, selectedCount])
   const someChecked = useMemo(() => selectedCount > 0 && !allChecked, [selectedCount, allChecked])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const selectedFiles = useMemo(
-    () => listToRender.filter(fi => selectedIds.has(idOf(fi))),
-    [listToRender, selectedIds, idOf],
+    () => listToRender.filter(fi => selectedIds.has(getFileId(fi))),
+    [listToRender, selectedIds],
   )
 
-  const toggleOne = useCallback(
-    (fi: FileInfo, checked: boolean) => {
-      const id = idOf(fi)
-      setSelectedIds(prev => {
-        const next = new Set(prev)
+  const toggleOne = useCallback((fi: FileInfo, checked: boolean) => {
+    const id = getFileId(fi)
+    setSelectedIds(prev => {
+      const next = new Set(prev)
 
-        if (checked) next.add(id)
-        else next.delete(id)
+      if (checked) next.add(id)
+      else next.delete(id)
 
-        return next
-      })
-    },
-    [idOf],
-  )
+      return next
+    })
+  }, [])
 
   const selectAll = useCallback(() => setSelectedIds(new Set(allIds)), [allIds])
   const clearAll = useCallback(() => setSelectedIds(new Set()), [])
@@ -125,8 +111,6 @@ export function useBulkActions(opts: {
       bulkTrash,
       bulkRestore,
       bulkForget,
-      // helpers
-      idOf,
     }),
     [
       selectedIds,
@@ -142,7 +126,6 @@ export function useBulkActions(opts: {
       bulkTrash,
       bulkRestore,
       bulkForget,
-      idOf,
     ],
   )
 }

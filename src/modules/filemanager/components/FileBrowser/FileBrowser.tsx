@@ -21,7 +21,7 @@ import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
-import { getUsableStamps } from '../../utils/bee'
+import { handleDestroyDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 
 export function FileBrowser(): ReactElement {
@@ -170,7 +170,6 @@ export function FileBrowser(): ReactElement {
               trackDownload={trackDownload}
               selectedIds={bulk.selectedIds}
               onToggleSelected={bulk.toggleOne}
-              idOf={bulk.idOf}
               bulkSelectedCount={bulk.selectedCount}
               onBulk={{
                 download: () => bulk.bulkDownload(bulk.selectedFiles),
@@ -227,11 +226,7 @@ export function FileBrowser(): ReactElement {
                   }
 
                   if (view === ViewType.Trash) {
-                    return (
-                      <ContextMenu>
-                        <div className="fm-context-item">Empty trash</div>
-                      </ContextMenu>
-                    )
+                    return <div className="fm-context-item"></div>
                   }
 
                   return (
@@ -312,21 +307,21 @@ export function FileBrowser(): ReactElement {
               drive={currentDrive}
               onCancelClick={() => setShowDestroyDriveModal(false)}
               doDestroy={async () => {
-                if (!fm || !currentDrive) return
-                try {
-                  const stamp = (await getUsableStamps(beeApi)).find(
-                    s => s.batchID.toString() === currentDrive.batchId.toString(),
-                  )
+                if (!currentDrive) return
 
-                  if (!stamp) throw new Error('Postage stamp for the current drive not found')
-
-                  await fm.destroyDrive(currentDrive, stamp)
-                  await Promise.resolve(refreshFiles?.())
-                  setShowDestroyDriveModal(false)
-                } catch (error) {
-                  // eslint-disable-next-line no-console
-                  console.error('Error destroying drive:', error)
-                }
+                await handleDestroyDrive(
+                  beeApi,
+                  fm,
+                  currentDrive,
+                  () => {
+                    refreshFiles?.()
+                    setShowDestroyDriveModal(false)
+                  },
+                  error => {
+                    // eslint-disable-next-line no-console
+                    console.error('Error destroying drive:', error)
+                  },
+                )
               }}
             />
           )}

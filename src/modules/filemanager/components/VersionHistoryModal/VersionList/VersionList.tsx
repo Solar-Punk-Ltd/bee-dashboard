@@ -411,8 +411,10 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
         if (hasValue) {
           next[key] = !next[key]
         } else {
-          const isLatest = indexStrToBigint(fi.version) === indexStrToBigint(headFi.version)
-          next[key] = isLatest
+          const isCurrent = indexStrToBigint(fi.version) === indexStrToBigint(headFi.version)
+          const defaultCollapsed = !isCurrent
+
+          next[key] = defaultCollapsed
         }
 
         return next

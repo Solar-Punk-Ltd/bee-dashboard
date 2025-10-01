@@ -1,5 +1,5 @@
 import { BatchId, Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
-import { FileManagerBase } from '@solarpunkltd/file-manager-lib'
+import { FileManagerBase, DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
   if (!bee) {
@@ -111,5 +111,31 @@ export const handleCreateDrive = async (
     onError?.(e)
   } finally {
     setLoading?.(false)
+  }
+}
+
+export const handleDestroyDrive = async (
+  beeApi: Bee | null,
+  fm: FileManagerBase | null,
+  drive: DriveInfo,
+  onSuccess?: () => void,
+  onError?: (error: unknown) => void,
+): Promise<void> => {
+  if (!beeApi || !fm) {
+    return
+  }
+
+  try {
+    const stamp = (await getUsableStamps(beeApi)).find(s => s.batchID.toString() === drive.batchId.toString())
+
+    if (!stamp) {
+      throw new Error('Postage stamp for the current drive not found')
+    }
+
+    await fm.destroyDrive(drive, stamp)
+
+    onSuccess?.()
+  } catch (e) {
+    onError?.(e)
   }
 }
