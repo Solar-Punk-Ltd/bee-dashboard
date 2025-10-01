@@ -1,4 +1,4 @@
-import { ReactElement, useState, useContext, useEffect, useRef } from 'react'
+import { ReactElement, useState, useContext, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Drive from 'remixicon-react/HardDrive2LineIcon'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
@@ -15,7 +15,7 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
+import { calculateStampCapacityMetrics, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface DriveItemProps {
@@ -85,6 +85,8 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
     }
   }, [drive.id, refreshDrives])
 
+  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(stamp, 3), [stamp])
+
   return (
     <div
       className={`fm-drive-item-container${isSelected ? ' fm-drive-item-container-selected' : ''}`}
@@ -104,17 +106,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
-            {(() => {
-              const usedGB = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
-              const totalGB = stamp.size.toGigabytes()
-
-              return (
-                <>
-                  Capacity <ProgressBar value={stamp.usage * 100} width="64px" /> {formatUsedGB(usedGB)} GB /{' '}
-                  {totalGB.toFixed(2)} GB
-                </>
-              )
-            })()}
+            Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
           </div>
           <div className="fm-drive-item-capacity">Expiry date: {stamp.duration.toEndDate().toLocaleDateString()}</div>
         </div>

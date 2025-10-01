@@ -163,7 +163,7 @@ export function UpgradeDriveModal({
     <div className={`fm-modal-container${containerColor === 'none' ? ' fm-modal-container-no-bg' : ''}`}>
       <div className="fm-modal-window fm-upgrade-drive-modal">
         <div className="fm-modal-window-header">
-          <DriveIcon size="18px" /> Upgrade {drive?.name || stamp?.label || shortBatchId}
+          <DriveIcon size="18px" /> Upgrade {drive.name || stamp.label || shortBatchId}
         </div>
         <div>Choose extension period and additional storage for your drive.</div>
         <div className="fm-modal-window-body">
@@ -231,10 +231,11 @@ export function UpgradeDriveModal({
 
           <div className="fm-modal-white-section">
             <div className="fm-emphasized-text">Summary</div>
-            <div>Drive: {drive?.name || stamp?.label || shortBatchId}</div>
+            <div>Drive: {drive.name}</div>
             <div>
-              BatchId: {shortBatchId} ({stamp?.label})
+              BatchId: {stamp.label} ({shortBatchId})
             </div>
+            <div>Expiry: {stamp.duration.toEndDate().toLocaleDateString()}</div>
             <div>
               Additional storage:{' '}
               {capacity.toBytes() === 0

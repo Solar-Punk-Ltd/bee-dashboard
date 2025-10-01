@@ -114,6 +114,30 @@ export const handleCreateDrive = async (
   }
 }
 
+export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 4) => {
+  if (!stamp) {
+    return {
+      capacityPct: 0,
+      usedSize: '—',
+      totalSize: '—',
+    }
+  }
+
+  const capacityPct = Math.max(0, Math.min(100, stamp.usage * 100))
+
+  const usedGb = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
+  const totalGb = stamp.size.toGigabytes()
+
+  const usedSize = usedGb <= 1 ? `${usedGb.toFixed(digits)} MB` : `${usedGb.toFixed(2)} GB`
+  const totalSize = totalGb <= 1 ? `${totalGb.toFixed(digits)} MB` : `${totalGb.toFixed(2)} GB`
+
+  return {
+    capacityPct,
+    usedSize,
+    totalSize,
+  }
+}
+
 export const handleDestroyDrive = async (
   beeApi: Bee | null,
   fm: FileManagerBase | null,

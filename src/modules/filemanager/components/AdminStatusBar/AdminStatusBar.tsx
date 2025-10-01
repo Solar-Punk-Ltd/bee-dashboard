@@ -6,6 +6,7 @@ import { Tooltip } from '../Tooltip/Tooltip'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
+import { calculateStampCapacityMetrics } from '../../utils/bee'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -16,13 +17,8 @@ interface AdminStatusBarProps {
 export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusBarProps): ReactElement {
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
 
-  const capacityPct = useMemo(() => (adminStamp ? Math.max(0, Math.min(100, adminStamp.usage * 100)) : 0), [adminStamp])
+  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(adminStamp), [adminStamp])
 
-  const usedGb = useMemo(
-    () => (adminStamp ? (adminStamp.size.toGigabytes() - adminStamp.remainingSize.toGigabytes()).toFixed(1) : '—'),
-    [adminStamp],
-  )
-  const totalGb = useMemo(() => (adminStamp ? adminStamp.size.toGigabytes().toFixed(1) : '—'), [adminStamp])
   const expiresAt = useMemo(
     () => (adminStamp ? adminStamp.duration.toEndDate().toLocaleDateString() : '—'),
     [adminStamp],
@@ -34,7 +30,7 @@ export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusB
     <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={loading ? 'true' : 'false'}>
       <div className="fm-admin-status-bar-left">
         <div className="fm-drive-item-capacity">
-          Capacity <ProgressBar value={capacityPct} width="150px" /> {usedGb} GB / {totalGb} GB
+          Capacity <ProgressBar value={capacityPct} width="150px" /> {usedSize} / {totalSize}
         </div>
 
         <div>File Manager Available: Until: {expiresAt}</div>
