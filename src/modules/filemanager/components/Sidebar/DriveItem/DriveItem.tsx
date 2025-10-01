@@ -1,4 +1,4 @@
-import { ReactElement, useState, useContext } from 'react'
+import { ReactElement, useEffect, useState, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import Drive from 'remixicon-react/HardDrive2LineIcon'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
@@ -34,7 +34,9 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
-  const { fm, refreshFiles } = useContext(FMContext)
+  const [isUpgrading, setIsUpgrading] = useState(false)
+
+  const { fm, refreshDrives } = useContext(FMContext)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
@@ -48,6 +50,31 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   function handleDestroyDriveClick() {
     setShowContext(false)
   }
+
+  useEffect(() => {
+    const id = drive.id.toString()
+    const onStart = (e: Event) => {
+      const { driveId } = (e as CustomEvent).detail || {}
+
+      if (driveId === id) setIsUpgrading(true)
+    }
+    const onEnd = async (e: Event) => {
+      const { driveId, success } = (e as CustomEvent).detail || {}
+
+      if (driveId === id) {
+        if (success) await Promise.resolve(refreshDrives?.())
+        setIsUpgrading(false)
+      }
+    }
+
+    window.addEventListener('fm:drive-upgrade-start', onStart as EventListener)
+    window.addEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+
+    return () => {
+      window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
+      window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+    }
+  }, [drive.id, refreshDrives])
 
   return (
     <div
@@ -84,7 +111,12 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
         </div>
       </div>
       <div className="fm-drive-item-actions">
-        <MoreFill size="13" className="fm-pointer" onClick={handleMenuClick} />
+        <MoreFill
+          size="13"
+          className={`fm-pointer${isUpgrading ? ' fm-disabled' : ''}`}
+          onClick={!isUpgrading ? handleMenuClick : undefined}
+          aria-disabled={isUpgrading ? 'true' : 'false'}
+        />
         {showContext &&
           createPortal(
             <div
@@ -110,12 +142,25 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
 
             document.body,
           )}
-
-        <Button label="Upgrade" variant="primary" size="small" onClick={() => setIsUpgradeDriveModalOpen(true)} />
+        <Button
+          label="Upgrade"
+          variant="primary"
+          size="small"
+          disabled={isUpgrading}
+          onClick={() => setIsUpgradeDriveModalOpen(true)}
+        />
       </div>
       {isUpgradeDriveModalOpen && (
-        <UpgradeDriveModal stamp={stamp} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} drive={drive} />
+        <UpgradeDriveModal stamp={stamp} drive={drive} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
       )}
+
+      {isUpgrading && (
+        <div className="fm-drive-item-creating-overlay" aria-live="polite">
+          <div className="fm-mini-spinner" />
+          <span>Upgrading drive…</span>
+        </div>
+      )}
+
       {isDestroyDriveModalOpen && (
         <DestroyDriveModal
           drive={drive}
@@ -125,7 +170,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
 
             try {
               await fm.destroyDrive(drive)
-              await Promise.resolve(refreshFiles?.())
+              await Promise.resolve(refreshDrives?.())
               setIsDestroyDriveModalOpen(false)
             } catch (error) {
               // eslint-disable-next-line no-console

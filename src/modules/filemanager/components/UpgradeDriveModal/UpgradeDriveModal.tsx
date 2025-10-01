@@ -53,6 +53,7 @@ export function UpgradeDriveModal({
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const [extensionCost, setExtensionCost] = useState('0')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(Size.fromBytes(value))
@@ -258,25 +259,56 @@ export function UpgradeDriveModal({
         </div>
         <div className="fm-modal-window-footer">
           <Button
-            label="Confirm upgrade"
+            label={isSubmitting ? 'Confirming…' : 'Confirm upgrade'}
             variant="primary"
-            disabled={extensionCost === '0'}
-            onClick={() => {
-              beeApi?.extendStorage(
-                stamp.batchID,
-                capacity,
-                durationExtensionCost === '0'
-                  ? Duration.ZERO
-                  : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()),
-                undefined,
-                false,
-                defaultErasureCodeLevel,
-              )
-              onCancelClick()
+            disabled={extensionCost === '0' || isSubmitting}
+            onClick={async () => {
+              if (!beeApi) return
+              try {
+                setIsSubmitting(true)
+                window.dispatchEvent(
+                  new CustomEvent('fm:drive-upgrade-start', {
+                    detail: { driveId: drive.id.toString() },
+                  }),
+                )
+
+                await beeApi.extendStorage(
+                  stamp.batchID,
+                  capacity,
+                  durationExtensionCost === '0'
+                    ? Duration.ZERO
+                    : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()),
+                  undefined,
+                  false,
+                  defaultErasureCodeLevel,
+                )
+
+                window.dispatchEvent(
+                  new CustomEvent('fm:drive-upgrade-end', {
+                    detail: { driveId: drive.id.toString(), success: true },
+                  }),
+                )
+                onCancelClick()
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : 'Upgrade failed'
+                window.dispatchEvent(
+                  new CustomEvent('fm:drive-upgrade-end', {
+                    detail: { driveId: drive.id.toString(), success: false, error: msg },
+                  }),
+                )
+                setIsSubmitting(false)
+              }
             }}
           />
-          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button label="Cancel" variant="secondary" disabled={isSubmitting} onClick={onCancelClick} />
         </div>
+
+        {isSubmitting && (
+          <div className="fm-drive-item-creating-overlay">
+            <div className="fm-mini-spinner" />
+            <span>Please wait…</span>
+          </div>
+        )}
       </div>
     </div>,
     modalRoot,
