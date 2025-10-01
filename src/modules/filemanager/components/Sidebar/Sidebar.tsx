@@ -99,6 +99,26 @@ export function Sidebar(): ReactElement {
           <div>My Drives</div>
         </div>
 
+        {isMyDrivesOpen && isDriveCreationInProgress && (
+          <div className="fm-drive-item-container fm-drive-item-creating" aria-live="polite">
+            <div className="fm-drive-item-info">
+              <div className="fm-drive-item-header">
+                <div className="fm-drive-item-icon">
+                  <Folder size="16px" />
+                </div>
+                <div>Creating drive…</div>
+              </div>
+              <div className="fm-drive-item-content">
+                <div className="fm-drive-item-capacity">Initializing drive metadata</div>
+              </div>
+            </div>
+            <div className="fm-drive-item-actions" />
+            <div className="fm-drive-item-creating-overlay">
+              <div className="fm-mini-spinner" />
+              <span>Please wait…</span>
+            </div>
+          </div>
+        )}
         {isMyDrivesOpen &&
           drives.map(d => {
             const isSelected = isCurrent(d) && view === ViewType.File
@@ -157,7 +177,7 @@ export function Sidebar(): ReactElement {
         )}
       </div>
 
-      {isDriveCreationInProgress && <div className="fm-sidebar-drive-creation">Creating drive…</div>}
+      {isDriveCreationInProgress && <div className="fm-sidebar-drive-creation">Creating drive . . .</div>}
     </div>
   )
 }

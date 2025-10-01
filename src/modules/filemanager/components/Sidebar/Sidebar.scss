@@ -62,3 +62,43 @@
   color: rgb(31, 41, 55);
   font-weight: 500;
 }
+
+.fm-drive-item-creating {
+  position: relative;
+}
+
+.fm-drive-item-creating .fm-drive-item-info,
+.fm-drive-item-creating .fm-drive-item-actions {
+  filter: blur(2px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.fm-drive-item-creating-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  font-weight: 600;
+  color: #111827;
+  border-radius: 0;
+}
+
+.fm-mini-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: rgba(0, 0, 0, 0.7);
+  animation: fmSpin 0.8s linear infinite;
+}
+
+@keyframes fmSpin {
+  to { transform: rotate(360deg); }
+}
