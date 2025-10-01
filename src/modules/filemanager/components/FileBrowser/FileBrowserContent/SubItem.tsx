@@ -7,20 +7,10 @@ interface SubItemProps {
   name: string
   reference: string
   type: 'file' | 'folder'
+  onDoubleClick?: () => void // Opcionális dupla kattintás esemény
 }
 
-function handleDoubleClick(name: string, type: 'file' | 'folder', reference: string, beeApi: Bee): void {
-  if (type === 'folder') {
-    // eslint-disable-next-line no-console
-    console.log(`Folder opened: ${name}`)
-  } else {
-    // eslint-disable-next-line no-console
-    console.log(`File downloaded: ${name} (ref: ${reference})`)
-    //TODO file viewer
-  }
-}
-
-export function SubItem({ name, reference, type }: SubItemProps): ReactElement {
+export function SubItem({ name, reference, type, onDoubleClick }: SubItemProps): ReactElement {
   const displayName = name.endsWith('/') ? name.split('/').filter(Boolean).pop() : name.split('/').pop()
   const { beeApi } = useContext(SettingsContext)
 
@@ -29,7 +19,7 @@ export function SubItem({ name, reference, type }: SubItemProps): ReactElement {
   }
 
   return (
-    <div className="fm-file-item-content" onDoubleClick={() => handleDoubleClick(name, type, reference, beeApi)}>
+    <div className="fm-file-item-content" onDoubleClick={onDoubleClick}>
       <div className="fm-file-item-content-item fm-checkbox">
         <input type="checkbox" checked={false} onClick={e => e.stopPropagation()} />
       </div>

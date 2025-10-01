@@ -70,7 +70,6 @@ export function FileItem({
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString() // todo: make sure that timestamp is correct
   const isTrashedFile = isTrashed(fileInfo)
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
-  const { viewFolders, setViewFolders } = useView()
 
   const [safePos, setSafePos] = useState(pos)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
@@ -133,8 +132,8 @@ export function FileItem({
     if (!fm || !beeApi) return
 
     if (fileInfo?.customMetadata?.mime === 'folder') {
-      setViewFolders([...viewFolders, fileInfo.name])
       const fileDatas = await handleOpenFolder()
+
       folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
 
       return

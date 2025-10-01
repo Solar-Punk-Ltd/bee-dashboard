@@ -1,15 +1,29 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
 import { useView } from '../../../providers/FMFileViewContext'
-import { set } from 'bignumber.js'
 
 export function FileBrowserTopBar(): ReactElement {
-  const { viewFolders, setViewFolders, actualItemView, folderView, setFolderView } = useView()
+  const { viewFolders, setViewFolders, actualItemView, folderView, setFolderView, currentTree, setCurrentTree } =
+    useView()
 
-  const handleItemClick = (type: string) => {
+  const handleItemClick = (type: string, name?: { folderName: string; tree: any }, index?: number) => {
     if (type === 'drive') {
       setFolderView(false)
       setViewFolders([])
+    }
+
+    if (type === 'folder' && folderView) {
+      if (index !== undefined && index !== -1) {
+        const newFolders = viewFolders.slice(0, index + 1)
+
+        if (JSON.stringify(viewFolders) !== JSON.stringify(newFolders)) {
+          setViewFolders(newFolders)
+        }
+
+        if (currentTree !== newFolders[newFolders.length - 1].tree) {
+          setCurrentTree(newFolders[newFolders.length - 1].tree)
+        }
+      }
     }
   }
 
@@ -22,8 +36,8 @@ export function FileBrowserTopBar(): ReactElement {
         viewFolders.map((folder, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
             /{' '}
-            <div onClick={() => handleItemClick('folder')} className="fm-file-browser-top-bar-item">
-              {folder}
+            <div onClick={() => handleItemClick('folder', folder, index)} className="fm-file-browser-top-bar-item">
+              {folder.folderName}
             </div>
           </div>
         ))}

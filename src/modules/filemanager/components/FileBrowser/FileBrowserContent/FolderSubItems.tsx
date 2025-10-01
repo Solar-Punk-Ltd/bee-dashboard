@@ -1,29 +1,47 @@
-import { ReactElement } from 'react'
+import { ReactElement, useState } from 'react'
 import { SubItem } from './SubItem'
+import { useView } from 'src/modules/filemanager/providers/FMFileViewContext'
 
 interface FolderSubItemsProps {
-  items: { path: string; ref: string }[]
+  tree: any
 }
 
-export function FolderSubItems({ items }: FolderSubItemsProps): ReactElement {
-  const directItems = items.filter(item => {
-    const pathParts = item.path.split('/').filter(Boolean)
+export function FolderSubItems({ tree }: FolderSubItemsProps): ReactElement {
+  const { viewFolders, setViewFolders, currentTree, setCurrentTree } = useView()
 
-    return pathParts.length === 2
-  })
+  const handleFolderDoubleClick = (path: string) => {
+    let currentNode = currentTree
+
+    if (currentNode[path]) {
+      currentNode = currentNode[path].children
+      setCurrentTree(currentNode)
+    } else {
+      setCurrentTree({})
+    }
+
+    setViewFolders([...viewFolders, { folderName: path, tree: currentNode }])
+  }
 
   return (
     <>
-      {directItems.map((item, index) => {
-        const isFile = item.path.includes('.') && !item.path.endsWith('/')
-        const isFolder = !isFile
+      {currentTree &&
+        Object.entries(currentTree).map(([name, value]: [string, any]) => {
+          const currentPath = `${name}`
 
-        return isFolder ? (
-          <SubItem key={`${item.path}-${index}`} name={item.path} reference={item.ref} type="folder" />
-        ) : (
-          <SubItem key={`${item.path}-${index}`} name={item.path} reference={item.ref} type="file" />
-        )
-      })}
+          if (value.type === 'folder') {
+            return (
+              <SubItem
+                key={currentPath}
+                name={currentPath}
+                reference={value.ref}
+                type="folder"
+                onDoubleClick={() => handleFolderDoubleClick(currentPath)}
+              />
+            )
+          } else {
+            return <SubItem key={currentPath} name={currentPath} reference={value.ref} type="file" />
+          }
+        })}
     </>
   )
 }

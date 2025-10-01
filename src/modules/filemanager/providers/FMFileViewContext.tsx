@@ -4,21 +4,24 @@ import { ViewType } from '../constants/constants'
 interface ViewContextProps {
   view: ViewType
   setView: (view: ViewType) => void
-  viewFolders: string[]
-  setViewFolders: (folders: string[]) => void
+  viewFolders: { folderName: string; tree: any }[]
+  setViewFolders: (folders: { folderName: string; tree: any }[]) => void
   actualItemView?: string
   setActualItemView?: (view: string) => void
   folderView: boolean
   setFolderView: (folderView: boolean) => void
+  currentTree: any
+  setCurrentTree: (tree: any) => void
 }
 
 const FMFileViewContext = createContext<ViewContextProps | undefined>(undefined)
 
 export function FMFileViewProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ViewType>(ViewType.File)
-  const [viewFolders, setViewFolders] = useState<string[]>([])
+  const [viewFolders, setViewFolders] = useState<{ folderName: string; tree: any }[]>([])
   const [actualItemView, setActualItemView] = useState<string | undefined>(undefined)
   const [folderView, setFolderView] = useState<boolean>(false)
+  const [currentTree, setCurrentTree] = useState<any>(null)
 
   return (
     <FMFileViewContext.Provider
@@ -31,6 +34,8 @@ export function FMFileViewProvider({ children }: { children: ReactNode }) {
         setActualItemView,
         folderView,
         setFolderView,
+        currentTree,
+        setCurrentTree,
       }}
     >
       {children}
