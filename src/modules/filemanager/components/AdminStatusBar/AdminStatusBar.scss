@@ -1,0 +1,53 @@
+.fm-admin-status-bar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgb(33, 33, 33);
+  height: 60px;
+  padding: 10px 16px;
+
+  &.is-loading {
+    filter: blur(1px);
+  }
+}
+
+.fm-admin-status-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: rgb(229, 231, 235);
+}
+
+.fm-admin-status-bar-upgrade-button {
+  padding: 6px;
+  background-color: rgb(237, 237, 237);
+  border-radius: 0;
+  text-align: center;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &[aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+.fm-admin-status-bar-loader {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
+  animation: fmShimmer 1.2s infinite;
+  border-radius: 6px;
+}
+
+@keyframes fmShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

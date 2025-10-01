@@ -1,107 +1,360 @@
-import { ReactElement, useContext, useEffect, useState } from 'react'
+import { ReactElement, useEffect, useMemo, useState, useCallback, useContext } from 'react'
 import './VersionHistoryModal.scss'
 import '../../styles/global.scss'
 
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
-import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
-import UserIcon from 'remixicon-react/UserLineIcon'
-import DownloadIcon from 'remixicon-react/Download2LineIcon'
-import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
-import { Context as SettingsContext } from '../../../../providers/Settings'
-import { PostageBatch } from '@ethersphere/bee-js'
-import { getUsableStamps } from '../../utils/utils'
 
-interface VersionHistoryModalProps {
-  fileName: string
-  onCancelClick: () => void
+import { Context as FMContext } from '../../../../providers/FileManager'
+import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FeedIndex } from '@ethersphere/bee-js'
+import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
+import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
+
+import { indexStrToBigint } from '../../utils/common'
+import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
+import { ActionTag } from '../../constants/fileTransfer'
+import { useTransfers } from '../../hooks/useTransfers'
+
+const pageSize = 5
+
+type RenameConfirmState = {
+  version: FileInfo
+  headName: string
+  targetName: string
 }
 
-const FILE_VERSIONS_MOCK = [
-  {
-    version: 'Current',
-    versionHash: '1',
-    isCurrent: true,
-    size: '1.2MB',
-    expiryDate: '2025-12-31',
-    changes: 'Added new sections',
-  },
-  {
-    version: 'v2',
-    versionHash: '1',
-    isCurrent: false,
-    size: '1.1MB',
-    expiryDate: '2025-10-15',
-    changes: 'Updated content formatting',
-  },
-  {
-    version: 'v1',
-    versionHash: '1',
-    isCurrent: false,
-    size: '1.0MB',
-    expiryDate: '2025-08-01',
-    changes: 'Initial version',
-  },
-]
+interface VersionHistoryModalProps {
+  fileInfo: FileInfo
+  onCancelClick: () => void
+  onDownload?: (
+    name: string,
+    size?: string,
+    expectedSize?: number,
+  ) => (progress: number, isDownloading: boolean) => void
+}
 
-export function VersionHistoryModal({ fileName, onCancelClick }: VersionHistoryModalProps): ReactElement {
-  const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
-  const [stamps, setStamps] = useState([] as PostageBatch[])
-  const { beeApi } = useContext(SettingsContext)
+export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
+  const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
+
+  const localTransfers = useTransfers()
+  const trackDownload = onDownload ?? localTransfers.trackDownload
+
+  const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body
 
+  const [allVersions, setAllVersions] = useState<FileInfo[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [conflictWarning, setConflictWarning] = useState<string | null>(null)
+  const [totalVersionsCount, setTotalVersionsCount] = useState<number>(0)
+
+  const [renameConfirm, setRenameConfirm] = useState<RenameConfirmState | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
+
+  const currentVersion = useMemo(() => {
+    return indexStrToBigint(fileInfo.version) ?? BigInt(0)
+  }, [fileInfo])
+
+  const totalPages = Math.max(1, Math.ceil(totalVersionsCount / pageSize))
+  const pageVersions = useMemo(() => {
+    const startIndex = currentPage * pageSize
+    const endIndex = startIndex + pageSize
+
+    return allVersions.slice(startIndex, endIndex)
+  }, [allVersions, currentPage])
+
+  const loadVersionsForPage = useCallback(
+    async (page: number) => {
+      if (!fm) return
+
+      const startIndex = page * pageSize
+      const endIndex = startIndex + pageSize
+
+      let hasVersionsForPage = false
+      setAllVersions(prevVersions => {
+        const currentTotal = Number(currentVersion + BigInt(1))
+        hasVersionsForPage =
+          prevVersions.slice(startIndex, endIndex).length === pageSize ||
+          (page === Math.floor(currentTotal / pageSize) && currentTotal % pageSize > 0)
+
+        return prevVersions
+      })
+
+      if (hasVersionsForPage) {
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+
+      const startVersion = currentVersion - BigInt(page * pageSize)
+      const endVersion = startVersion - BigInt(pageSize - 1)
+      const versions: FileInfo[] = []
+
+      for (let i = startVersion; i >= BigInt(0) && i >= endVersion; i--) {
+        try {
+          const version = await fm.getVersion(fileInfo, FeedIndex.fromBigInt(i).toString())
+          versions.push(version)
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn(`Failed to get version: ${i}, err: ${e}`)
+        }
+      }
+
+      setAllVersions(prev => {
+        const updated = [...prev]
+        const insertIndex = page * pageSize
+
+        for (let idx = 0; idx < versions.length; idx++) {
+          updated[insertIndex + idx] = versions[idx]
+        }
+
+        return updated
+      })
+
+      setLoading(false)
+    },
+    [fm, currentVersion, fileInfo],
+  )
+
   useEffect(() => {
-    const getStamps = async () => {
-      const stamps = await getUsableStamps(beeApi)
-      setStamps([...stamps])
+    setCurrentPage(0)
+    setError(null)
+    setAllVersions([])
+
+    const totalCount = Number(currentVersion + BigInt(1))
+    setTotalVersionsCount(totalCount)
+
+    if (!fm) {
+      return
     }
-    getStamps()
-  }, [beeApi])
+
+    loadVersionsForPage(0)
+  }, [fm, fileInfo, currentVersion, loadVersionsForPage])
+
+  useEffect(() => {
+    if (fm && currentPage > 0) {
+      loadVersionsForPage(currentPage)
+    }
+  }, [currentPage, fm, loadVersionsForPage])
+
+  // TODO: why max not infinite?
+  const promptUniqueName = useCallback(
+    async (
+      initial: string,
+      taken: Set<string>,
+      forbidReplaceMsg: string,
+      maxAttempts = 6,
+    ): Promise<{ cancelled: boolean; name?: string }> => {
+      let proposed = initial
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const choice = await openConflict({
+          originalName: proposed,
+          existingNames: taken,
+        })
+
+        if (!choice || choice.action === ConflictAction.Cancel) return { cancelled: true }
+
+        if (choice.action === ConflictAction.KeepBoth) {
+          if (!choice.newName || choice.newName.length === 0) {
+            setConflictWarning('Empty new name. Please enter one.')
+
+            return { cancelled: false }
+          }
+
+          const candidate = choice.newName.trim()
+
+          if (candidate && !taken.has(candidate)) {
+            return { cancelled: false, name: candidate }
+          }
+          setConflictWarning('That name is already taken. Please enter a different one.')
+          proposed = candidate || proposed
+        } else {
+          setConflictWarning(forbidReplaceMsg)
+        }
+      }
+
+      return { cancelled: true }
+    },
+    [openConflict],
+  )
+
+  const doRestore = useCallback(
+    async (versionFi: FileInfo): Promise<void> => {
+      if (!fm || !currentDrive) return
+
+      const doRefreshAndClose = () => {
+        onCancelClick()
+        setTimeout(() => {
+          refreshFiles?.()
+        }, 0)
+      }
+
+      try {
+        const restoredFrom = indexStrToBigint(versionFi.version)
+
+        const srcLifecycleRaw = (versionFi.customMetadata?.lifecycle || '').trim().toLowerCase()
+        const srcLifecycle: ActionTag | undefined =
+          srcLifecycleRaw === ActionTag.Trashed || srcLifecycleRaw === ActionTag.Recovered
+            ? (srcLifecycleRaw as ActionTag)
+            : undefined
+
+        const srcLifecycleAt =
+          versionFi.customMetadata?.lifecycleAt ||
+          (versionFi.timestamp ? new Date(versionFi.timestamp).toISOString() : undefined)
+
+        const withMeta: FileInfo = {
+          ...versionFi,
+          customMetadata: {
+            ...(versionFi.customMetadata ?? {}),
+            lifecycle: ActionTag.Restored,
+            lifecycleFrom: restoredFrom !== undefined ? `v${restoredFrom}` : '',
+            lifecycleAt: new Date().toISOString(),
+            restoredFromLifecycle: srcLifecycle ?? '',
+            restoredFromLifecycleAt: srcLifecycleAt ?? '',
+          },
+        }
+
+        await fm.restoreVersion(withMeta)
+        doRefreshAndClose()
+      } catch (e) {
+        const msg = (e as Error)?.message || JSON.stringify(e)
+        setError(msg)
+      }
+    },
+    [fm, refreshFiles, onCancelClick, currentDrive],
+  )
+
+  const restoreVersion = useCallback(
+    async (versionFi: FileInfo): Promise<void> => {
+      if (!fm) return
+
+      const targetName = versionFi.name
+      const headName = fileInfo.name
+
+      const sameDrive = files.filter(fi => {
+        return fi.driveId === versionFi.driveId.toString()
+      })
+
+      const nameConflicts = sameDrive.filter(fi => fi.name === targetName)
+      const otherHistoryConflicts = nameConflicts.filter(fi => fi.topic.toString() !== fileInfo.topic.toString())
+
+      if (targetName !== headName && otherHistoryConflicts.length === 0) {
+        setRenameConfirm({ version: versionFi, headName, targetName })
+
+        return
+      }
+
+      if (otherHistoryConflicts.length > 0) {
+        const taken = new Set<string>(sameDrive.map(fi => fi.name))
+        const forbidMsg =
+          'Replace is not available because another file with that name belongs to a different history. Please choose “Keep both” and enter a different name.'
+        const res = await promptUniqueName(targetName, taken, forbidMsg, 8)
+
+        if (res.cancelled || !res.name) return
+
+        versionFi.name = res.name
+      }
+
+      await doRestore(versionFi)
+    },
+    [fm, fileInfo, files, promptUniqueName, doRestore],
+  )
 
   return createPortal(
     <div className="fm-modal-container">
+      {conflictPortal}
       <div className="fm-modal-window fm-upgrade-drive-modal">
         <div className="fm-modal-window-header">
           <HistoryIcon size="21px" />
-          <span className="fm-main-font-color">Version history - {fileName}</span>
+          <span className="fm-main-font-color">
+            <>
+              Version history –{' '}
+              <span className="vh-title" title={fileInfo.name}>
+                {truncateNameMiddle(fileInfo.name, 56)}
+              </span>
+              {fileInfo && (
+                <span
+                  className="vh-title-sub"
+                  title={`Version v${(indexStrToBigint(fileInfo.version) ?? 0).toString()}`}
+                >
+                  {' '}
+                  (version v{(indexStrToBigint(fileInfo.version) ?? 0).toString()})
+                </span>
+              )}
+            </>
+          </span>
         </div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {FILE_VERSIONS_MOCK.map(item => (
-            <div key={item.versionHash} className="fm-modal-white-section fm-space-between">
-              <div className="fm-version-history-modal-section-left fm-space-between">
-                <div className="fm-version-history-modal-section-left-row">
-                  <div className="fm-emphasized-text">{item.version}</div>
-                  {item.version === 'Current' && <div className="fm-current-tag">Current</div>}
-                  <div className="fm-soft-text">{item.size}</div>
-                </div>
-                <div className="fm-version-history-modal-section-left-row">
-                  <CalendarIcon size="12" /> {item.expiryDate} <UserIcon size="12" />
-                </div>
-                <div className="fm-version-history-modal-section-left-row">{item.changes}</div>
-              </div>
-              <div className="fm-version-history-modal-section-right">
-                <FMButton
-                  label="Download"
-                  variant="secondary"
-                  onClick={() => setShowUpgradeDriveModal(true)}
-                  icon={<DownloadIcon size="15" />}
-                />
-                <FMButton label="Restore" variant="primary" onClick={() => setShowUpgradeDriveModal(true)} />
-              </div>
+          {error && <div className="fm-modal-white-section fm-soft-text">{error}</div>}
+
+          {loading && <div className="fm-loading">Loading…</div>}
+          {!error && !loading && pageVersions.length === 0 && (
+            <div className="fm-empty">No versions found for this file.</div>
+          )}
+          {conflictWarning && (
+            <div
+              className="fm-modal-white-section fm-soft-text"
+              style={{ borderLeft: '3px solid var(--fm-accent, #6aa7ff)' }}
+            >
+              {conflictWarning}
             </div>
-          ))}
+          )}
+
+          {renameConfirm && (
+            <ConfirmModal
+              title="Restore this version?"
+              message={
+                <>
+                  Restoring will rename:&nbsp;
+                  <b className="vh-name" title={renameConfirm.headName}>
+                    {truncateNameMiddle(renameConfirm.headName, 44)}
+                  </b>{' '}
+                  →{' '}
+                  <b className="vh-name" title={renameConfirm.targetName}>
+                    {truncateNameMiddle(renameConfirm.targetName, 44)}
+                  </b>
+                  .
+                </>
+              }
+              confirmLabel="Restore"
+              cancelLabel="Cancel"
+              onConfirm={async () => {
+                await doRestore(renameConfirm.version)
+                setRenameConfirm(null)
+              }}
+              onCancel={() => setRenameConfirm(null)}
+            />
+          )}
+
+          <VersionsList
+            versions={!error && !loading ? pageVersions : []}
+            headFi={fileInfo}
+            restoreVersion={restoreVersion}
+            onDownload={trackDownload}
+          />
         </div>
-        <div className="fm-modal-window-footer">
-          <div className="fm-expiring-notification-modal-footer-one-button">
-            <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+
+        <div className="fm-modal-window-footer vh-footer">
+          <div className="vh-footer-left">
+            <Button label="Close" variant="secondary" onClick={onCancelClick} />
+          </div>
+          <div className="vh-footer-right">
+            <span className="vh-page">
+              Page {Math.min(currentPage + 1, totalPages)} / {totalPages} · total {totalVersionsCount}
+            </span>
+            {currentPage > 0 && (
+              <Button label="Previous" variant="secondary" onClick={() => setCurrentPage(p => p - 1)} />
+            )}
+            {currentPage + 1 < totalPages && (
+              <Button label="Next" variant="primary" onClick={() => setCurrentPage(p => p + 1)} />
+            )}
           </div>
         </div>
       </div>
-      {showUpgradeDriveModal && (
-        <UpgradeDriveModal stamp={stamps[0]} onCancelClick={onCancelClick} containerColor="none" />
-      )}
     </div>,
     modalRoot,
   )

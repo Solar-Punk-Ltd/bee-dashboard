@@ -1,14 +1,20 @@
-import { ReactElement } from 'react'
+import { ReactElement, useLayoutEffect, useRef } from 'react'
 import CloseIcon from 'remixicon-react/CloseLineIcon'
+import ArrowDownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
-import { FileTransferType, TransferBarColor } from '../../constants/constants'
+import { FileTransferType, TransferBarColor, TransferStatus } from '../../constants/fileTransfer'
 
 type ProgressItem = {
   name: string
   percent?: number
   size?: string
+  kind?: FileTransferType
+  status?: TransferStatus
+  driveName?: string
+  etaSec?: number
+  elapsedSec?: number
 }
 
 interface FileProgressWindowProps {
@@ -16,6 +22,28 @@ interface FileProgressWindowProps {
   items?: ProgressItem[]
   type: FileTransferType
   onCancelClick: () => void
+  onRowClose?: (name: string) => void
+  onCloseAll?: () => void
+}
+
+const formatEta = (sec?: number) => {
+  if (sec === undefined || sec === null) return ''
+
+  if (sec <= 0) return 'Done'
+  const s = Math.ceil(sec)
+  const mm = Math.floor(s / 60)
+  const ss = s % 60
+
+  return mm > 0 ? `${mm}m ${ss}s left` : `${ss}s left`
+}
+
+const formatDuration = (sec?: number) => {
+  if (sec === undefined || sec === null) return ''
+  const s = Math.max(0, Math.round(sec))
+  const mm = Math.floor(s / 60)
+  const ss = s % 60
+
+  return mm > 0 ? `${mm}m ${ss}s` : `${ss}s`
 }
 
 export function FileProgressWindow({
@@ -23,57 +51,148 @@ export function FileProgressWindow({
   items,
   type,
   onCancelClick,
+  onRowClose,
+  onCloseAll,
 }: FileProgressWindowProps): ReactElement | null {
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const firstRowRef = useRef<HTMLDivElement | null>(null)
   const count = items?.length ?? numberOfFiles ?? 0
-
   const rows: ProgressItem[] =
     items && items.length > 0
       ? items
-      : Array.from({ length: count }, (_, i) => ({
-          name: `Pending file ${i + 1}`,
-          percent: 0,
-          size: '',
-        }))
+      : Array.from({ length: count }, (_, i) => ({ name: `Pending file ${i + 1}`, percent: 0, size: '' }))
 
-  const noun = type === FileTransferType.Download ? 'download' : 'upload'
-  const statusText = type === FileTransferType.Download ? 'Downloading…' : 'Uploading…'
-  const barColor = type === FileTransferType.Download ? TransferBarColor.Download : TransferBarColor.Upload
+  const getTransferInfo = (item: ProgressItem, pct?: number) => {
+    const transferType = item?.kind ?? type
+    const cap = transferType.charAt(0).toUpperCase() + transferType.slice(1)
+    let verb = `${cap}ing`
+
+    if (cap.toLowerCase() === 'update') verb = 'Updating'
+
+    return {
+      statusText: pct === 100 || item.status === TransferStatus.Done ? 'Done' : `${verb}…`,
+      barColor: TransferBarColor[cap as keyof typeof TransferBarColor],
+    }
+  }
+
+  const allDone =
+    rows.length > 0 &&
+    rows.every(r =>
+      Number.isFinite(r.percent) ? Math.round(r.percent as number) >= 100 : r.status === TransferStatus.Done,
+    )
+
+  useLayoutEffect(() => {
+    const rowEl = firstRowRef.current
+    const listEl = listRef.current
+
+    if (!rowEl || !listEl) return
+    const rowH = rowEl.getBoundingClientRect().height
+    const safeRowH = rowH > 0 ? rowH : 72
+    listEl.style.maxHeight = `${safeRowH * 5}px`
+  }, [rows.length])
 
   return (
     <div className="fm-file-progress-window">
       <div className="fm-file-progress-window-header">
         <div className="fm-emphasized-text">
-          {count} {noun}
+          {count} {type}
           {count === 1 ? '' : 's'}
         </div>
-        <div className="fm-file-progress-window-header-close" onClick={onCancelClick} role="button" aria-label="Close">
-          <CloseIcon size="16" />
+
+        <div className="fm-file-progress-window-header-actions">
+          <button
+            className="fm-file-progress-window-header-btn fm-file-progress-window-header-dismiss"
+            aria-label="Dismiss all"
+            type="button"
+            disabled={!allDone}
+            onClick={() => onCloseAll?.()}
+          >
+            <CloseIcon size="16" />
+          </button>
+
+          <button
+            className="fm-file-progress-window-header-btn fm-file-progress-window-header-hide"
+            aria-label="Hide"
+            type="button"
+            onClick={onCancelClick}
+          >
+            <ArrowDownIcon size="16" />
+          </button>
         </div>
       </div>
+      <div className="fm-file-progress-window-list" ref={listRef}>
+        {rows.map((file, idx) => {
+          const pctNum = Number.isFinite(file.percent)
+            ? Math.max(0, Math.min(100, Math.round(file.percent as number)))
+            : undefined
 
-      {rows.map(file => (
-        <div className="fm-file-progress-window-file-item" key={file.name}>
-          <div className="fm-file-progress-window-file-type-icon">
-            <GetIconElement size="14" icon={file.name || 'file'} color="black" />
-          </div>
-          <div className="fm-file-progress-window-file-datas">
-            <div className="fm-file-progress-window-file-item-header">
-              <div className="truncate">{file.name}</div>
-              <div>{typeof file.percent === 'number' ? `${Math.max(0, Math.min(100, file.percent))}%` : ''}</div>
+          const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
+          const transferInfo = getTransferInfo(file, pctNum)
+          const uiName = file.name
+
+          let centerText = ''
+
+          if (!isComplete && typeof file.etaSec === 'number') centerText = formatEta(file.etaSec)
+          else if (isComplete && typeof file.elapsedSec === 'number') centerText = formatDuration(file.elapsedSec)
+          const centerDisplay = centerText || '\u00A0'
+
+          return (
+            <div
+              className="fm-file-progress-window-file-item"
+              key={`${file.name}`}
+              ref={idx === 0 ? firstRowRef : undefined}
+            >
+              <div className="fm-file-progress-window-file-type-icon">
+                <GetIconElement size="14" icon={uiName} color="black" />
+              </div>
+
+              <div className="fm-file-progress-window-file-datas">
+                <div className="fm-file-progress-window-file-item-header">
+                  <div className="fm-file-progress-window-name" title={uiName}>
+                    <div className="fm-file-progress-window-name-text">{uiName}</div>
+                    {file.driveName && (
+                      <div className="fm-drive-line">
+                        <span className="fm-drive-chip" title={`Drive: ${file.driveName}`}>
+                          {file.driveName}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="fm-file-progress-window-percent" aria-live="polite">
+                    {typeof pctNum === 'number' ? `${pctNum}%` : ''}
+                  </div>
+
+                  <button
+                    className="fm-file-progress-window-row-close"
+                    aria-label={isComplete ? 'Dismiss' : 'Dismiss (disabled until complete)'}
+                    disabled={!isComplete}
+                    onClick={() => {
+                      if (isComplete) onRowClose?.(file.name)
+                    }}
+                    type="button"
+                  >
+                    <CloseIcon size="14" />
+                  </button>
+                </div>
+
+                <ProgressBar
+                  value={typeof pctNum === 'number' ? pctNum : 0}
+                  width="100%"
+                  backgroundColor="rgb(229, 231, 235)"
+                  color={transferInfo.barColor}
+                />
+
+                <div className="fm-file-progress-window-file-item-footer">
+                  <div className="fm-file-progress-window-size">{file.size || '—'}</div>
+                  <div className="fm-file-progress-window-center">{centerDisplay}</div>
+                  <div className="fm-file-progress-window-status">{transferInfo.statusText}</div>
+                </div>
+              </div>
             </div>
-            <ProgressBar
-              value={typeof file.percent === 'number' ? Math.max(0, Math.min(100, file.percent)) : 0}
-              width="100%"
-              backgroundColor="rgb(229, 231, 235)"
-              color={barColor}
-            />
-            <div className="fm-file-progress-window-file-item-footer">
-              <div>{file.size || '—'}</div>
-              <div>{statusText}</div>
-            </div>
-          </div>
-        </div>
-      ))}
+          )
+        })}
+      </div>
     </div>
   )
 }

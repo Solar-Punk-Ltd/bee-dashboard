@@ -1,9 +1,17 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
-import { useView } from '../../../providers/FMFileViewContext'
+import { useView } from '../../../../../pages/filemanager/ViewContext'
+import { ViewType } from 'src/modules/filemanager/constants/fileTransfer'
 
 export function FileBrowserTopBar(): ReactElement {
-  const { actualItemView } = useView()
+  const { view, actualItemView } = useView()
 
-  return <div className="fm-file-browser-top-bar">{actualItemView}</div>
+  const viewText = view === ViewType.Trash ? ' Trash' : ''
+
+  return (
+    <div className="fm-file-browser-top-bar">
+      {actualItemView}
+      {viewText}
+    </div>
+  )
 }

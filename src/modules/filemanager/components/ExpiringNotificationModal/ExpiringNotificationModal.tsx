@@ -2,25 +2,34 @@ import { ReactElement, useState } from 'react'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 
-import { FMButton } from '../FMButton/FMButton'
+import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
-import { getDaysLeft } from '../../utils/utils'
+import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
+  drives: DriveInfo[]
   onCancelClick: () => void
 }
-
-export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNotificationModalProps): ReactElement {
+// TODO: create an icon for the admin drive to distinguish it from the others
+export function ExpiringNotificationModal({
+  stamps,
+  drives,
+  onCancelClick,
+}: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
-  const [actualStamp, setActualStamp] = useState<PostageBatch>()
+  const [actualStamp, setActualStamp] = useState<PostageBatch | undefined>(undefined)
+  const [actualDrive, setActualDrive] = useState<DriveInfo | undefined>(undefined)
   const modalRoot = document.querySelector('.fm-main') || document.body
+
+  if (stamps.length === 0) return <></>
 
   return createPortal(
     <div className="fm-modal-container">
@@ -31,9 +40,13 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
         <div>The following drives will expire soon. Extend them to keep your data accessible.</div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {stamps.map((stamp, index) => {
+          {stamps.map(stamp => {
             const daysLeft = getDaysLeft(stamp.duration.toEndDate())
             let daysClass = ''
+
+            const drive = drives.find(d => d.batchId.toString() === stamp.batchID.toString())
+
+            if (!drive) return null
 
             if (daysLeft < 10) {
               daysClass = 'fm-red-font'
@@ -61,12 +74,13 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
                   </div>
                   <div className={daysClass}>{daysLeft} days left</div>
                   <div className="fm-expiring-notification-modal-section-right-button">
-                    <FMButton
+                    <Button
                       label="Upgrade"
                       variant="primary"
                       onClick={() => {
-                        setShowUpgradeDriveModal(true)
                         setActualStamp(stamp)
+                        setActualDrive(drive)
+                        setShowUpgradeDriveModal(true)
                       }}
                     />
                   </div>
@@ -77,13 +91,17 @@ export function ExpiringNotificationModal({ stamps, onCancelClick }: ExpiringNot
         </div>
         <div className="fm-modal-window-footer">
           <div className="fm-expiring-notification-modal-footer-one-button">
-            <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+            <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
           </div>
         </div>
       </div>
-      {showUpgradeDriveModal && actualStamp && (
-        //TODO The stamps[0] is just for mock purpose, it needs to implemented correctly
-        <UpgradeDriveModal stamp={actualStamp} onCancelClick={onCancelClick} containerColor="none" />
+      {showUpgradeDriveModal && actualStamp && actualDrive && (
+        <UpgradeDriveModal
+          stamp={actualStamp}
+          onCancelClick={onCancelClick}
+          containerColor="none"
+          drive={actualDrive}
+        />
       )}
     </div>,
     modalRoot,

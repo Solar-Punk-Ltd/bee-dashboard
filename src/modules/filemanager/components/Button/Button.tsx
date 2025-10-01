@@ -1,7 +1,7 @@
 import { ReactElement } from 'react'
-import './FMButton.scss'
+import './Button.scss'
 
-interface FMButtonProps {
+interface ButtonProps {
   label: string
   onClick?: () => void
   icon?: ReactElement
@@ -10,14 +10,14 @@ interface FMButtonProps {
   disabled?: boolean
 }
 
-export function FMButton({
+export function Button({
   label,
   onClick,
   icon,
   size = 'medium',
   variant = 'primary',
   disabled,
-}: FMButtonProps): ReactElement {
+}: ButtonProps): ReactElement {
   return (
     <div
       className={`fm-button fm-button-${variant} fm-button-${size}${icon ? ' fm-button-icon' : ''}${

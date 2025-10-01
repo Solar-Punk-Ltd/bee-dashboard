@@ -3,68 +3,49 @@ import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
-import { FMButton } from '../FMButton/FMButton'
-import { fmFetchCost, fromBytesConversion, getExpiryDateByLifetime } from '../../utils/utils'
-import { desiredLifetimeOptions } from '../../constants/constants'
+import { Button } from '../Button/Button'
+import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
+import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { erasureCodeMarks } from '../../constants/common'
+import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { FMSlider } from '../FMSlider/FMSlider'
-
-const erasureCodeMarks = Object.entries(RedundancyLevel)
-  .filter(([key, value]) => typeof value === 'number')
-  .map(([key, value]) => ({
-    value: value as number,
-    label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase(),
-  }))
+import { FMSlider } from '../Slider/Slider'
+import { Context as FMContext } from '../../../../providers/FileManager'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
-  handleCreateDrive: (
-    size: Size,
-    duration: Duration,
-    label: string,
-    encryption: boolean,
-    erasureCodeLevel: RedundancyLevel,
-  ) => void
+  onDriveCreated: () => void
+  onCreationStarted: () => void
+  onCreationError: () => void
 }
-
-export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDriveModalProps): ReactElement {
+// TODO: select existing batch id or create a new one - just like in InitialModal
+export function CreateDriveModal({
+  onCancelClick,
+  onDriveCreated,
+  onCreationStarted,
+  onCreationError,
+}: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [label, setLabel] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(-1)
-  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  const [encryptionEnabled] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
 
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const { beeApi } = useContext(SettingsContext)
+  const { fm } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(value)
     setCapacityIndex(index)
-  }
-
-  const createPostageStamp = async () => {
-    try {
-      if (isCreateEnabled) {
-        onCancelClick()
-        await handleCreateDrive(
-          Size.fromBytes(capacity),
-          Duration.fromEndDate(validityEndDate),
-          label,
-          encryptionEnabled,
-          erasureCodeLevel,
-        )
-      }
-    } catch (e) {
-      //TODO It needs to be discussed what happens to the error
-    }
   }
 
   useEffect(() => {
@@ -78,7 +59,7 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
     )
 
     setCapacity(newSizes[capacityIndex])
-  }, [encryptionEnabled, erasureCodeLevel])
+  }, [encryptionEnabled, erasureCodeLevel, capacityIndex])
 
   useEffect(() => {
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
@@ -91,7 +72,7 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, label])
+  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -152,8 +133,33 @@ export function CreateDriveModal({ onCancelClick, handleCreateDrive }: CreateDri
           </div>
         </div>
         <div className="fm-modal-window-footer">
-          <FMButton label="Create drive" variant="primary" disabled={!isCreateEnabled} onClick={createPostageStamp} />
-          <FMButton label="Cancel" variant="secondary" onClick={onCancelClick} />
+          <Button
+            label="Create drive"
+            variant="primary"
+            disabled={!isCreateEnabled}
+            onClick={async () => {
+              if (isCreateEnabled && fm && beeApi) {
+                onCreationStarted()
+                onCancelClick()
+
+                await handleCreateDrive(
+                  beeApi,
+                  fm,
+                  Size.fromBytes(capacity),
+                  Duration.fromEndDate(validityEndDate),
+                  label,
+                  encryptionEnabled,
+                  erasureCodeLevel,
+                  false,
+                  null,
+                  undefined,
+                  () => onDriveCreated(),
+                  () => onCreationError(),
+                )
+              }
+            }}
+          />
+          <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
         </div>
       </div>
     </div>

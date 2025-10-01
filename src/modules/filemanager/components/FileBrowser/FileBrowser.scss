@@ -17,16 +17,18 @@
 
 .fm-file-browser-content-header {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr;
   padding: 12px;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgb(226, 232, 240);
 }
 
-.fm-file-browser-content-body {
-  flex: 1 1 auto;
-  position: relative;
+.fm-file-browser-content[data-search-mode='false'] .fm-file-browser-content-header {
+  grid-template-columns: 32px 2fr 1fr 1fr;
+}
+
+.fm-file-browser-content[data-search-mode='true'] .fm-file-browser-content-header {
+  grid-template-columns: 32px 2fr 1.1fr 1fr 1fr;
 }
 
 .fm-file-browser-content-header-item {
@@ -37,11 +39,17 @@
   font-weight: 700;
 
   & input {
-    margin: 0px;
+    margin: 0;
     width: 16px;
     height: 16px;
     accent-color: rgb(237, 129, 49);
   }
+}
+
+.fm-file-browser-content-header-item.fm-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .fm-file-browser-content-header-item-icon {
@@ -50,19 +58,47 @@
   color: rgb(237, 129, 49);
 }
 
+.fm-file-browser-content-body {
+  flex: 1 1 auto;
+  position: relative;
+}
+
 .fm-file-browser-footer {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
   max-height: 45px;
   padding: 12px;
   border-top: 1px solid #929292;
   background-color: #ededed;
 }
 
+.fm-file-browser-footer > * {
+  flex: 0 0 auto;
+}
+.fm-file-browser-footer > :nth-child(1) {
+  margin-right: 8px;
+}
+.fm-file-browser-footer > :nth-child(3) {
+  margin-left: auto;
+}
+.fm-file-browser-footer {
+  column-gap: 12px;
+}
+
 .fm-file-browser-context-menu {
   position: absolute;
   z-index: 1000;
 }
+.fm-file-browser-context-menu[data-drop='up'] {
+  transform-origin: bottom left;
+}
+.fm-file-browser-context-menu[data-drop='up'] .caret {
+  transform: rotate(180deg);
+  bottom: -6px;
+  top: auto;
+}
+
 .fm-context-item {
   margin: 4px;
   padding: 8px;
@@ -71,7 +107,6 @@
     background-color: #d1d1d1;
     cursor: pointer;
   }
-
   &.red {
     color: rgb(220, 38, 38);
   }
@@ -107,4 +142,9 @@
   background: rgba(255, 255, 255, 0.85);
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.fm-drop-hint {
+  padding: 24px;
+  color: #6b7280;
 }

@@ -8,7 +8,7 @@ interface ProgressBarProps {
   color?: string
   backgroundColor?: string
 }
-
+// TODO: seems wierd for the user 0.0000015745 / 0.68 GB
 export function ProgressBar({
   value,
   width = '200px',
