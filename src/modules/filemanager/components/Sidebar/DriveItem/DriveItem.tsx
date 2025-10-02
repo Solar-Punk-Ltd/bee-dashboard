@@ -15,21 +15,13 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { calculateStampCapacityMetrics, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
+import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface DriveItemProps {
   drive: DriveInfo
   stamp: PostageBatch
   isSelected: boolean
-}
-
-const formatUsedGB = (n: number): string => {
-  if (n === 0) return '0'
-
-  if (n < 1) return Number(n.toPrecision(3)).toString()
-
-  return n.toFixed(2)
 }
 
 export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactElement {
@@ -85,7 +77,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
     }
   }, [drive.id, refreshDrives])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(stamp, 3), [stamp])
+  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(stamp), [stamp])
 
   return (
     <div

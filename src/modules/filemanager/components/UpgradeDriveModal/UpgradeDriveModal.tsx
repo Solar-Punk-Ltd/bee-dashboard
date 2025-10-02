@@ -265,8 +265,6 @@ export function UpgradeDriveModal({
             disabled={extensionCost === '0' || isSubmitting}
             onClick={async () => {
               if (!beeApi) return
-
-              // TODO: use react states instead of events
               try {
                 setIsSubmitting(true)
                 window.dispatchEvent(
@@ -274,6 +272,8 @@ export function UpgradeDriveModal({
                     detail: { driveId: drive.id.toString() },
                   }),
                 )
+
+                onCancelClick()
 
                 await beeApi.extendStorage(
                   stamp.batchID,
@@ -291,7 +291,6 @@ export function UpgradeDriveModal({
                     detail: { driveId: drive.id.toString(), success: true },
                   }),
                 )
-                onCancelClick()
               } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Upgrade failed'
                 window.dispatchEvent(
@@ -299,7 +298,6 @@ export function UpgradeDriveModal({
                     detail: { driveId: drive.id.toString(), success: false, error: msg },
                   }),
                 )
-                setIsSubmitting(false)
               }
             }}
           />

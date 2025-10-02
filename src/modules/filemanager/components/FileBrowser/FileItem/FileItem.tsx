@@ -21,8 +21,7 @@ import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
-import { openOrDownload } from '../../../utils/view'
-import { getUsableStamps, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
+import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
@@ -59,6 +58,8 @@ export function FileItem({
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
 
   const isMountedRef = useRef(true)
+  const rafIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     isMountedRef.current = true
 
@@ -77,6 +78,10 @@ export function FileItem({
 
     return () => {
       isMountedRef.current = false
+
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
     }
   }, [beeApi, drives, fileInfo.driveId])
 
@@ -115,22 +120,23 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  const handleDownload = useCallback(async () => {
-    handleCloseContext()
-
-    if (!fm || !beeApi) return
-    const rawSize = fileInfo.customMetadata?.size
-    const expectedSize = rawSize ? Number(rawSize) : undefined
-    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
-  }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
-
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-  const handleOpen = useCallback(async () => {
-    handleCloseContext()
+  const handleDownload = useCallback(
+    async (isNewWindow?: boolean) => {
+      handleCloseContext()
 
-    if (!fm || !beeApi) return
-    await openOrDownload(beeApi.url, fm, fileInfo)
-  }, [handleCloseContext, fm, beeApi, fileInfo])
+      if (!fm || !beeApi) return
+      const rawSize = fileInfo.customMetadata?.size
+      const expectedSize = rawSize ? Number(rawSize) : undefined
+      await startDownloadingQueue(
+        fm,
+        [fileInfo],
+        onDownload(fileInfo.name, formatBytes(rawSize), expectedSize),
+        isNewWindow,
+      )
+    },
+    [handleCloseContext, fm, beeApi, fileInfo, onDownload],
+  )
 
   const doTrash = useCallback(async () => {
     if (!fm) return
@@ -225,7 +231,7 @@ export function FileItem({
 
   const renderContextMenuItems = useCallback(() => {
     const viewItem = (
-      <MenuItem disabled={isBulk} onClick={handleOpen}>
+      <MenuItem disabled={isBulk} onClick={() => handleDownload(true)}>
         View / Open
       </MenuItem>
     )
@@ -341,11 +347,18 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, onBulk])
+  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return
-    requestAnimationFrame(() => {
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      if (!isMountedRef.current) return
+
       const menu = contextRef.current
 
       if (!menu) return
@@ -355,9 +368,20 @@ export function FileItem({
         viewport: { w: window.innerWidth, h: window.innerHeight },
         margin: 8,
       })
-      setSafePos(s)
-      setDropDir(d)
+
+      if (isMountedRef.current) {
+        setSafePos(s)
+        setDropDir(d)
+      }
+      rafIdRef.current = null
     })
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
   }, [showContext, pos, contextRef])
 
   if (!currentDrive || !fm || !beeApi) {
@@ -375,7 +399,7 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={handleOpen}>
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
         <GetIconElement icon={fileInfo.name} />
         {fileInfo.name}
       </div>
