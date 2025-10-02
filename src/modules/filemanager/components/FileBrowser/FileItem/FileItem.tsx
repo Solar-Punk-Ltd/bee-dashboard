@@ -59,6 +59,8 @@ export function FileItem({
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
 
   const isMountedRef = useRef(true)
+  const rafIdRef = useRef<number | null>(null)
+
   useEffect(() => {
     isMountedRef.current = true
 
@@ -77,6 +79,10 @@ export function FileItem({
 
     return () => {
       isMountedRef.current = false
+
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
     }
   }, [beeApi, drives, fileInfo.driveId])
 
@@ -345,7 +351,14 @@ export function FileItem({
 
   useLayoutEffect(() => {
     if (!showContext) return
-    requestAnimationFrame(() => {
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      if (!isMountedRef.current) return
+
       const menu = contextRef.current
 
       if (!menu) return
@@ -355,9 +368,20 @@ export function FileItem({
         viewport: { w: window.innerWidth, h: window.innerHeight },
         margin: 8,
       })
-      setSafePos(s)
-      setDropDir(d)
+
+      if (isMountedRef.current) {
+        setSafePos(s)
+        setDropDir(d)
+      }
+      rafIdRef.current = null
     })
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
   }, [showContext, pos, contextRef])
 
   if (!currentDrive || !fm || !beeApi) {
