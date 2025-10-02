@@ -8,21 +8,47 @@ import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatus
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { Context as FMContext } from '../../providers/FileManager'
+import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+
+const KEY_STORAGE = 'privateKey'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
-  const { fm, adminDrive, initializationError, adminStamp, getStoredState } = useContext(FMContext)
+  const [hasPk, setHasPk] = useState<boolean>(() => Boolean(localStorage.getItem(KEY_STORAGE)))
+  const { fm, adminDrive, initializationError, adminStamp, getStoredState, init } = useContext(FMContext)
 
   useEffect(() => {
-    if (!fm) {
-      const storedState = getStoredState()
-      setShowInitialModal(!storedState)
-    }
-  }, [fm, getStoredState])
+    if (!hasPk || fm) return
+    const storedState = getStoredState()
+    setShowInitialModal(!storedState?.adminBatchId)
+  }, [hasPk, fm, getStoredState])
 
   useEffect(() => {
+    if (!hasPk) return
+
     if (fm) setShowInitialModal(false)
-  }, [fm])
+  }, [hasPk, fm])
+
+  if (!hasPk) {
+    return (
+      <div className="fm-main">
+        <PrivateKeyModal
+          onSaved={async () => {
+            setHasPk(true)
+
+            const stored = getStoredState()
+            const batchId = stored?.adminBatchId
+
+            setShowInitialModal(!batchId)
+
+            if (batchId) {
+              await init(batchId)
+            }
+          }}
+        />
+      </div>
+    )
+  }
 
   if (initializationError) {
     return (

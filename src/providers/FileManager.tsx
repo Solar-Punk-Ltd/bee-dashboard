@@ -231,6 +231,10 @@ export function Provider({ children }: Props) {
   useEffect(() => {
     if (!apiUrl || !beeApi) return
 
+    if (!localStorage.getItem('privateKey')) return
+
+    if (fm) return
+
     const initFromLocalState = async () => {
       const storedState = getStoredState()
 
@@ -248,7 +252,7 @@ export function Provider({ children }: Props) {
 
     initFromLocalState()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, beeApi])
+  }, [apiUrl, beeApi, fm])
 
   return (
     <Context.Provider

@@ -51,7 +51,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setAdminStamp, refreshDrives, init, fm } = useContext(FMContext)
+  const { setAdminStamp, refreshDrives, init } = useContext(FMContext)
 
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
@@ -69,7 +69,8 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
 
     setAdminStamp(selectedBatch)
     refreshDrives()
-  }, [selectedBatch, setAdminStamp, refreshDrives])
+    handleVisibility(false)
+  }, [selectedBatch, setAdminStamp, refreshDrives, handleVisibility])
 
   const handleNewAdminDriveSuccess = useCallback(
     (batch?: PostageBatch) => {
@@ -77,8 +78,9 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
 
       setAdminStamp(batch || null)
       refreshDrives()
+      handleVisibility(false)
     },
-    [setAdminStamp, refreshDrives],
+    [setAdminStamp, refreshDrives, handleVisibility],
   )
 
   const controllerRef = useRef<AbortController | null>(null)
@@ -207,10 +209,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
       setSelectedBatch(null)
     }
   }, [usableStamps, selectedBatchIndex])
-
-  useEffect(() => {
-    if (fm) handleVisibility(false)
-  }, [fm, handleVisibility])
 
   return isAdminStampCreationInProgress ? (
     <div className="fm-initialization-modal-container">
