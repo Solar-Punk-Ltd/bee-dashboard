@@ -51,18 +51,25 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setAdminStamp, refreshDrives, init } = useContext(FMContext)
+  const { setAdminStamp, refreshDrives, init, fm } = useContext(FMContext)
 
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
 
+  const safeSet =
+    <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
+    (value: React.SetStateAction<T>) => {
+      if (isMountedRef.current) setter(value)
+    }
+
+  // use guarded setters
+  const safeSetProgress = safeSet(setIsAdminStampCreationInProgress)
   const handleExistingAdminDrive = useCallback(() => {
     if (!selectedBatch || !isMountedRef.current) return
 
     setAdminStamp(selectedBatch)
     refreshDrives()
-    handleVisibility(false)
-  }, [selectedBatch, setAdminStamp, refreshDrives, handleVisibility])
+  }, [selectedBatch, setAdminStamp, refreshDrives])
 
   const handleNewAdminDriveSuccess = useCallback(
     (batch?: PostageBatch) => {
@@ -70,13 +77,20 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
 
       setAdminStamp(batch || null)
       refreshDrives()
-      handleVisibility(false)
     },
-    [setAdminStamp, refreshDrives, handleVisibility],
+    [setAdminStamp, refreshDrives],
   )
+
+  const controllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    return () => controllerRef.current?.abort()
+  }, [])
 
   const createNewAdminDriveWithFm = useCallback(
     async (fmInstance: FileManagerBase) => {
+      controllerRef.current?.abort()
+      controllerRef.current = new AbortController()
       await handleCreateDrive(
         beeApi,
         fmInstance,
@@ -87,11 +101,13 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
         erasureCodeLevel,
         true,
         selectedBatch,
-        setIsAdminStampCreationInProgress,
+        safeSetProgress,
         handleNewAdminDriveSuccess,
+        undefined,
+        controllerRef.current.signal,
       )
     },
-    [beeApi, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleNewAdminDriveSuccess],
+    [beeApi, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleNewAdminDriveSuccess, safeSetProgress],
   )
 
   const handleAdminDriveReady = useCallback(
@@ -108,14 +124,18 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   )
 
   const handleFileManagerInit = useCallback(async () => {
-    setIsAdminStampCreationInProgress(true)
+    safeSetProgress(true)
 
     try {
-      await init(selectedBatch?.batchID.toString(), handleAdminDriveReady)
-    } finally {
-      setIsAdminStampCreationInProgress(false)
+      const ok = await init(selectedBatch?.batchID.toString(), handleAdminDriveReady)
+
+      if (!ok) {
+        safeSetProgress(false)
+      }
+    } catch {
+      safeSetProgress(false)
     }
-  }, [init, selectedBatch, handleAdminDriveReady])
+  }, [init, selectedBatch, handleAdminDriveReady, safeSetProgress])
 
   useEffect(() => {
     return () => {
@@ -187,6 +207,10 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
       setSelectedBatch(null)
     }
   }, [usableStamps, selectedBatchIndex])
+
+  useEffect(() => {
+    if (fm) handleVisibility(false)
+  }, [fm, handleVisibility])
 
   return isAdminStampCreationInProgress ? (
     <div className="fm-initialization-modal-container">

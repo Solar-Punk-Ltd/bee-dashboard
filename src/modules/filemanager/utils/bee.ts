@@ -84,19 +84,27 @@ export const handleCreateDrive = async (
   setLoading?: (loading: boolean) => void,
   onSuccess?: (batch?: PostageBatch) => void,
   onError?: (error: unknown) => void,
+  signal?: AbortSignal,
 ): Promise<void> => {
-  if (!beeApi || !fm) {
-    return
+  if (!beeApi || !fm) return
+
+  const safe = (fn: () => void) => {
+    if (!signal?.aborted) fn()
   }
 
   try {
-    setLoading?.(true)
+    safe(() => setLoading?.(true))
+
+    if (signal?.aborted) return
 
     let batchId: BatchId
     let batch: PostageBatch
 
     if (!existingBatch) {
+      // Buy a new stamp
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+
+      if (signal?.aborted) return
 
       batch = await beeApi.getPostageBatch(batchId)
     } else {
@@ -104,13 +112,19 @@ export const handleCreateDrive = async (
       batch = existingBatch
     }
 
+    if (signal?.aborted) return
+
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
 
-    onSuccess?.(batch)
+    if (signal?.aborted) return
+
+    safe(() => onSuccess?.(batch))
   } catch (e) {
-    onError?.(e)
+    if (!signal?.aborted) {
+      safe(() => onError?.(e))
+    }
   } finally {
-    setLoading?.(false)
+    safe(() => setLoading?.(false))
   }
 }
 

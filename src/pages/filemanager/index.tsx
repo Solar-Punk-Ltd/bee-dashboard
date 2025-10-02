@@ -20,6 +20,10 @@ export function FileManagerPage(): ReactElement {
     }
   }, [fm, getStoredState])
 
+  useEffect(() => {
+    if (fm) setShowInitialModal(false)
+  }, [fm])
+
   if (initializationError) {
     return (
       <div className="fm-main">
