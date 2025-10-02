@@ -21,7 +21,6 @@ import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
-import { openOrDownload } from '../../../utils/view'
 import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 
@@ -121,22 +120,23 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  const handleDownload = useCallback(async () => {
-    handleCloseContext()
-
-    if (!fm || !beeApi) return
-    const rawSize = fileInfo.customMetadata?.size
-    const expectedSize = rawSize ? Number(rawSize) : undefined
-    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
-  }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
-
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-  const handleOpen = useCallback(async () => {
-    handleCloseContext()
+  const handleDownload = useCallback(
+    async (isNewWindow?: boolean) => {
+      handleCloseContext()
 
-    if (!fm || !beeApi) return
-    await openOrDownload(beeApi.url, fm, fileInfo)
-  }, [handleCloseContext, fm, beeApi, fileInfo])
+      if (!fm || !beeApi) return
+      const rawSize = fileInfo.customMetadata?.size
+      const expectedSize = rawSize ? Number(rawSize) : undefined
+      await startDownloadingQueue(
+        fm,
+        [fileInfo],
+        onDownload(fileInfo.name, formatBytes(rawSize), expectedSize),
+        isNewWindow,
+      )
+    },
+    [handleCloseContext, fm, beeApi, fileInfo, onDownload],
+  )
 
   const doTrash = useCallback(async () => {
     if (!fm) return
@@ -231,7 +231,7 @@ export function FileItem({
 
   const renderContextMenuItems = useCallback(() => {
     const viewItem = (
-      <MenuItem disabled={isBulk} onClick={handleOpen}>
+      <MenuItem disabled={isBulk} onClick={() => handleDownload(true)}>
         View / Open
       </MenuItem>
     )
@@ -347,7 +347,7 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, onBulk])
+  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return
@@ -399,7 +399,7 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={handleOpen}>
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
         <GetIconElement icon={fileInfo.name} />
         {fileInfo.name}
       </div>

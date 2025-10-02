@@ -1,4 +1,5 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
+import { getExtensionFromName, guessMime, VIEWERS } from './view'
 
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
@@ -38,11 +39,11 @@ const processStream = async (
   }
 }
 
-async function streamToBlob(
+const streamToBlob = async (
   stream: ReadableStream<Uint8Array>,
   mimeType: string,
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
-): Promise<Blob | undefined> {
+): Promise<Blob | undefined> => {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
 
@@ -84,13 +85,13 @@ interface FileInfoWithHandle {
   handle?: FileSystemFileHandle
 }
 
-async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> {
+const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> => {
   const defaultDownloadFolder = 'downloads'
   const fileHandles: FileInfoWithHandle[] = []
 
-  for (let i = 0; i < infoList.length; i++) {
-    const name = infoList[i].name
-    const mimeType = infoList[i].customMetadata?.mimeType || 'application/octet-stream'
+  for (const info of infoList) {
+    const name = info.name
+    const mimeType = guessMime(name, info.customMetadata)
     let handle: FileSystemFileHandle | undefined
 
     try {
@@ -101,7 +102,7 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
         types: [
           {
             accept: {
-              [mimeType]: [`.${name.split('.').pop()}`],
+              [mimeType]: [`.${getExtensionFromName(name)}`],
             },
           },
         ],
@@ -116,7 +117,7 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
     }
 
     fileHandles.push({
-      info: infoList[i],
+      info,
       handle,
     })
   }
@@ -124,37 +125,69 @@ async function getFileHandles(infoList: FileInfo[]): Promise<FileInfoWithHandle[
   return fileHandles
 }
 
-async function downloadToDisk(
+const downloadToDisk = async (
   streams: ReadableStream<Uint8Array>[],
-  info: FileInfo,
-  fileHandle?: FileSystemFileHandle,
+  handle: FileSystemFileHandle,
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
-): Promise<void> {
+): Promise<void> => {
   try {
     for (const stream of streams) {
-      // Fallback for browsers that do not support the File System Access API
-      if (!fileHandle) {
-        const blob = await streamToBlob(
-          stream,
-          info.customMetadata?.mimeType || 'application/octet-stream',
-          onDownloadProgress,
-        )
+      // TODO: is await needed here?
+      await processStream(stream, handle, onDownloadProgress)
+    }
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error('Error during download to disk: ', error)
+  }
+}
 
-        if (blob) {
-          downloadFileFallback(blob, info.name)
+const openNewWindow = (name: string, mime: string, url: string): boolean => {
+  const viewer = VIEWERS.find(v => v.test(mime))
+  const win = window.open('', '_blank')
+
+  if (viewer && win) {
+    viewer.render(win, url, mime, name)
+
+    return true
+  }
+
+  win?.close()
+
+  return false
+}
+
+const downloadToBlob = async (
+  streams: ReadableStream<Uint8Array>[],
+  info: FileInfo,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  isOpenWindow?: boolean,
+): Promise<void> => {
+  try {
+    for (const stream of streams) {
+      const mime = guessMime(info.name, info.customMetadata)
+      const blob = await streamToBlob(stream, mime, onDownloadProgress)
+
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+
+        let openSuccess = false
+
+        if (isOpenWindow) {
+          openSuccess = openNewWindow(info.name, mime, url)
         }
-      } else {
-        await processStream(stream, fileHandle, onDownloadProgress)
+
+        if (!openSuccess) {
+          downloadFromUrl(url, info.name)
+        }
       }
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
-    console.error('Error during downloading to disk: ', error)
+    console.error('Error during download and open: ', error)
   }
 }
 
-function downloadFileFallback(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob)
+const downloadFromUrl = (url: string, fileName: string): void => {
   const a = document.createElement('a')
   a.href = url
   a.download = fileName
@@ -166,21 +199,35 @@ function downloadFileFallback(blob: Blob, fileName: string): void {
 
 export const startDownloadingQueue = async (
   fm: FileManager,
-  fileInfoList: FileInfo[],
+  infoList: FileInfo[],
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  isOpenWindow?: boolean,
 ): Promise<void> => {
   try {
-    const fileHandles = await getFileHandles(fileInfoList)
+    let fileHandles: FileInfoWithHandle[] | undefined
+
+    if (isOpenWindow) {
+      fileHandles = infoList.map(info => ({ info }))
+    } else {
+      fileHandles = await getFileHandles(infoList)
+    }
 
     if (!fileHandles) {
       return
     }
 
-    for (let i = 0; i < fileHandles.length; i++) {
-      const info = fileHandles[i].info
+    for (const { info, handle } of fileHandles) {
       const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
 
-      await downloadToDisk(dataStreams, info, fileHandles[i].handle, onDownloadProgress)
+      if (isOpenWindow || !handle) {
+        await downloadToBlob(dataStreams, info, onDownloadProgress, isOpenWindow)
+
+        return
+      }
+
+      if (handle) {
+        await downloadToDisk(dataStreams, handle, onDownloadProgress)
+      }
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
