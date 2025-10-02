@@ -128,7 +128,7 @@ export const handleCreateDrive = async (
   }
 }
 
-export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 4) => {
+export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 2) => {
   if (!stamp) {
     return {
       capacityPct: 0,
@@ -137,13 +137,13 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits
     }
   }
 
-  const capacityPct = Math.max(0, Math.min(100, stamp.usage * 100))
+  const capacityPct = stamp.usage * 100
 
-  const usedGb = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
-  const totalGb = stamp.size.toGigabytes()
+  const usedByes = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
+  const totalBytes = stamp.size.toGigabytes()
 
-  const usedSize = usedGb <= 1 ? `${usedGb.toFixed(digits)} MB` : `${usedGb.toFixed(2)} GB`
-  const totalSize = totalGb <= 1 ? `${totalGb.toFixed(digits)} MB` : `${totalGb.toFixed(2)} GB`
+  const usedSize = usedByes <= 1 ? `${(usedByes * 1000).toFixed(digits)} MB` : `${usedByes.toFixed(2)} GB`
+  const totalSize = totalBytes <= 1 ? `${(totalBytes * 1000).toFixed(digits)} MB` : `${totalBytes.toFixed(2)} GB`
 
   return {
     capacityPct,

@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import type { FileManagerBase } from '@solarpunkltd/file-manager-lib'
@@ -6,7 +6,7 @@ import CircularProgress from '@material-ui/core/CircularProgress'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
-import { fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
+import { calculateStampCapacityMetrics, fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
 import { getExpiryDateByLifetime } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
@@ -210,6 +210,11 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     }
   }, [usableStamps, selectedBatchIndex])
 
+  const { capacityPct, usedSize, totalSize } = useMemo(
+    () => calculateStampCapacityMetrics(selectedBatch),
+    [selectedBatch],
+  )
+
   return isAdminStampCreationInProgress ? (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
@@ -244,9 +249,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
             {selectedBatch && (
               <div className="fm-drive-item-content">
                 <div className="fm-drive-item-capacity">
-                  Capacity <ProgressBar value={selectedBatch.usage * 100} width="64px" />{' '}
-                  {selectedBatch.size.toGigabytes() - selectedBatch.remainingSize.toGigabytes()} GB /{' '}
-                  {selectedBatch.size.toGigabytes()} GB
+                  Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
                 </div>
                 <div className="fm-drive-item-capacity">
                   Expiry date: {selectedBatch.duration.toEndDate().toLocaleDateString()}
