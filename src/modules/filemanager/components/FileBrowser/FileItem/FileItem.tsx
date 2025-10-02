@@ -22,7 +22,7 @@ import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
-import { getUsableStamps, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
+import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {

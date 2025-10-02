@@ -1,7 +1,7 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
-import { ViewType } from 'src/modules/filemanager/constants/fileTransfer'
+import { ViewType } from '../../../../filemanager/constants/fileTransfer'
 
 export function FileBrowserTopBar(): ReactElement {
   const { view, actualItemView } = useView()
