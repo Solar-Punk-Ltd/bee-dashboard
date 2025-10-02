@@ -143,7 +143,7 @@ export function FileProgressWindow({
               ref={idx === 0 ? firstRowRef : undefined}
             >
               <div className="fm-file-progress-window-file-type-icon">
-                <GetIconElement size="14" icon={uiName} color="black" />
+                <GetIconElement size="14" type={uiName} color="black" />
               </div>
 
               <div className="fm-file-progress-window-file-datas">

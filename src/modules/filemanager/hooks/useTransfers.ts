@@ -1,6 +1,6 @@
 import { useCallback, useState, useContext } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
-import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileInfo, FileInfoOptions, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
@@ -19,8 +19,7 @@ export type TransferItem = {
   etaSec?: number
   elapsedSec?: number
 }
-
-type UploadMeta = Record<string, string | number>
+type UploadMeta = Record<string, string | number | File[]>
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   const out: Record<string, string> = {}
@@ -29,7 +28,7 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta => {
+const buildUploadMeta = (files: File[] | FileList, path?: string, folderUpload = false): UploadMeta => {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -37,7 +36,8 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   const meta: UploadMeta = {
     size: String(totalSize),
     fileCount: String(arr.length),
-    mime: primary?.type || 'application/octet-stream',
+    mime: folderUpload ? 'folder' : primary?.type || 'application/octet-stream',
+    files: arr,
   }
 
   if (path) meta.path = path
@@ -48,7 +48,8 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
 const makeUploadInfo = (args: {
   name: string
   files: File[]
-  meta: Record<string, string | number>
+
+  meta: Record<string, string | number | File[]>
   topic?: string
 }): FileInfoOptions => {
   const info = {
@@ -196,8 +197,10 @@ export function useTransfers() {
   )
 
   const uploadFiles = useCallback(
-    (picked: FileList | File[]): void => {
+    (picked: FileList | File[], folderUpload = false, folderName = ''): void => {
       const filesArr = Array.from(picked)
+      const manager = fm as FileManagerBase
+      const drive = currentDrive as DriveInfo
 
       if (filesArr.length === 0) return
 
@@ -205,11 +208,46 @@ export function useTransfers() {
         setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
       }
 
+      async function uploadFile(
+        currentDrive: DriveInfo,
+        file: File,
+        meta: UploadMeta,
+        finalName: string,
+        prettySize?: string,
+        isReplace?: boolean,
+        replaceTopic?: string,
+        replaceHistory?: string,
+      ) {
+        const progressCallback = trackUploadProgress(
+          finalName,
+          prettySize,
+          isReplace ? FileTransferType.Update : FileTransferType.Upload,
+        )
+
+        const info = makeUploadInfo({
+          name: finalName,
+          files: [file],
+          meta,
+          topic: isReplace ? replaceTopic : undefined,
+        })
+
+        try {
+          await fm?.upload(
+            currentDrive,
+            { ...info, onUploadProgress: progressCallback },
+            { actHistoryAddress: isReplace ? replaceHistory : undefined },
+          )
+        } catch {
+          markError(finalName)
+        }
+      }
+
       async function processOne(file: File, reservedNames: Set<string>) {
         if (!fm || !currentDrive) return
 
         const meta = buildUploadMeta([file])
-        const prettySize = formatBytes(meta.size)
+
+        const prettySize = typeof meta.size === 'string' || typeof meta.size === 'number' ? formatBytes(meta.size) : '0'
         const sameDrive = collectSameDrive(currentDrive.id.toString())
 
         let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
@@ -235,6 +273,23 @@ export function useTransfers() {
 
         reservedNames.add(finalName)
 
+        await uploadFile(currentDrive, file, meta, finalName, prettySize, isReplace, replaceTopic, replaceHistory)
+      }
+
+      async function processFolder() {
+        const meta = buildUploadMeta(filesArr, undefined, true)
+        const prettySize = typeof meta.size === 'string' || typeof meta.size === 'number' ? formatBytes(meta.size) : '0'
+        const sameDrive = collectSameDrive(drive.id.toString())
+
+        // eslint-disable-next-line prefer-const
+        let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(folderName, sameDrive)
+        finalName = finalName ?? ''
+
+        const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+        const invalidName = !finalName || finalName.trim().length === 0
+
+        if (invalidCombo || invalidName) return
+
         const progressCallback = trackUploadProgress(
           finalName,
           prettySize,
@@ -243,16 +298,16 @@ export function useTransfers() {
 
         const info = makeUploadInfo({
           name: finalName,
-          files: [file],
+          files: filesArr,
           meta,
           topic: isReplace ? replaceTopic : undefined,
         })
 
-        fm.upload(
-          currentDrive,
+        void manager.upload(
+          drive,
           { ...info, onUploadProgress: progressCallback },
           { actHistoryAddress: isReplace ? replaceHistory : undefined },
-        ).catch(() => markError(finalName))
+        )
       }
 
       async function processAll() {
@@ -262,6 +317,8 @@ export function useTransfers() {
         }
       }
 
+      if (folderUpload) void processFolder()
+      else void processAll()
       void processAll()
     },
     [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],

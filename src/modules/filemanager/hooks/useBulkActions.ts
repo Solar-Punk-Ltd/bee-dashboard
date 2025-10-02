@@ -22,6 +22,7 @@ export function useBulkActions(opts: {
   const allChecked = useMemo(() => allIds.length > 0 && selectedCount === allIds.length, [allIds.length, selectedCount])
   const someChecked = useMemo(() => selectedCount > 0 && !allChecked, [selectedCount, allChecked])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const folderInputRef = useRef<HTMLInputElement | null>(null)
 
   const selectedFiles = useMemo(
     () => listToRender.filter(fi => selectedIds.has(getFileId(fi))),
@@ -105,6 +106,7 @@ export function useBulkActions(opts: {
       clearAll,
       // file input (for bulk upload)
       fileInputRef,
+      folderInputRef,
       bulkUploadFromPicker,
       // actions
       bulkDownload,

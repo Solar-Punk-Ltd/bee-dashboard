@@ -1,8 +1,10 @@
-import { ReactElement, useCallback } from 'react'
+import { ReactElement, useCallback, useState } from 'react'
 import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/fileTransfer'
 import { getFileId } from '../../../utils/common'
+import FolderSubItems from './FolderSubItems'
+import { useView } from 'src/pages/filemanager/ViewContext'
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -27,6 +29,28 @@ interface FileBrowserContentProps {
   }
 }
 
+function buildTree(items: { path: string; ref: string }[]) {
+  const root: any = {}
+
+  items.forEach(item => {
+    const parts = item.path.split('/').filter(Boolean).slice(1)
+    let current = root
+
+    parts.forEach((part, index) => {
+      if (!current[part]) {
+        current[part] = {
+          type: index === parts.length - 1 && item.path.includes('.') ? 'file' : 'folder',
+          children: {},
+          ref: index === parts.length - 1 ? item.ref : undefined,
+        }
+      }
+      current = current[part].children
+    })
+  })
+
+  return root
+}
+
 export function FileBrowserContent({
   listToRender,
   drives,
@@ -39,6 +63,9 @@ export function FileBrowserContent({
   bulkSelectedCount,
   onBulk,
 }: FileBrowserContentProps): ReactElement {
+  const { folderView, setFolderView, currentTree, setCurrentTree, viewFolders, setViewFolders } = useView()
+  const [showFolderFileItems, setShowFolderFileItems] = useState(false)
+  const [folderFileItems, setFolderFileItems] = useState<{ path: string; ref: string }[] | null>(null)
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
       return <div className="fm-drop-hint">Create a drive to start using the file manager</div>
@@ -59,8 +86,16 @@ export function FileBrowserContent({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
-  const renderFileList = useCallback(
-    (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
+  const handleFolderItemDoubleClick = (folderFileItems: { path: string; ref: string }[] | null, name: string) => {
+    setFolderView(true)
+    setFolderFileItems(folderFileItems)
+    setCurrentTree(buildTree(folderFileItems || []))
+    setShowFolderFileItems(true)
+    setViewFolders([...viewFolders, { folderName: name, tree: buildTree(folderFileItems || []) }])
+  }
+
+  const renderFileList = (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
+    if (!folderView) {
       return filesToRender.map(fi => {
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
         const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
@@ -76,12 +111,16 @@ export function FileBrowserContent({
             onToggleSelected={onToggleSelected}
             bulkSelectedCount={bulkSelectedCount}
             onBulk={onBulk}
+            folderItemDoubleClick={(folderFileItems: { path: string; ref: string }[] | null, name: string) =>
+              handleFolderItemDoubleClick(folderFileItems, name)
+            }
           />
         )
       })
-    },
-    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk],
-  )
+    } else {
+      return folderFileItems ? <FolderSubItems tree={buildTree(folderFileItems)} /> : null
+    }
+  }
 
   if (drives.length === 0) {
     return renderEmptyState()

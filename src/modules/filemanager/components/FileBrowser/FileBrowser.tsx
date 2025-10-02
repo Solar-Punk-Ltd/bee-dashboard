@@ -27,6 +27,7 @@ import { Context as SettingsContext } from '../../../../providers/Settings'
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
+
   const { beeApi } = useContext(SettingsContext)
   const { files, currentDrive, refreshFiles, drives, fm } = useContext(FMContext)
   const {
@@ -92,6 +93,11 @@ export function FileBrowser(): ReactElement {
     el?.click()
   }
 
+  const onContextUploadFolder = () => {
+    const el = bulk.folderInputRef.current || legacyUploadRef.current
+    el?.click()
+  }
+
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
     handleContextMenu(e)
@@ -128,7 +134,7 @@ export function FileBrowser(): ReactElement {
       ? `Search results${scope === 'selected' && currentDrive?.name ? ` — ${currentDrive.name}` : ''}`
       : currentDrive?.name || ''
     setActualItemView?.(title)
-  }, [isSearchMode, scope, currentDrive, setActualItemView])
+  }, [isSearchMode, scope, currentDrive, setActualItemView, bulk])
 
   useEffect(() => {
     if (!isSearchMode) {
@@ -137,11 +143,74 @@ export function FileBrowser(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode])
 
+  async function selectFolder() {
+    if (typeof window.showDirectoryPicker === 'function') {
+      try {
+        const dirHandle = await window.showDirectoryPicker()
+        const dataTransfer = new DataTransfer() // Create a DataTransfer object
+        const metadataMap = new Map()
+
+        const processHandle = async (handle: FileSystemHandle, path = '') => {
+          if (handle.kind === 'file') {
+            const file = await (handle as FileSystemFileHandle).getFile()
+
+            if (file.name.startsWith('.')) return
+            const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
+            dataTransfer.items.add(createdFile)
+            metadataMap.set(createdFile, { name: file.name, itemType: 'file', path: `${path}${file.name}` })
+          } else if (handle.kind === 'directory') {
+            const dirHandle = handle as FileSystemDirectoryHandle
+
+            const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: 'folder' })
+            metadataMap.set(folderFileItem, {
+              name: dirHandle.name,
+              itemType: 'folder',
+              path: `${path}${folderFileItem.name}`,
+            })
+            dataTransfer.items.add(folderFileItem)
+
+            for await (const [name, childHandle] of dirHandle.entries()) {
+              await processHandle(childHandle, `${path}${dirHandle.name}/`)
+            }
+          }
+        }
+
+        for await (const [name, handle] of dirHandle.entries()) {
+          await processHandle(handle, `${dirHandle.name}/`)
+        }
+
+        const fileList = dataTransfer.files
+
+        if (!currentDrive || fileList.length === 0) {
+          // Handle error for no files or no current drive
+          return
+        }
+
+        if (fileList && fileList.length) uploadFiles(fileList, true, dirHandle.name)
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Folder selection cancelled or not supported:', err)
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('showDirectoryPicker is not supported in this browser.')
+    }
+  }
+
   return (
     <>
       {conflictPortal}
       <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} />
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
+
+      <input
+        type="file"
+        webkitdirectory
+        ref={bulk.folderInputRef}
+        style={{ display: 'none' }}
+        onClick={selectFolder}
+        onChange={onFileSelected}
+      />
 
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
         <FileBrowserTopBar />
@@ -234,6 +303,9 @@ export function FileBrowser(): ReactElement {
                       <div className="fm-context-item">New folder</div>
                       <div className="fm-context-item" onClick={onContextUploadFile}>
                         Upload file
+                      </div>
+                      <div className="fm-context-item" onClick={selectFolder}>
+                        Upload folder
                       </div>
                       <div className="fm-context-item">Upload folder</div>
                       <div className="fm-context-item-border" />

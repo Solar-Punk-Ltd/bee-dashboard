@@ -24,6 +24,7 @@ import { computeContextMenuPosition } from '../../../utils/ui'
 import { openOrDownload } from '../../../utils/view'
 import { getUsableStamps, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
+import { folder } from 'jszip'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -40,6 +41,7 @@ interface FileItemProps {
     destroy?: () => void
     delete?: () => void
   }
+  folderItemDoubleClick: (folderFileItems: { path: string; ref: string }[] | null, fileName: string) => void
 }
 
 export function FileItem({
@@ -51,6 +53,7 @@ export function FileItem({
   onToggleSelected,
   bulkSelectedCount,
   onBulk,
+  folderItemDoubleClick,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, refreshFiles, currentDrive, files, drives } = useContext(FMContext)
@@ -83,6 +86,7 @@ export function FileItem({
   const size = formatBytes(fileInfo.customMetadata?.size)
   const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
   const isTrashedFile = isTrashed(fileInfo)
+
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
 
   const [safePos, setSafePos] = useState(pos)
@@ -96,12 +100,27 @@ export function FileItem({
   const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
   const [confirmForget, setConfirmForget] = useState(false)
 
+  //TODO Handle name change
   const openGetInfo = useCallback(async () => {
     if (!fm) return
     const groups = await buildGetInfoGroups(fm, fileInfo, driveName, driveStamp)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
   }, [fm, fileInfo, driveName, driveStamp])
+
+  const handleOpenFolder = useCallback(async () => {
+    if (!fm) return
+    const list = await fm.listFiles(fileInfo)
+    const paths = Object.keys(list)
+    const refs = Object.values(list)
+
+    const result = paths.map((path, index) => ({
+      path,
+      ref: refs[index],
+    }))
+
+    return result
+  }, [fm, fileInfo, driveName])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
@@ -125,12 +144,20 @@ export function FileItem({
   }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-  const handleOpen = useCallback(async () => {
+  const handleOpen = async () => {
     handleCloseContext()
 
     if (!fm || !beeApi) return
+
+    if (fileInfo?.customMetadata?.mime === 'folder') {
+      const fileDatas = await handleOpenFolder()
+      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
+
+      return
+    }
+
     await openOrDownload(beeApi.url, fm, fileInfo)
-  }, [handleCloseContext, fm, beeApi, fileInfo])
+  }
 
   const doTrash = useCallback(async () => {
     if (!fm) return
@@ -365,7 +392,14 @@ export function FileItem({
   }
 
   return (
-    <div className="fm-file-item-content" onContextMenu={handleContextMenu} onClick={handleCloseContext}>
+    <div
+      className="fm-file-item-content"
+      onContextMenu={handleContextMenu}
+      onDoubleClick={() => {
+        handleOpen()
+      }}
+      onClick={handleCloseContext}
+    >
       <div className="fm-file-item-content-item fm-checkbox">
         <input
           type="checkbox"
@@ -375,8 +409,8 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={handleOpen}>
-        <GetIconElement icon={fileInfo.name} />
+      <div className="fm-file-item-content-item fm-name">
+        <GetIconElement type={fileInfo?.customMetadata?.mime ? fileInfo?.customMetadata?.mime : ''} />
         {fileInfo.name}
       </div>
 

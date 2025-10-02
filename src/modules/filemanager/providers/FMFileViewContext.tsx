@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { ViewType } from '../../modules/filemanager/constants/fileTransfer'
+import { ViewType } from '../constants/fileTransfer'
 
 interface ViewContextProps {
   view: ViewType
@@ -15,9 +15,9 @@ interface ViewContextProps {
   setCurrentTree: (tree: any) => void
 }
 
-const ViewContext = createContext<ViewContextProps | undefined>(undefined)
+const FMFileViewContext = createContext<ViewContextProps | undefined>(undefined)
 
-export function ViewProvider({ children }: { children: ReactNode }) {
+export function FMFileViewProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ViewType>(ViewType.File)
   const [viewFolders, setViewFolders] = useState<{ folderName: string; tree: any }[]>([])
   const [actualItemView, setActualItemView] = useState<string | undefined>(undefined)
@@ -25,7 +25,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   const [currentTree, setCurrentTree] = useState<any>(null)
 
   return (
-    <ViewContext.Provider
+    <FMFileViewContext.Provider
       value={{
         view,
         setView,
@@ -40,12 +40,12 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </ViewContext.Provider>
+    </FMFileViewContext.Provider>
   )
 }
 
 export function useView() {
-  const context = useContext(ViewContext)
+  const context = useContext(FMFileViewContext)
 
   if (!context) {
     throw new Error('useView must be used within a FMFileViewProvider')
