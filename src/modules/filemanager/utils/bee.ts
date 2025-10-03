@@ -84,19 +84,27 @@ export const handleCreateDrive = async (
   setLoading?: (loading: boolean) => void,
   onSuccess?: (batch?: PostageBatch) => void,
   onError?: (error: unknown) => void,
+  signal?: AbortSignal,
 ): Promise<void> => {
-  if (!beeApi || !fm) {
-    return
+  if (!beeApi || !fm) return
+
+  const safe = (fn: () => void) => {
+    if (!signal?.aborted) fn()
   }
 
   try {
-    setLoading?.(true)
+    safe(() => setLoading?.(true))
+
+    if (signal?.aborted) return
 
     let batchId: BatchId
     let batch: PostageBatch
 
     if (!existingBatch) {
+      // Buy a new stamp
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
+
+      if (signal?.aborted) return
 
       batch = await beeApi.getPostageBatch(batchId)
     } else {
@@ -104,17 +112,23 @@ export const handleCreateDrive = async (
       batch = existingBatch
     }
 
+    if (signal?.aborted) return
+
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
 
-    onSuccess?.(batch)
+    if (signal?.aborted) return
+
+    safe(() => onSuccess?.(batch))
   } catch (e) {
-    onError?.(e)
+    if (!signal?.aborted) {
+      safe(() => onError?.(e))
+    }
   } finally {
-    setLoading?.(false)
+    safe(() => setLoading?.(false))
   }
 }
 
-export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 4) => {
+export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 2) => {
   if (!stamp) {
     return {
       capacityPct: 0,
@@ -123,13 +137,13 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits
     }
   }
 
-  const capacityPct = Math.max(0, Math.min(100, stamp.usage * 100))
+  const capacityPct = stamp.usage * 100
 
-  const usedGb = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
-  const totalGb = stamp.size.toGigabytes()
+  const usedByes = stamp.size.toGigabytes() - stamp.remainingSize.toGigabytes()
+  const totalBytes = stamp.size.toGigabytes()
 
-  const usedSize = usedGb <= 1 ? `${usedGb.toFixed(digits)} MB` : `${usedGb.toFixed(2)} GB`
-  const totalSize = totalGb <= 1 ? `${totalGb.toFixed(digits)} MB` : `${totalGb.toFixed(2)} GB`
+  const usedSize = usedByes <= 1 ? `${(usedByes * 1000).toFixed(digits)} MB` : `${usedByes.toFixed(2)} GB`
+  const totalSize = totalBytes <= 1 ? `${(totalBytes * 1000).toFixed(digits)} MB` : `${totalBytes.toFixed(2)} GB`
 
   return {
     capacityPct,

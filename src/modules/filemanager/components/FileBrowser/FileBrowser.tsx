@@ -51,6 +51,8 @@ export function FileBrowser(): ReactElement {
 
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
+  const isMountedRef = useRef(true)
+  const rafIdRef = useRef<number | null>(null)
 
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
@@ -105,7 +107,14 @@ export function FileBrowser(): ReactElement {
 
   useLayoutEffect(() => {
     if (!showContext) return
-    requestAnimationFrame(() => {
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      if (!isMountedRef.current) return
+
       const menu = contextRef.current
       const container = document.querySelector('.fm-file-browser-container') as HTMLElement | null
 
@@ -124,9 +133,19 @@ export function FileBrowser(): ReactElement {
         containerRect,
       })
 
-      setSafePos(sp)
-      setDropDir(dd)
+      if (isMountedRef.current) {
+        setSafePos(sp)
+        setDropDir(dd)
+      }
+      rafIdRef.current = null
     })
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
   }, [showContext, pos, contextRef])
 
   useEffect(() => {
@@ -142,6 +161,16 @@ export function FileBrowser(): ReactElement {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode])
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [])
 
   async function selectFolder() {
     if (typeof window.showDirectoryPicker === 'function') {

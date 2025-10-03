@@ -1,4 +1,4 @@
-import { useCallback, useState, useContext } from 'react'
+import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
 import type { DriveInfo, FileInfo, FileInfoOptions, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
@@ -67,6 +67,7 @@ const makeUploadInfo = (args: {
 export function useTransfers() {
   const { fm, currentDrive, files } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
+  const isMountedRef = useRef(true)
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const isUploading = uploadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
@@ -79,6 +80,8 @@ export function useTransfers() {
       let lastTs = startedAt
       let lastProcessed = 0
       let lastEta: number | undefined
+
+      if (!isMountedRef.current) return
 
       setUploadItems(prev => {
         const idx = prev.findIndex(p => p.name === name)
@@ -132,11 +135,13 @@ export function useTransfers() {
             etaSec = lastEta
           }
 
-          setUploadItems(prev =>
-            prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, pct), kind, etaSec } : it)),
-          )
+          if (isMountedRef.current) {
+            setUploadItems(prev =>
+              prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, pct), kind, etaSec } : it)),
+            )
+          }
 
-          if (progress.processed >= progress.total) {
+          if (progress.processed >= progress.total && isMountedRef.current) {
             const finishedAt = Date.now()
             setUploadItems(prev =>
               prev.map(it =>
@@ -205,7 +210,9 @@ export function useTransfers() {
       if (filesArr.length === 0) return
 
       function markError(name: string) {
-        setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
+        if (isMountedRef.current) {
+          setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
+        }
       }
 
       async function uploadFile(
@@ -334,6 +341,12 @@ export function useTransfers() {
   ): ((bytesDownloaded: number, downloadingFlag: boolean) => void) => {
     const driveName = currentDrive?.name
 
+    if (!isMountedRef.current) {
+      return () => {
+        // No-op function for unmounted component
+      }
+    }
+
     setDownloadItems(prev => {
       const row: TransferItem = {
         name,
@@ -362,6 +375,8 @@ export function useTransfers() {
 
     const onProgress = (bytesDownloaded: number, downloadingFlag: boolean) => {
       let percent = 0
+
+      if (!isMountedRef.current) return
 
       setDownloadItems(prev => {
         const now = Date.now()
@@ -440,15 +455,34 @@ export function useTransfers() {
   }
 
   const dismissUpload = (name: string) => {
-    setUploadItems(prev => prev.filter(it => it.name !== name))
+    if (isMountedRef.current) {
+      setUploadItems(prev => prev.filter(it => it.name !== name))
+    }
   }
 
   const dismissDownload = (name: string) => {
-    setDownloadItems(prev => prev.filter(it => it.name !== name))
+    if (isMountedRef.current) {
+      setDownloadItems(prev => prev.filter(it => it.name !== name))
+    }
   }
 
-  const dismissAllUploads = () => setUploadItems([])
-  const dismissAllDownloads = () => setDownloadItems([])
+  const dismissAllUploads = () => {
+    if (isMountedRef.current) {
+      setUploadItems([])
+    }
+  }
+
+  const dismissAllDownloads = () => {
+    if (isMountedRef.current) {
+      setDownloadItems([])
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   return {
     uploadFiles,

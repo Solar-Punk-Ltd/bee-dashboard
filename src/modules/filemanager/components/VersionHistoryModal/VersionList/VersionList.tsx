@@ -14,7 +14,7 @@ import { formatBytes, indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
 import { ActionTag } from '../../../constants/fileTransfer'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { useContextMenu } from 'src/modules/filemanager/hooks/useContextMenu'
+import { useContextMenu } from '../../../hooks/useContextMenu'
 
 export const truncateNameMiddle = (s: string, max = 42): string => {
   const str = String(s)
