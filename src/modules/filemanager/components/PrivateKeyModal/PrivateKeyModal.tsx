@@ -1,31 +1,25 @@
-import { useMemo, useState, ReactElement } from 'react'
+import { useState, ReactElement } from 'react'
 import './PrivateKeyModal.scss'
 import { Button } from '../Button/Button'
+import { KEY_STORAGE } from '../../utils/common'
+import { PrivateKey } from '@ethersphere/bee-js'
 
-const KEY_STORAGE = 'privateKey'
-
-type Props = {
-  onSaved: () => void
-}
-
-function normalizePk(input: string): string {
-  const s = input.trim()
-
-  // allow both with and without 0x
-  return s.startsWith('0x') ? s : `0x${s}`
-}
-
-function isValidPk(pk: string): boolean {
-  // 0x + 64 hex chars
-  return /^0x[a-fA-F0-9]{64}$/.test(pk)
-}
+type Props = { onSaved: () => void }
 
 export function PrivateKeyModal({ onSaved }: Props): ReactElement {
   const [value, setValue] = useState('')
-  const [touched, setTouched] = useState(false)
-  const normalized = useMemo(() => normalizePk(value), [value])
-  const valid = isValidPk(normalized)
-  const showError = touched && !valid
+  const [showError, setShowError] = useState(false)
+
+  const handleSave = () => {
+    try {
+      new PrivateKey(value)
+
+      localStorage.setItem(KEY_STORAGE, value)
+      onSaved()
+    } catch {
+      setShowError(true)
+    }
+  }
 
   return (
     <div className="fm-initialization-modal-container">
@@ -40,7 +34,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
               className="fm-emphasized-text"
               style={{ display: 'block', marginBottom: 6 }}
             >
-              Private key (hex, 64 chars)
+              Private key
             </label>
             <input
               id="fm-private-key"
@@ -49,30 +43,19 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
               placeholder="0x…"
               autoComplete="off"
               value={value}
-              onChange={e => setValue(e.target.value)}
-              onBlur={() => setTouched(true)}
+              onChange={e => {
+                setShowError(false)
+                setValue(e.target.value)
+              }}
               spellCheck={false}
             />
-            {showError && (
-              <div className="fm-input-hint-error">Expected a 64-character hex string (with or without 0x).</div>
-            )}
-            <div className="fm-input-hint">This is saved only in your browser’s local storage.</div>
+            {showError && <div className="fm-input-hint-error">Invalid private key. Please paste a valid hex key.</div>}
+            <div className="fm-input-hint">Saved only in your browser’s local storage.</div>
           </div>
         </div>
 
         <div className="fm-modal-window-footer">
-          <Button
-            label="Save"
-            variant="primary"
-            disabled={!valid}
-            onClick={() => {
-              const pk = normalizePk(value)
-
-              if (!isValidPk(pk)) return
-              localStorage.setItem(KEY_STORAGE, pk)
-              onSaved()
-            }}
-          />
+          <Button label="Save" variant="primary" onClick={handleSave} />
         </div>
       </div>
     </div>

@@ -1,12 +1,13 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
-import { ViewType } from 'src/modules/filemanager/constants/fileTransfer'
+import { ViewType } from '../../../../filemanager/constants/fileTransfer'
 import { useView } from 'src/pages/filemanager/ViewContext'
 
 export function FileBrowserTopBar(): ReactElement {
-  const { viewFolders, setViewFolders, actualItemView, folderView, setFolderView, currentTree, setCurrentTree } =
+  const { view, viewFolders, setViewFolders, actualItemView, folderView, setFolderView, currentTree, setCurrentTree } =
     useView()
 
+  const viewText = view === ViewType.Trash ? ' Trash' : ''
   const handleItemClick = (type: string, name?: { folderName: string; tree: any }, index?: number) => {
     if (type === 'drive') {
       setFolderView(false)
@@ -33,7 +34,9 @@ export function FileBrowserTopBar(): ReactElement {
       <div onClick={() => handleItemClick('drive')} className="fm-file-browser-top-bar-item">
         {actualItemView}
       </div>
-      {viewFolders.length > 0 &&
+
+      {view !== ViewType.Trash &&
+        viewFolders.length > 0 &&
         viewFolders.map((folder, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
             /{' '}

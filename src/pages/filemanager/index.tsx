@@ -9,8 +9,7 @@ import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/Fi
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-
-const KEY_STORAGE = 'privateKey'
+import { KEY_STORAGE } from '../../modules/filemanager/utils/common'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)

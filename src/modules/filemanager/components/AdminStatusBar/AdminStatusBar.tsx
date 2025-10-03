@@ -1,5 +1,4 @@
-import { ReactElement, useState, useMemo } from 'react'
-
+import { ReactElement, useState, useMemo, useEffect } from 'react'
 import './AdminStatusBar.scss'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { Tooltip } from '../Tooltip/Tooltip'
@@ -16,6 +15,33 @@ interface AdminStatusBarProps {
 // TODO: refresh admin drive and stamp info after upload, new drive etc.
 export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusBarProps): ReactElement {
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
+  const [isUpgrading, setIsUpgrading] = useState(false)
+
+  useEffect(() => {
+    if (!adminDrive) return
+
+    const id = adminDrive.id.toString()
+
+    const onStart = (e: Event) => {
+      const { driveId } = (e as CustomEvent).detail || {}
+
+      if (driveId === id) setIsUpgrading(true)
+    }
+
+    const onEnd = (e: Event) => {
+      const { driveId } = (e as CustomEvent).detail || {}
+
+      if (driveId === id) setIsUpgrading(false)
+    }
+
+    window.addEventListener('fm:drive-upgrade-start', onStart as EventListener)
+    window.addEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+
+    return () => {
+      window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
+      window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+    }
+  }, [adminDrive])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(adminStamp), [adminStamp])
 
@@ -24,10 +50,11 @@ export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusB
     [adminStamp],
   )
 
-  const blurCls = loading ? ' is-loading' : ''
+  const isBusy = loading || isUpgrading
+  const blurCls = isBusy ? ' is-loading' : ''
 
   return (
-    <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={loading ? 'true' : 'false'}>
+    <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={isBusy ? 'true' : 'false'}>
       <div className="fm-admin-status-bar-left">
         <div className="fm-drive-item-capacity">
           Capacity <ProgressBar value={capacityPct} width="150px" /> {usedSize} / {totalSize}
@@ -44,20 +71,32 @@ export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusB
       {isUpgradeDriveModalOpen && adminStamp && adminDrive && (
         <UpgradeDriveModal
           stamp={adminStamp}
-          onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
           drive={adminDrive}
+          onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
         />
       )}
 
       <div
         className="fm-admin-status-bar-upgrade-button"
-        onClick={() => !loading && adminStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
-        aria-disabled={loading ? 'true' : 'false'}
+        onClick={() => !isBusy && adminStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
+        aria-disabled={isBusy ? 'true' : 'false'}
       >
-        {loading ? 'Loading…' : 'Manage'}
+        {isBusy ? 'Working…' : 'Manage'}
       </div>
 
-      {loading && <div className="fm-admin-status-bar-loader" aria-hidden="true" />}
+      {loading && (
+        <div className="fm-drive-item-creating-overlay" aria-live="polite">
+          <div className="fm-mini-spinner" />
+          <span>Creating admin drive…</span>
+        </div>
+      )}
+
+      {isUpgrading && (
+        <div className="fm-drive-item-creating-overlay" aria-live="polite">
+          <div className="fm-mini-spinner" />
+          <span>Upgrading admin drive…</span>
+        </div>
+      )}
     </div>
   )
 }

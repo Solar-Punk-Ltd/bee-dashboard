@@ -21,8 +21,8 @@ import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
-import { openOrDownload } from '../../../utils/view'
-import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
+
+import { getUsableStamps, handleDestroyDrive } from 'src/modules/filemanager/utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { folder } from 'jszip'
 
@@ -126,7 +126,7 @@ export function FileItem({
     }))
 
     return result
-  }, [fm, fileInfo, driveName])
+  }, [fm, fileInfo])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
@@ -140,30 +140,28 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
-  const handleDownload = useCallback(async () => {
-    handleCloseContext()
+  // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
+  const handleDownload = useCallback(
+    async (isNewWindow?: boolean) => {
+      handleCloseContext()
 
-    if (!fm || !beeApi) return
-    const rawSize = fileInfo.customMetadata?.size
-    const expectedSize = rawSize ? Number(rawSize) : undefined
-    await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
-  }, [handleCloseContext, fm, beeApi, fileInfo, onDownload])
+      if (!fm || !beeApi) return
+
+      if (fileInfo?.customMetadata?.mime === 'folder') {
+        const fileDatas = await handleOpenFolder()
+        folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
+
+        return
+      }
+
+      const rawSize = fileInfo.customMetadata?.size
+      const expectedSize = rawSize ? Number(rawSize) : undefined
+      await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
+    },
+    [handleCloseContext, fm, beeApi, fileInfo, onDownload, folderItemDoubleClick, handleOpenFolder],
+  )
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-  const handleOpen = async () => {
-    handleCloseContext()
-
-    if (!fm || !beeApi) return
-
-    if (fileInfo?.customMetadata?.mime === 'folder') {
-      const fileDatas = await handleOpenFolder()
-      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
-
-      return
-    }
-
-    await openOrDownload(beeApi.url, fm, fileInfo)
-  }
 
   const doTrash = useCallback(async () => {
     if (!fm) return
@@ -258,7 +256,7 @@ export function FileItem({
 
   const renderContextMenuItems = useCallback(() => {
     const viewItem = (
-      <MenuItem disabled={isBulk} onClick={handleOpen}>
+      <MenuItem disabled={isBulk} onClick={() => handleDownload(true)}>
         View / Open
       </MenuItem>
     )
@@ -374,7 +372,7 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, handleOpen, openGetInfo, doRecover, onBulk])
+  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, onBulk])
 
   useLayoutEffect(() => {
     if (!showContext) return
@@ -420,7 +418,7 @@ export function FileItem({
       className="fm-file-item-content"
       onContextMenu={handleContextMenu}
       onDoubleClick={() => {
-        handleOpen()
+        handleDownload(true)
       }}
       onClick={handleCloseContext}
     >
@@ -433,8 +431,13 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name">
-        <GetIconElement type={fileInfo?.customMetadata?.mime ? fileInfo?.customMetadata?.mime : ''} />
+      <div
+        className="fm-file-item-content-item fm-name"
+        onDoubleClick={() => {
+          handleDownload(true)
+        }}
+      >
+        <GetIconElement type={fileInfo.name} />
         {fileInfo.name}
       </div>
 

@@ -5,9 +5,7 @@ import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-l
 import { Context as SettingsContext } from './Settings'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getUsableStamps } from '../modules/filemanager/utils/bee'
-
-const KEY_STORAGE = 'privateKey'
-const FM_STORAGE_STATE = 'fmState'
+import { KEY_STORAGE, FM_STORAGE_STATE } from '../modules/filemanager/utils/common'
 
 type FMStorageState = {
   adminDriveId: string

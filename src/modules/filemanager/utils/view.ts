@@ -1,5 +1,3 @@
-import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
-
 const EXT_TO_MIME: Record<string, string> = {
   mp4: 'video/mp4',
   webm: 'video/webm',
@@ -25,17 +23,21 @@ const EXT_TO_MIME: Record<string, string> = {
   htm: 'text/html',
 }
 
-function guessMime(name: string, fi: FileInfo): string {
-  const md = fi.customMetadata?.mimeType || fi.customMetadata?.mime || fi.customMetadata?.['content-type']
+export function getExtensionFromName(name: string): string {
+  return name.split('.').pop()?.toLowerCase() || ''
+}
+
+export function guessMime(name: string, mtdt?: Record<string, string> | undefined): string {
+  const md = mtdt?.mimeType || mtdt?.mime || mtdt?.['content-type']
 
   if (md) return md
 
-  const ext = name.split('.').pop()?.toLowerCase() || ''
+  const ext = getExtensionFromName(name)
 
   return EXT_TO_MIME[ext] || 'application/octet-stream'
 }
 
-type Viewer = {
+export type Viewer = {
   name: string
   test: (mime: string) => boolean
   render: (win: Window, url: string, mime: string, name: string) => void
@@ -56,7 +58,7 @@ const IMAGE_HTML = (u: string, title: string) =>
     <img style="max-width:100%;max-height:100vh" src="${u}" />
   </body></html>`
 
-const VIEWERS: Viewer[] = [
+export const VIEWERS: Viewer[] = [
   {
     name: 'video',
     test: m => m.startsWith('video/'),
@@ -106,61 +108,3 @@ const VIEWERS: Viewer[] = [
     },
   },
 ]
-
-export async function openOrDownload(
-  beeUrl: string,
-  fm: FileManager,
-  fi: FileInfo,
-  path?: string,
-  headers?: Record<string, string>,
-): Promise<void> {
-  const win = window.open('', '_blank')
-
-  const map = await fm.listFiles(fi)
-  const pick = path ?? fi.name
-  const ref = map[pick]
-
-  if (!ref) throw new Error(`Path not found in mantaray: ${pick}`)
-  // TODO: use simply use bee.downloadData?
-  const href = `${beeUrl}/bytes/${ref}`
-
-  const mime = guessMime(pick, fi)
-  const viewer = VIEWERS.find(v => v.test(mime))
-
-  if (!viewer) {
-    downloadByName(href, pick)
-
-    return
-  }
-
-  if (!win) {
-    downloadByName(href, pick)
-
-    return
-  }
-
-  try {
-    const res = await fetch(href, { headers })
-
-    if (!res.ok) throw new Error(`GET failed: ${res.status}`)
-    const blob = await res.blob()
-
-    const typed = blob.type && blob.type !== 'application/octet-stream' ? blob : new Blob([blob], { type: mime })
-    const url = URL.createObjectURL(typed)
-
-    viewer.render(win, url, mime, pick)
-  } catch (e) {
-    win.close()
-    downloadByName(href, pick)
-  }
-}
-
-// TODO: DRY, use downloadFileFallback
-function downloadByName(href: string, fileName: string): void {
-  const a = document.createElement('a')
-  a.href = href
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-}

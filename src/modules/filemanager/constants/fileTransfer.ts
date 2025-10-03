@@ -15,7 +15,7 @@ export enum TransferBarColor {
   Update = '#f59e0b',
   Download = '#3b82f6',
 }
-
+// TODO folder view using
 export enum ViewType {
   File = 'file',
   Trash = 'trash',

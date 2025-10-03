@@ -93,3 +93,6 @@ export enum Dir {
 export function getFileId(fi: FileInfo): string {
   return fi.topic.toString()
 }
+
+export const KEY_STORAGE = 'privateKey'
+export const FM_STORAGE_STATE = 'fmState'
