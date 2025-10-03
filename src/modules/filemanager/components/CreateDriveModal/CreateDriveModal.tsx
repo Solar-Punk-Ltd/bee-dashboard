@@ -37,10 +37,11 @@ export function CreateDriveModal({
   const [encryptionEnabled] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
-
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
+
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useContext(FMContext)
+
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {

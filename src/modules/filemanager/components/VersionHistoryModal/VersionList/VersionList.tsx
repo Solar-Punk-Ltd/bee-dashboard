@@ -11,9 +11,8 @@ import { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { formatBytes, indexStrToBigint } from '../../../utils/common'
-import { startDownloadingQueue } from '../../../utils/download'
+import { DownloadProgress, startDownloadingQueue } from '../../../utils/download'
 import { ActionTag } from '../../../constants/fileTransfer'
-import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 
 export const truncateNameMiddle = (s: string, max = 42): string => {
@@ -28,7 +27,7 @@ export const truncateNameMiddle = (s: string, max = 42): string => {
 interface VersionListProps {
   versions: FileInfo[]
   headFi: FileInfo
-  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
+  onDownload: (name: string, size?: string, expectedSize?: number) => (dp: DownloadProgress) => void
   restoreVersion: (fi: FileInfo) => Promise<void>
 }
 
@@ -399,7 +398,6 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
   const { handleCloseContext } = useContextMenu<HTMLDivElement>()
 
   const { fm } = useContext(FMContext)
-  const { beeApi } = useContext(SettingsContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const toggle = useCallback(
@@ -427,12 +425,14 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
     async (fileInfo: FileInfo) => {
       handleCloseContext()
 
-      if (!fm || !beeApi) return
+      if (!fm) return
+
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
+
       await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
     },
-    [handleCloseContext, fm, beeApi, onDownload],
+    [handleCloseContext, fm, onDownload],
   )
 
   if (!versions.length || !fm) return null

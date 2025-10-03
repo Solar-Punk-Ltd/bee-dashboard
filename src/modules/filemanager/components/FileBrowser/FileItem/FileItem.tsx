@@ -19,14 +19,14 @@ import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
-import { startDownloadingQueue } from '../../../utils/download'
+import { DownloadProgress, startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
   fileInfo: FileInfo
-  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
+  onDownload: (name: string, size?: string, expectedSize?: number) => (dp: DownloadProgress) => void
   showDriveColumn?: boolean
   driveName: string
   selected?: boolean
@@ -55,6 +55,7 @@ export function FileItem({
   const { fm, refreshFiles, currentDrive, files, drives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
+
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
 
   const isMountedRef = useRef(true)
@@ -103,13 +104,16 @@ export function FileItem({
 
   const openGetInfo = useCallback(async () => {
     if (!fm) return
+
     const groups = await buildGetInfoGroups(fm, fileInfo, driveName, driveStamp)
+
     setInfoGroups(groups)
     setShowGetInfoModal(true)
   }, [fm, fileInfo, driveName, driveStamp])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
+
     const wanted = currentDrive.batchId.toString()
     const sameDrive = files.filter(fi => fi.batchId.toString() === wanted)
     const out = new Set<string>()
@@ -126,8 +130,10 @@ export function FileItem({
       handleCloseContext()
 
       if (!fm || !beeApi) return
+
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
+
       await startDownloadingQueue(
         fm,
         [fileInfo],
@@ -140,6 +146,7 @@ export function FileItem({
 
   const doTrash = useCallback(async () => {
     if (!fm) return
+
     const withMeta = {
       ...fileInfo,
       customMetadata: {
@@ -148,12 +155,15 @@ export function FileItem({
         lifecycleAt: new Date().toISOString(),
       },
     }
+
     await fm.trashFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles?.())
+
+    refreshFiles()
   }, [fm, fileInfo, refreshFiles])
 
   const doRecover = useCallback(async () => {
     if (!fm) return
+
     const withMeta = {
       ...fileInfo,
       customMetadata: {
@@ -162,21 +172,25 @@ export function FileItem({
         lifecycleAt: new Date().toISOString(),
       },
     }
+
     await fm.recoverFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles?.())
+
+    refreshFiles()
   }, [fm, fileInfo, refreshFiles])
 
   const doForget = useCallback(async () => {
     if (!fm) return
+
     await fm.forgetFile(fileInfo)
-    await Promise.resolve(refreshFiles?.())
+
+    refreshFiles()
   }, [fm, fileInfo, refreshFiles])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }, [currentDrive])
-  // TODO: do rename upload progress
+
   const doRename = useCallback(
     async (newName: string) => {
       if (!fm || !currentDrive) return
@@ -201,7 +215,7 @@ export function FileItem({
         },
       )
 
-      await Promise.resolve(refreshFiles?.())
+      refreshFiles()
     },
     [fm, currentDrive, fileInfo, takenNames, refreshFiles],
   )
@@ -536,7 +550,7 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                refreshFiles?.()
+                refreshFiles()
 
                 if (isMountedRef.current) {
                   setShowDestroyDriveModal(false)

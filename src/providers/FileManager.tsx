@@ -68,6 +68,7 @@ interface Props {
 
 export function Provider({ children }: Props) {
   const { apiUrl, beeApi } = useContext(SettingsContext)
+
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])

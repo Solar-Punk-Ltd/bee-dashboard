@@ -10,7 +10,6 @@ import FormControlLabel from '@material-ui/core/FormControlLabel'
 import FormControl from '@material-ui/core/FormControl'
 
 import { FileAction } from '../../constants/fileTransfer'
-import { preventDefault } from '../../utils/common'
 
 interface DeleteFileModalProps {
   name?: string
@@ -61,7 +60,7 @@ export function DeleteFileModal({
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Move to Trash</div>
-                      <div onClick={preventDefault}>
+                      <div onClick={e => e.preventDefault()}>
                         Moves {subjectNoun} to the trash. It will still take up space on{' '}
                         {currentDriveName ?? 'this drive'} and expire along with it. You can restore it later.
                       </div>
@@ -77,7 +76,7 @@ export function DeleteFileModal({
                   label={
                     <div className="fm-radio-label">
                       <div className="fm-radio-label-header fm-main-font-color fm-line-height-fit">Forget</div>
-                      <div onClick={preventDefault}>
+                      <div onClick={e => e.preventDefault()}>
                         Removes {subjectNoun} from your view. The data will remain on Swarm until{' '}
                         {currentDriveName ?? 'the drive'} expires. This action cannot be easily undone.
                       </div>
@@ -98,7 +97,7 @@ export function DeleteFileModal({
                         Destroy entire drive {currentDriveName ? `‘${currentDriveName}’` : ''} to delete this{' '}
                         {subjectNoun}
                       </div>
-                      <div className="fm-red-font" onClick={preventDefault}>
+                      <div className="fm-red-font" onClick={e => e.preventDefault()}>
                         <AlertIcon size="14px" className="fm-alert-icon-inline" />
                         Warning: This will make all files on this drive inaccessible. This action is irreversible.
                       </div>

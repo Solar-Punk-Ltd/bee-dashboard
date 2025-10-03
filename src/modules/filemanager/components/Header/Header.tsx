@@ -33,6 +33,7 @@ export function Header(): ReactElement {
   }, [currentDrive])
 
   const [openFilters, setOpenFilters] = useState(false)
+
   const menuRef = useRef<HTMLDivElement | null>(null)
   const btnRef = useRef<HTMLButtonElement | null>(null)
 

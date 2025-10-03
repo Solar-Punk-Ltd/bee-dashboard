@@ -45,17 +45,16 @@ export function FileBrowser(): ReactElement {
 
   const { query, scope, includeActive, includeTrashed } = useSearch()
 
-  const [safePos, setSafePos] = useState<Point>(pos as Point)
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
+  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
+  const [confirmBulkForget, setConfirmBulkForget] = useState(false)
+  const [safePos, setSafePos] = useState<Point>(pos)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const isMountedRef = useRef(true)
   const rafIdRef = useRef<number | null>(null)
-
-  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
-  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
-  const [confirmBulkForget, setConfirmBulkForget] = useState(false)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -220,7 +219,7 @@ export function FileBrowser(): ReactElement {
                   if (drives.length === 0) {
                     return (
                       <ContextMenu>
-                        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                        <div className="fm-context-item" onClick={() => refreshFiles()}>
                           Refresh
                         </div>
                       </ContextMenu>
@@ -268,7 +267,7 @@ export function FileBrowser(): ReactElement {
                       <div className="fm-context-item-border" />
                       <div className="fm-context-item">Paste</div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                      <div className="fm-context-item" onClick={() => refreshFiles()}>
                         Refresh
                       </div>
                     </ContextMenu>
@@ -343,7 +342,7 @@ export function FileBrowser(): ReactElement {
                   fm,
                   currentDrive,
                   () => {
-                    refreshFiles?.()
+                    refreshFiles()
                     setShowDestroyDriveModal(false)
                   },
                   error => {

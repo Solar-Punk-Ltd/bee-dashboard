@@ -28,10 +28,12 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
+  const [isUpgrading, setIsUpgrading] = useState(false)
+
   const { fm, refreshDrives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
+
   const isMountedRef = useRef(true)
-  const [isUpgrading, setIsUpgrading] = useState(false)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
@@ -52,6 +54,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
     setShowContext(false)
   }
 
+  // TODO: event handler refactor --> use states instead of event listeners
   useEffect(() => {
     const id = drive.id.toString()
     const onStart = (e: Event) => {
@@ -59,11 +62,11 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
 
       if (driveId === id) setIsUpgrading(true)
     }
-    const onEnd = async (e: Event) => {
+    const onEnd = (e: Event) => {
       const { driveId, success } = (e as CustomEvent).detail || {}
 
       if (driveId === id) {
-        if (success) await Promise.resolve(refreshDrives?.())
+        if (success) refreshDrives()
         setIsUpgrading(false)
       }
     }
@@ -164,7 +167,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
               fm,
               drive,
               () => {
-                refreshDrives?.()
+                refreshDrives()
 
                 if (isMountedRef.current) {
                   setIsDestroyDriveModalOpen(false)

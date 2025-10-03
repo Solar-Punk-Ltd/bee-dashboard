@@ -16,6 +16,7 @@ import { indexStrToBigint } from '../../utils/common'
 import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
 import { ActionTag } from '../../constants/fileTransfer'
 import { useTransfers } from '../../hooks/useTransfers'
+import { DownloadProgress } from '../../utils/download'
 
 const pageSize = 5
 
@@ -28,17 +29,14 @@ type RenameConfirmState = {
 interface VersionHistoryModalProps {
   fileInfo: FileInfo
   onCancelClick: () => void
-  onDownload?: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (progress: number, isDownloading: boolean) => void
+  onDownload?: (name: string, size?: string, expectedSize?: number) => (dp: DownloadProgress) => void
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
   const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
 
   const localTransfers = useTransfers()
+  // TODO: why undefined?
   const trackDownload = onDownload ?? localTransfers.trackDownload
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()
@@ -185,13 +183,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
     async (versionFi: FileInfo): Promise<void> => {
       if (!fm || !currentDrive) return
 
-      const doRefreshAndClose = () => {
-        onCancelClick()
-        setTimeout(() => {
-          refreshFiles?.()
-        }, 0)
-      }
-
       try {
         const restoredFrom = indexStrToBigint(versionFi.version)
 
@@ -218,7 +209,9 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
         }
 
         await fm.restoreVersion(withMeta)
-        doRefreshAndClose()
+
+        onCancelClick()
+        refreshFiles()
       } catch (e) {
         const msg = (e as Error)?.message || JSON.stringify(e)
         setError(msg)

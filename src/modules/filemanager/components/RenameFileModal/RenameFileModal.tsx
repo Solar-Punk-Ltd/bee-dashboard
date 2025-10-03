@@ -22,9 +22,10 @@ export function RenameFileModal({
   const [value, setValue] = useState(currentName)
   const [touched, setTouched] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
 
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const isMountedRef = useRef(true)
+
   useEffect(() => {
     isMountedRef.current = true
 

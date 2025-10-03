@@ -3,6 +3,7 @@ import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ViewType } from '../../../constants/fileTransfer'
 import { getFileId } from '../../../utils/common'
+import { DownloadProgress } from 'src/modules/filemanager/utils/download'
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -10,11 +11,7 @@ interface FileBrowserContentProps {
   currentDrive: DriveInfo | null
   view: ViewType
   isSearchMode: boolean
-  trackDownload: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (progress: number, isDownloading: boolean) => void
+  trackDownload: (name: string, size?: string, expectedSize?: number) => (dp: DownloadProgress) => void
   selectedIds?: Set<string>
   onToggleSelected?: (fi: FileInfo, checked: boolean) => void
   bulkSelectedCount?: number

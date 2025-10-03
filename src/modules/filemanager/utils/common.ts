@@ -1,9 +1,4 @@
-import { MouseEvent } from 'react'
-
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
-export function preventDefault(event: MouseEvent) {
-  event.preventDefault()
-}
 
 export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()
@@ -85,6 +80,7 @@ export const formatBytes = (v?: string | number): string | undefined => {
 export const isTrashed = (fi: FileInfo): boolean => fi.status === FileStatus.Trashed
 
 export type Point = { x: number; y: number }
+
 export enum Dir {
   Down = 'down',
   Up = 'up',

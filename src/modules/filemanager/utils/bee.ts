@@ -71,6 +71,7 @@ export const fmFetchCost = async (
   currentFetch.current = null
 }
 
+// TODO: overall signal handling and try-catch seems to complicated
 export const handleCreateDrive = async (
   beeApi: Bee | null,
   fm: FileManagerBase | null,
@@ -101,7 +102,6 @@ export const handleCreateDrive = async (
     let batch: PostageBatch
 
     if (!existingBatch) {
-      // Buy a new stamp
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
 
       if (signal?.aborted) return

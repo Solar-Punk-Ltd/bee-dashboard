@@ -1,10 +1,20 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
 
+export interface DownloadProgress {
+  progress: number
+  isDownloading: boolean
+}
+
+interface FileInfoWithHandle {
+  info: FileInfo
+  handle?: FileSystemFileHandle
+}
+
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
   fileHandle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (dp: DownloadProgress) => void,
 ): Promise<void> => {
   const reader = stream.getReader()
 
@@ -25,7 +35,7 @@ const processStream = async (
 
       done = streamDone
 
-      if (onDownloadProgress) onDownloadProgress(progress, !done)
+      if (onDownloadProgress) onDownloadProgress({ progress, isDownloading: !done })
     }
   } catch (e: unknown) {
     // eslint-disable-next-line no-console
@@ -42,7 +52,7 @@ const processStream = async (
 const streamToBlob = async (
   stream: ReadableStream<Uint8Array>,
   mimeType: string,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (dp: DownloadProgress) => void,
 ): Promise<Blob | undefined> => {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
@@ -59,7 +69,7 @@ const streamToBlob = async (
       }
       done = streamDone
 
-      if (onDownloadProgress) onDownloadProgress(progress, !done)
+      if (onDownloadProgress) onDownloadProgress({ progress, isDownloading: !done })
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
@@ -78,11 +88,6 @@ const streamToBlob = async (
   }
 
   return new Blob([combined], { type: mimeType })
-}
-
-interface FileInfoWithHandle {
-  info: FileInfo
-  handle?: FileSystemFileHandle
 }
 
 const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> => {
@@ -125,15 +130,14 @@ const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[
   return fileHandles
 }
 
-const downloadToDisk = async (
+const downloadToDisk = (
   streams: ReadableStream<Uint8Array>[],
   handle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
-): Promise<void> => {
+  onDownloadProgress?: (dp: DownloadProgress) => void,
+): void => {
   try {
     for (const stream of streams) {
-      // TODO: is await needed here?
-      await processStream(stream, handle, onDownloadProgress)
+      processStream(stream, handle, onDownloadProgress)
     }
   } catch (error: unknown) {
     // eslint-disable-next-line no-console
@@ -159,31 +163,26 @@ const openNewWindow = (name: string, mime: string, url: string): boolean => {
 const downloadToBlob = async (
   streams: ReadableStream<Uint8Array>[],
   info: FileInfo,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (dp: DownloadProgress) => void,
   isOpenWindow?: boolean,
 ): Promise<void> => {
-  try {
-    for (const stream of streams) {
-      const mime = guessMime(info.name, info.customMetadata)
-      const blob = await streamToBlob(stream, mime, onDownloadProgress)
+  for (const stream of streams) {
+    const mime = guessMime(info.name, info.customMetadata)
+    const blob = await streamToBlob(stream, mime, onDownloadProgress)
 
-      if (blob) {
-        const url = URL.createObjectURL(blob)
+    if (blob) {
+      const url = URL.createObjectURL(blob)
 
-        let openSuccess = false
+      let openSuccess = false
 
-        if (isOpenWindow) {
-          openSuccess = openNewWindow(info.name, mime, url)
-        }
+      if (isOpenWindow) {
+        openSuccess = openNewWindow(info.name, mime, url)
+      }
 
-        if (!openSuccess) {
-          downloadFromUrl(url, info.name)
-        }
+      if (!openSuccess) {
+        downloadFromUrl(url, info.name)
       }
     }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during download and open: ', error)
   }
 }
 
@@ -200,37 +199,32 @@ const downloadFromUrl = (url: string, fileName: string): void => {
 export const startDownloadingQueue = async (
   fm: FileManager,
   infoList: FileInfo[],
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (dp: DownloadProgress) => void,
   isOpenWindow?: boolean,
 ): Promise<void> => {
-  try {
-    let fileHandles: FileInfoWithHandle[] | undefined
+  let fileHandles: FileInfoWithHandle[] | undefined
 
-    if (isOpenWindow) {
-      fileHandles = infoList.map(info => ({ info }))
-    } else {
-      fileHandles = await getFileHandles(infoList)
-    }
+  if (isOpenWindow) {
+    fileHandles = infoList.map(info => ({ info }))
+  } else {
+    fileHandles = await getFileHandles(infoList)
+  }
 
-    if (!fileHandles) {
+  if (!fileHandles) {
+    return
+  }
+
+  for (const { info, handle } of fileHandles) {
+    const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
+
+    if (isOpenWindow || !handle) {
+      downloadToBlob(dataStreams, info, onDownloadProgress, isOpenWindow)
+
       return
     }
 
-    for (const { info, handle } of fileHandles) {
-      const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
-
-      if (isOpenWindow || !handle) {
-        await downloadToBlob(dataStreams, info, onDownloadProgress, isOpenWindow)
-
-        return
-      }
-
-      if (handle) {
-        await downloadToDisk(dataStreams, handle, onDownloadProgress)
-      }
+    if (handle) {
+      downloadToDisk(dataStreams, handle, onDownloadProgress)
     }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during downloading queue: ', error)
   }
 }

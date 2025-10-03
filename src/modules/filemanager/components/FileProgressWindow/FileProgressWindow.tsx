@@ -56,6 +56,7 @@ export function FileProgressWindow({
 }: FileProgressWindowProps): ReactElement | null {
   const listRef = useRef<HTMLDivElement | null>(null)
   const firstRowRef = useRef<HTMLDivElement | null>(null)
+
   const count = items?.length ?? numberOfFiles ?? 0
   const rows: ProgressItem[] =
     items && items.length > 0

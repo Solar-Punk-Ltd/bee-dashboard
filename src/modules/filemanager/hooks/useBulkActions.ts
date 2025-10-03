@@ -1,26 +1,26 @@
 import { useCallback, useMemo, useRef, useState, useContext } from 'react'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
-import { startDownloadingQueue } from '../utils/download'
+import { DownloadProgress, startDownloadingQueue } from '../utils/download'
 import { formatBytes, getFileId } from '../utils/common'
 
-export function useBulkActions(opts: {
+interface BulkActionsProps {
   listToRender: FileInfo[]
-  trackDownload: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (bytesDownloaded: number, isDownloading: boolean) => void
-}) {
-  const { listToRender, trackDownload } = opts
+  trackDownload: (name: string, size?: string, expectedSize?: number) => (dp: DownloadProgress) => void
+}
+
+export function useBulkActions(props: BulkActionsProps) {
+  const { listToRender, trackDownload } = props
 
   const { fm, refreshFiles } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
   const allIds = useMemo(() => listToRender.map(getFileId), [listToRender])
   const selectedCount = useMemo(() => allIds.filter(id => selectedIds.has(id)).length, [allIds, selectedIds])
   const allChecked = useMemo(() => allIds.length > 0 && selectedCount === allIds.length, [allIds.length, selectedCount])
   const someChecked = useMemo(() => selectedCount > 0 && !allChecked, [selectedCount, allChecked])
+
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const selectedFiles = useMemo(
@@ -49,12 +49,14 @@ export function useBulkActions(opts: {
 
   const bulkDownload = useCallback(
     async (list: FileInfo[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !list.length) return
+
       for (const fi of list) {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
         const tracker = trackDownload(fi.name, prettySize, expected)
+
         await startDownloadingQueue(fm, [fi], tracker)
       }
     },
@@ -63,9 +65,11 @@ export function useBulkActions(opts: {
 
   const bulkTrash = useCallback(
     async (list: FileInfo[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !list.length) return
+
       await Promise.allSettled(list.map(f => fm.trashFile(f)))
-      await Promise.resolve(refreshFiles?.())
+
+      refreshFiles()
       clearAll()
     },
     [fm, refreshFiles, clearAll],
@@ -75,7 +79,7 @@ export function useBulkActions(opts: {
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
       await Promise.allSettled(list.map(f => fm.recoverFile(f)))
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
       clearAll()
     },
     [fm, refreshFiles, clearAll],
@@ -83,9 +87,10 @@ export function useBulkActions(opts: {
 
   const bulkForget = useCallback(
     async (list: FileInfo[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !list.length) return
+
       await Promise.allSettled(list.map(f => fm.forgetFile(f)))
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
       clearAll()
     },
     [fm, refreshFiles, clearAll],
@@ -93,7 +98,6 @@ export function useBulkActions(opts: {
 
   return useMemo(
     () => ({
-      // selection
       selectedIds,
       setSelectedIds,
       selectedFiles,
@@ -103,10 +107,8 @@ export function useBulkActions(opts: {
       toggleOne,
       selectAll,
       clearAll,
-      // file input (for bulk upload)
       fileInputRef,
       bulkUploadFromPicker,
-      // actions
       bulkDownload,
       bulkTrash,
       bulkRestore,
