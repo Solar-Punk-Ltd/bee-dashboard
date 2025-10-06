@@ -437,7 +437,7 @@ export function FileItem({
           handleDownload(true)
         }}
       >
-        <GetIconElement type={fileInfo.name} />
+        <GetIconElement type={fileInfo.customMetadata?.mime} />
         {fileInfo.name}
       </div>
 

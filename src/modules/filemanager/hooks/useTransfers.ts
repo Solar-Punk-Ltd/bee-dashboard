@@ -326,7 +326,6 @@ export function useTransfers() {
 
       if (folderUpload) void processFolder()
       else void processAll()
-      void processAll()
     },
     [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
   )
