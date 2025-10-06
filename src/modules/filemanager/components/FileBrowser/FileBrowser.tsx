@@ -329,18 +329,17 @@ export function FileBrowser(): ReactElement {
 
                   return (
                     <ContextMenu>
-                      <div className="fm-context-item">New folder</div>
+                      {/*TODO: is the needed ? <div className="fm-context-item">New folder</div> */}
                       <div className="fm-context-item" onClick={onContextUploadFile}>
                         Upload file
                       </div>
                       <div className="fm-context-item" onClick={selectFolder}>
                         Upload folder
                       </div>
-                      <div className="fm-context-item">Upload folder</div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item">Paste</div>
+                      {/*TODO: is the needed ?  <div className="fm-context-item">Paste</div> */}
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                      <div className="fm-context-item" onClick={() => refreshFiles()}>
                         Refresh
                       </div>
                     </ContextMenu>
