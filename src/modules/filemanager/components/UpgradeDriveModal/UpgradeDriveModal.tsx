@@ -1,4 +1,5 @@
-import { ReactElement, useCallback, useContext, useEffect, useState } from 'react'
+/* eslint-disable no-console */
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
@@ -9,9 +10,9 @@ import DatabaseIcon from 'remixicon-react/Database2LineIcon'
 import WalletIcon from 'remixicon-react/Wallet3LineIcon'
 import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
-import { desiredLifetimeOptions } from '../../constants/stamps'
+import { desiredLifetimeOptions } from '../../constants/common'
 import { Context as BeeContext } from '../../../../providers/Bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { ByteMetric, fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import {
   BatchId,
@@ -24,6 +25,8 @@ import {
   Utils,
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { SELECT_VALUE_LABEL } from '../../constants/common'
+import CheckLineIcon from 'remixicon-react/CheckLineIcon'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
@@ -105,11 +108,16 @@ export function UpgradeDriveModal({
       const newSizes = sizes.slice(fromIndex + 1)
 
       const updatedSizes = [
-        { value: 0, label: 'Select a value' },
-        ...newSizes.map(size => ({
-          value: size,
-          label: `${fromBytesConversion(size - stamp.size.toBytes(), 'GB').toFixed(3)} GB`,
-        })),
+        { value: 0, label: SELECT_VALUE_LABEL },
+        ...newSizes.map(size => {
+          const metric = size >= 1000 ? ByteMetric.GB : ByteMetric.MB
+          const convertedSize = fromBytesConversion(size - stamp.size.toBytes(), metric).toFixed(3)
+
+          return {
+            value: size,
+            label: `${convertedSize} ${metric}`,
+          }
+        }),
       ]
       setSizeMarks(updatedSizes)
     }
@@ -155,6 +163,27 @@ export function UpgradeDriveModal({
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
   }, [lifetimeIndex, stamp.duration])
+
+  const additionalInfo = useMemo(() => {
+    let additionalCapacityText = ''
+    let additionalDurationText = ''
+
+    if (capacity.toBytes() === 0) {
+      additionalCapacityText = 'Not selected'
+    } else {
+      const additionalCapacityBytes = Math.max(capacity.toBytes() - stamp.size.toBytes(), 0)
+      const metric = additionalCapacityBytes >= 1000 ? ByteMetric.GB : ByteMetric.MB
+      additionalCapacityText = fromBytesConversion(additionalCapacityBytes, metric).toFixed(3) + ' ' + metric
+    }
+
+    if (durationExtensionCost !== '') {
+      additionalDurationText = '(' + extensionCost + ' xBZZ)'
+    }
+
+    console.log('bagoy extensionCost: ', extensionCost)
+
+    return additionalCapacityText + additionalDurationText
+  }, [capacity, stamp.size, durationExtensionCost, extensionCost])
 
   const batchIdStr = stamp.batchID.toString()
   const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
@@ -211,7 +240,7 @@ export function UpgradeDriveModal({
                 options={sizeMarks}
                 value={capacity.toBytes()}
                 onChange={handleCapacityChange}
-                placeholder="Select a value"
+                placeholder={SELECT_VALUE_LABEL}
               />
             </div>
             <div className="fm-modal-window-input-container">
@@ -224,7 +253,7 @@ export function UpgradeDriveModal({
                 onChange={(value, index) => {
                   setLifetimeIndex(value)
                 }}
-                placeholder="Select a value"
+                placeholder={SELECT_VALUE_LABEL}
               />
             </div>
           </div>
@@ -236,14 +265,7 @@ export function UpgradeDriveModal({
               BatchId: {stamp.label} ({shortBatchId})
             </div>
             <div>Expiry: {stamp.duration.toEndDate().toLocaleDateString()}</div>
-            <div>
-              Additional storage:{' '}
-              {capacity.toBytes() === 0
-                ? 'Not selected'
-                : `${
-                    fromBytesConversion(Math.max(capacity.toBytes() - stamp.size.toBytes(), 0), 'GB').toFixed(3) + ' GB'
-                  } ${durationExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'}`}
-            </div>
+            <div>Additional storage: {additionalInfo}</div>
             <div>
               Extension period:{' '}
               {durationExtensionCost === '0'

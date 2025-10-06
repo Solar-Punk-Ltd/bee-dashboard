@@ -5,9 +5,8 @@ import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
-import { erasureCodeMarks } from '../../constants/common'
-import { desiredLifetimeOptions } from '../../constants/stamps'
+import { ByteMetric, fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { erasureCodeMarks, desiredLifetimeOptions, SELECT_VALUE_LABEL } from '../../constants/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -22,6 +21,7 @@ interface CreateDriveModalProps {
   onCreationError: () => void
 }
 // TODO: select existing batch id or create a new one - just like in InitialModal
+// TODO: same view as in InitialModal - merge
 export function CreateDriveModal({
   onCancelClick,
   onDriveCreated,
@@ -53,10 +53,15 @@ export function CreateDriveModal({
     const newSizes = Array.from(Utils.getStampEffectiveBytesBreakpoints(encryptionEnabled, erasureCodeLevel).values())
 
     setSizeMarks(
-      newSizes.map(size => ({
-        value: size,
-        label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
-      })),
+      newSizes.map(size => {
+        const metric = size >= 1000 ? ByteMetric.GB : ByteMetric.MB
+        const convertedSize = fromBytesConversion(size, metric).toFixed(2)
+
+        return {
+          value: size,
+          label: `${convertedSize} ${metric}`,
+        }
+      }),
     )
 
     setCapacity(newSizes[capacityIndex])
@@ -101,7 +106,7 @@ export function CreateDriveModal({
               options={sizeMarks}
               value={capacity}
               onChange={handleCapacityChange}
-              placeholder="Select a value"
+              placeholder={SELECT_VALUE_LABEL}
               infoText="Amount of data you can store on the drive. Later you can upgrade it."
             />
           </div>
@@ -112,7 +117,7 @@ export function CreateDriveModal({
               options={desiredLifetimeOptions}
               value={lifetimeIndex}
               onChange={setLifetimeIndex}
-              placeholder="Select a value"
+              placeholder={SELECT_VALUE_LABEL}
               infoText="Might change over time depending on the network"
             />
           </div>

@@ -8,8 +8,7 @@ import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { calculateStampCapacityMetrics, fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
 import { getExpiryDateByLifetime } from '../../utils/common'
-import { erasureCodeMarks } from '../../constants/common'
-import { desiredLifetimeOptions } from '../../constants/stamps'
+import { erasureCodeMarks, desiredLifetimeOptions, SELECT_VALUE_LABEL } from '../../constants/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -267,7 +266,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
                 options={desiredLifetimeOptions}
                 value={lifetimeIndex}
                 onChange={setLifetimeIndex}
-                placeholder="Select a value"
+                placeholder={SELECT_VALUE_LABEL}
                 infoText="Might change over time depending on the network"
               />
             </div>
