@@ -50,6 +50,7 @@ export function FileBrowser(): ReactElement {
 
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
+  const bodyRef = useRef<HTMLDivElement | null>(null)
   const isMountedRef = useRef(true)
   const rafIdRef = useRef<number | null>(null)
 
@@ -94,9 +95,60 @@ export function FileBrowser(): ReactElement {
     el?.click()
   }
 
+  const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
+    const out: File[] = []
+    const items = e.clipboardData?.items ?? []
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i]
+
+      if (it.kind === 'file') {
+        const f = it.getAsFile()
+
+        if (f) out.push(f)
+      }
+    }
+
+    return out
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const files = extractFilesFromClipboardEvent(e)
+
+    if (files.length > 0) {
+      e.preventDefault()
+      uploadFiles(files)
+    }
+  }
+
+  const handleContextPaste = async () => {
+    const navAny = navigator as Navigator
+
+    if (!navAny.clipboard || !navAny.clipboard.read) return
+    try {
+      const items: ClipboardItem[] = await navAny.clipboard.read()
+      const files: File[] = []
+      for (const ci of items) {
+        for (const type of ci.types) {
+          if (type.startsWith('image/') || type === 'application/octet-stream') {
+            const blob = await ci.getType(type)
+            const ext = type.split('/')[1] || 'bin'
+            const name = `Pasted-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`
+            files.push(new File([blob], name, { type }))
+          }
+        }
+      }
+
+      if (files.length) uploadFiles(files)
+    } catch {
+      // Silently ignore; user can still use ⌘V/Ctrl+V or Edit→Paste.
+    }
+  }
+
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
-    handleContextMenu(e)
+    e.preventDefault()
+    e.stopPropagation()
+    handleContextMenu(e.nativeEvent as unknown as React.MouseEvent<HTMLDivElement>)
   }
 
   useLayoutEffect(() => {
@@ -110,14 +162,14 @@ export function FileBrowser(): ReactElement {
       if (!isMountedRef.current) return
 
       const menu = contextRef.current
-      const container = document.querySelector('.fm-file-browser-container') as HTMLElement | null
+      const body = bodyRef.current
 
       if (!menu) return
 
       const rect = menu.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const containerRect = container?.getBoundingClientRect() ?? null
+      const containerRect = body?.getBoundingClientRect() ?? null
 
       const { safePos: sp, dropDir: dd } = computeContextMenuPosition({
         clickPos: pos as Point,
@@ -128,7 +180,10 @@ export function FileBrowser(): ReactElement {
       })
 
       if (isMountedRef.current) {
-        setSafePos(sp)
+        const topLeft = containerRect
+          ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
+          : sp
+        setSafePos(topLeft)
         setDropDir(dd)
       }
       rafIdRef.current = null
@@ -182,13 +237,11 @@ export function FileBrowser(): ReactElement {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onPaste={handlePaste}
+          onContextMenu={handleFileBrowserContextMenu}
         >
           <FileBrowserHeader key={isSearchMode ? 'hdr-search' : 'hdr-normal'} isSearchMode={isSearchMode} bulk={bulk} />
-          <div
-            className="fm-file-browser-content-body"
-            onContextMenu={handleFileBrowserContextMenu}
-            onClick={handleCloseContext}
-          >
+          <div className="fm-file-browser-content-body" ref={bodyRef} onClick={handleCloseContext}>
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={listToRender}
@@ -266,7 +319,16 @@ export function FileBrowser(): ReactElement {
                       </div>
                       <div className="fm-context-item">Upload folder</div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item">Paste</div>
+                      <div className="fm-context-item" onClick={handleContextPaste}>
+                        <span>Paste</span>
+                        <span
+                          className="fm-info fm-info--inline"
+                          data-tip="Tip: If this doesn’t work, use ⌘V / Ctrl+V or Browser → Edit → Paste."
+                          aria-label="Paste help"
+                        >
+                          i
+                        </span>
+                      </div>
                       <div className="fm-context-item-border" />
                       <div className="fm-context-item" onClick={() => refreshFiles?.()}>
                         Refresh
