@@ -5,7 +5,7 @@ import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { formatBytes, getExpiryDateByLifetime } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
@@ -30,7 +30,7 @@ export function CreateDriveModal({
 }: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
-  const [lifetimeIndex, setLifetimeIndex] = useState(0)
+  const [lifetimeIndex, setLifetimeIndex] = useState<number>(-1)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [label, setLabel] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(-1)
@@ -44,7 +44,7 @@ export function CreateDriveModal({
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {
-    setCapacity(value)
+    setCapacity(index >= 0 ? value : 0)
     setCapacityIndex(index)
   }
 
@@ -54,28 +54,34 @@ export function CreateDriveModal({
     setSizeMarks(
       newSizes.map(size => ({
         value: size,
-        label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
+        label: formatBytes(size) ?? '0 B',
       })),
     )
 
-    setCapacity(newSizes[capacityIndex])
+    setCapacity(capacityIndex >= 0 ? newSizes[capacityIndex] : 0)
   }, [encryptionEnabled, erasureCodeLevel, capacityIndex])
 
   useEffect(() => {
-    if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
-      fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
+    const hasName = label.trim().length > 0
+    const hasCapacity = capacity > 0
+    const hasLifetime = lifetimeIndex >= 0
+    const isValidDate = validityEndDate.getTime() > Date.now()
 
-      if (label) {
-        setIsCreateEnabled(true)
-      }
+    if (hasCapacity && hasLifetime && isValidDate) {
+      fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
     } else {
       setCost('0')
-      setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel])
+
+    setIsCreateEnabled(hasName && hasCapacity && hasLifetime && isValidDate)
+  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel, lifetimeIndex])
 
   useEffect(() => {
-    setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
+    if (lifetimeIndex >= 0) {
+      setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
+    } else {
+      setValidityEndDate(new Date(0))
+    }
   }, [lifetimeIndex])
 
   return (
@@ -129,7 +135,7 @@ export function CreateDriveModal({
 
           <div>
             <div>Estimated Cost: {cost} BZZ</div>
-            <div>(Based on current network conditions)</div>
+            <div>Estimated Cost: {lifetimeIndex >= 0 && capacity > 0 ? `${cost} BZZ` : '—'}</div>
           </div>
         </div>
         <div className="fm-modal-window-footer">
