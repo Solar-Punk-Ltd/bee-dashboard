@@ -135,21 +135,25 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits
       capacityPct: 0,
       usedSize: '—',
       totalSize: '—',
+      usedBytes: 0,
+      totalBytes: 0,
     }
   }
 
   const capacityPct = stamp.usage * 100
 
-  const usedByes = stamp.size.toBytes() - stamp.remainingSize.toBytes()
+  const usedBytes = stamp.size.toBytes() - stamp.remainingSize.toBytes()
   const totalBytes = stamp.size.toBytes()
 
-  const usedSize = getHumanReadableFileSize(usedByes)
+  const usedSize = getHumanReadableFileSize(usedBytes)
   const totalSize = getHumanReadableFileSize(totalBytes)
 
   return {
     capacityPct,
     usedSize,
     totalSize,
+    usedBytes,
+    totalBytes,
   }
 }
 

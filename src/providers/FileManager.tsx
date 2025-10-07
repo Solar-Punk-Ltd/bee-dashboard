@@ -26,12 +26,14 @@ interface ContextInterface {
   fm: FileManagerBase | null
   files: FileInfo[]
   currentDrive?: DriveInfo
+  currentStamp?: PostageBatch
   drives: DriveInfo[]
   adminDrive: DriveInfo | null
   adminStamp: PostageBatch | null
   initializationError: boolean
   setAdminStamp: (stamp: PostageBatch | null) => void
   setCurrentDrive: (d: DriveInfo) => void
+  setCurrentStamp: (s: PostageBatch | undefined) => void
   refreshFiles: () => void
   refreshDrives: () => void
   init: (
@@ -46,12 +48,14 @@ const initialValues: ContextInterface = {
   fm: null,
   files: [],
   currentDrive: undefined,
+  currentStamp: undefined,
   drives: [],
   adminDrive: null,
   adminStamp: null,
   initializationError: false,
   setAdminStamp: () => {}, // eslint-disable-line
   setCurrentDrive: () => {}, // eslint-disable-line
+  setCurrentStamp: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
   init: async () => false, // eslint-disable-line
@@ -74,6 +78,7 @@ export function Provider({ children }: Props) {
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
   const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
+  const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
 
   const signerPk = (): PrivateKey | undefined => {
@@ -258,11 +263,13 @@ export function Provider({ children }: Props) {
         fm,
         files,
         currentDrive,
+        currentStamp,
         drives,
         adminDrive,
         adminStamp,
         initializationError,
         setCurrentDrive,
+        setCurrentStamp,
         setAdminStamp,
         refreshFiles,
         refreshDrives,
