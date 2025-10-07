@@ -5,12 +5,13 @@ import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { getExpiryDateByLifetime } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
+import { getHumanReadableFileSize } from 'src/utils/file'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
@@ -54,7 +55,7 @@ export function CreateDriveModal({
     setSizeMarks(
       newSizes.map(size => ({
         value: size,
-        label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
+        label: getHumanReadableFileSize(size),
       })),
     )
 
