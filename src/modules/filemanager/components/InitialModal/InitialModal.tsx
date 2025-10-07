@@ -41,7 +41,8 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
 export function InitialModal({ handleVisibility }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
-  const [lifetimeIndex, setLifetimeIndex] = useState(0)
+  const [lifetimeIndex, setLifetimeIndex] = useState<number>(-1)
+  const [formError, setFormError] = useState('')
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [isAdminStampCreationInProgress, setIsAdminStampCreationInProgress] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
@@ -126,6 +127,13 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   )
 
   const handleFileManagerInit = useCallback(async () => {
+    setFormError('')
+
+    if (!selectedBatch && lifetimeIndex < 0) {
+      setFormError('Please select a desired lifetime.')
+
+      return
+    }
     safeSetProgress(true)
 
     try {
@@ -137,7 +145,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     } catch {
       safeSetProgress(false)
     }
-  }, [init, selectedBatch, handleAdminDriveReady, safeSetProgress])
+  }, [init, selectedBatch, handleAdminDriveReady, safeSetProgress, lifetimeIndex])
 
   useEffect(() => {
     return () => {
@@ -199,7 +207,11 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   }, [validityEndDate, beeApi, capacity, erasureCodeLevel, lifetimeIndex])
 
   useEffect(() => {
-    setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
+    if (lifetimeIndex >= 0) {
+      setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
+    } else {
+      setValidityEndDate(new Date(0))
+    }
   }, [lifetimeIndex])
 
   useEffect(() => {
@@ -284,8 +296,9 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
             </div>
 
             <div>
-              <div>Estimated Cost: {cost} BZZ</div>
+              <div>Estimated Cost: {lifetimeIndex >= 0 ? `${cost} BZZ` : '—'}</div>
               <div>(Based on current network conditions)</div>
+              {formError && <div className="fm-error-text">{formError}</div>}
             </div>
           </div>
         )}
