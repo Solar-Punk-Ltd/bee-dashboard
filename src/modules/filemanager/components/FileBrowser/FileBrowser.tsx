@@ -56,6 +56,7 @@ export function FileBrowser(): ReactElement {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -166,6 +167,22 @@ export function FileBrowser(): ReactElement {
     }
   }, [])
 
+  const doRefresh = async () => {
+    handleCloseContext()
+
+    if (isRefreshing || !refreshFiles) return
+
+    setIsRefreshing(true)
+
+    try {
+      await refreshFiles()
+    } finally {
+      if (isMountedRef.current) {
+        setIsRefreshing(false)
+      }
+    }
+  }
+
   return (
     <>
       {conflictPortal}
@@ -220,7 +237,7 @@ export function FileBrowser(): ReactElement {
                   if (drives.length === 0) {
                     return (
                       <ContextMenu>
-                        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                        <div className="fm-context-item" onClick={doRefresh}>
                           Refresh
                         </div>
                       </ContextMenu>
@@ -268,7 +285,7 @@ export function FileBrowser(): ReactElement {
                       <div className="fm-context-item-border" />
                       <div className="fm-context-item">Paste</div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                      <div className="fm-context-item" onClick={doRefresh}>
                         Refresh
                       </div>
                     </ContextMenu>
@@ -277,7 +294,6 @@ export function FileBrowser(): ReactElement {
               </div>
             )}
           </div>
-
           {isDragging && currentDrive && (
             <div
               className="fm-drag-overlay"
@@ -290,7 +306,6 @@ export function FileBrowser(): ReactElement {
               <div className="fm-drag-text">Drop file(s) to upload</div>
             </div>
           )}
-
           {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
             <DeleteFileModal
               names={bulk.selectedFiles.map(f => f.name)}
@@ -309,7 +324,6 @@ export function FileBrowser(): ReactElement {
               }}
             />
           )}
-
           {confirmBulkForget && (
             <ConfirmModal
               title="Forget permanently?"
@@ -330,7 +344,6 @@ export function FileBrowser(): ReactElement {
               onCancel={() => setConfirmBulkForget(false)}
             />
           )}
-
           {showDestroyDriveModal && currentDrive && (
             <DestroyDriveModal
               drive={currentDrive}
@@ -353,6 +366,14 @@ export function FileBrowser(): ReactElement {
                 )
               }}
             />
+          )}
+          {isRefreshing && (
+            <div className="fm-refresh-overlay" aria-busy="true" aria-live="polite">
+              <div className="fm-refresh-content">
+                <div className="fm-mini-spinner" role="status" aria-label="Syncing…" />
+                <span className="fm-refresh-text">Syncing latest files…</span>
+              </div>
+            </div>
           )}
         </div>
 

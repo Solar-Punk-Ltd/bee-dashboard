@@ -76,7 +76,7 @@ export function Provider({ children }: Props) {
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
 
-  const signerPk = (): PrivateKey | undefined => {
+  const signerPk = useCallback((): PrivateKey | undefined => {
     try {
       return ensurePrivateKey()
     } catch (err: unknown) {
@@ -85,31 +85,22 @@ export function Provider({ children }: Props) {
 
       return
     }
-  }
+  }, [])
 
-  const getStoredState = (): FMStorageState | undefined => {
+  const getStoredState = useCallback((): FMStorageState | undefined => {
     const fromLocalState = localStorage.getItem(FM_STORAGE_STATE)
 
-    if (!fromLocalState) {
-      return undefined
-    }
-
+    if (!fromLocalState) return undefined
     try {
       return JSON.parse(fromLocalState) as FMStorageState
     } catch {
       return undefined
     }
-  }
+  }, [])
 
-  const setStoredState = (state: FMStorageState): void => {
+  const setStoredState = useCallback((state: FMStorageState): void => {
     localStorage.setItem(FM_STORAGE_STATE, JSON.stringify(state))
-  }
-
-  const refreshFiles = useCallback((): void => {
-    if (fm) {
-      setFiles([...fm.fileInfoList])
-    }
-  }, [fm])
+  }, [])
 
   const refreshDrives = useCallback(
     (driveInfo?: DriveInfo): void => {
@@ -224,8 +215,44 @@ export function Provider({ children }: Props) {
         return false
       }
     },
-    [apiUrl, beeApi, adminStamp],
+    [apiUrl, beeApi, adminStamp, getStoredState, setStoredState, signerPk],
   )
+
+  const refreshFiles = useCallback(async (): Promise<void> => {
+    if (!apiUrl || !beeApi) return
+
+    const pk = signerPk()
+
+    if (!pk) return
+
+    try {
+      const tmpBee = new BeeDev(apiUrl, { signer: pk })
+      const tmpFM = new FileManagerBase(tmpBee)
+
+      const stored = getStoredState()
+      await tmpFM.initialize(stored?.adminBatchId)
+
+      const allDrives = tmpFM.getDrives()
+      const admin = allDrives.find(d => d.isAdmin) || null
+      const userDrives = allDrives.filter(d => !d.isAdmin)
+      const allFiles = [...tmpFM.fileInfoList]
+
+      setFiles(allFiles)
+      setAdminDrive(admin)
+      setDrives(userDrives)
+
+      const prevDriveId = currentDrive?.id.toString()
+
+      if (prevDriveId) {
+        const match = userDrives.find(d => d.id.toString() === prevDriveId)
+
+        if (match) setCurrentDrive(match)
+      }
+    } catch {
+      // TODO: handle error
+    }
+  }, [apiUrl, beeApi, currentDrive, getStoredState, signerPk])
+
   useEffect(() => {
     if (!apiUrl || !beeApi) return
 
