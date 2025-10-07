@@ -26,7 +26,6 @@ import {
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { SELECT_VALUE_LABEL } from '../../constants/common'
-import CheckLineIcon from 'remixicon-react/CheckLineIcon'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch

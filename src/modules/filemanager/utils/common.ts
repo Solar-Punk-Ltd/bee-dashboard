@@ -9,22 +9,25 @@ export function getDaysLeft(expiryDate: Date): number {
 }
 
 export enum ByteMetric {
-  MB = 'MB',
+  TB = 'TB',
   GB = 'GB',
+  MB = 'MB',
   KB = 'KB',
+  B = 'B',
 }
 
-export const fromBytesConversion = (size: number, metric: ByteMetric) => {
-  switch (metric) {
-    case ByteMetric.GB:
-      return size / 1000 / 1000 / 1000
-    case ByteMetric.MB:
-      return size / 1000 / 1000
-    case ByteMetric.KB:
-      return size / 1000
-    default:
-      return size
-  }
+const BYTE_CONVERSION_FACTORS: Record<ByteMetric, number> = {
+  [ByteMetric.TB]: 1000 ** 4,
+  [ByteMetric.GB]: 1000 ** 3,
+  [ByteMetric.MB]: 1000 ** 2,
+  [ByteMetric.KB]: 1000,
+  [ByteMetric.B]: 1,
+}
+
+export const fromBytesConversion = (size: number, metric: ByteMetric): number => {
+  const factor = BYTE_CONVERSION_FACTORS[metric]
+
+  return size / factor
 }
 
 const lifetimeAdjustments = new Map<number, (date: Date) => void>([
@@ -36,7 +39,7 @@ const lifetimeAdjustments = new Map<number, (date: Date) => void>([
   [4, date => date.setMonth(date.getMonth() + 6)],
   [5, date => date.setFullYear(date.getFullYear() + 1)],
 ])
-
+// TODO: is this correct?
 export function getExpiryDateByLifetime(lifetimeValue: number, actualValidity?: Date): Date {
   const now = actualValidity || new Date()
 
