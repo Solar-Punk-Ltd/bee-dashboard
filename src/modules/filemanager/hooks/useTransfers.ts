@@ -255,11 +255,13 @@ export function useTransfers() {
           topic: isReplace ? replaceTopic : undefined,
         })
 
-        fm.upload(
-          currentDrive,
-          { ...info, onUploadProgress: progressCallback },
-          { actHistoryAddress: isReplace ? replaceHistory : undefined },
-        ).catch(() => markError(finalName))
+        await fm
+          .upload(
+            currentDrive,
+            { ...info, onUploadProgress: progressCallback },
+            { actHistoryAddress: isReplace ? replaceHistory : undefined },
+          )
+          .catch(() => markError(finalName))
       }
 
       async function processAll() {
@@ -336,9 +338,8 @@ export function useTransfers() {
           const rowStarted = it.startedAt ?? startedAt
           const safeStarted = rowStarted ?? now
 
-          if (expectedSize && expectedSize > 0) {
+          if (expectedSize && expectedSize > 0 && bytesDownloaded >= 0) {
             percent = Math.floor((bytesDownloaded / expectedSize) * 100)
-
             const tsRef = lastTs ?? safeStarted
             const dt = (now - tsRef) / 1000
 
@@ -377,17 +378,21 @@ export function useTransfers() {
         if (!downloadingFlag) {
           const finishedAt = Date.now()
 
-          return out.map(it =>
-            it.name === name
-              ? {
-                  ...it,
-                  percent: 100,
-                  status: TransferStatus.Done,
-                  etaSec: 0,
-                  elapsedSec: it.startedAt !== undefined ? Math.round((finishedAt - it.startedAt) / 1000) : 0,
-                }
-              : it,
-          )
+          return out.map(it => {
+            if (it.name !== name) return it
+
+            if (bytesDownloaded === -1) {
+              return { ...it, status: TransferStatus.Error, etaSec: undefined, elapsedSec: 0, percent: it.percent ?? 0 }
+            }
+
+            return {
+              ...it,
+              percent: 100,
+              status: TransferStatus.Done,
+              etaSec: 0,
+              elapsedSec: it.startedAt !== undefined ? Math.round((finishedAt - it.startedAt) / 1000) : 0,
+            }
+          })
         }
 
         return out

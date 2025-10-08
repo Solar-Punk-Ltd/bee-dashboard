@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState, useContext } from 'react'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
-import { startDownloadingQueue } from '../utils/download'
+import { startDownloadingQueue, startDownloadingZip } from '../utils/download'
 import { formatBytes, getFileId } from '../utils/common'
 
 export function useBulkActions(opts: {
@@ -61,6 +61,18 @@ export function useBulkActions(opts: {
     [fm, trackDownload],
   )
 
+  const bulkDownloadAsZip = useCallback(
+    async (files: FileInfo[]) => {
+      if (!fm || !files?.length) return
+      const total = files.reduce((acc, f) => acc + Number(f.customMetadata?.size ?? 0), 0)
+      const zipLabel =
+        files.length === 1 ? `${files[0].name}.zip` : `swarm-fm-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
+      const tracker = trackDownload(zipLabel, formatBytes(total), total)
+      await startDownloadingZip(fm as FileManagerBase, files, tracker)
+    },
+    [fm, trackDownload],
+  )
+
   const bulkTrash = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
@@ -93,7 +105,6 @@ export function useBulkActions(opts: {
 
   return useMemo(
     () => ({
-      // selection
       selectedIds,
       setSelectedIds,
       selectedFiles,
@@ -103,11 +114,10 @@ export function useBulkActions(opts: {
       toggleOne,
       selectAll,
       clearAll,
-      // file input (for bulk upload)
       fileInputRef,
       bulkUploadFromPicker,
-      // actions
       bulkDownload,
+      bulkDownloadAsZip,
       bulkTrash,
       bulkRestore,
       bulkForget,
@@ -123,6 +133,7 @@ export function useBulkActions(opts: {
       clearAll,
       bulkUploadFromPicker,
       bulkDownload,
+      bulkDownloadAsZip,
       bulkTrash,
       bulkRestore,
       bulkForget,

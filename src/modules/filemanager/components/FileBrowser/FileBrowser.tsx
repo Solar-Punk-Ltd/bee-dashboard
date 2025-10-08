@@ -17,6 +17,7 @@ import { useBulkActions } from '../../hooks/useBulkActions'
 import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
+import { ConfirmZipModal } from './ConfirmZipModal/ConfirmZipModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -56,6 +57,8 @@ export function FileBrowser(): ReactElement {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
+  const [showZipChoice, setShowZipChoice] = useState(false)
+  const [pendingBulkFiles, setPendingBulkFiles] = useState<typeof bulk.selectedFiles>([])
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -166,6 +169,155 @@ export function FileBrowser(): ReactElement {
     }
   }, [])
 
+  const renderContextMenu = (): ReactElement | null => {
+    if (drives.length === 0) {
+      return (
+        <ContextMenu>
+          <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+            Refresh
+          </div>
+        </ContextMenu>
+      )
+    }
+
+    if (bulk.selectedFiles.length > 1) {
+      return (
+        <ContextMenu>
+          <div
+            className="fm-context-item"
+            onClick={() => {
+              // mirror the row action: if multi-select, show choice
+              setPendingBulkFiles(bulk.selectedFiles)
+              setShowZipChoice(true)
+            }}
+          >
+            Download
+          </div>
+          {view === ViewType.File ? (
+            <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
+              Delete…
+            </div>
+          ) : (
+            <>
+              <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
+                Restore
+              </div>
+              <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
+                Destroy
+              </div>
+              <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
+                Forget permanently
+              </div>
+            </>
+          )}
+        </ContextMenu>
+      )
+    }
+
+    if (view === ViewType.Trash) return <div className="fm-context-item"></div>
+
+    return (
+      <ContextMenu>
+        <div className="fm-context-item">New folder</div>
+        <div className="fm-context-item" onClick={onContextUploadFile}>
+          Upload file
+        </div>
+        <div className="fm-context-item">Upload folder</div>
+        <div className="fm-context-item-border" />
+        <div className="fm-context-item">Paste</div>
+        <div className="fm-context-item-border" />
+        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+          Refresh
+        </div>
+      </ContextMenu>
+    )
+  }
+
+  const renderModals = (): ReactElement | null => (
+    <>
+      {showZipChoice && pendingBulkFiles.length > 0 && (
+        <ConfirmZipModal
+          fileCount={pendingBulkFiles.length}
+          onZipAll={async () => {
+            setShowZipChoice(false)
+            await bulk.bulkDownloadAsZip(pendingBulkFiles)
+          }}
+          onIndividual={async () => {
+            setShowZipChoice(false)
+            await bulk.bulkDownload(pendingBulkFiles)
+          }}
+          onCancel={() => {
+            setShowZipChoice(false)
+            setPendingBulkFiles([])
+          }}
+        />
+      )}
+
+      {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
+        <DeleteFileModal
+          names={bulk.selectedFiles.map(f => f.name)}
+          currentDriveName={currentDrive?.name}
+          onCancelClick={() => setShowBulkDeleteModal(false)}
+          onProceed={async action => {
+            setShowBulkDeleteModal(false)
+
+            if (action === FileAction.Trash) {
+              await bulk.bulkTrash(bulk.selectedFiles)
+            } else if (action === FileAction.Forget) {
+              setConfirmBulkForget(true)
+            } else if (action === FileAction.Destroy) {
+              setShowDestroyDriveModal(true)
+            }
+          }}
+        />
+      )}
+
+      {confirmBulkForget && (
+        <ConfirmModal
+          title="Forget permanently?"
+          message={
+            <>
+              This removes <b>{bulk.selectedFiles.length}</b> file
+              {bulk.selectedFiles.length > 1 ? 's' : ''} from your view.
+              <br />
+              The data remains on Swarm until the drive expires.
+            </>
+          }
+          confirmLabel="Forget"
+          cancelLabel="Cancel"
+          onConfirm={async () => {
+            await bulk.bulkForget(bulk.selectedFiles)
+            setConfirmBulkForget(false)
+          }}
+          onCancel={() => setConfirmBulkForget(false)}
+        />
+      )}
+
+      {showDestroyDriveModal && currentDrive && (
+        <DestroyDriveModal
+          drive={currentDrive}
+          onCancelClick={() => setShowDestroyDriveModal(false)}
+          doDestroy={async () => {
+            if (!currentDrive) return
+            await handleDestroyDrive(
+              beeApi,
+              fm,
+              currentDrive,
+              () => {
+                refreshFiles?.()
+                setShowDestroyDriveModal(false)
+              },
+              error => {
+                // eslint-disable-next-line no-console
+                console.error('Error destroying drive:', error)
+              },
+            )
+          }}
+        />
+      )}
+    </>
+  )
+
   return (
     <>
       {conflictPortal}
@@ -201,7 +353,15 @@ export function FileBrowser(): ReactElement {
               onToggleSelected={bulk.toggleOne}
               bulkSelectedCount={bulk.selectedCount}
               onBulk={{
-                download: () => bulk.bulkDownload(bulk.selectedFiles),
+                download: () => {
+                  if (bulk.selectedFiles.length <= 1) {
+                    bulk.bulkDownload(bulk.selectedFiles)
+
+                    return
+                  }
+                  setPendingBulkFiles(bulk.selectedFiles)
+                  setShowZipChoice(true)
+                },
                 restore: () => bulk.bulkRestore(bulk.selectedFiles),
                 forget: () => bulk.bulkForget(bulk.selectedFiles),
                 destroy: () => setShowDestroyDriveModal(true),
@@ -216,64 +376,7 @@ export function FileBrowser(): ReactElement {
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
               >
-                {(() => {
-                  if (drives.length === 0) {
-                    return (
-                      <ContextMenu>
-                        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
-                          Refresh
-                        </div>
-                      </ContextMenu>
-                    )
-                  }
-
-                  if (bulk.selectedFiles.length > 1) {
-                    return (
-                      <ContextMenu>
-                        <div className="fm-context-item" onClick={() => bulk.bulkDownload(bulk.selectedFiles)}>
-                          Download
-                        </div>
-                        {view === ViewType.File ? (
-                          <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
-                            Delete…
-                          </div>
-                        ) : (
-                          <>
-                            <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
-                              Restore
-                            </div>
-                            <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
-                              Destroy
-                            </div>
-                            <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
-                              Forget permanently
-                            </div>
-                          </>
-                        )}
-                      </ContextMenu>
-                    )
-                  }
-
-                  if (view === ViewType.Trash) {
-                    return <div className="fm-context-item"></div>
-                  }
-
-                  return (
-                    <ContextMenu>
-                      <div className="fm-context-item">New folder</div>
-                      <div className="fm-context-item" onClick={onContextUploadFile}>
-                        Upload file
-                      </div>
-                      <div className="fm-context-item">Upload folder</div>
-                      <div className="fm-context-item-border" />
-                      <div className="fm-context-item">Paste</div>
-                      <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
-                        Refresh
-                      </div>
-                    </ContextMenu>
-                  )
-                })()}
+                {renderContextMenu()}
               </div>
             )}
           </div>
@@ -291,69 +394,7 @@ export function FileBrowser(): ReactElement {
             </div>
           )}
 
-          {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
-            <DeleteFileModal
-              names={bulk.selectedFiles.map(f => f.name)}
-              currentDriveName={currentDrive?.name}
-              onCancelClick={() => setShowBulkDeleteModal(false)}
-              onProceed={async action => {
-                setShowBulkDeleteModal(false)
-
-                if (action === FileAction.Trash) {
-                  await bulk.bulkTrash(bulk.selectedFiles)
-                } else if (action === FileAction.Forget) {
-                  setConfirmBulkForget(true)
-                } else if (action === FileAction.Destroy) {
-                  setShowDestroyDriveModal(true)
-                }
-              }}
-            />
-          )}
-
-          {confirmBulkForget && (
-            <ConfirmModal
-              title="Forget permanently?"
-              message={
-                <>
-                  This removes <b>{bulk.selectedFiles.length}</b> file
-                  {bulk.selectedFiles.length > 1 ? 's' : ''} from your view.
-                  <br />
-                  The data remains on Swarm until the drive expires.
-                </>
-              }
-              confirmLabel="Forget"
-              cancelLabel="Cancel"
-              onConfirm={async () => {
-                await bulk.bulkForget(bulk.selectedFiles)
-                setConfirmBulkForget(false)
-              }}
-              onCancel={() => setConfirmBulkForget(false)}
-            />
-          )}
-
-          {showDestroyDriveModal && currentDrive && (
-            <DestroyDriveModal
-              drive={currentDrive}
-              onCancelClick={() => setShowDestroyDriveModal(false)}
-              doDestroy={async () => {
-                if (!currentDrive) return
-
-                await handleDestroyDrive(
-                  beeApi,
-                  fm,
-                  currentDrive,
-                  () => {
-                    refreshFiles?.()
-                    setShowDestroyDriveModal(false)
-                  },
-                  error => {
-                    // eslint-disable-next-line no-console
-                    console.error('Error destroying drive:', error)
-                  },
-                )
-              }}
-            />
-          )}
+          {renderModals()}
         </div>
 
         <div className="fm-file-browser-footer">

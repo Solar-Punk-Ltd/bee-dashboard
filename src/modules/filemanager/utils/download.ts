@@ -1,5 +1,12 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
+import { Zip, ZipDeflate } from 'fflate'
+
+type FileInfoWithHandle = {
+  info: FileInfo
+  handle?: FileSystemFileHandle
+  cancelled?: boolean
+}
 
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
@@ -80,49 +87,58 @@ const streamToBlob = async (
   return new Blob([combined], { type: mimeType })
 }
 
-interface FileInfoWithHandle {
-  info: FileInfo
-  handle?: FileSystemFileHandle
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isPickerSupported = (): boolean => typeof (window as any).showSaveFilePicker === 'function'
 
 const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> => {
-  const defaultDownloadFolder = 'downloads'
-  const fileHandles: FileInfoWithHandle[] = []
+  if (!isPickerSupported()) return infoList.map(info => ({ info }))
 
-  for (const info of infoList) {
+  const handles: FileInfoWithHandle[] = []
+
+  for (let i = 0; i < infoList.length; i++) {
+    const info = infoList[i]
     const name = info.name
     const mimeType = guessMime(name, info.customMetadata)
-    let handle: FileSystemFileHandle | undefined
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      handle = (await (window as any).showSaveFilePicker({
+      const handle = (await (window as any).showSaveFilePicker({
         suggestedName: name,
-        startIn: defaultDownloadFolder,
-        types: [
-          {
-            accept: {
-              [mimeType]: [`.${getExtensionFromName(name)}`],
-            },
-          },
-        ],
+        types: [{ accept: { [mimeType]: [`.${getExtensionFromName(name)}`] } }],
       })) as FileSystemFileHandle
+
+      handles.push({ info, handle })
     } catch (error: unknown) {
-      if ((error as Error).name === 'AbortError') {
-        return
+      const errName = (error as { name?: string })?.name
+
+      if (errName === 'AbortError' || errName === 'NotAllowedError' || errName === 'SecurityError') {
+        handles.push({ info, cancelled: true })
+      } else {
+        return undefined
       }
-
-      // eslint-disable-next-line no-console
-      console.error(`Error getting file handle ${error}, using fallback download`)
     }
-
-    fileHandles.push({
-      info,
-      handle,
-    })
   }
 
-  return fileHandles
+  return handles
+}
+
+const savePicker = async (suggestedName: string): Promise<FileSystemFileHandle | undefined> => {
+  if (!isPickerSupported()) return
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handle = await (window as any).showSaveFilePicker({
+      suggestedName,
+      types: [{ accept: { 'application/zip': ['.zip'] } }],
+    })
+
+    return handle as FileSystemFileHandle
+  } catch (e: unknown) {
+    const n = (e as { name?: string })?.name
+
+    if (n === 'AbortError' || n === 'NotAllowedError' || n === 'SecurityError') return
+
+    return
+  }
 }
 
 const downloadToDisk = async (
@@ -204,33 +220,95 @@ export const startDownloadingQueue = async (
   isOpenWindow?: boolean,
 ): Promise<void> => {
   try {
-    let fileHandles: FileInfoWithHandle[] | undefined
+    const fileHandles: FileInfoWithHandle[] | undefined = isOpenWindow
+      ? infoList.map(info => ({ info }))
+      : await getFileHandles(infoList)
 
-    if (isOpenWindow) {
-      fileHandles = infoList.map(info => ({ info }))
-    } else {
-      fileHandles = await getFileHandles(infoList)
+    if (!fileHandles) return
+
+    for (const fh of fileHandles) {
+      if (fh.cancelled) {
+        onDownloadProgress?.(-1, false)
+      } else {
+        const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
+
+        if (isOpenWindow || !fh.handle) {
+          await downloadToBlob(dataStreams, fh.info, onDownloadProgress, isOpenWindow)
+        } else {
+          await downloadToDisk(dataStreams, fh.handle, onDownloadProgress)
+        }
+      }
     }
+  } catch {
+    // TODO: handle error
+  }
+}
 
-    if (!fileHandles) {
+export const startDownloadingZip = async (
+  fm: FileManager,
+  infoList: FileInfo[],
+  onDownloadProgress?: (bytesDownloaded: number, isDownloading: boolean) => void,
+): Promise<void> => {
+  if (!infoList?.length) return
+
+  const zipName =
+    infoList.length === 1 ? `${infoList[0].name}.zip` : `swarm-fm-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`
+
+  let handle: FileSystemFileHandle | undefined
+  try {
+    handle = await savePicker(zipName)
+  } catch (e: unknown) {
+    onDownloadProgress?.(-1, false)
+
+    return
+  }
+
+  if (!handle) {
+    onDownloadProgress?.(-1, false)
+
+    return
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const writer = (await (handle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
+
+  let pending = Promise.resolve()
+  let totalBytes = 0
+
+  const zip = new Zip((err, chunk, final) => {
+    if (err) {
+      onDownloadProgress?.(-1, false)
+
       return
     }
+    pending = pending.then(() => writer.write(chunk))
 
-    for (const { info, handle } of fileHandles) {
-      const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
+    if (final) {
+      pending = pending.then(() => writer.close()).then(() => onDownloadProgress?.(totalBytes, false))
+    }
+  })
 
-      if (isOpenWindow || !handle) {
-        await downloadToBlob(dataStreams, info, onDownloadProgress, isOpenWindow)
+  for (const fi of infoList) {
+    const entry = new ZipDeflate(fi.name)
+    zip.add(entry)
 
-        return
-      }
+    const streams = (await fm.download(fi)) as ReadableStream<Uint8Array>[]
+    for (const s of streams) {
+      const reader = s.getReader()
+      for (;;) {
+        const { value, done } = await reader.read()
 
-      if (handle) {
-        await downloadToDisk(dataStreams, handle, onDownloadProgress)
+        if (value) {
+          entry.push(value, false)
+          totalBytes += value.length
+          onDownloadProgress?.(totalBytes, true)
+        }
+
+        if (done) break
       }
     }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during downloading queue: ', error)
+    entry.push(new Uint8Array(0), true)
   }
+
+  zip.end()
 }
