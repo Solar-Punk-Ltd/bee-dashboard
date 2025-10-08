@@ -43,7 +43,10 @@ export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusB
     }
   }, [adminDrive])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(adminStamp), [adminStamp])
+  const { capacityPct, usedSize, totalSize } = useMemo(
+    () => calculateStampCapacityMetrics(adminStamp, adminDrive),
+    [adminStamp, adminDrive],
+  )
 
   const expiresAt = useMemo(
     () => (adminStamp ? adminStamp.duration.toEndDate().toLocaleDateString() : '—'),

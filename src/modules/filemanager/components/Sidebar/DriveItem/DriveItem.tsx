@@ -77,7 +77,10 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
     }
   }, [drive.id, refreshDrives])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(() => calculateStampCapacityMetrics(stamp), [stamp])
+  const { capacityPct, usedSize, totalSize } = useMemo(
+    () => calculateStampCapacityMetrics(stamp, drive),
+    [stamp, drive],
+  )
 
   return (
     <div

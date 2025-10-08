@@ -264,7 +264,7 @@ export function useTransfers() {
       }
 
       async function processAll() {
-        const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null)
+        const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
         const remainingSize = totalBytes - usedBytes
         const reservedNames = new Set<string>()
         for (const file of filesArr) {

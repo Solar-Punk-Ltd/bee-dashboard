@@ -129,7 +129,7 @@ export const handleCreateDrive = async (
   }
 }
 
-export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits = 2) => {
+export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, drive?: DriveInfo | null) => {
   if (!stamp) {
     return {
       capacityPct: 0,
@@ -140,11 +140,20 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, digits
     }
   }
 
-  const capacityPct = stamp.usage * 100
+  let usedBytes = 0
+  let totalBytes = 0
+  let capacityPct = 0
 
-  const usedBytes = stamp.size.toBytes() - stamp.remainingSize.toBytes()
-  const totalBytes = stamp.size.toBytes()
-
+  if (drive) {
+    totalBytes = stamp.calculateSize(false, drive.redundancyLevel).toBytes()
+    const remainingBytes = stamp.calculateRemainingSize(false, drive.redundancyLevel).toBytes()
+    usedBytes = totalBytes - remainingBytes
+    capacityPct = ((totalBytes - remainingBytes) / totalBytes) * 100
+  } else {
+    capacityPct = stamp.usage * 100
+    usedBytes = stamp.size.toBytes() - stamp.remainingSize.toBytes()
+    totalBytes = stamp.size.toBytes()
+  }
   const usedSize = getHumanReadableFileSize(usedBytes)
   const totalSize = getHumanReadableFileSize(totalBytes)
 
