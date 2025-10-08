@@ -28,7 +28,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, refreshFiles, drives, fm } = useContext(FMContext)
+  const { files, currentDrive, refreshFiles, resyncFM, drives, fm } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -170,12 +170,12 @@ export function FileBrowser(): ReactElement {
   const doRefresh = async () => {
     handleCloseContext()
 
-    if (isRefreshing || !refreshFiles) return
+    if (isRefreshing || !resyncFM) return
 
     setIsRefreshing(true)
 
     try {
-      await refreshFiles()
+      await resyncFM()
     } finally {
       if (isMountedRef.current) {
         setIsRefreshing(false)

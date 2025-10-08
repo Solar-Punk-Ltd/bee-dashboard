@@ -34,6 +34,7 @@ interface ContextInterface {
   setCurrentDrive: (d: DriveInfo) => void
   refreshFiles: () => void
   refreshDrives: () => void
+  resyncFM: () => void
   init: (
     batchId?: string,
     onAdminDriveReady?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
@@ -54,6 +55,7 @@ const initialValues: ContextInterface = {
   setCurrentDrive: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
+  resyncFM: () => {}, // eslint-disable-line
   init: async () => false, // eslint-disable-line
   getStoredState: () => undefined, // eslint-disable-line
   setStoredState: () => {}, // eslint-disable-line
@@ -218,40 +220,26 @@ export function Provider({ children }: Props) {
     [apiUrl, beeApi, adminStamp, getStoredState, setStoredState, signerPk],
   )
 
-  const refreshFiles = useCallback(async (): Promise<void> => {
-    if (!apiUrl || !beeApi) return
-
-    const pk = signerPk()
-
-    if (!pk) return
-
-    try {
-      const tmpBee = new BeeDev(apiUrl, { signer: pk })
-      const tmpFM = new FileManagerBase(tmpBee)
-
-      const stored = getStoredState()
-      await tmpFM.initialize(stored?.adminBatchId)
-
-      const allDrives = tmpFM.getDrives()
-      const admin = allDrives.find(d => d.isAdmin) || null
-      const userDrives = allDrives.filter(d => !d.isAdmin)
-      const allFiles = [...tmpFM.fileInfoList]
-
-      setFiles(allFiles)
-      setAdminDrive(admin)
-      setDrives(userDrives)
-
-      const prevDriveId = currentDrive?.id.toString()
-
-      if (prevDriveId) {
-        const match = userDrives.find(d => d.id.toString() === prevDriveId)
-
-        if (match) setCurrentDrive(match)
-      }
-    } catch {
-      // TODO: handle error
+  const refreshFiles = useCallback((): void => {
+    if (fm) {
+      setFiles([...fm.fileInfoList])
     }
-  }, [apiUrl, beeApi, currentDrive, getStoredState, signerPk])
+  }, [fm])
+
+  const resyncFM = useCallback(async (): Promise<void> => {
+    if (!apiUrl) return
+
+    const stored = getStoredState()
+    const prevDriveId = currentDrive?.id.toString()
+
+    await init(stored?.adminBatchId, (_hasAdmin, manager) => {
+      if (prevDriveId) {
+        const next = manager.getDrives().find(d => d.id.toString() === prevDriveId)
+
+        if (next) setCurrentDrive(next)
+      }
+    })
+  }, [apiUrl, currentDrive?.id, getStoredState, init, setCurrentDrive])
 
   useEffect(() => {
     if (!apiUrl || !beeApi) return
@@ -293,6 +281,7 @@ export function Provider({ children }: Props) {
         setAdminStamp,
         refreshFiles,
         refreshDrives,
+        resyncFM,
         init,
         getStoredState,
         setStoredState,
