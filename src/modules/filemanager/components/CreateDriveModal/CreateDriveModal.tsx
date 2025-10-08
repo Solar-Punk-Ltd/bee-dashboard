@@ -45,7 +45,6 @@ export function CreateDriveModal({
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {
-    setCapacity(value)
     setCapacityIndex(index)
   }
 
@@ -63,17 +62,20 @@ export function CreateDriveModal({
   }, [encryptionEnabled, erasureCodeLevel, capacityIndex])
 
   useEffect(() => {
-    if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
+    if (capacity > 0 && validityEndDate.getTime() > new Date().getTime() && lifetimeIndex > 0) {
       fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
 
-      if (label) {
+      if (label && label.trim().length > 0) {
         setIsCreateEnabled(true)
+      } else {
+        setIsCreateEnabled(false)
       }
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capacity, validityEndDate, beeApi, label, lifetimeIndex])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
