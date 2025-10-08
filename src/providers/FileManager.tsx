@@ -104,6 +104,12 @@ export function Provider({ children }: Props) {
     localStorage.setItem(FM_STORAGE_STATE, JSON.stringify(state))
   }, [])
 
+  const refreshFiles = useCallback((): void => {
+    if (fm) {
+      setFiles([...fm.fileInfoList])
+    }
+  }, [fm])
+
   const refreshDrives = useCallback(
     (driveInfo?: DriveInfo): void => {
       if (!fm) {
@@ -219,12 +225,6 @@ export function Provider({ children }: Props) {
     },
     [apiUrl, beeApi, adminStamp, getStoredState, setStoredState, signerPk],
   )
-
-  const refreshFiles = useCallback((): void => {
-    if (fm) {
-      setFiles([...fm.fileInfoList])
-    }
-  }, [fm])
 
   const resyncFM = useCallback(async (): Promise<void> => {
     if (!apiUrl) return

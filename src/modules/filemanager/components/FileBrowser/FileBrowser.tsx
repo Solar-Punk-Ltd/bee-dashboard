@@ -294,6 +294,7 @@ export function FileBrowser(): ReactElement {
               </div>
             )}
           </div>
+
           {isDragging && currentDrive && (
             <div
               className="fm-drag-overlay"
@@ -306,6 +307,7 @@ export function FileBrowser(): ReactElement {
               <div className="fm-drag-text">Drop file(s) to upload</div>
             </div>
           )}
+
           {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
             <DeleteFileModal
               names={bulk.selectedFiles.map(f => f.name)}
@@ -324,6 +326,7 @@ export function FileBrowser(): ReactElement {
               }}
             />
           )}
+
           {confirmBulkForget && (
             <ConfirmModal
               title="Forget permanently?"
@@ -344,6 +347,7 @@ export function FileBrowser(): ReactElement {
               onCancel={() => setConfirmBulkForget(false)}
             />
           )}
+
           {showDestroyDriveModal && currentDrive && (
             <DestroyDriveModal
               drive={currentDrive}
