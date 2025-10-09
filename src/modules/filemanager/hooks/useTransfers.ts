@@ -65,7 +65,7 @@ const makeUploadInfo = (args: {
 }
 
 export function useTransfers() {
-  const { fm, currentDrive, currentStamp, files } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, files, setShowUploadError } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
 
@@ -273,6 +273,7 @@ export function useTransfers() {
           } else {
             // eslint-disable-next-line no-console
             console.log(`Skipping upload of file because there is not enough space in the current stamp`)
+            setShowUploadError(true)
           }
         }
       }

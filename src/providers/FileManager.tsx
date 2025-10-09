@@ -42,6 +42,8 @@ interface ContextInterface {
   ) => Promise<boolean>
   getStoredState: () => FMStorageState | undefined
   setStoredState: (state: FMStorageState) => void
+  showUploadError?: boolean
+  setShowUploadError: (show: boolean) => void
 }
 
 const initialValues: ContextInterface = {
@@ -61,6 +63,8 @@ const initialValues: ContextInterface = {
   init: async () => false, // eslint-disable-line
   getStoredState: () => undefined, // eslint-disable-line
   setStoredState: () => {}, // eslint-disable-line
+  showUploadError: false,
+  setShowUploadError: () => {}, // eslint-disable-line
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -80,6 +84,7 @@ export function Provider({ children }: Props) {
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
+  const [showUploadError, setShowUploadError] = useState<boolean>(false)
 
   const signerPk = (): PrivateKey | undefined => {
     try {
@@ -276,6 +281,8 @@ export function Provider({ children }: Props) {
         init,
         getStoredState,
         setStoredState,
+        showUploadError,
+        setShowUploadError,
       }}
     >
       {children}
