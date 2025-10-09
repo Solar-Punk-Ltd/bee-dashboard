@@ -18,6 +18,7 @@ import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { ConfirmZipModal } from './ConfirmZipModal/ConfirmZipModal'
+import { ViewerModal } from '../ViewerModal/ViewerModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -60,6 +61,8 @@ export function FileBrowser(): ReactElement {
   const [showZipChoice, setShowZipChoice] = useState(false)
   const [pendingBulkFiles, setPendingBulkFiles] = useState<typeof bulk.selectedFiles>([])
   const [pendingCancelName, setPendingCancelName] = useState<string | null>(null)
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerPayload, setViewerPayload] = useState<{ name: string; mime: string; url: string } | null>(null)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -168,6 +171,20 @@ export function FileBrowser(): ReactElement {
         cancelAnimationFrame(rafIdRef.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { name: string; mime: string; url: string }
+
+      if (!detail) return
+      setViewerPayload(detail)
+      setViewerOpen(true)
+    }
+
+    window.addEventListener('fm:open-preview', onOpen as EventListener)
+
+    return () => window.removeEventListener('fm:open-preview', onOpen as EventListener)
   }, [])
 
   const renderContextMenu = (): ReactElement | null => {
@@ -448,6 +465,14 @@ export function FileBrowser(): ReactElement {
             onCloseAll={() => dismissAllDownloads()}
           />
           <NotificationBar />
+          <ViewerModal
+            open={viewerOpen}
+            payload={viewerPayload}
+            onClose={() => {
+              setViewerOpen(false)
+              setViewerPayload(null)
+            }}
+          />
         </div>
       </div>
     </>

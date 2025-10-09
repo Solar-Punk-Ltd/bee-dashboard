@@ -157,19 +157,18 @@ const downloadToDisk = async (
   }
 }
 
-const openNewWindow = (name: string, mime: string, url: string): boolean => {
+const openInAppFrame = (name: string, mime: string, url: string): boolean => {
   const viewer = VIEWERS.find(v => v.test(mime))
-  const win = window.open('', '_blank')
 
-  if (viewer && win) {
-    viewer.render(win, url, mime, name)
+  if (!viewer) return false
 
-    return true
-  }
+  window.dispatchEvent(
+    new CustomEvent('fm:open-preview', {
+      detail: { name, mime, url },
+    }),
+  )
 
-  win?.close()
-
-  return false
+  return true
 }
 
 const downloadToBlob = async (
@@ -189,7 +188,7 @@ const downloadToBlob = async (
         let openSuccess = false
 
         if (isOpenWindow) {
-          openSuccess = openNewWindow(info.name, mime, url)
+          openSuccess = openInAppFrame(info.name, mime, url)
         }
 
         if (!openSuccess) {

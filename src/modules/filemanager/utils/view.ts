@@ -58,6 +58,14 @@ const IMAGE_HTML = (u: string, title: string) =>
     <img style="max-width:100%;max-height:100vh" src="${u}" />
   </body></html>`
 
+const PDF_HTML = (u: string, title: string) =>
+  `<html><head><meta charset="utf-8"/><title>${title}</title>
+    <style>html,body{height:100%;margin:0;background:#000}</style>
+  </head>
+  <body>
+    <embed src="${u}" type="application/pdf" width="100%" height="100%"/>
+  </body></html>`
+
 export const VIEWERS: Viewer[] = [
   {
     name: 'video',
@@ -87,24 +95,40 @@ export const VIEWERS: Viewer[] = [
     name: 'pdf',
     test: m => m === 'application/pdf',
     render: (w, url, mime, name) => {
+      w.document.open()
+      w.document.write(PDF_HTML(url, name))
+      w.document.close()
       w.document.title = name
-      w.location.href = url
     },
   },
   {
     name: 'html',
     test: m => m === 'text/html',
     render: (w, url, mime, name) => {
+      w.document.open()
+      w.document.write(
+        `<html><head><meta charset="utf-8"/><title>${name}</title></head>
+         <body style="margin:0">
+           <iframe src="${url}" style="border:0;width:100%;height:100vh"></iframe>
+         </body></html>`,
+      )
+      w.document.close()
       w.document.title = name
-      w.location.href = url
     },
   },
   {
     name: 'text-like',
     test: m => m.startsWith('text/') || m === 'application/json' || m === 'text/markdown',
     render: (w, url, mime, name) => {
+      w.document.open()
+      w.document.write(
+        `<html><head><meta charset="utf-8"/><title>${name}</title>
+          <style>html,body{height:100%;margin:0} pre{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word}</style>
+        </head>
+        <body><iframe src="${url}" style="border:0;width:100%;height:100%"></iframe></body></html>`,
+      )
+      w.document.close()
       w.document.title = name
-      w.location.href = url
     },
   },
 ]
