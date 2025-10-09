@@ -274,13 +274,16 @@ export function useTransfers() {
             // eslint-disable-next-line no-console
             console.log(`Skipping upload of file because there is not enough space in the current stamp`)
             setShowUploadError(true)
+
+            return
           }
         }
       }
 
       void processAll()
     },
-    [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fm, currentDrive, currentStamp, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])

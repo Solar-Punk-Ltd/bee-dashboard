@@ -208,7 +208,7 @@ export function FileBrowser(): ReactElement {
                 delete: () => setShowBulkDeleteModal(true),
               }}
             />
-            {showUploadError && <ErrorModal label="An error occurred while uploading files." />}
+            {showUploadError && <ErrorModal label="There is not enough space to continue the file uploading." />}
 
             {showContext && (
               <div
