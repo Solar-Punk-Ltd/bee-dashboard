@@ -69,8 +69,20 @@ export function FileProgressWindow({
 
     if (cap.toLowerCase() === 'update') verb = 'Updating'
 
+    const isDone = pct === 100 || item.status === TransferStatus.Done
+    const isCancelled = item.status === TransferStatus.Error
+    const isQueued = item.status === TransferStatus.Queued
+
     return {
-      statusText: pct === 100 || item.status === TransferStatus.Done ? 'Done' : `${verb}…`,
+      statusText: (() => {
+        if (isQueued) return 'Queued…'
+
+        if (isCancelled) return 'Cancelled…'
+
+        if (isDone) return 'Done'
+
+        return `${verb}…`
+      })(),
       barColor: TransferBarColor[cap as keyof typeof TransferBarColor],
     }
   }

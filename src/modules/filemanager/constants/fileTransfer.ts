@@ -8,6 +8,7 @@ export enum TransferStatus {
   Uploading = 'uploading',
   Done = 'done',
   Error = 'error',
+  Queued = 'queued',
 }
 
 export enum TransferBarColor {

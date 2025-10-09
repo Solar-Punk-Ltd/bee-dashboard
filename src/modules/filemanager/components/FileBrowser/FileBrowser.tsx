@@ -5,7 +5,7 @@ import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
 import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
-import { FileAction, FileTransferType, ViewType } from '../../constants/fileTransfer'
+import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/fileTransfer'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -38,7 +38,7 @@ export function FileBrowser(): ReactElement {
     downloadItems,
     trackDownload,
     conflictPortal,
-    dismissUpload,
+    cancelOrDismissUpload,
     dismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
@@ -59,6 +59,7 @@ export function FileBrowser(): ReactElement {
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [pendingCancelUpload, setPendingCancelUpload] = useState<string | null>(null)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -434,6 +435,27 @@ export function FileBrowser(): ReactElement {
               </div>
             </div>
           )}
+          {pendingCancelUpload && (
+            <ConfirmModal
+              title="Cancel upload?"
+              message={
+                <>
+                  Stopping now will cancel the network request. Data already transmitted cannot be reverted.{' '}
+                  <b>We will try our best to clean up the transmitted data.</b>
+                  <br />
+                  To remove any (remaining) cancelled items from your browser view later, use{' '}
+                  <i>Right-click → Delete → Forget</i>.
+                </>
+              }
+              confirmLabel="Cancel upload"
+              cancelLabel="Keep uploading"
+              onConfirm={() => {
+                cancelOrDismissUpload(pendingCancelUpload)
+                setPendingCancelUpload(null)
+              }}
+              onCancel={() => setPendingCancelUpload(null)}
+            />
+          )}
         </div>
 
         <div className="fm-file-browser-footer">
@@ -443,7 +465,15 @@ export function FileBrowser(): ReactElement {
             open={isUploading}
             count={uploadItems.length}
             items={uploadItems}
-            onRowClose={name => dismissUpload(name)}
+            onRowClose={name => {
+              const row = uploadItems.find(i => i.name === name)
+
+              if (row?.status === TransferStatus.Uploading) {
+                setPendingCancelUpload(name)
+              } else {
+                cancelOrDismissUpload(name)
+              }
+            }}
             onCloseAll={() => dismissAllUploads()}
           />
           <FileProgressNotification

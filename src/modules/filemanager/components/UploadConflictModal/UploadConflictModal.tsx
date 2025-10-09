@@ -7,14 +7,28 @@ import WarningIcon from 'remixicon-react/ErrorWarningLineIcon'
 interface Props {
   filename: string
   suggestedName: string
+  existingNames: Set<string>
+  isTrashedExisting?: boolean
   onKeepBoth: (newName: string) => void
   onReplace: () => void
   onCancel: () => void
 }
 
-export function UploadConflictModal({ filename, suggestedName, onKeepBoth, onReplace, onCancel }: Props): ReactElement {
+export function UploadConflictModal({
+  filename,
+  suggestedName,
+  existingNames,
+  isTrashedExisting,
+  onKeepBoth,
+  onReplace,
+  onCancel,
+}: Props): ReactElement {
   const [customName, setCustomName] = useState<string>(suggestedName)
-  const isNameValid = useMemo(() => Boolean(customName && customName.trim().length > 0), [customName])
+  const isNameValid = useMemo(() => {
+    const n = (customName || '').trim()
+
+    return n.length > 0 && !existingNames.has(n)
+  }, [customName, existingNames])
 
   return (
     <div className="fm-modal-container">
@@ -46,6 +60,11 @@ export function UploadConflictModal({ filename, suggestedName, onKeepBoth, onRep
                   className="fm-input"
                   placeholder={suggestedName}
                 />
+                {!isNameValid && customName.trim().length > 0 && existingNames.has(customName.trim()) && (
+                  <div className="fm-soft-text" style={{ marginTop: 6 }}>
+                    That name already exists.
+                  </div>
+                )}
               </div>
               <Button
                 label="Keep both"
@@ -65,6 +84,16 @@ export function UploadConflictModal({ filename, suggestedName, onKeepBoth, onRep
               <Button label="Replace" variant="primary" onClick={onReplace} />
             </div>
           </div>
+          {isTrashedExisting && (
+            <div className="fm-callout fm-callout--warning" role="note" aria-live="polite" style={{ marginTop: 12 }}>
+              <span className="fm-callout__icon" aria-hidden>
+                <WarningIcon size="16px" />
+              </span>
+              <span className="fm-callout__text">
+                <b>Heads up:</b> The existing &apos;{filename}&apos; is currently in <b>Trash</b>.
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="fm-modal-window-footer">

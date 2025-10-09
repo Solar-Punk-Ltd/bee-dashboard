@@ -5,6 +5,15 @@ import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDial
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 import { calculateStampCapacityMetrics } from '../utils/bee'
+import { isTrashed } from '../utils/common'
+
+type ResolveResult = {
+  cancelled: boolean
+  finalName?: string
+  isReplace?: boolean
+  replaceTopic?: string
+  replaceHistory?: string
+}
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -34,7 +43,6 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
-
   const meta: UploadMeta = {
     size: String(totalSize),
     fileCount: String(arr.length),
@@ -64,13 +72,81 @@ const makeUploadInfo = (args: {
   }
 }
 
+type UploadTask = {
+  file: File
+  finalName: string
+  prettySize?: string
+  isReplace: boolean
+  replaceTopic?: string
+  replaceHistory?: string
+}
+
 export function useTransfers() {
   const { fm, currentDrive, currentStamp, files, setShowUploadError } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
+  const queueRef = useRef<UploadTask[]>([])
+  const runningRef = useRef(false)
+  const cancelledNamesRef = useRef<Set<string>>(new Set())
+  const uploadAbortersRef = useRef<Map<string, AbortController>>(new Map())
+  const cancelledUploadingRef = useRef<Set<string>>(new Set())
+  const pendingForgetRef = useRef<Set<string>>(new Set())
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const isUploading = uploadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
+
+  const clearAllFlagsFor = useCallback((name: string) => {
+    cancelledNamesRef.current.delete(name)
+    cancelledUploadingRef.current.delete(name)
+    pendingForgetRef.current.delete(name)
+    uploadAbortersRef.current.delete(name)
+    queueRef.current = queueRef.current.filter(t => t.finalName !== name)
+  }, [])
+
+  const ensureQueuedRow = useCallback(
+    (name: string, kind: FileTransferType, size?: string, driveName?: string) => {
+      clearAllFlagsFor(name)
+
+      setUploadItems(prev => {
+        const idx = prev.findIndex(p => p.name === name)
+        const base: TransferItem = {
+          name,
+          size,
+          percent: 0,
+          status: TransferStatus.Queued,
+          kind,
+          driveName,
+          startedAt: undefined,
+          etaSec: undefined,
+          elapsedSec: undefined,
+        }
+
+        if (idx === -1) return [...prev, base]
+        const copy = [...prev]
+        copy[idx] = base
+
+        return copy
+      })
+    },
+    [clearAllFlagsFor],
+  )
+
+  async function withAbortSignal<T>(signal: AbortSignal, fn: () => Promise<T>): Promise<T> {
+    const originalFetch = window.fetch
+    window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const merged: RequestInit = { ...(init || {}) }
+
+      if (!merged.signal) merged.signal = signal
+
+      return originalFetch(input as RequestInfo | URL, merged)
+    }) as typeof window.fetch
+
+    try {
+      return await fn()
+    } finally {
+      window.fetch = originalFetch
+    }
+  }
 
   const trackUploadProgress = useCallback(
     (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
@@ -81,7 +157,11 @@ export function useTransfers() {
       let lastProcessed = 0
       let lastEta: number | undefined
 
-      if (!isMountedRef.current) return
+      if (!isMountedRef.current) {
+        return () => {
+          /* no-op */
+        }
+      }
 
       setUploadItems(prev => {
         const idx = prev.findIndex(p => p.name === name)
@@ -105,6 +185,8 @@ export function useTransfers() {
       })
 
       const onProgress = (progress: { total: number; processed: number }) => {
+        if (cancelledUploadingRef.current.has(name)) return
+
         if (progress.total > 0) {
           const now = Date.now()
           const pct = Math.floor((progress.processed / progress.total) * 100)
@@ -135,23 +217,31 @@ export function useTransfers() {
             etaSec = lastEta
           }
 
-          if (isMountedRef.current) {
+          if (isMountedRef.current && !cancelledUploadingRef.current.has(name)) {
             setUploadItems(prev =>
-              prev.map(it => (it.name === name ? { ...it, percent: Math.max(it.percent, pct), kind, etaSec } : it)),
+              prev.map(it =>
+                it.name !== name || it.status === TransferStatus.Error
+                  ? it
+                  : { ...it, percent: Math.max(it.percent, pct), kind, etaSec },
+              ),
             )
           }
 
-          if (progress.processed >= progress.total && isMountedRef.current) {
+          if (
+            progress.processed >= progress.total &&
+            isMountedRef.current &&
+            !cancelledUploadingRef.current.has(name)
+          ) {
             const finishedAt = Date.now()
             setUploadItems(prev =>
               prev.map(it =>
-                it.name === name
+                it.name === name && it.status !== TransferStatus.Error
                   ? {
                       ...it,
                       percent: 100,
                       status: TransferStatus.Done,
                       etaSec: 0,
-                      elapsedSec: Math.round((finishedAt - (it.startedAt || startedAt)) / 1000), // NEW
+                      elapsedSec: Math.round((finishedAt - (it.startedAt || startedAt)) / 1000),
                     }
                   : it,
               ),
@@ -169,121 +259,230 @@ export function useTransfers() {
     (id: string): FileInfo[] => files.filter(fi => fi.driveId.toString() === id),
     [files],
   )
+
   // TODO: find the history of the same name -> can taken.length be > 1?
   const resolveConflict = useCallback(
-    async (
-      originalName: string,
-      sameDrive: FileInfo[],
-    ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string; replaceHistory?: string }> => {
+    async (originalName: string, sameDrive: FileInfo[], allTakenNames: Set<string>): Promise<ResolveResult> => {
       const taken = sameDrive.filter(fi => fi.name === originalName)
 
-      if (!taken.length) {
-        return { finalName: originalName, isReplace: false }
+      if (!taken.length && !allTakenNames.has(originalName)) {
+        return { cancelled: false, finalName: originalName, isReplace: false }
       }
 
-      const choice = await openConflict({ originalName, existingNames: taken.map(fi => fi.name) })
+      const existing = taken[0]
+      const isTrashedExisting = existing ? isTrashed(existing) : false
+
+      const choice = await openConflict({
+        originalName,
+        existingNames: allTakenNames,
+        isTrashedExisting,
+      })
 
       if (choice.action === ConflictAction.Cancel) {
-        return { finalName: originalName, isReplace: false }
+        return { cancelled: true }
       }
 
       if (choice.action === ConflictAction.KeepBoth) {
-        return { finalName: choice.newName?.trim() || '', isReplace: false }
+        return { cancelled: false, finalName: (choice.newName ?? '').trim(), isReplace: false }
       }
 
       return {
+        cancelled: false,
         finalName: originalName,
         isReplace: true,
-        replaceTopic: taken[0].topic.toString(),
-        replaceHistory: taken[0].file.historyRef.toString(),
+        replaceTopic: existing?.topic.toString(),
+        replaceHistory: existing?.file.historyRef.toString(),
       }
     },
     [openConflict],
   )
 
+  const processUploadTask = useCallback(
+    async (task: UploadTask) => {
+      if (!fm || !currentDrive) return
+      const info = makeUploadInfo({
+        name: task.finalName,
+        files: [task.file],
+        meta: buildUploadMeta([task.file]),
+        topic: task.isReplace ? task.replaceTopic : undefined,
+      })
+
+      const progressCb = trackUploadProgress(
+        task.finalName,
+        task.prettySize,
+        task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+      )
+
+      setUploadItems(prev =>
+        prev.map(it =>
+          it.name === task.finalName
+            ? {
+                ...it,
+                status: TransferStatus.Uploading,
+                kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+                startedAt: it.startedAt ?? Date.now(),
+              }
+            : it,
+        ),
+      )
+
+      const controller = new AbortController()
+      uploadAbortersRef.current.set(task.finalName, controller)
+
+      try {
+        await withAbortSignal(controller.signal, async () => {
+          await fm.upload(
+            currentDrive,
+            { ...info, onUploadProgress: progressCb },
+            { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
+          )
+        })
+      } catch {
+        setUploadItems(prev =>
+          prev.map(it => (it.name === task.finalName ? { ...it, status: TransferStatus.Error } : it)),
+        )
+      } finally {
+        uploadAbortersRef.current.delete(task.finalName)
+        cancelledUploadingRef.current.delete(task.finalName)
+        cancelledNamesRef.current.delete(task.finalName)
+      }
+    },
+    [fm, currentDrive, trackUploadProgress],
+  )
+
   const uploadFiles = useCallback(
     (picked: FileList | File[]): void => {
-      const filesArr = Array.from(picked)
+      const sel = Array.from(picked)
 
-      if (filesArr.length === 0) return
+      if (sel.length === 0 || !fm || !currentDrive) return
 
-      function markError(name: string) {
-        if (isMountedRef.current) {
-          setUploadItems(prev => prev.map(it => (it.name === name ? { ...it, status: TransferStatus.Error } : it)))
-        }
-      }
+      const preflight = async (): Promise<UploadTask[]> => {
+        const progressNames = new Set<string>(uploadItems.map(u => u.name))
 
-      async function processOne(file: File, reservedNames: Set<string>) {
-        if (!fm || !currentDrive) return
+        const sameDrive: FileInfo[] = collectSameDrive(currentDrive.id.toString())
+        const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
 
-        const meta = buildUploadMeta([file])
-        const prettySize = formatBytes(meta.size)
-        const sameDrive = collectSameDrive(currentDrive.id.toString())
+        const reserved = new Set<string>()
 
-        let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive)
-        finalName = finalName ?? ''
+        const tasks: UploadTask[] = []
 
-        const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
-        const invalidName = !finalName || finalName.trim().length === 0
+        for (const file of sel) {
+          const meta = buildUploadMeta([file])
+          const prettySize = formatBytes(meta.size)
 
-        if (invalidCombo || invalidName) return
+          const allTaken = new Set<string>([
+            ...Array.from(onDiskNames),
+            ...Array.from(reserved),
+            ...Array.from(progressNames),
+          ])
+          const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
+          let remainingBytes = totalBytes - usedBytes
 
-        if (reservedNames.has(finalName)) {
-          const retry = await resolveConflict(finalName, sameDrive)
-          finalName = retry.finalName ?? ''
-          isReplace = retry.isReplace
-          replaceTopic = retry.replaceTopic
-          replaceHistory = retry.replaceHistory
+          let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(
+            file.name,
+            sameDrive,
+            allTaken,
+          )
+          finalName = finalName ?? ''
 
-          const retryInvalidCombo = isReplace && (!replaceHistory || !replaceTopic)
-          const retryInvalidName = !finalName || finalName.trim().length === 0
-
-          if (retryInvalidCombo || retryInvalidName) return
-        }
-
-        reservedNames.add(finalName)
-
-        const progressCallback = trackUploadProgress(
-          finalName,
-          prettySize,
-          isReplace ? FileTransferType.Update : FileTransferType.Upload,
-        )
-
-        const info = makeUploadInfo({
-          name: finalName,
-          files: [file],
-          meta,
-          topic: isReplace ? replaceTopic : undefined,
-        })
-
-        fm.upload(
-          currentDrive,
-          { ...info, onUploadProgress: progressCallback },
-          { actHistoryAddress: isReplace ? replaceHistory : undefined },
-        ).catch(() => markError(finalName))
-      }
-
-      async function processAll() {
-        const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
-        const remainingSize = totalBytes - usedBytes
-        const reservedNames = new Set<string>()
-        for (const file of filesArr) {
-          if (file.size <= remainingSize) {
-            await processOne(file, reservedNames)
-          } else {
+          if (file.size > remainingBytes) {
             // eslint-disable-next-line no-console
-            console.log(`Skipping upload of file because there is not enough space in the current stamp`)
-            setShowUploadError(true)
+            console.log('Skipping upload of file because there is not enough space in the current stamp')
+            setShowUploadError?.(true)
+            break
+          }
 
-            return
+          const invalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
+          const invalidName = !finalName || finalName.trim().length === 0
+
+          if (!invalidCombo && !invalidName) {
+            if (reserved.has(finalName)) {
+              const retryTaken = new Set<string>([...Array.from(allTaken), finalName])
+              const retry = await resolveConflict(finalName, sameDrive, retryTaken)
+              finalName = retry.finalName ?? ''
+              isReplace = retry.isReplace
+              replaceTopic = retry.replaceTopic
+              replaceHistory = retry.replaceHistory
+            }
+
+            const retryInvalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
+            const retryInvalidName = !finalName || finalName.trim().length === 0
+
+            if (!retryInvalidCombo && !retryInvalidName) {
+              reserved.add(finalName)
+              remainingBytes -= file.size
+
+              ensureQueuedRow(
+                finalName,
+                isReplace ? FileTransferType.Update : FileTransferType.Upload,
+                prettySize,
+                currentDrive.name,
+              )
+
+              tasks.push({
+                file,
+                finalName,
+                prettySize,
+                isReplace: Boolean(isReplace),
+                replaceTopic,
+                replaceHistory,
+              })
+            }
           }
         }
+
+        return tasks
+      }
+      const runQueue = async () => {
+        if (runningRef.current) return
+        runningRef.current = true
+        try {
+          while (queueRef.current.length > 0) {
+            const task = queueRef.current[0]
+
+            if (!task) break
+
+            const isCancelled = cancelledNamesRef.current.has(task.finalName)
+
+            if (isCancelled) {
+              setUploadItems(prev =>
+                prev.map(it => (it.name === task.finalName ? { ...it, status: TransferStatus.Error } : it)),
+              )
+              cancelledNamesRef.current.delete(task.finalName)
+              queueRef.current.shift()
+            } else {
+              await processUploadTask(task)
+              queueRef.current.shift()
+            }
+          }
+        } finally {
+          runningRef.current = false
+        }
       }
 
-      void processAll()
+      void (async () => {
+        const tasks = await preflight()
+        queueRef.current = queueRef.current.concat(tasks)
+        runQueue()
+      })()
+
+      void (async () => {
+        const tasks = await preflight()
+        queueRef.current = queueRef.current.concat(tasks)
+        runQueue()
+      })()
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fm, currentDrive, currentStamp, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
+    [
+      fm,
+      currentDrive,
+      currentStamp,
+      collectSameDrive,
+      resolveConflict,
+      ensureQueuedRow,
+      processUploadTask,
+      uploadItems,
+      setShowUploadError,
+    ],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
@@ -409,10 +608,39 @@ export function useTransfers() {
     return onProgress
   }
 
-  const dismissUpload = (name: string) => {
-    if (isMountedRef.current) {
-      setUploadItems(prev => prev.filter(it => it.name !== name))
-    }
+  const cancelOrDismissUpload = (name: string) => {
+    setUploadItems(prev => {
+      const row = prev.find(r => r.name === name)
+
+      if (!row) return prev
+
+      if (row.status === TransferStatus.Queued) {
+        cancelledNamesRef.current.add(name)
+        queueRef.current = queueRef.current.filter(t => t.finalName !== name)
+
+        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+      }
+
+      if (row.status === TransferStatus.Uploading) {
+        cancelledUploadingRef.current.add(name)
+        const ac = uploadAbortersRef.current.get(name)
+
+        if (ac) {
+          try {
+            ac.abort()
+          } catch {
+            /* no-op */
+          }
+          uploadAbortersRef.current.delete(name)
+        }
+
+        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+      }
+
+      clearAllFlagsFor(name)
+
+      return prev.filter(r => r.name !== name)
+    })
   }
 
   const dismissDownload = (name: string) => {
@@ -422,9 +650,10 @@ export function useTransfers() {
   }
 
   const dismissAllUploads = () => {
-    if (isMountedRef.current) {
-      setUploadItems([])
-    }
+    if (!isMountedRef.current) return
+    setUploadItems([])
+    cancelledNamesRef.current.clear()
+    cancelledUploadingRef.current.clear()
   }
 
   const dismissAllDownloads = () => {
@@ -447,9 +676,9 @@ export function useTransfers() {
     isDownloading,
     downloadItems,
     conflictPortal,
-    dismissUpload,
     dismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
+    cancelOrDismissUpload,
   }
 }
