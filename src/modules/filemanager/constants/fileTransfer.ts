@@ -2,6 +2,7 @@ export enum FileTransferType {
   Upload = 'upload',
   Download = 'download',
   Update = 'update',
+  Open = 'open',
 }
 
 export enum TransferStatus {
@@ -11,10 +12,11 @@ export enum TransferStatus {
   Queued = 'queued',
 }
 
-export enum TransferBarColor {
-  Upload = '#22c55e',
-  Update = '#f59e0b',
-  Download = '#3b82f6',
+export const TransferBarColor: Record<Capitalize<FileTransferType>, string> = {
+  Upload: 'rgb(16, 185, 129)',
+  Download: 'rgb(59, 130, 246)',
+  Update: 'rgb(234, 179, 8)',
+  Open: 'rgb(59, 130, 246)',
 }
 
 export enum ViewType {

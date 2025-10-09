@@ -450,6 +450,7 @@ export function useTransfers() {
     name: string,
     size?: string,
     expectedSize?: number,
+    mode: 'open' | 'download' = 'download',
   ): ((bytesDownloaded: number, downloadingFlag: boolean) => void) => {
     const driveName = currentDrive?.name
 
@@ -465,7 +466,7 @@ export function useTransfers() {
         size,
         percent: 0,
         status: TransferStatus.Uploading,
-        kind: FileTransferType.Download,
+        kind: mode === 'open' ? FileTransferType.Open : FileTransferType.Download,
         driveName,
         startedAt: undefined,
         etaSec: undefined,

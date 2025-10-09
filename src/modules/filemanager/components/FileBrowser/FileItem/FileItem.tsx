@@ -16,6 +16,7 @@ import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
+import { guessMime, VIEWERS } from '../../../utils/view'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
@@ -26,7 +27,12 @@ import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
   fileInfo: FileInfo
-  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
+  onDownload: (
+    name: string,
+    size?: string,
+    expectedSize?: number,
+    mode?: 'open' | 'download',
+  ) => (progress: number, isDownloading: boolean) => void
   showDriveColumn?: boolean
   driveName: string
   selected?: boolean
@@ -126,13 +132,21 @@ export function FileItem({
       handleCloseContext()
 
       if (!fm || !beeApi) return
+
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
+
+      const mime = guessMime(fileInfo.name, fileInfo.customMetadata)
+      const supportsOpen = VIEWERS.some(v => v.test(mime))
+
+      const mode: 'open' | 'download' = isNewWindow && supportsOpen ? 'open' : 'download'
+      const isOpenWindow = Boolean(isNewWindow && supportsOpen)
+
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        onDownload(fileInfo.name, formatBytes(rawSize), expectedSize),
-        isNewWindow,
+        onDownload(fileInfo.name, formatBytes(rawSize), expectedSize, mode),
+        isOpenWindow,
       )
     },
     [handleCloseContext, fm, beeApi, fileInfo, onDownload],

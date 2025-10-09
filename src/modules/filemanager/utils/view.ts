@@ -18,7 +18,6 @@ const EXT_TO_MIME: Record<string, string> = {
   txt: 'text/plain',
   md: 'text/markdown',
   json: 'application/json',
-  csv: 'text/csv',
   html: 'text/html',
   htm: 'text/html',
 }
@@ -111,21 +110,6 @@ export const VIEWERS: Viewer[] = [
          <body style="margin:0">
            <iframe src="${url}" style="border:0;width:100%;height:100vh"></iframe>
          </body></html>`,
-      )
-      w.document.close()
-      w.document.title = name
-    },
-  },
-  {
-    name: 'text-like',
-    test: m => m.startsWith('text/') || m === 'application/json' || m === 'text/markdown',
-    render: (w, url, mime, name) => {
-      w.document.open()
-      w.document.write(
-        `<html><head><meta charset="utf-8"/><title>${name}</title>
-          <style>html,body{height:100%;margin:0} pre{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word}</style>
-        </head>
-        <body><iframe src="${url}" style="border:0;width:100%;height:100%"></iframe></body></html>`,
       )
       w.document.close()
       w.document.title = name

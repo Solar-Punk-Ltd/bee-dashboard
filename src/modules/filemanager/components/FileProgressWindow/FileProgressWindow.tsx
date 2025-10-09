@@ -167,15 +167,19 @@ export function FileProgressWindow({
                 <div className="fm-file-progress-window-file-item-header">
                   <div className="fm-file-progress-window-name" title={uiName}>
                     <div className="fm-file-progress-window-name-text">{uiName}</div>
-                    {file.driveName && (
-                      <div className="fm-drive-line">
+                    <div className="fm-drive-line">
+                      {file.driveName && (
                         <span className="fm-drive-chip" title={`Drive: ${file.driveName}`}>
                           {file.driveName}
                         </span>
-                      </div>
-                    )}
+                      )}
+                      {file.kind === FileTransferType.Open && (
+                        <span className="fm-drive-chip fm-chip-open" title="Open">
+                          View / Open
+                        </span>
+                      )}
+                    </div>
                   </div>
-
                   <div className="fm-file-progress-window-percent" aria-live="polite">
                     {typeof pctNum === 'number' ? `${pctNum}%` : ''}
                   </div>

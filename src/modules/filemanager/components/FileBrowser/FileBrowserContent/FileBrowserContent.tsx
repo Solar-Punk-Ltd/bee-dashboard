@@ -14,6 +14,7 @@ interface FileBrowserContentProps {
     name: string,
     size?: string,
     expectedSize?: number,
+    mode?: 'open' | 'download',
   ) => (progress: number, isDownloading: boolean) => void
   selectedIds?: Set<string>
   onToggleSelected?: (fi: FileInfo, checked: boolean) => void
