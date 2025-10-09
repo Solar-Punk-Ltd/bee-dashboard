@@ -51,6 +51,7 @@ export function useUploadConflictDialog(): [
       <UploadConflictModal
         filename={req.originalName}
         suggestedName={suggested}
+        existingNames={req.existingNames}
         onKeepBoth={(newName: string) => {
           const { resolve } = req
           setReq(null)

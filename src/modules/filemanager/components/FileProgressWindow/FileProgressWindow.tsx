@@ -71,9 +71,12 @@ export function FileProgressWindow({
 
     const isDone = pct === 100 || item.status === TransferStatus.Done
     const isCancelled = item.status === TransferStatus.Error
+    const isQueued = item.status === TransferStatus.Queued
 
     return {
       statusText: (() => {
+        if (isQueued) return 'Queued…'
+
         if (isCancelled) return 'Cancelled…'
 
         if (isDone) return 'Done'

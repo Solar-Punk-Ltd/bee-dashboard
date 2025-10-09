@@ -38,7 +38,7 @@ export function FileBrowser(): ReactElement {
     downloadItems,
     trackDownload,
     conflictPortal,
-    dismissUpload,
+    cancelOrDismissUpload,
     dismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
@@ -404,7 +404,7 @@ export function FileBrowser(): ReactElement {
             open={isUploading}
             count={uploadItems.length}
             items={uploadItems}
-            onRowClose={name => dismissUpload(name)}
+            onRowClose={name => cancelOrDismissUpload(name)}
             onCloseAll={() => dismissAllUploads()}
           />
           <FileProgressNotification
