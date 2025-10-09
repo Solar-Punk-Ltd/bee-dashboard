@@ -143,8 +143,7 @@ export function FileProgressWindow({
             : undefined
 
           const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
-          const canDismiss =
-            isComplete || file.status === TransferStatus.Error || (typeof pctNum === 'number' ? pctNum === 0 : true)
+          const canDismiss = true
           const transferInfo = getTransferInfo(file, pctNum)
           const uiName = file.name
 
