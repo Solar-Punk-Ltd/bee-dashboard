@@ -4,6 +4,7 @@ import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
+import { calculateStampCapacityMetrics } from '../utils/bee'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -64,7 +65,7 @@ const makeUploadInfo = (args: {
 }
 
 export function useTransfers() {
-  const { fm, currentDrive, files } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, files, setShowUploadError } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
 
@@ -263,15 +264,26 @@ export function useTransfers() {
       }
 
       async function processAll() {
+        const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
+        const remainingSize = totalBytes - usedBytes
         const reservedNames = new Set<string>()
         for (const file of filesArr) {
-          await processOne(file, reservedNames)
+          if (file.size <= remainingSize) {
+            await processOne(file, reservedNames)
+          } else {
+            // eslint-disable-next-line no-console
+            console.log(`Skipping upload of file because there is not enough space in the current stamp`)
+            setShowUploadError(true)
+
+            return
+          }
         }
       }
 
       void processAll()
     },
-    [fm, currentDrive, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fm, currentDrive, currentStamp, collectSameDrive, resolveConflict, setUploadItems, trackUploadProgress],
   )
 
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])

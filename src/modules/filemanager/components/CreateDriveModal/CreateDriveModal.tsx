@@ -5,12 +5,13 @@ import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
-import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
+import { getExpiryDateByLifetime } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
+import { getHumanReadableFileSize } from 'src/utils/file'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
@@ -30,7 +31,7 @@ export function CreateDriveModal({
 }: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
-  const [lifetimeIndex, setLifetimeIndex] = useState(0)
+  const [lifetimeIndex, setLifetimeIndex] = useState(-1)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
   const [label, setLabel] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(-1)
@@ -44,7 +45,6 @@ export function CreateDriveModal({
   const currentFetch = useRef<Promise<void> | null>(null)
 
   const handleCapacityChange = (value: number, index: number) => {
-    setCapacity(value)
     setCapacityIndex(index)
   }
 
@@ -54,7 +54,7 @@ export function CreateDriveModal({
     setSizeMarks(
       newSizes.map(size => ({
         value: size,
-        label: `${fromBytesConversion(size, 'GB').toFixed(2)} GB`,
+        label: getHumanReadableFileSize(size),
       })),
     )
 
@@ -65,14 +65,17 @@ export function CreateDriveModal({
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
       fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
 
-      if (label) {
+      if (label && label.trim().length > 0) {
         setIsCreateEnabled(true)
+      } else {
+        setIsCreateEnabled(false)
       }
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, label, erasureCodeLevel])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capacity, validityEndDate, beeApi, label])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))

@@ -24,6 +24,7 @@ import {
   Utils,
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { getHumanReadableFileSize } from 'src/utils/file'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
@@ -108,7 +109,7 @@ export function UpgradeDriveModal({
         { value: 0, label: 'Select a value' },
         ...newSizes.map(size => ({
           value: size,
-          label: `${fromBytesConversion(size - stamp.size.toBytes(), 'GB').toFixed(3)} GB`,
+          label: getHumanReadableFileSize(size - stamp.size.toBytes()),
         })),
       ]
       setSizeMarks(updatedSizes)
