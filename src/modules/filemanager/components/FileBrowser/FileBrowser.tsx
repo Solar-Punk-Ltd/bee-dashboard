@@ -23,12 +23,13 @@ import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
+import { ErrorModal } from '../ErrorModal/ErrorModal'
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, refreshFiles, resyncFM, drives, fm } = useContext(FMContext)
+  const { files, currentDrive, refreshFiles, resyncFM, drives, fm, showUploadError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -186,6 +187,7 @@ export function FileBrowser(): ReactElement {
   return (
     <>
       {conflictPortal}
+
       <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
 
@@ -225,6 +227,7 @@ export function FileBrowser(): ReactElement {
                 delete: () => setShowBulkDeleteModal(true),
               }}
             />
+            {showUploadError && <ErrorModal label="There is not enough space to continue the upload." />}
 
             {showContext && (
               <div

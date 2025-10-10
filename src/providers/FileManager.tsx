@@ -53,12 +53,14 @@ interface ContextInterface {
   fm: FileManagerBase | null
   files: FileInfo[]
   currentDrive?: DriveInfo
+  currentStamp?: PostageBatch
   drives: DriveInfo[]
   adminDrive: DriveInfo | null
   adminStamp: PostageBatch | null
   initializationError: boolean
   setAdminStamp: (stamp: PostageBatch | null) => void
   setCurrentDrive: (d: DriveInfo) => void
+  setCurrentStamp: (s: PostageBatch | undefined) => void
   refreshFiles: () => void
   refreshDrives: () => void
   resyncFM: () => void
@@ -68,24 +70,30 @@ interface ContextInterface {
   ) => Promise<boolean>
   getStoredState: () => FMStorageState | undefined
   setStoredState: (state: FMStorageState) => void
+  showUploadError?: boolean
+  setShowUploadError: (show: boolean) => void
 }
 
 const initialValues: ContextInterface = {
   fm: null,
   files: [],
   currentDrive: undefined,
+  currentStamp: undefined,
   drives: [],
   adminDrive: null,
   adminStamp: null,
   initializationError: false,
   setAdminStamp: () => {}, // eslint-disable-line
   setCurrentDrive: () => {}, // eslint-disable-line
+  setCurrentStamp: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
   resyncFM: () => {}, // eslint-disable-line
   init: async () => false, // eslint-disable-line
   getStoredState: () => undefined, // eslint-disable-line
   setStoredState: () => {}, // eslint-disable-line
+  showUploadError: false,
+  setShowUploadError: () => {}, // eslint-disable-line
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -103,7 +111,9 @@ export function Provider({ children }: Props) {
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
   const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
+  const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
+  const [showUploadError, setShowUploadError] = useState<boolean>(false)
 
   const refreshFiles = useCallback((): void => {
     if (fm) {
@@ -274,11 +284,13 @@ export function Provider({ children }: Props) {
         fm,
         files,
         currentDrive,
+        currentStamp,
         drives,
         adminDrive,
         adminStamp,
         initializationError,
         setCurrentDrive,
+        setCurrentStamp,
         setAdminStamp,
         refreshFiles,
         refreshDrives,
@@ -286,6 +298,8 @@ export function Provider({ children }: Props) {
         init,
         getStoredState,
         setStoredState,
+        showUploadError,
+        setShowUploadError,
       }}
     >
       {children}

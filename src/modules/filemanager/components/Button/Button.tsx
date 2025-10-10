@@ -8,6 +8,7 @@ interface ButtonProps {
   size?: 'small' | 'medium'
   variant?: 'primary' | 'secondary' | 'danger'
   disabled?: boolean
+  width?: number
 }
 
 export function Button({
@@ -17,6 +18,7 @@ export function Button({
   size = 'medium',
   variant = 'primary',
   disabled,
+  width,
 }: ButtonProps): ReactElement {
   return (
     <div
@@ -24,6 +26,7 @@ export function Button({
         disabled ? ' fm-button-disabled' : ''
       }`}
       onClick={disabled ? undefined : onClick}
+      style={{ width: width ? `${width}px` : undefined }}
     >
       {icon} {label}
     </div>

@@ -28,7 +28,7 @@ export function Sidebar(): ReactElement {
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { fm, currentDrive, drives, setCurrentDrive, refreshDrives } = useContext(FMContext)
+  const { fm, currentDrive, drives, setCurrentDrive, setCurrentStamp, refreshDrives } = useContext(FMContext)
 
   useEffect(() => {
     let isMounted = true
@@ -130,6 +130,7 @@ export function Sidebar(): ReactElement {
                   key={d.id.toString()}
                   onClick={() => {
                     setCurrentDrive(d)
+                    setCurrentStamp(stamp)
                     setView(ViewType.File)
                   }}
                 >
