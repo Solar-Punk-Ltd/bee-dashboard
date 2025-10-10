@@ -122,30 +122,6 @@ export function FileBrowser(): ReactElement {
     }
   }
 
-  const handleContextPaste = async () => {
-    const navAny = navigator as Navigator
-
-    if (!navAny.clipboard || !navAny.clipboard.read) return
-    try {
-      const items: ClipboardItem[] = await navAny.clipboard.read()
-      const files: File[] = []
-      for (const ci of items) {
-        for (const type of ci.types) {
-          if (type.startsWith('image/') || type === 'application/octet-stream') {
-            const blob = await ci.getType(type)
-            const ext = type.split('/')[1] || 'bin'
-            const name = `Pasted-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`
-            files.push(new File([blob], name, { type }))
-          }
-        }
-      }
-
-      if (files.length) uploadFiles(files)
-    } catch {
-      // Silently ignore; user can still use ⌘V/Ctrl+V or Edit→Paste.
-    }
-  }
-
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
     e.preventDefault()
@@ -343,11 +319,21 @@ export function FileBrowser(): ReactElement {
                         Upload folder
                       </div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={handleContextPaste}>
+                      <div
+                        className="fm-context-item"
+                        role="menuitem"
+                        aria-disabled="true"
+                        tabIndex={-1}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                      >
                         <span>Paste</span>
                         <span
                           className="fm-info fm-info--inline"
-                          data-tip="Tip: If this doesn’t work, use ⌘V / Ctrl+V or Browser → Edit → Paste."
+                          data-tip="Tip: Use ⌘V / Ctrl+V or Browser → Edit → Paste."
                           aria-label="Paste help"
                         >
                           i

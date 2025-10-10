@@ -112,6 +112,11 @@
   }
 }
 
+.fm-context-item[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .fm-context-item-border {
   border-bottom: 1px solid #d1d1d1;
 }
