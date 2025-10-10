@@ -51,6 +51,7 @@ export function FileBrowser(): ReactElement {
 
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
+  const bodyRef = useRef<HTMLDivElement | null>(null)
   const isMountedRef = useRef(true)
   const rafIdRef = useRef<number | null>(null)
 
@@ -96,9 +97,36 @@ export function FileBrowser(): ReactElement {
     el?.click()
   }
 
+  const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
+    const out: File[] = []
+    const items = e.clipboardData?.items ?? []
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i]
+
+      if (it.kind === 'file') {
+        const f = it.getAsFile()
+
+        if (f) out.push(f)
+      }
+    }
+
+    return out
+  }
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const files = extractFilesFromClipboardEvent(e)
+
+    if (files.length > 0) {
+      e.preventDefault()
+      uploadFiles(files)
+    }
+  }
+
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
-    handleContextMenu(e)
+    e.preventDefault()
+    e.stopPropagation()
+    handleContextMenu(e.nativeEvent as unknown as React.MouseEvent<HTMLDivElement>)
   }
 
   useLayoutEffect(() => {
@@ -112,14 +140,14 @@ export function FileBrowser(): ReactElement {
       if (!isMountedRef.current) return
 
       const menu = contextRef.current
-      const container = document.querySelector('.fm-file-browser-container') as HTMLElement | null
+      const body = bodyRef.current
 
       if (!menu) return
 
       const rect = menu.getBoundingClientRect()
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const containerRect = container?.getBoundingClientRect() ?? null
+      const containerRect = body?.getBoundingClientRect() ?? null
 
       const { safePos: sp, dropDir: dd } = computeContextMenuPosition({
         clickPos: pos as Point,
@@ -130,7 +158,10 @@ export function FileBrowser(): ReactElement {
       })
 
       if (isMountedRef.current) {
-        setSafePos(sp)
+        const topLeft = containerRect
+          ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
+          : sp
+        setSafePos(topLeft)
         setDropDir(dd)
       }
       rafIdRef.current = null
@@ -201,13 +232,11 @@ export function FileBrowser(): ReactElement {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onPaste={handlePaste}
+          onContextMenu={handleFileBrowserContextMenu}
         >
           <FileBrowserHeader key={isSearchMode ? 'hdr-search' : 'hdr-normal'} isSearchMode={isSearchMode} bulk={bulk} />
-          <div
-            className="fm-file-browser-content-body"
-            onContextMenu={handleFileBrowserContextMenu}
-            onClick={handleCloseContext}
-          >
+          <div className="fm-file-browser-content-body" ref={bodyRef} onClick={handleCloseContext}>
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={listToRender}
@@ -290,7 +319,26 @@ export function FileBrowser(): ReactElement {
                         Upload folder
                       </div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item">Paste</div>
+                      <div
+                        className="fm-context-item"
+                        role="menuitem"
+                        aria-disabled="true"
+                        tabIndex={-1}
+                        onMouseDown={e => e.stopPropagation()}
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                      >
+                        <span>Paste</span>
+                        <span
+                          className="fm-info fm-info--inline"
+                          data-tip="Tip: Use ⌘V / Ctrl+V or Browser → Edit → Paste."
+                          aria-label="Paste help"
+                        >
+                          i
+                        </span>
+                      </div>
                       <div className="fm-context-item-border" />
                       <div className="fm-context-item" onClick={doRefresh}>
                         Refresh
