@@ -8,6 +8,7 @@ interface Props {
   filename: string
   suggestedName: string
   existingNames: Set<string>
+  isTrashedExisting?: boolean
   onKeepBoth: (newName: string) => void
   onReplace: () => void
   onCancel: () => void
@@ -17,6 +18,7 @@ export function UploadConflictModal({
   filename,
   suggestedName,
   existingNames,
+  isTrashedExisting,
   onKeepBoth,
   onReplace,
   onCancel,
@@ -82,6 +84,16 @@ export function UploadConflictModal({
               <Button label="Replace" variant="primary" onClick={onReplace} />
             </div>
           </div>
+          {isTrashedExisting && (
+            <div className="fm-callout fm-callout--warning" role="note" aria-live="polite" style={{ marginTop: 12 }}>
+              <span className="fm-callout__icon" aria-hidden>
+                <WarningIcon size="16px" />
+              </span>
+              <span className="fm-callout__text">
+                <b>Heads up:</b> The existing &apos;{filename}&apos; is currently in <b>Trash</b>.
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="fm-modal-window-footer">

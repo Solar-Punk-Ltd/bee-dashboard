@@ -4,6 +4,15 @@ import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
+import { isTrashed } from '../utils/common'
+
+type ResolveResult = {
+  cancelled: boolean
+  finalName?: string
+  isReplace?: boolean
+  replaceTopic?: string
+  replaceHistory?: string
+}
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -252,32 +261,36 @@ export function useTransfers() {
 
   // TODO: find the history of the same name -> can taken.length be > 1?
   const resolveConflict = useCallback(
-    async (
-      originalName: string,
-      sameDrive: FileInfo[],
-      allTakenNames: Set<string>,
-    ): Promise<{ finalName: string; isReplace: boolean; replaceTopic?: string; replaceHistory?: string }> => {
+    async (originalName: string, sameDrive: FileInfo[], allTakenNames: Set<string>): Promise<ResolveResult> => {
       const taken = sameDrive.filter(fi => fi.name === originalName)
 
       if (!taken.length && !allTakenNames.has(originalName)) {
-        return { finalName: originalName, isReplace: false }
+        return { cancelled: false, finalName: originalName, isReplace: false }
       }
 
-      const choice = await openConflict({ originalName, existingNames: allTakenNames })
+      const existing = taken[0]
+      const isTrashedExisting = existing ? isTrashed(existing) : false
+
+      const choice = await openConflict({
+        originalName,
+        existingNames: allTakenNames,
+        isTrashedExisting,
+      })
 
       if (choice.action === ConflictAction.Cancel) {
-        return { finalName: originalName, isReplace: false }
+        return { cancelled: true }
       }
 
       if (choice.action === ConflictAction.KeepBoth) {
-        return { finalName: choice.newName?.trim() || '', isReplace: false }
+        return { cancelled: false, finalName: (choice.newName ?? '').trim(), isReplace: false }
       }
 
       return {
+        cancelled: false,
         finalName: originalName,
         isReplace: true,
-        replaceTopic: taken[0].topic.toString(),
-        replaceHistory: taken[0].file.historyRef.toString(),
+        replaceTopic: existing?.topic.toString(),
+        replaceHistory: existing?.file.historyRef.toString(),
       }
     },
     [openConflict],
@@ -369,7 +382,7 @@ export function useTransfers() {
           )
           finalName = finalName ?? ''
 
-          const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+          const invalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
           const invalidName = !finalName || finalName.trim().length === 0
 
           if (!invalidCombo && !invalidName) {
@@ -382,7 +395,7 @@ export function useTransfers() {
               replaceHistory = retry.replaceHistory
             }
 
-            const retryInvalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+            const retryInvalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
             const retryInvalidName = !finalName || finalName.trim().length === 0
 
             if (!retryInvalidCombo && !retryInvalidName) {
@@ -397,7 +410,7 @@ export function useTransfers() {
                 file,
                 finalName,
                 prettySize,
-                isReplace,
+                isReplace: Boolean(isReplace),
                 replaceTopic,
                 replaceHistory,
               })

@@ -49,3 +49,24 @@
 .fm-input:focus {
   border-color: #cbd5e1;
 }
+
+.fm-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.fm-callout__icon {
+  margin-top: 2px;
+}
+
+.fm-callout--warning {
+  background: #fff7e6;
+  border: 1px solid #ffe3b3;
+  border-left: 4px solid #ff9900;
+  color: #5f4b00;
+}
