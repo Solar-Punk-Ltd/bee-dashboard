@@ -22,6 +22,33 @@ function ensurePrivateKey(): PrivateKey {
 
   return new PrivateKey(fromLocalPk)
 }
+
+function signerPk(): PrivateKey | undefined {
+  try {
+    return ensurePrivateKey()
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Private key error:', err)
+
+    return undefined
+  }
+}
+
+function getStoredState(): FMStorageState | undefined {
+  const raw = localStorage.getItem(FM_STORAGE_STATE)
+
+  if (!raw) return undefined
+  try {
+    return JSON.parse(raw) as FMStorageState
+  } catch {
+    return undefined
+  }
+}
+
+function setStoredState(state: FMStorageState): void {
+  localStorage.setItem(FM_STORAGE_STATE, JSON.stringify(state))
+}
+
 interface ContextInterface {
   fm: FileManagerBase | null
   files: FileInfo[]
@@ -77,32 +104,6 @@ export function Provider({ children }: Props) {
   const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
-
-  const signerPk = useCallback((): PrivateKey | undefined => {
-    try {
-      return ensurePrivateKey()
-    } catch (err: unknown) {
-      // eslint-disable-next-line no-console
-      console.error('Private key error:', err)
-
-      return
-    }
-  }, [])
-
-  const getStoredState = useCallback((): FMStorageState | undefined => {
-    const fromLocalState = localStorage.getItem(FM_STORAGE_STATE)
-
-    if (!fromLocalState) return undefined
-    try {
-      return JSON.parse(fromLocalState) as FMStorageState
-    } catch {
-      return undefined
-    }
-  }, [])
-
-  const setStoredState = useCallback((state: FMStorageState): void => {
-    localStorage.setItem(FM_STORAGE_STATE, JSON.stringify(state))
-  }, [])
 
   const refreshFiles = useCallback((): void => {
     if (fm) {
@@ -223,7 +224,7 @@ export function Provider({ children }: Props) {
         return false
       }
     },
-    [apiUrl, beeApi, adminStamp, getStoredState, setStoredState, signerPk],
+    [apiUrl, beeApi, adminStamp],
   )
 
   const resyncFM = useCallback(async (): Promise<void> => {
@@ -234,12 +235,12 @@ export function Provider({ children }: Props) {
 
     await init(stored?.adminBatchId, (_hasAdmin, manager) => {
       if (prevDriveId) {
-        const next = manager.getDrives().find(d => d.id.toString() === prevDriveId)
+        const refreshedDrive = manager.getDrives().find(d => d.id.toString() === prevDriveId)
 
-        if (next) setCurrentDrive(next)
+        if (refreshedDrive) setCurrentDrive(refreshedDrive)
       }
     })
-  }, [apiUrl, currentDrive?.id, getStoredState, init, setCurrentDrive])
+  }, [apiUrl, currentDrive?.id, init, setCurrentDrive])
 
   useEffect(() => {
     if (!apiUrl || !beeApi) return
