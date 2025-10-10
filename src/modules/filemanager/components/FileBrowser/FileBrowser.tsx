@@ -169,8 +169,8 @@ export function FileBrowser(): ReactElement {
   return (
     <>
       {conflictPortal}
-      <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} />
-      <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} />
+      <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
+      <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
 
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
         <FileBrowserTopBar />
@@ -264,7 +264,7 @@ export function FileBrowser(): ReactElement {
                         New folder
                       </div>
                       <div className="fm-context-item" onClick={onContextUploadFile}>
-                        Upload file
+                        Upload file(s)
                       </div>
                       <div className="fm-context-item" style={{ display: 'none' }}>
                         Upload folder
