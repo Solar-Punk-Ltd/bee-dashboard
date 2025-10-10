@@ -28,7 +28,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, refreshFiles, drives, fm } = useContext(FMContext)
+  const { files, currentDrive, refreshFiles, resyncFM, drives, fm } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -56,6 +56,7 @@ export function FileBrowser(): ReactElement {
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -166,6 +167,22 @@ export function FileBrowser(): ReactElement {
     }
   }, [])
 
+  const doRefresh = async () => {
+    handleCloseContext()
+
+    if (isRefreshing || !resyncFM) return
+
+    setIsRefreshing(true)
+
+    try {
+      await resyncFM()
+    } finally {
+      if (isMountedRef.current) {
+        setIsRefreshing(false)
+      }
+    }
+  }
+
   return (
     <>
       {conflictPortal}
@@ -220,7 +237,7 @@ export function FileBrowser(): ReactElement {
                   if (drives.length === 0) {
                     return (
                       <ContextMenu>
-                        <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                        <div className="fm-context-item" onClick={doRefresh}>
                           Refresh
                         </div>
                       </ContextMenu>
@@ -272,7 +289,7 @@ export function FileBrowser(): ReactElement {
                       <div className="fm-context-item-border" />
                       <div className="fm-context-item">Paste</div>
                       <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={() => refreshFiles?.()}>
+                      <div className="fm-context-item" onClick={doRefresh}>
                         Refresh
                       </div>
                     </ContextMenu>
@@ -357,6 +374,14 @@ export function FileBrowser(): ReactElement {
                 )
               }}
             />
+          )}
+          {isRefreshing && (
+            <div className="fm-refresh-overlay" aria-busy="true" aria-live="polite">
+              <div className="fm-refresh-content">
+                <div className="fm-mini-spinner" role="status" aria-label="Syncing…" />
+                <span className="fm-refresh-text">Syncing latest files…</span>
+              </div>
+            </div>
           )}
         </div>
 
