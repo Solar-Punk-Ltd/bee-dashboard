@@ -63,7 +63,7 @@ interface ContextInterface {
   setCurrentStamp: (s: PostageBatch | undefined) => void
   refreshFiles: () => void
   refreshDrives: () => void
-  resyncFM: () => void
+  resyncFM: () => Promise<void>
   init: (
     batchId?: string,
     onAdminDriveReady?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
@@ -88,7 +88,7 @@ const initialValues: ContextInterface = {
   setCurrentStamp: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
-  resyncFM: () => {}, // eslint-disable-line
+  resyncFM: async () => {}, // eslint-disable-line
   init: async () => false, // eslint-disable-line
   getStoredState: () => undefined, // eslint-disable-line
   setStoredState: () => {}, // eslint-disable-line
