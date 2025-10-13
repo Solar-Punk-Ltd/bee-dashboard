@@ -7,6 +7,7 @@ import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
+import { AbortManager } from '../utils/abortManager'
 
 type ResolveResult = {
   cancelled: boolean
@@ -89,7 +90,7 @@ export function useTransfers() {
   const queueRef = useRef<UploadTask[]>([])
   const runningRef = useRef(false)
   const cancelledNamesRef = useRef<Set<string>>(new Set())
-  const uploadAbortersRef = useRef<Map<string, AbortController>>(new Map())
+  const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
   const cancelledUploadingRef = useRef<Set<string>>(new Set())
   const pendingForgetRef = useRef<Set<string>>(new Set())
 
@@ -100,7 +101,7 @@ export function useTransfers() {
     cancelledNamesRef.current.delete(name)
     cancelledUploadingRef.current.delete(name)
     pendingForgetRef.current.delete(name)
-    uploadAbortersRef.current.delete(name)
+    uploadAbortsRef.current.abort(name)
     queueRef.current = queueRef.current.filter(t => t.finalName !== name)
   }, [])
 
@@ -131,23 +132,6 @@ export function useTransfers() {
     },
     [clearAllFlagsFor],
   )
-
-  async function withAbortSignal<T>(signal: AbortSignal, fn: () => Promise<T>): Promise<T> {
-    const originalFetch = window.fetch
-    window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-      const merged: RequestInit = { ...(init || {}) }
-
-      if (!merged.signal) merged.signal = signal
-
-      return originalFetch(input as RequestInfo | URL, merged)
-    }) as typeof window.fetch
-
-    try {
-      return await fn()
-    } finally {
-      window.fetch = originalFetch
-    }
-  }
 
   const trackUploadProgress = useCallback(
     (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
@@ -327,11 +311,10 @@ export function useTransfers() {
         ),
       )
 
-      const controller = new AbortController()
-      uploadAbortersRef.current.set(task.finalName, controller)
+      uploadAbortsRef.current.create(task.finalName)
 
       try {
-        await withAbortSignal(controller.signal, async () => {
+        await uploadAbortsRef.current.withSignal(task.finalName, async () => {
           await fm.upload(
             currentDrive,
             { ...info, onUploadProgress: progressCb },
@@ -343,7 +326,7 @@ export function useTransfers() {
           prev.map(it => (it.name === task.finalName ? { ...it, status: TransferStatus.Error } : it)),
         )
       } finally {
-        uploadAbortersRef.current.delete(task.finalName)
+        uploadAbortsRef.current.abort(task.finalName)
         cancelledUploadingRef.current.delete(task.finalName)
         cancelledNamesRef.current.delete(task.finalName)
       }
@@ -628,16 +611,7 @@ export function useTransfers() {
 
       if (row.status === TransferStatus.Uploading) {
         cancelledUploadingRef.current.add(name)
-        const ac = uploadAbortersRef.current.get(name)
-
-        if (ac) {
-          try {
-            ac.abort()
-          } catch {
-            /* no-op */
-          }
-          uploadAbortersRef.current.delete(name)
-        }
+        uploadAbortsRef.current.abort(name)
 
         return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
       }
