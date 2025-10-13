@@ -63,7 +63,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
       const { driveId, success } = (e as CustomEvent).detail || {}
 
       if (driveId === id) {
-        if (success) await Promise.resolve(refreshDrives?.())
+        if (success) await Promise.resolve(refreshDrives())
         setIsUpgrading(false)
       }
     }
@@ -167,7 +167,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
               fm,
               drive,
               () => {
-                refreshDrives?.()
+                refreshDrives()
 
                 if (isMountedRef.current) {
                   setIsDestroyDriveModalOpen(false)
