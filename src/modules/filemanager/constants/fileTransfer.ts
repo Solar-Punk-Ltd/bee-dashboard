@@ -6,8 +6,10 @@ export enum FileTransferType {
 
 export enum TransferStatus {
   Uploading = 'uploading',
+  Downloading = 'downloading',
   Done = 'done',
   Error = 'error',
+  Queued = 'queued',
 }
 
 export enum TransferBarColor {

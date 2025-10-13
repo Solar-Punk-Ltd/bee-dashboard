@@ -19,7 +19,7 @@ import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
 import { Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
-import { startDownloadingQueue } from '../../../utils/download'
+import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
@@ -121,13 +121,18 @@ export function FileItem({
   }, [files, currentDrive, fileInfo.topic])
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
+
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       handleCloseContext()
 
       if (!fm || !beeApi) return
+
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
+
+      createDownloadAbort(fileInfo.name)
+
       await startDownloadingQueue(
         fm,
         [fileInfo],

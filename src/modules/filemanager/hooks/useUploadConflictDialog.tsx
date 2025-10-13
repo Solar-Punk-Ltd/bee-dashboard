@@ -12,6 +12,7 @@ export type ConflictChoice = { action: ConflictAction; newName?: string }
 type Request = {
   originalName: string
   existingNames: Set<string>
+  isTrashedExisting?: boolean
   resolve: (r: ConflictChoice) => void
 }
 
@@ -37,7 +38,11 @@ function nextCopyName(originalName: string, taken: Set<string>): string {
 }
 
 export function useUploadConflictDialog(): [
-  (args: { originalName: string; existingNames: Set<string> | string[] }) => Promise<ConflictChoice>,
+  (args: {
+    originalName: string
+    existingNames: Set<string> | string[]
+    isTrashedExisting?: boolean
+  }) => Promise<ConflictChoice>,
   ReactPortal | null,
 ] {
   const [req, setReq] = useState<Request | null>(null)
@@ -51,6 +56,8 @@ export function useUploadConflictDialog(): [
       <UploadConflictModal
         filename={req.originalName}
         suggestedName={suggested}
+        existingNames={req.existingNames}
+        isTrashedExisting={req.isTrashedExisting}
         onKeepBoth={(newName: string) => {
           const { resolve } = req
           setReq(null)
@@ -72,11 +79,20 @@ export function useUploadConflictDialog(): [
   }, [req])
 
   const open = useCallback(
-    async (args: { originalName: string; existingNames: Set<string> | string[] }): Promise<ConflictChoice> => {
+    async (args: {
+      originalName: string
+      existingNames: Set<string> | string[]
+      isTrashedExisting?: boolean
+    }): Promise<ConflictChoice> => {
       const existing = Array.isArray(args.existingNames) ? new Set(args.existingNames) : args.existingNames
 
       return await new Promise<ConflictChoice>(resolve => {
-        setReq({ originalName: args.originalName, existingNames: existing, resolve })
+        setReq({
+          originalName: args.originalName,
+          existingNames: existing,
+          isTrashedExisting: args.isTrashedExisting,
+          resolve,
+        })
       })
     },
     [],

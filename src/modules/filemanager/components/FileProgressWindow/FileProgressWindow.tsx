@@ -69,17 +69,33 @@ export function FileProgressWindow({
 
     if (cap.toLowerCase() === 'update') verb = 'Updating'
 
+    const isDone = pct === 100 || item.status === TransferStatus.Done
+    const isCancelled = item.status === TransferStatus.Error
+    const isQueued = item.status === TransferStatus.Queued
+
     return {
-      statusText: pct === 100 || item.status === TransferStatus.Done ? 'Done' : `${verb}…`,
+      statusText: (() => {
+        if (isQueued) return 'Queued…'
+
+        if (isCancelled) return 'Cancelled…'
+
+        if (isDone) return 'Done'
+
+        return `${verb}…`
+      })(),
       barColor: TransferBarColor[cap as keyof typeof TransferBarColor],
     }
   }
 
   const allDone =
     rows.length > 0 &&
-    rows.every(r =>
-      Number.isFinite(r.percent) ? Math.round(r.percent as number) >= 100 : r.status === TransferStatus.Done,
-    )
+    rows.every(r => {
+      const pct = Number.isFinite(r.percent) ? Math.round(r.percent as number) : undefined
+
+      return (
+        r.status === TransferStatus.Done || r.status === TransferStatus.Error || (typeof pct === 'number' && pct >= 100)
+      )
+    })
 
   useLayoutEffect(() => {
     const rowEl = firstRowRef.current
@@ -127,6 +143,14 @@ export function FileProgressWindow({
             : undefined
 
           const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
+          const isActive =
+            file.status === TransferStatus.Uploading ||
+            file.status === TransferStatus.Downloading ||
+            file.status === TransferStatus.Queued
+
+          const canDismiss = isActive || isComplete || file.status === TransferStatus.Error
+          const rowActionLabel = isActive ? 'Cancel' : 'Dismiss'
+
           const transferInfo = getTransferInfo(file, pctNum)
           const uiName = file.name
 
@@ -165,11 +189,9 @@ export function FileProgressWindow({
 
                   <button
                     className="fm-file-progress-window-row-close"
-                    aria-label={isComplete ? 'Dismiss' : 'Dismiss (disabled until complete)'}
-                    disabled={!isComplete}
-                    onClick={() => {
-                      if (isComplete) onRowClose?.(file.name)
-                    }}
+                    aria-label={rowActionLabel}
+                    disabled={!canDismiss}
+                    onClick={() => onRowClose?.(file.name)}
                     type="button"
                   >
                     <CloseIcon size="14" />
