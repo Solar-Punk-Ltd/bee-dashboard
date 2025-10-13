@@ -36,18 +36,24 @@ const processStream = async (
         progress += value.length
       }
       done = streamDone
+
       onDownloadProgress?.(progress, !done)
     }
   } catch (e: unknown) {
-    if ((e as { name?: string }).name === 'AbortError') onDownloadProgress?.(-1, false)
+    if ((e as { name?: string }).name === 'AbortError') {
+      onDownloadProgress?.(-1, false)
+
+      return
+    }
+
     // eslint-disable-next-line no-console
-    else console.error('Failed to process stream: ', e)
+    console.error('Failed to process stream: ', e)
   } finally {
     reader.releaseLock()
+
     try {
       if (signal?.aborted) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (writable as any)?.abort?.()
+        await writable?.abort()
       } else {
         await writable?.close()
       }
@@ -68,6 +74,7 @@ const streamToBlob = async (
   try {
     let done = false
     let progress = 0
+
     while (!done) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
 
@@ -119,8 +126,7 @@ const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[
 
   const handles: FileInfoWithHandle[] = []
 
-  for (let i = 0; i < infoList.length; i++) {
-    const info = infoList[i]
+  for (const info of infoList) {
     const name = info.name
     const mimeType = guessMime(name, info.customMetadata)
 
