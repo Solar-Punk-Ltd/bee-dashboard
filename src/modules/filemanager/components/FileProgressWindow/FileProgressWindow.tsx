@@ -89,9 +89,13 @@ export function FileProgressWindow({
 
   const allDone =
     rows.length > 0 &&
-    rows.every(r =>
-      Number.isFinite(r.percent) ? Math.round(r.percent as number) >= 100 : r.status === TransferStatus.Done,
-    )
+    rows.every(r => {
+      const pct = Number.isFinite(r.percent) ? Math.round(r.percent as number) : undefined
+
+      return (
+        r.status === TransferStatus.Done || r.status === TransferStatus.Error || (typeof pct === 'number' && pct >= 100)
+      )
+    })
 
   useLayoutEffect(() => {
     const rowEl = firstRowRef.current
@@ -139,6 +143,8 @@ export function FileProgressWindow({
             : undefined
 
           const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
+          const canDismiss =
+            isComplete || file.status === TransferStatus.Error || (typeof pctNum === 'number' ? pctNum === 0 : true)
           const transferInfo = getTransferInfo(file, pctNum)
           const uiName = file.name
 
@@ -177,10 +183,10 @@ export function FileProgressWindow({
 
                   <button
                     className="fm-file-progress-window-row-close"
-                    aria-label={isComplete ? 'Dismiss' : 'Dismiss (disabled until complete)'}
-                    disabled={!isComplete}
+                    aria-label={canDismiss ? 'Dismiss' : 'Dismiss (disabled)'}
+                    disabled={!canDismiss}
                     onClick={() => {
-                      if (isComplete) onRowClose?.(file.name)
+                      if (canDismiss) onRowClose?.(file.name)
                     }}
                     type="button"
                   >

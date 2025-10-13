@@ -83,46 +83,45 @@ const streamToBlob = async (
 interface FileInfoWithHandle {
   info: FileInfo
   handle?: FileSystemFileHandle
+  cancelled?: boolean
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isPickerSupported = (): boolean => typeof (window as any).showSaveFilePicker === 'function'
 
 const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[] | undefined> => {
   const defaultDownloadFolder = 'downloads'
-  const fileHandles: FileInfoWithHandle[] = []
 
-  for (const info of infoList) {
+  if (!isPickerSupported()) return infoList.map(info => ({ info }))
+
+  const handles: FileInfoWithHandle[] = []
+
+  for (let i = 0; i < infoList.length; i++) {
+    const info = infoList[i]
     const name = info.name
     const mimeType = guessMime(name, info.customMetadata)
-    let handle: FileSystemFileHandle | undefined
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      handle = (await (window as any).showSaveFilePicker({
+      const handle = (await (window as any).showSaveFilePicker({
         suggestedName: name,
         startIn: defaultDownloadFolder,
-        types: [
-          {
-            accept: {
-              [mimeType]: [`.${getExtensionFromName(name)}`],
-            },
-          },
-        ],
+        types: [{ accept: { [mimeType]: [`.${getExtensionFromName(name)}`] } }],
       })) as FileSystemFileHandle
+
+      handles.push({ info, handle })
     } catch (error: unknown) {
-      if ((error as Error).name === 'AbortError') {
-        return
+      const errName = (error as { name?: string })?.name
+
+      if (errName === 'AbortError' || errName === 'NotAllowedError' || errName === 'SecurityError') {
+        handles.push({ info, cancelled: true })
+      } else {
+        return undefined
       }
-
-      // eslint-disable-next-line no-console
-      console.error(`Error getting file handle ${error}, using fallback download`)
     }
-
-    fileHandles.push({
-      info,
-      handle,
-    })
   }
 
-  return fileHandles
+  return handles
 }
 
 const downloadToDisk = async (
@@ -204,29 +203,23 @@ export const startDownloadingQueue = async (
   isOpenWindow?: boolean,
 ): Promise<void> => {
   try {
-    let fileHandles: FileInfoWithHandle[] | undefined
+    const fileHandles: FileInfoWithHandle[] | undefined = isOpenWindow
+      ? infoList.map(info => ({ info }))
+      : await getFileHandles(infoList)
 
-    if (isOpenWindow) {
-      fileHandles = infoList.map(info => ({ info }))
-    } else {
-      fileHandles = await getFileHandles(infoList)
-    }
+    if (!fileHandles) return
 
-    if (!fileHandles) {
-      return
-    }
+    for (const fh of fileHandles) {
+      if (fh.cancelled) {
+        onDownloadProgress?.(-1, false)
+      } else {
+        const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
 
-    for (const { info, handle } of fileHandles) {
-      const dataStreams = (await fm.download(info)) as ReadableStream<Uint8Array>[]
-
-      if (isOpenWindow || !handle) {
-        await downloadToBlob(dataStreams, info, onDownloadProgress, isOpenWindow)
-
-        return
-      }
-
-      if (handle) {
-        await downloadToDisk(dataStreams, handle, onDownloadProgress)
+        if (isOpenWindow || !fh.handle) {
+          await downloadToBlob(dataStreams, fh.info, onDownloadProgress, isOpenWindow)
+        } else {
+          await downloadToDisk(dataStreams, fh.handle, onDownloadProgress)
+        }
       }
     }
   } catch (error: unknown) {
