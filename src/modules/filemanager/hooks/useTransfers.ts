@@ -6,6 +6,7 @@ import { formatBytes } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
+import { abortDownload } from '../utils/download'
 
 type ResolveResult = {
   cancelled: boolean
@@ -506,7 +507,7 @@ export function useTransfers() {
         name,
         size,
         percent: 0,
-        status: TransferStatus.Uploading,
+        status: TransferStatus.Downloading,
         kind: FileTransferType.Download,
         driveName,
         startedAt: undefined,
@@ -647,10 +648,20 @@ export function useTransfers() {
     })
   }
 
-  const dismissDownload = (name: string) => {
-    if (isMountedRef.current) {
-      setDownloadItems(prev => prev.filter(it => it.name !== name))
-    }
+  const cancelOrDismissDownload = (name: string) => {
+    setDownloadItems(prev => {
+      const row = prev.find(r => r.name === name)
+
+      if (!row) return prev
+
+      if (row.status === TransferStatus.Downloading) {
+        abortDownload(name)
+
+        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+      }
+
+      return prev.filter(r => r.name !== name)
+    })
   }
 
   const dismissAllUploads = () => {
@@ -680,7 +691,7 @@ export function useTransfers() {
     isDownloading,
     downloadItems,
     conflictPortal,
-    dismissDownload,
+    cancelOrDismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
     cancelOrDismissUpload,

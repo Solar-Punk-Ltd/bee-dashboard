@@ -143,12 +143,13 @@ export function FileProgressWindow({
             : undefined
 
           const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
-          const isUpload =
-            (file.kind ?? type) === FileTransferType.Upload || (file.kind ?? type) === FileTransferType.Update
+          const isActive =
+            file.status === TransferStatus.Uploading ||
+            file.status === TransferStatus.Downloading ||
+            file.status === TransferStatus.Queued
 
-          const canDismiss = isUpload
-            ? file.status !== TransferStatus.Done
-            : isComplete || file.status === TransferStatus.Error
+          const canDismiss = isActive || isComplete || file.status === TransferStatus.Error
+          const rowActionLabel = isActive ? 'Cancel' : 'Dismiss'
 
           const transferInfo = getTransferInfo(file, pctNum)
           const uiName = file.name
@@ -188,11 +189,9 @@ export function FileProgressWindow({
 
                   <button
                     className="fm-file-progress-window-row-close"
-                    aria-label={canDismiss ? 'Dismiss' : 'Dismiss (disabled)'}
+                    aria-label={rowActionLabel}
                     disabled={!canDismiss}
-                    onClick={() => {
-                      if (canDismiss) onRowClose?.(file.name)
-                    }}
+                    onClick={() => onRowClose?.(file.name)}
                     type="button"
                   >
                     <CloseIcon size="14" />

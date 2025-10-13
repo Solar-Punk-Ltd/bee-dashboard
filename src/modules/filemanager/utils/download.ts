@@ -1,13 +1,48 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
 
+const downloadAborters = new Map<string, AbortController>()
+
+export function createDownloadAbort(name: string): void {
+  if (!downloadAborters.has(name)) downloadAborters.set(name, new AbortController())
+}
+
+export function getDownloadSignal(name: string): AbortSignal | undefined {
+  return downloadAborters.get(name)?.signal
+}
+
+export function abortDownload(name: string): void {
+  const ac = downloadAborters.get(name)
+  try {
+    ac?.abort()
+  } catch {
+    /* no-op */
+  }
+  downloadAborters.delete(name)
+}
+
+async function withAbortSignal<T>(signal: AbortSignal | undefined, fn: () => Promise<T>): Promise<T> {
+  if (!signal) return fn()
+  const originalFetch = window.fetch
+  window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    const merged: RequestInit = { ...(init || {}), signal: init?.signal ?? signal }
+
+    return originalFetch(input as RequestInfo | URL, merged)
+  }) as typeof window.fetch
+  try {
+    return await fn()
+  } finally {
+    window.fetch = originalFetch
+  }
+}
+
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
   fileHandle: FileSystemFileHandle,
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  signal?: AbortSignal,
 ): Promise<void> => {
   const reader = stream.getReader()
-
   let writable: WritableStreamDefaultWriter<Uint8Array> | undefined
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,25 +51,32 @@ const processStream = async (
     let done = false
     let progress = 0
     while (!done) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+
       const { value, done: streamDone } = await reader.read()
 
       if (value) {
         await writable.write(value)
         progress += value.length
       }
-
       done = streamDone
-
-      if (onDownloadProgress) onDownloadProgress(progress, !done)
+      onDownloadProgress?.(progress, !done)
     }
   } catch (e: unknown) {
+    if ((e as { name?: string }).name === 'AbortError') onDownloadProgress?.(-1, false)
     // eslint-disable-next-line no-console
-    console.error('Failed to process stream: ', e)
+    else console.error('Failed to process stream: ', e)
   } finally {
     reader.releaseLock()
-
-    if (writable) {
-      await writable.close()
+    try {
+      if (signal?.aborted) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (writable as any)?.abort?.()
+      } else {
+        await writable?.close()
+      }
+    } catch {
+      /* no-op */
     }
   }
 }
@@ -43,14 +85,16 @@ const streamToBlob = async (
   stream: ReadableStream<Uint8Array>,
   mimeType: string,
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  signal?: AbortSignal,
 ): Promise<Blob | undefined> => {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
-
   try {
     let done = false
     let progress = 0
     while (!done) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+
       const { value, done: streamDone } = await reader.read()
 
       if (value) {
@@ -58,23 +102,26 @@ const streamToBlob = async (
         progress += value.length
       }
       done = streamDone
-
-      if (onDownloadProgress) onDownloadProgress(progress, !done)
+      onDownloadProgress?.(progress, !done)
     }
   } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during stream processing: ', error)
+    if ((error as { name?: string }).name === 'AbortError') {
+      onDownloadProgress?.(-1, false)
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('Error during stream processing: ', error)
+    }
 
     return
   } finally {
     reader.releaseLock()
   }
 
-  const combined = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+  const combined = new Uint8Array(chunks.reduce((acc, c) => acc + c.length, 0))
   let offset = 0
-  for (const chunk of chunks) {
-    combined.set(chunk, offset)
-    offset += chunk.length
+  for (const c of chunks) {
+    combined.set(c, offset)
+    offset += c.length
   }
 
   return new Blob([combined], { type: mimeType })
@@ -128,15 +175,50 @@ const downloadToDisk = async (
   streams: ReadableStream<Uint8Array>[],
   handle: FileSystemFileHandle,
   onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  signal?: AbortSignal,
 ): Promise<void> => {
   try {
     for (const stream of streams) {
-      // TODO: is await needed here?
-      await processStream(stream, handle, onDownloadProgress)
+      await processStream(stream, handle, onDownloadProgress, signal)
     }
   } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during download to disk: ', error)
+    if ((error as { name?: string }).name !== 'AbortError') {
+      // eslint-disable-next-line no-console
+      console.error('Error during download to disk: ', error)
+    }
+  }
+}
+
+const downloadToBlob = async (
+  streams: ReadableStream<Uint8Array>[],
+  info: FileInfo,
+  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  isOpenWindow?: boolean,
+  signal?: AbortSignal,
+): Promise<void> => {
+  try {
+    for (const stream of streams) {
+      const mime = guessMime(info.name, info.customMetadata)
+      const blob = await streamToBlob(stream, mime, onDownloadProgress, signal)
+
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        let opened = false
+
+        if (isOpenWindow) {
+          opened = openNewWindow(info.name, mime, url)
+        }
+
+        if (!opened) {
+          downloadFromUrl(url, info.name)
+        }
+      }
+    }
+  } catch (error: unknown) {
+    if ((error as { name?: string }).name !== 'AbortError') {
+      // eslint-disable-next-line no-console
+      console.error('Error during download and open: ', error)
+    }
   }
 }
 
@@ -153,37 +235,6 @@ const openNewWindow = (name: string, mime: string, url: string): boolean => {
   win?.close()
 
   return false
-}
-
-const downloadToBlob = async (
-  streams: ReadableStream<Uint8Array>[],
-  info: FileInfo,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
-  isOpenWindow?: boolean,
-): Promise<void> => {
-  try {
-    for (const stream of streams) {
-      const mime = guessMime(info.name, info.customMetadata)
-      const blob = await streamToBlob(stream, mime, onDownloadProgress)
-
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-
-        let openSuccess = false
-
-        if (isOpenWindow) {
-          openSuccess = openNewWindow(info.name, mime, url)
-        }
-
-        if (!openSuccess) {
-          downloadFromUrl(url, info.name)
-        }
-      }
-    }
-  } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during download and open: ', error)
-  }
 }
 
 const downloadFromUrl = (url: string, fileName: string): void => {
@@ -210,20 +261,30 @@ export const startDownloadingQueue = async (
     if (!fileHandles) return
 
     for (const fh of fileHandles) {
+      const name = fh.info.name
+      createDownloadAbort(name)
+      const signal = getDownloadSignal(name)
+
       if (fh.cancelled) {
         onDownloadProgress?.(-1, false)
       } else {
-        const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
+        await withAbortSignal(signal, async () => {
+          const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
 
-        if (isOpenWindow || !fh.handle) {
-          await downloadToBlob(dataStreams, fh.info, onDownloadProgress, isOpenWindow)
-        } else {
-          await downloadToDisk(dataStreams, fh.handle, onDownloadProgress)
-        }
+          if (isOpenWindow || !fh.handle) {
+            await downloadToBlob(dataStreams, fh.info, onDownloadProgress, isOpenWindow, signal)
+          } else {
+            await downloadToDisk(dataStreams, fh.handle, onDownloadProgress, signal)
+          }
+        })
       }
+
+      abortDownload(name)
     }
   } catch (error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error('Error during downloading queue: ', error)
+    if ((error as { name?: string }).name !== 'AbortError') {
+      // eslint-disable-next-line no-console
+      console.error('Error during downloading queue: ', error)
+    }
   }
 }

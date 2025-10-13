@@ -39,7 +39,7 @@ export function FileBrowser(): ReactElement {
     trackDownload,
     conflictPortal,
     cancelOrDismissUpload,
-    dismissDownload,
+    cancelOrDismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
   } = useTransfers()
@@ -482,7 +482,7 @@ export function FileBrowser(): ReactElement {
             open={isDownloading}
             count={downloadItems.length}
             items={downloadItems}
-            onRowClose={name => dismissDownload(name)}
+            onRowClose={name => cancelOrDismissDownload(name)}
             onCloseAll={() => dismissAllDownloads()}
           />
           <NotificationBar />
