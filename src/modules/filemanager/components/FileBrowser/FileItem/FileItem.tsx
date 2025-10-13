@@ -244,7 +244,7 @@ export function FileItem({
     const downloadItem = isBulk ? (
       <MenuItem onClick={onBulk.download}>Download</MenuItem>
     ) : (
-      <MenuItem onClick={handleDownload}>Download</MenuItem>
+      <MenuItem onClick={() => handleDownload(false)}>Download</MenuItem>
     )
 
     const getInfoItem = (

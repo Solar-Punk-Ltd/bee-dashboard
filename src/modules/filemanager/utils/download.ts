@@ -1,39 +1,15 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
+import { AbortManager } from './abortManager'
 
-const downloadAborters = new Map<string, AbortController>()
+const downloadAborts = new AbortManager()
 
 export function createDownloadAbort(name: string): void {
-  if (!downloadAborters.has(name)) downloadAborters.set(name, new AbortController())
-}
-
-export function getDownloadSignal(name: string): AbortSignal | undefined {
-  return downloadAborters.get(name)?.signal
+  downloadAborts.create(name)
 }
 
 export function abortDownload(name: string): void {
-  const ac = downloadAborters.get(name)
-  try {
-    ac?.abort()
-  } catch {
-    /* no-op */
-  }
-  downloadAborters.delete(name)
-}
-
-async function withAbortSignal<T>(signal: AbortSignal | undefined, fn: () => Promise<T>): Promise<T> {
-  if (!signal) return fn()
-  const originalFetch = window.fetch
-  window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-    const merged: RequestInit = { ...(init || {}), signal: init?.signal ?? signal }
-
-    return originalFetch(input as RequestInfo | URL, merged)
-  }) as typeof window.fetch
-  try {
-    return await fn()
-  } finally {
-    window.fetch = originalFetch
-  }
+  downloadAborts.abort(name)
 }
 
 const processStream = async (
@@ -60,18 +36,24 @@ const processStream = async (
         progress += value.length
       }
       done = streamDone
+
       onDownloadProgress?.(progress, !done)
     }
   } catch (e: unknown) {
-    if ((e as { name?: string }).name === 'AbortError') onDownloadProgress?.(-1, false)
+    if ((e as { name?: string }).name === 'AbortError') {
+      onDownloadProgress?.(-1, false)
+
+      return
+    }
+
     // eslint-disable-next-line no-console
     else console.error('Failed to process stream: ', e)
   } finally {
     reader.releaseLock()
+
     try {
       if (signal?.aborted) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (writable as any)?.abort?.()
+        await writable?.abort()
       } else {
         await writable?.close()
       }
@@ -92,6 +74,7 @@ const streamToBlob = async (
   try {
     let done = false
     let progress = 0
+
     while (!done) {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
 
@@ -263,12 +246,12 @@ export const startDownloadingQueue = async (
     for (const fh of fileHandles) {
       const name = fh.info.name
       createDownloadAbort(name)
-      const signal = getDownloadSignal(name)
+      const signal = downloadAborts.getSignal(name)
 
       if (fh.cancelled) {
         onDownloadProgress?.(-1, false)
       } else {
-        await withAbortSignal(signal, async () => {
+        await downloadAborts.withSignal(name, async () => {
           const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
 
           if (isOpenWindow || !fh.handle) {
