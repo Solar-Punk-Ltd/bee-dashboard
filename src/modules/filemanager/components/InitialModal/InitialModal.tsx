@@ -62,7 +62,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
       if (isMountedRef.current) setter(value)
     }
 
-  // use guarded setters
   const safeSetProgress = safeSet(setIsAdminStampCreationInProgress)
   const handleExistingAdminDrive = useCallback(() => {
     if (!selectedBatch || !isMountedRef.current) return

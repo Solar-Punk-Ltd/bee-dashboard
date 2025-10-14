@@ -7,13 +7,12 @@ import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { Context as FMContext } from '../../providers/FileManager'
+import { Context as FMContext, getSignerPk } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-import { KEY_STORAGE } from '../../modules/filemanager/utils/common'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
-  const [hasPk, setHasPk] = useState<boolean>(() => Boolean(localStorage.getItem(KEY_STORAGE)))
+  const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const { fm, adminDrive, initializationError, adminStamp, getStoredState, init } = useContext(FMContext)
 
   useEffect(() => {

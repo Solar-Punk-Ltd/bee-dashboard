@@ -47,7 +47,7 @@ const processStream = async (
     }
 
     // eslint-disable-next-line no-console
-    else console.error('Failed to process stream: ', e)
+    console.error('Failed to process stream: ', e)
   } finally {
     reader.releaseLock()
 
