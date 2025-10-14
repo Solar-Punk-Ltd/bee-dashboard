@@ -13,35 +13,46 @@ import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKey
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
-  const { fm, adminDrive, initializationError, adminStamp, getStoredState, init } = useContext(FMContext)
+  const { fm, adminDrive, initializationError, adminStamp, getStoredState, savedAdminStatus } = useContext(FMContext)
 
   useEffect(() => {
-    if (!hasPk || fm) return
-    const storedState = getStoredState()
-    setShowInitialModal(!storedState?.adminBatchId)
-  }, [hasPk, fm, getStoredState])
+    if (!hasPk) {
+      setShowInitialModal(false)
 
-  useEffect(() => {
-    if (!hasPk) return
+      return
+    }
 
-    if (fm) setShowInitialModal(false)
-  }, [hasPk, fm])
+    if (fm) {
+      setShowInitialModal(false)
+
+      return
+    }
+
+    const hasStoredAdmin = Boolean(getStoredState()?.adminBatchId)
+
+    if (!hasStoredAdmin) {
+      setShowInitialModal(true)
+
+      return
+    }
+
+    if (savedAdminStatus?.checked && !savedAdminStatus.usable) {
+      setShowInitialModal(true)
+
+      return
+    }
+
+    setShowInitialModal(false)
+  }, [hasPk, fm, getStoredState, savedAdminStatus?.checked, savedAdminStatus?.usable])
 
   if (!hasPk) {
     return (
       <div className="fm-main">
         <PrivateKeyModal
-          onSaved={async () => {
+          onSaved={() => {
             setHasPk(true)
-
-            const stored = getStoredState()
-            const batchId = stored?.adminBatchId
-
-            setShowInitialModal(!batchId)
-
-            if (batchId) {
-              await init(batchId)
-            }
+            const hasStored = Boolean(getStoredState()?.adminBatchId)
+            setShowInitialModal(!hasStored)
           }}
         />
       </div>

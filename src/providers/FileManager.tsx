@@ -13,6 +13,14 @@ type FMStorageState = {
   adminBatchId: string
 }
 
+type SavedAdminStatus = {
+  id: string
+  short: string
+  expired: boolean
+  usable: boolean
+  checked: boolean
+}
+
 export function getSignerPk(): PrivateKey | undefined {
   try {
     const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
@@ -64,6 +72,7 @@ interface ContextInterface {
   setStoredState: (state: FMStorageState) => void
   showUploadError?: boolean
   setShowUploadError: (show: boolean) => void
+  savedAdminStatus: SavedAdminStatus | null
 }
 
 const initialValues: ContextInterface = {
@@ -86,6 +95,7 @@ const initialValues: ContextInterface = {
   setStoredState: () => {}, // eslint-disable-line
   showUploadError: false,
   setShowUploadError: () => {}, // eslint-disable-line
+  savedAdminStatus: null,
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -106,6 +116,7 @@ export function Provider({ children }: Props) {
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
   const [showUploadError, setShowUploadError] = useState<boolean>(false)
+  const [savedAdminStatus, setSavedAdminStatus] = useState<SavedAdminStatus | null>(null)
 
   const refreshFiles = useCallback((): void => {
     if (fm) {
@@ -134,6 +145,15 @@ export function Provider({ children }: Props) {
       batchId?: string,
       adminDriveReadyCallback?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
     ): Promise<boolean> => {
+      setInitializationError(false)
+      setFm(null)
+      setFiles([])
+      setDrives([])
+      setAdminDrive(null)
+      setAdminStamp(null)
+      setCurrentDrive(undefined)
+      setCurrentStamp(undefined)
+
       const pk = getSignerPk()
 
       if (!apiUrl || !pk) return false
@@ -163,12 +183,23 @@ export function Provider({ children }: Props) {
             })()
           }
 
-          if (tmpAdminDrive && !getStoredState()) {
-            setStoredState({
+          const prev = getStoredState()
+
+          if (tmpAdminDrive) {
+            const next = {
               adminDriveId: tmpAdminDrive.id.toString(),
               adminDriveName: tmpAdminDrive.name,
               adminBatchId: tmpAdminDrive.batchId.toString(),
-            })
+            }
+
+            if (
+              !prev ||
+              prev.adminDriveId !== next.adminDriveId ||
+              prev.adminBatchId !== next.adminBatchId ||
+              prev.adminDriveName !== next.adminDriveName
+            ) {
+              setStoredState(next)
+            }
           }
 
           setDrives(allDrives.filter(d => !d.isAdmin))
@@ -253,22 +284,45 @@ export function Provider({ children }: Props) {
 
     const initFromLocalState = async () => {
       const storedState = getStoredState()
+      const savedId = storedState?.adminBatchId
 
-      if (storedState?.adminBatchId) {
-        const usableStamps = await getUsableStamps(beeApi)
-        const adminBatch = usableStamps.find(s => s.batchID.toString() === storedState.adminBatchId)
+      if (!savedId) {
+        setSavedAdminStatus(null)
 
-        if (adminBatch) {
-          await init(storedState.adminBatchId, () => {
-            setAdminStamp(adminBatch)
+        return
+      }
+
+      try {
+        const batch = await beeApi.getPostageBatch(savedId)
+        const endDate = batch?.duration?.toEndDate?.()
+        const expired = !batch || batch.usable === false || (endDate instanceof Date && endDate.getTime() <= Date.now())
+
+        setSavedAdminStatus({
+          id: savedId,
+          short: savedId.slice(0, 8),
+          expired,
+          usable: Boolean(batch && batch.usable && !expired),
+          checked: true,
+        })
+
+        if (batch && batch.usable && !expired) {
+          await init(savedId, () => {
+            setAdminStamp(batch)
           })
         }
+      } catch {
+        setSavedAdminStatus({
+          id: savedId,
+          short: savedId.slice(0, 8),
+          expired: true,
+          usable: false,
+          checked: true,
+        })
       }
     }
 
-    initFromLocalState()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, beeApi, fm])
+    void initFromLocalState()
+  }, [init, apiUrl, beeApi, fm])
 
   return (
     <Context.Provider
@@ -292,6 +346,7 @@ export function Provider({ children }: Props) {
         setStoredState,
         showUploadError,
         setShowUploadError,
+        savedAdminStatus,
       }}
     >
       {children}

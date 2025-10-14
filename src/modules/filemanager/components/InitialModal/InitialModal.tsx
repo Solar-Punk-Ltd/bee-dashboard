@@ -51,8 +51,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setAdminStamp, refreshDrives, init } = useContext(FMContext)
-
+  const { setAdminStamp, refreshDrives, init, savedAdminStatus } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
 
@@ -63,20 +62,11 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     }
 
   const safeSetProgress = safeSet(setIsAdminStampCreationInProgress)
-  const handleExistingAdminDrive = useCallback(() => {
-    if (!selectedBatch || !isMountedRef.current) return
-
-    setAdminStamp(selectedBatch)
-    refreshDrives()
-    handleVisibility(false)
-  }, [selectedBatch, setAdminStamp, refreshDrives, handleVisibility])
-
   const handleNewAdminDriveSuccess = useCallback(
-    (batch?: PostageBatch) => {
+    async (batch?: PostageBatch) => {
       if (!isMountedRef.current) return
-
       setAdminStamp(batch || null)
-      refreshDrives()
+      await refreshDrives()
       handleVisibility(false)
     },
     [setAdminStamp, refreshDrives, handleVisibility],
@@ -114,35 +104,25 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const handleAdminDriveReady = useCallback(
     (hasExistingDrive: boolean, fmInstance: FileManagerBase) => {
       if (hasExistingDrive) {
-        if (selectedBatch) {
-          handleExistingAdminDrive()
-        }
+        if (selectedBatch) setAdminStamp(selectedBatch)
+        handleVisibility(false)
       } else {
-        createNewAdminDriveWithFm(fmInstance)
+        void createNewAdminDriveWithFm(fmInstance)
       }
     },
-    [selectedBatch, handleExistingAdminDrive, createNewAdminDriveWithFm],
+    [selectedBatch, setAdminStamp, createNewAdminDriveWithFm, handleVisibility],
   )
 
   const handleFileManagerInit = useCallback(async () => {
     safeSetProgress(true)
-
     try {
       const ok = await init(selectedBatch?.batchID.toString(), handleAdminDriveReady)
 
-      if (!ok) {
-        safeSetProgress(false)
-      }
+      if (!ok) safeSetProgress(false)
     } catch {
       safeSetProgress(false)
     }
   }, [init, selectedBatch, handleAdminDriveReady, safeSetProgress])
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -214,6 +194,9 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     [selectedBatch],
   )
 
+  const buttonLabel = selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'
+  const isPrimaryDisabled = selectedBatch ? false : !isCreateEnabled
+
   return isAdminStampCreationInProgress ? (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
@@ -228,6 +211,27 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
+        {savedAdminStatus && (
+          <div
+            className={`fm-inline-banner ${
+              savedAdminStatus.expired ? 'fm-inline-banner--error' : 'fm-inline-banner--info'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {savedAdminStatus.expired ? (
+              <>
+                Saved admin stamp <code>{savedAdminStatus.short}</code> is <b>expired / unusable</b>. Please select
+                another existing stamp below or purchase a new one to continue.
+              </>
+            ) : (
+              <>
+                A saved admin stamp <code>{savedAdminStatus.short}</code> was found. You can select it from the dropdown
+                below to reuse it, or choose a different one.
+              </>
+            )}
+          </div>
+        )}
         <div>You are now initializing the file manager</div>
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-input-container">
@@ -289,12 +293,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
           </div>
         )}
         <div className="fm-modal-window-footer">
-          <Button
-            label={selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'}
-            variant="primary"
-            disabled={selectedBatch ? false : !isCreateEnabled}
-            onClick={handleFileManagerInit}
-          />
+          <Button label={buttonLabel} variant="primary" disabled={isPrimaryDisabled} onClick={handleFileManagerInit} />
         </div>
       </div>
     </div>
