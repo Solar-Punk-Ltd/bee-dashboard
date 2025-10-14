@@ -13,22 +13,14 @@ type FMStorageState = {
   adminBatchId: string
 }
 
-function ensurePrivateKey(): PrivateKey {
-  const fromLocalPk = localStorage.getItem(KEY_STORAGE)
-
-  if (!fromLocalPk) {
-    throw new Error(`Missing private key in localStorage under key "${KEY_STORAGE}".`)
-  }
-
-  return new PrivateKey(fromLocalPk)
-}
-
-function signerPk(): PrivateKey | undefined {
+export function getSignerPk(): PrivateKey | undefined {
   try {
-    return ensurePrivateKey()
+    const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
+
+    return new PrivateKey(fromLocalPk)
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('Private key error:', err)
+    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
 
     return undefined
   }
@@ -63,7 +55,7 @@ interface ContextInterface {
   setCurrentStamp: (s: PostageBatch | undefined) => void
   refreshFiles: () => void
   refreshDrives: () => void
-  resyncFM: () => void
+  resyncFM: () => Promise<void>
   init: (
     batchId?: string,
     onAdminDriveReady?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
@@ -88,7 +80,7 @@ const initialValues: ContextInterface = {
   setCurrentStamp: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
-  resyncFM: () => {}, // eslint-disable-line
+  resyncFM: async () => {}, // eslint-disable-line
   init: async () => false, // eslint-disable-line
   getStoredState: () => undefined, // eslint-disable-line
   setStoredState: () => {}, // eslint-disable-line
@@ -142,7 +134,7 @@ export function Provider({ children }: Props) {
       batchId?: string,
       adminDriveReadyCallback?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
     ): Promise<boolean> => {
-      const pk = signerPk()
+      const pk = getSignerPk()
 
       if (!apiUrl || !pk) return false
 
@@ -253,9 +245,9 @@ export function Provider({ children }: Props) {
   }, [apiUrl, currentDrive?.id, init, setCurrentDrive])
 
   useEffect(() => {
-    if (!apiUrl || !beeApi) return
+    const pk = getSignerPk()
 
-    if (!localStorage.getItem('privateKey')) return
+    if (!apiUrl || !beeApi || !pk) return
 
     if (fm) return
 

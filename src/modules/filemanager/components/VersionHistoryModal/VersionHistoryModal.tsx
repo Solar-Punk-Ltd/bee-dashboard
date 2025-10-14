@@ -188,7 +188,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
       const doRefreshAndClose = () => {
         onCancelClick()
         setTimeout(() => {
-          refreshFiles?.()
+          refreshFiles()
         }, 0)
       }
 

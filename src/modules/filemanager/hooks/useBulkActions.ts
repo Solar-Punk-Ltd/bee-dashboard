@@ -65,7 +65,7 @@ export function useBulkActions(opts: {
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
       await Promise.allSettled(list.map(f => fm.trashFile(f)))
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
       clearAll()
     },
     [fm, refreshFiles, clearAll],
@@ -75,7 +75,7 @@ export function useBulkActions(opts: {
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
       await Promise.allSettled(list.map(f => fm.recoverFile(f)))
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
       clearAll()
     },
     [fm, refreshFiles, clearAll],
@@ -85,7 +85,7 @@ export function useBulkActions(opts: {
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
       await Promise.allSettled(list.map(f => fm.forgetFile(f)))
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
       clearAll()
     },
     [fm, refreshFiles, clearAll],

@@ -1,6 +1,6 @@
 import { BatchId, Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import { FileManagerBase, DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { getHumanReadableFileSize } from 'src/utils/file'
+import { getHumanReadableFileSize } from '../../../utils/file'
 
 export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> => {
   if (!bee) {

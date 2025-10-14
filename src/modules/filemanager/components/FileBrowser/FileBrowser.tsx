@@ -2,7 +2,6 @@ import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext 
 import './FileBrowser.scss'
 import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
 import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
-import { ContextMenu } from '../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
 import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/fileTransfer'
@@ -14,9 +13,6 @@ import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
-import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
-import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
-import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -24,6 +20,24 @@ import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
+import { FileBrowserModals } from './FileBrowserModals'
+import { FileBrowserContextMenu } from './FileBrowserMenu/FileBrowserContextMenu'
+
+const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
+  const out: File[] = []
+  const items = e.clipboardData?.items ?? []
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i]
+
+    if (it.kind === 'file') {
+      const f = it.getAsFile()
+
+      if (f) out.push(f)
+    }
+  }
+
+  return out
+}
 
 export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -46,7 +60,7 @@ export function FileBrowser(): ReactElement {
 
   const { query, scope, includeActive, includeTrashed } = useSearch()
 
-  const [safePos, setSafePos] = useState<Point>(pos as Point)
+  const [safePos, setSafePos] = useState<Point>(pos)
   const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
 
   const legacyUploadRef = useRef<HTMLInputElement | null>(null)
@@ -88,9 +102,9 @@ export function FileBrowser(): ReactElement {
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files
-
-    if (f && f.length) uploadFiles(f)
     e.target.value = ''
+
+    if (f?.length) uploadFiles(f)
   }
 
   const onContextUploadFile = () => {
@@ -98,88 +112,120 @@ export function FileBrowser(): ReactElement {
     el?.click()
   }
 
-  const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
-    const out: File[] = []
-    const items = e.clipboardData?.items ?? []
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i]
-
-      if (it.kind === 'file') {
-        const f = it.getAsFile()
-
-        if (f) out.push(f)
-      }
-    }
-
-    return out
-  }
-
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const files = extractFilesFromClipboardEvent(e)
 
-    if (files.length > 0) {
-      e.preventDefault()
-      uploadFiles(files)
-    }
+    if (files.length === 0) return
+
+    e.preventDefault()
+    uploadFiles(files)
   }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
     e.preventDefault()
     e.stopPropagation()
-    handleContextMenu(e.nativeEvent as unknown as React.MouseEvent<HTMLDivElement>)
+    handleContextMenu(e)
+  }
+
+  const handleDeleteModalProceed = async (action: FileAction) => {
+    setShowBulkDeleteModal(false)
+
+    if (action === FileAction.Trash) {
+      return await bulk.bulkTrash(bulk.selectedFiles)
+    }
+
+    if (action === FileAction.Forget) {
+      return setConfirmBulkForget(true)
+    }
+
+    if (action === FileAction.Destroy) {
+      return setShowDestroyDriveModal(true)
+    }
+  }
+
+  const handleDestroyDriveConfirm = async () => {
+    if (!currentDrive) return
+
+    await handleDestroyDrive(
+      beeApi,
+      fm,
+      currentDrive,
+      () => {
+        refreshFiles()
+        setShowDestroyDriveModal(false)
+      },
+      error => {
+        // eslint-disable-next-line no-console
+        console.error('Error destroying drive:', error)
+      },
+    )
+  }
+
+  const handleUploadClose = (name: string) => {
+    const row = uploadItems.find(i => i.name === name)
+
+    if (row?.status === TransferStatus.Uploading) {
+      setPendingCancelUpload(name)
+    } else {
+      cancelOrDismissUpload(name)
+    }
+  }
+
+  const updateContextMenuPosition = () => {
+    const menu = contextRef.current
+    const body = bodyRef.current
+
+    if (!menu || !isMountedRef.current) return
+
+    const rect = menu.getBoundingClientRect()
+    const containerRect = body?.getBoundingClientRect() ?? null
+
+    const { safePos: sp, dropDir: dd } = computeContextMenuPosition({
+      clickPos: pos,
+      menuRect: rect,
+      viewport: { w: window.innerWidth, h: window.innerHeight },
+      margin: 8,
+      containerRect,
+    })
+
+    const topLeft = containerRect
+      ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
+      : sp
+    setSafePos(topLeft)
+    setDropDir(dd)
+    rafIdRef.current = null
   }
 
   useLayoutEffect(() => {
     if (!showContext) return
 
-    if (rafIdRef.current !== null) {
+    if (rafIdRef.current) {
       cancelAnimationFrame(rafIdRef.current)
     }
 
-    rafIdRef.current = requestAnimationFrame(() => {
-      if (!isMountedRef.current) return
-
-      const menu = contextRef.current
-      const body = bodyRef.current
-
-      if (!menu) return
-
-      const rect = menu.getBoundingClientRect()
-      const vw = window.innerWidth
-      const vh = window.innerHeight
-      const containerRect = body?.getBoundingClientRect() ?? null
-
-      const { safePos: sp, dropDir: dd } = computeContextMenuPosition({
-        clickPos: pos as Point,
-        menuRect: rect,
-        viewport: { w: vw, h: vh },
-        margin: 8,
-        containerRect,
-      })
-
-      if (isMountedRef.current) {
-        const topLeft = containerRect
-          ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
-          : sp
-        setSafePos(topLeft)
-        setDropDir(dd)
-      }
-      rafIdRef.current = null
-    })
+    rafIdRef.current = requestAnimationFrame(updateContextMenuPosition)
 
     return () => {
-      if (rafIdRef.current !== null) {
+      if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showContext, pos, contextRef])
 
   useEffect(() => {
-    const title = isSearchMode
-      ? `Search results${scope === 'selected' && currentDrive?.name ? ` — ${currentDrive.name}` : ''}`
-      : currentDrive?.name || ''
+    let title = currentDrive?.name || ''
+
+    if (isSearchMode) {
+      title = 'Search results'
+
+      if (scope === 'selected' && currentDrive?.name) {
+        title += ` — ${currentDrive.name}`
+      }
+    }
+
     setActualItemView?.(title)
   }, [isSearchMode, scope, currentDrive, setActualItemView])
 
@@ -194,7 +240,7 @@ export function FileBrowser(): ReactElement {
     return () => {
       isMountedRef.current = false
 
-      if (rafIdRef.current !== null) {
+      if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current)
       }
     }
@@ -203,7 +249,7 @@ export function FileBrowser(): ReactElement {
   const doRefresh = async () => {
     handleCloseContext()
 
-    if (isRefreshing || !resyncFM) return
+    if (!isRefreshing) return
 
     setIsRefreshing(true)
 
@@ -215,6 +261,10 @@ export function FileBrowser(): ReactElement {
       }
     }
   }
+
+  const showDeleteModal = showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File
+  const showDragOverlay = isDragging && Boolean(currentDrive)
+  const fileCountText = bulk.selectedFiles.length === 1 ? 'file' : 'files'
 
   return (
     <>
@@ -266,92 +316,23 @@ export function FileBrowser(): ReactElement {
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
               >
-                {(() => {
-                  if (drives.length === 0) {
-                    return (
-                      <ContextMenu>
-                        <div className="fm-context-item" onClick={doRefresh}>
-                          Refresh
-                        </div>
-                      </ContextMenu>
-                    )
-                  }
-
-                  if (bulk.selectedFiles.length > 1) {
-                    return (
-                      <ContextMenu>
-                        <div className="fm-context-item" onClick={() => bulk.bulkDownload(bulk.selectedFiles)}>
-                          Download
-                        </div>
-                        {view === ViewType.File ? (
-                          <div className="fm-context-item red" onClick={() => setShowBulkDeleteModal(true)}>
-                            Delete…
-                          </div>
-                        ) : (
-                          <>
-                            <div className="fm-context-item" onClick={() => bulk.bulkRestore(bulk.selectedFiles)}>
-                              Restore
-                            </div>
-                            <div className="fm-context-item red" onClick={() => setShowDestroyDriveModal(true)}>
-                              Destroy
-                            </div>
-                            <div className="fm-context-item red" onClick={() => bulk.bulkForget(bulk.selectedFiles)}>
-                              Forget permanently
-                            </div>
-                          </>
-                        )}
-                      </ContextMenu>
-                    )
-                  }
-
-                  if (view === ViewType.Trash) {
-                    return <div className="fm-context-item"></div>
-                  }
-
-                  return (
-                    <ContextMenu>
-                      <div className="fm-context-item" style={{ display: 'none' }}>
-                        New folder
-                      </div>
-                      <div className="fm-context-item" onClick={onContextUploadFile}>
-                        Upload file(s)
-                      </div>
-                      <div className="fm-context-item" style={{ display: 'none' }}>
-                        Upload folder
-                      </div>
-                      <div className="fm-context-item-border" />
-                      <div
-                        className="fm-context-item"
-                        role="menuitem"
-                        aria-disabled="true"
-                        tabIndex={-1}
-                        onMouseDown={e => e.stopPropagation()}
-                        onClick={e => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                        }}
-                      >
-                        <span>Paste</span>
-                        <span
-                          className="fm-info fm-info--inline"
-                          data-tip="Tip: Use ⌘V / Ctrl+V or Browser → Edit → Paste."
-                          aria-label="Paste help"
-                        >
-                          i
-                        </span>
-                      </div>
-                      <div className="fm-context-item-border" />
-                      <div className="fm-context-item" onClick={doRefresh}>
-                        Refresh
-                      </div>
-                    </ContextMenu>
-                  )
-                })()}
+                <FileBrowserContextMenu
+                  drives={drives}
+                  view={view}
+                  selectedFilesCount={bulk.selectedFiles.length}
+                  onRefresh={doRefresh}
+                  onUploadFile={onContextUploadFile}
+                  onBulkDownload={() => bulk.bulkDownload(bulk.selectedFiles)}
+                  onBulkRestore={() => bulk.bulkRestore(bulk.selectedFiles)}
+                  onBulkDelete={() => setShowBulkDeleteModal(true)}
+                  onBulkDestroy={() => setShowDestroyDriveModal(true)}
+                  onBulkForget={() => bulk.bulkForget(bulk.selectedFiles)}
+                />
               </div>
             )}
           </div>
 
-          {isDragging && currentDrive && (
+          {showDragOverlay && (
             <div
               className="fm-drag-overlay"
               onDragOver={e => {
@@ -364,69 +345,32 @@ export function FileBrowser(): ReactElement {
             </div>
           )}
 
-          {showBulkDeleteModal && bulk.selectedFiles.length > 0 && view === ViewType.File && (
-            <DeleteFileModal
-              names={bulk.selectedFiles.map(f => f.name)}
-              currentDriveName={currentDrive?.name}
-              onCancelClick={() => setShowBulkDeleteModal(false)}
-              onProceed={async action => {
-                setShowBulkDeleteModal(false)
-
-                if (action === FileAction.Trash) {
-                  await bulk.bulkTrash(bulk.selectedFiles)
-                } else if (action === FileAction.Forget) {
-                  setConfirmBulkForget(true)
-                } else if (action === FileAction.Destroy) {
-                  setShowDestroyDriveModal(true)
-                }
-              }}
-            />
-          )}
-
-          {confirmBulkForget && (
-            <ConfirmModal
-              title="Forget permanently?"
-              message={
-                <>
-                  This removes <b>{bulk.selectedFiles.length}</b> file
-                  {bulk.selectedFiles.length > 1 ? 's' : ''} from your view.
-                  <br />
-                  The data remains on Swarm until the drive expires.
-                </>
+          <FileBrowserModals
+            showDeleteModal={showDeleteModal}
+            selectedFiles={bulk.selectedFiles}
+            fileCountText={fileCountText}
+            currentDrive={currentDrive || null}
+            confirmBulkForget={confirmBulkForget}
+            showDestroyDriveModal={showDestroyDriveModal}
+            pendingCancelUpload={pendingCancelUpload}
+            onDeleteCancel={() => setShowBulkDeleteModal(false)}
+            onDeleteProceed={handleDeleteModalProceed}
+            onForgetConfirm={async () => {
+              await bulk.bulkForget(bulk.selectedFiles)
+              setConfirmBulkForget(false)
+            }}
+            onForgetCancel={() => setConfirmBulkForget(false)}
+            onDestroyCancel={() => setShowDestroyDriveModal(false)}
+            onDestroyConfirm={handleDestroyDriveConfirm}
+            onCancelUploadConfirm={() => {
+              if (pendingCancelUpload) {
+                cancelOrDismissUpload(pendingCancelUpload)
+                setPendingCancelUpload(null)
               }
-              confirmLabel="Forget"
-              cancelLabel="Cancel"
-              onConfirm={async () => {
-                await bulk.bulkForget(bulk.selectedFiles)
-                setConfirmBulkForget(false)
-              }}
-              onCancel={() => setConfirmBulkForget(false)}
-            />
-          )}
+            }}
+            onCancelUploadCancel={() => setPendingCancelUpload(null)}
+          />
 
-          {showDestroyDriveModal && currentDrive && (
-            <DestroyDriveModal
-              drive={currentDrive}
-              onCancelClick={() => setShowDestroyDriveModal(false)}
-              doDestroy={async () => {
-                if (!currentDrive) return
-
-                await handleDestroyDrive(
-                  beeApi,
-                  fm,
-                  currentDrive,
-                  () => {
-                    refreshFiles?.()
-                    setShowDestroyDriveModal(false)
-                  },
-                  error => {
-                    // eslint-disable-next-line no-console
-                    console.error('Error destroying drive:', error)
-                  },
-                )
-              }}
-            />
-          )}
           {isRefreshing && (
             <div className="fm-refresh-overlay" aria-busy="true" aria-live="polite">
               <div className="fm-refresh-content">
@@ -434,27 +378,6 @@ export function FileBrowser(): ReactElement {
                 <span className="fm-refresh-text">Syncing latest files…</span>
               </div>
             </div>
-          )}
-          {pendingCancelUpload && (
-            <ConfirmModal
-              title="Cancel upload?"
-              message={
-                <>
-                  Stopping now will cancel the network request. Data already transmitted cannot be reverted.{' '}
-                  <b>We will try our best to clean up the transmitted data.</b>
-                  <br />
-                  To remove any (remaining) cancelled items from your browser view later, use{' '}
-                  <i>Right-click → Delete → Forget</i>.
-                </>
-              }
-              confirmLabel="Cancel upload"
-              cancelLabel="Keep uploading"
-              onConfirm={() => {
-                cancelOrDismissUpload(pendingCancelUpload)
-                setPendingCancelUpload(null)
-              }}
-              onCancel={() => setPendingCancelUpload(null)}
-            />
           )}
         </div>
 
@@ -465,15 +388,7 @@ export function FileBrowser(): ReactElement {
             open={isUploading}
             count={uploadItems.length}
             items={uploadItems}
-            onRowClose={name => {
-              const row = uploadItems.find(i => i.name === name)
-
-              if (row?.status === TransferStatus.Uploading) {
-                setPendingCancelUpload(name)
-              } else {
-                cancelOrDismissUpload(name)
-              }
-            }}
+            onRowClose={handleUploadClose}
             onCloseAll={() => dismissAllUploads()}
           />
           <FileProgressNotification

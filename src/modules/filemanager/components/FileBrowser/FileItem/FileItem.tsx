@@ -154,7 +154,7 @@ export function FileItem({
       },
     }
     await fm.trashFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles?.())
+    await Promise.resolve(refreshFiles())
   }, [fm, fileInfo, refreshFiles])
 
   const doRecover = useCallback(async () => {
@@ -168,13 +168,13 @@ export function FileItem({
       },
     }
     await fm.recoverFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles?.())
+    await Promise.resolve(refreshFiles())
   }, [fm, fileInfo, refreshFiles])
 
   const doForget = useCallback(async () => {
     if (!fm) return
     await fm.forgetFile(fileInfo)
-    await Promise.resolve(refreshFiles?.())
+    await Promise.resolve(refreshFiles())
   }, [fm, fileInfo, refreshFiles])
 
   const showDestroyDrive = useCallback(() => {
@@ -206,7 +206,7 @@ export function FileItem({
         },
       )
 
-      await Promise.resolve(refreshFiles?.())
+      await Promise.resolve(refreshFiles())
     },
     [fm, currentDrive, fileInfo, takenNames, refreshFiles],
   )
@@ -541,7 +541,7 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                refreshFiles?.()
+                refreshFiles()
 
                 if (isMountedRef.current) {
                   setShowDestroyDriveModal(false)

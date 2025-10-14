@@ -1,9 +1,4 @@
-import { MouseEvent } from 'react'
-
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
-export function preventDefault(event: MouseEvent) {
-  event.preventDefault()
-}
 
 export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()

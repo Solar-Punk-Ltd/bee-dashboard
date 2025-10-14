@@ -126,7 +126,8 @@ const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[
 
   const handles: FileInfoWithHandle[] = []
 
-  for (const info of infoList) {
+  for (let i = 0; i < infoList.length; i++) {
+    const info = infoList[i]
     const name = info.name
     const mimeType = guessMime(name, info.customMetadata)
 

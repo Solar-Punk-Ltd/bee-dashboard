@@ -24,7 +24,7 @@ import {
   Utils,
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { getHumanReadableFileSize } from 'src/utils/file'
+import { getHumanReadableFileSize } from '../../../../utils/file'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
