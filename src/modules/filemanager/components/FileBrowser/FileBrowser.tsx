@@ -122,7 +122,12 @@ export function FileBrowser(): ReactElement {
   }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
+    const t = e.target as HTMLElement
+
+    if (t.closest('.fm-file-item-context-menu, .fm-file-browser-context-menu')) return
+
+    if (!e.shiftKey && t.closest('.fm-file-item-content')) return
+
     e.preventDefault()
     e.stopPropagation()
     handleContextMenu(e)
@@ -192,6 +197,7 @@ export function FileBrowser(): ReactElement {
     const topLeft = containerRect
       ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
       : sp
+
     setSafePos(topLeft)
     setDropDir(dd)
     rafIdRef.current = null
@@ -249,10 +255,8 @@ export function FileBrowser(): ReactElement {
   const doRefresh = async () => {
     handleCloseContext()
 
-    if (!isRefreshing) return
-
+    if (isRefreshing) return
     setIsRefreshing(true)
-
     try {
       await resyncFM()
     } finally {
@@ -287,7 +291,14 @@ export function FileBrowser(): ReactElement {
           onContextMenu={handleFileBrowserContextMenu}
         >
           <FileBrowserHeader key={isSearchMode ? 'hdr-search' : 'hdr-normal'} isSearchMode={isSearchMode} bulk={bulk} />
-          <div className="fm-file-browser-content-body" ref={bodyRef} onClick={handleCloseContext}>
+          <div
+            className="fm-file-browser-content-body"
+            ref={bodyRef}
+            onMouseDown={e => {
+              if (e.button !== 0) return
+              handleCloseContext()
+            }}
+          >
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={listToRender}
@@ -315,6 +326,8 @@ export function FileBrowser(): ReactElement {
                 className="fm-file-browser-context-menu"
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
+                onMouseDown={e => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
               >
                 <FileBrowserContextMenu
                   drives={drives}
