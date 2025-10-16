@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useState } from 'react'
+import { ReactElement, useContext, useState } from 'react'
 import './FileManager.scss'
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
@@ -7,25 +7,17 @@ import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { Context as FMContext, getSignerPk } from '../../providers/FileManager'
+import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
-  const { fm, adminDrive, initializationError, adminStamp, getStoredState, init } = useContext(FMContext)
+  const { fm, adminDrive, initializationError, init } = useContext(FMContext)
 
-  useEffect(() => {
-    if (!hasPk || fm) return
-    const storedState = getStoredState()
-    setShowInitialModal(!storedState?.adminBatchId)
-  }, [hasPk, fm, getStoredState])
-
-  useEffect(() => {
-    if (!hasPk) return
-
-    if (fm) setShowInitialModal(false)
-  }, [hasPk, fm])
+  // TODO: handle if fm is already set but not pk is set
 
   if (!hasPk) {
     return (
@@ -34,21 +26,23 @@ export function FileManagerPage(): ReactElement {
           onSaved={async () => {
             setHasPk(true)
 
-            const stored = getStoredState()
-            const batchId = stored?.adminBatchId
+            if (fm) {
+              setIsLoading(false)
 
-            setShowInitialModal(!batchId)
-
-            if (batchId) {
-              await init(batchId)
+              return
             }
+
+            const manager = await init()
+            setIsLoading(false)
+
+            setShowInitialModal(!manager?.adminStamp)
           }}
         />
       </div>
     )
   }
 
-  if (initializationError) {
+  if (initializationError && !isLoading) {
     return (
       <div className="fm-main">
         <div className="fm-loading">
@@ -58,7 +52,7 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (showInitialModal) {
+  if (showInitialModal && !isLoading) {
     return (
       <div className="fm-main">
         <InitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
@@ -87,7 +81,11 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-          <AdminStatusBar adminStamp={adminStamp} adminDrive={adminDrive} loading={!adminStamp || !adminDrive} />
+          <AdminStatusBar
+            adminStamp={fm.adminStamp || null}
+            adminDrive={adminDrive}
+            loading={!fm.adminStamp || !adminDrive}
+          />
         </div>
       </ViewProvider>
     </SearchProvider>

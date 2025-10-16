@@ -1,7 +1,7 @@
 import { useState, ReactElement } from 'react'
 import './PrivateKeyModal.scss'
 import { Button } from '../Button/Button'
-import { KEY_STORAGE } from '../../utils/common'
+import { setSignerPk } from '../../utils/common'
 import { PrivateKey } from '@ethersphere/bee-js'
 
 type Props = { onSaved: () => void }
@@ -13,8 +13,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
   const handleSave = () => {
     try {
       new PrivateKey(value)
-
-      localStorage.setItem(KEY_STORAGE, value)
+      setSignerPk(value)
       onSaved()
     } catch {
       setShowError(true)

@@ -191,21 +191,20 @@ export function FileItem({
       await fm.upload(
         currentDrive,
         {
-          info: {
-            name: newName,
-            topic: fileInfo.topic,
-            file: {
-              reference: fileInfo.file.reference,
-              historyRef: fileInfo.file.historyRef,
-            },
-            customMetadata: fileInfo.customMetadata,
+          name: newName,
+          topic: fileInfo.topic,
+          file: {
+            reference: fileInfo.file.reference,
+            historyRef: fileInfo.file.historyRef,
           },
+          customMetadata: fileInfo.customMetadata,
+          files: [],
         },
         {
           actHistoryAddress: fileInfo.file.historyRef,
         },
       )
-
+      // TODO: these resolves seem unnecessary
       await Promise.resolve(refreshFiles())
     },
     [fm, currentDrive, fileInfo, takenNames, refreshFiles],

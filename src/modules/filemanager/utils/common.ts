@@ -1,3 +1,4 @@
+import { PrivateKey } from '@ethersphere/bee-js'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 
 export function getDaysLeft(expiryDate: Date): number {
@@ -89,4 +90,20 @@ export function getFileId(fi: FileInfo): string {
 }
 
 export const KEY_STORAGE = 'privateKey'
-export const FM_STORAGE_STATE = 'fmState'
+
+export function getSignerPk(): PrivateKey | undefined {
+  try {
+    const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
+
+    return new PrivateKey(fromLocalPk)
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
+
+    return undefined
+  }
+}
+
+export function setSignerPk(pk: string): void {
+  localStorage.setItem(KEY_STORAGE, pk)
+}

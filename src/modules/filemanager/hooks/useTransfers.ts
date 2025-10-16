@@ -56,24 +56,6 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   return meta
 }
 
-const makeUploadInfo = (args: {
-  name: string
-  files: File[]
-  meta: Record<string, string | number>
-  topic?: string
-}): FileInfoOptions => {
-  const info = {
-    name: args.name,
-    customMetadata: normalizeCustomMetadata(args.meta),
-    topic: args.topic,
-  }
-
-  return {
-    info,
-    files: args.files,
-  }
-}
-
 type UploadTask = {
   file: File
   finalName: string
@@ -285,12 +267,12 @@ export function useTransfers() {
   const processUploadTask = useCallback(
     async (task: UploadTask) => {
       if (!fm || !currentDrive) return
-      const info = makeUploadInfo({
+      const info: FileInfoOptions = {
         name: task.finalName,
         files: [task.file],
-        meta: buildUploadMeta([task.file]),
+        customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file])),
         topic: task.isReplace ? task.replaceTopic : undefined,
-      })
+      }
 
       const progressCb = trackUploadProgress(
         task.finalName,

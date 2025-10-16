@@ -1,45 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react'
-import { BeeDev, PostageBatch, PrivateKey } from '@ethersphere/bee-js'
+import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from 'react'
+import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { Context as SettingsContext } from './Settings'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { getUsableStamps } from '../modules/filemanager/utils/bee'
-import { KEY_STORAGE, FM_STORAGE_STATE } from '../modules/filemanager/utils/common'
-
-type FMStorageState = {
-  adminDriveId: string
-  adminDriveName: string
-  adminBatchId: string
-}
-
-export function getSignerPk(): PrivateKey | undefined {
-  try {
-    const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
-
-    return new PrivateKey(fromLocalPk)
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
-
-    return undefined
-  }
-}
-
-function getStoredState(): FMStorageState | undefined {
-  const raw = localStorage.getItem(FM_STORAGE_STATE)
-
-  if (!raw) return undefined
-  try {
-    return JSON.parse(raw) as FMStorageState
-  } catch {
-    return undefined
-  }
-}
-
-function setStoredState(state: FMStorageState): void {
-  localStorage.setItem(FM_STORAGE_STATE, JSON.stringify(state))
-}
+import { getSignerPk } from '../modules/filemanager/utils/common'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -48,20 +13,13 @@ interface ContextInterface {
   currentStamp?: PostageBatch
   drives: DriveInfo[]
   adminDrive: DriveInfo | null
-  adminStamp: PostageBatch | null
   initializationError: boolean
-  setAdminStamp: (stamp: PostageBatch | null) => void
   setCurrentDrive: (d: DriveInfo) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   refreshFiles: () => void
   refreshDrives: () => void
   resyncFM: () => Promise<void>
-  init: (
-    batchId?: string,
-    onAdminDriveReady?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
-  ) => Promise<boolean>
-  getStoredState: () => FMStorageState | undefined
-  setStoredState: (state: FMStorageState) => void
+  init: () => Promise<FileManagerBase | null>
   showUploadError?: boolean
   setShowUploadError: (show: boolean) => void
 }
@@ -73,17 +31,13 @@ const initialValues: ContextInterface = {
   currentStamp: undefined,
   drives: [],
   adminDrive: null,
-  adminStamp: null,
   initializationError: false,
-  setAdminStamp: () => {}, // eslint-disable-line
   setCurrentDrive: () => {}, // eslint-disable-line
   setCurrentStamp: () => {}, // eslint-disable-line
   refreshFiles: () => {}, // eslint-disable-line
   refreshDrives: () => {}, // eslint-disable-line
   resyncFM: async () => {}, // eslint-disable-line
-  init: async () => false, // eslint-disable-line
-  getStoredState: () => undefined, // eslint-disable-line
-  setStoredState: () => {}, // eslint-disable-line
+  init: async () => null, // eslint-disable-line
   showUploadError: false,
   setShowUploadError: () => {}, // eslint-disable-line
 }
@@ -96,12 +50,12 @@ interface Props {
 }
 
 export function Provider({ children }: Props) {
-  const { apiUrl, beeApi } = useContext(SettingsContext)
+  const { apiUrl } = useContext(SettingsContext)
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
-  const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
+  // const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
   const [initializationError, setInitializationError] = useState<boolean>(false)
@@ -113,162 +67,110 @@ export function Provider({ children }: Props) {
     }
   }, [fm])
 
-  const refreshDrives = useCallback(
-    (driveInfo?: DriveInfo): void => {
-      if (!fm) {
+  const refreshDrives = useCallback((): void => {
+    if (!fm) {
+      return
+    }
+
+    // TODO: optimize, do not call find() twice
+    const allDrives = fm.getDrives()
+    const tmpAdminDrive = allDrives.find(d => d.isAdmin)
+    const userDrives = allDrives.filter(d => !d.isAdmin)
+    setAdminDrive(tmpAdminDrive || null)
+    setDrives(userDrives)
+  }, [fm])
+
+  const init = useCallback(async (): // batchId?: string,
+  // adminDriveReadyCallback?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
+  Promise<FileManagerBase | null> => {
+    const pk = getSignerPk()
+
+    if (!apiUrl || !pk) return null
+
+    // TODO: is reset everyting needed?
+    // setFm(null)
+
+    const bee = new Bee(apiUrl, { signer: pk })
+    const manager = new FileManagerBase(bee)
+
+    const syncFiles = () => {
+      setFiles([...manager.fileInfoList])
+    }
+
+    const handleInitialized = (success: boolean) => {
+      setInitializationError(!success)
+
+      if (success) {
+        setFm(manager)
+
+        // TODO: syncdrives is better
+        const allDrives = manager.getDrives()
+        const tmpAdminDrive = allDrives.find(d => d.isAdmin)
+        const userDrives = allDrives.filter(d => !d.isAdmin)
+        setAdminDrive(tmpAdminDrive || null)
+        setDrives(userDrives)
+        syncFiles()
+      } else {
+        setAdminDrive(null)
+        setDrives([])
+        setFiles([])
+      }
+    }
+
+    const handleDriveCreated = ({ driveInfo }: { driveInfo: DriveInfo }) => {
+      if (driveInfo.isAdmin) {
+        setAdminDrive(driveInfo)
+
         return
       }
 
-      if (driveInfo?.isAdmin && !adminDrive) {
-        setAdminDrive(driveInfo)
-      }
+      setDrives(manager.getDrives().filter(d => !d.isAdmin))
+    }
 
-      const userDrives = fm.getDrives().filter(d => !d.isAdmin)
-      setDrives(userDrives)
-    },
-    [fm, adminDrive],
-  )
+    const handleDriveDestroyed = ({ driveInfo }: { driveInfo: DriveInfo }) => {
+      setDrives(manager.getDrives().filter(d => !d.isAdmin))
+      syncFiles()
+    }
 
-  const init = useCallback(
-    async (
-      batchId?: string,
-      adminDriveReadyCallback?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
-    ): Promise<boolean> => {
-      const pk = getSignerPk()
+    manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
+    manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
+    manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
+    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, syncFiles)
+    manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, syncFiles)
+    manager.emitter.on(FileManagerEvents.FILE_TRASHED, syncFiles)
+    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, syncFiles)
+    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, syncFiles)
 
-      if (!apiUrl || !pk) return false
+    try {
+      await manager.initialize()
 
-      const bee = new BeeDev(apiUrl, { signer: pk })
-
-      const manager = new FileManagerBase(bee)
-
-      const syncFiles = () => {
-        setFiles([...manager.fileInfoList])
-      }
-
-      const handleInitialized = (success: boolean) => {
-        setFm(manager)
-        setInitializationError(!success)
-
-        if (success) {
-          const allDrives = manager.getDrives()
-          const tmpAdminDrive = allDrives.find(d => d.isAdmin) || null
-          setAdminDrive(tmpAdminDrive)
-
-          if (tmpAdminDrive && beeApi) {
-            ;(async () => {
-              const usableStamps = await getUsableStamps(beeApi)
-              const match = usableStamps.find(s => s.batchID.toString() === tmpAdminDrive.batchId.toString()) || null
-              setAdminStamp(match)
-            })()
-          }
-
-          if (tmpAdminDrive && !getStoredState()) {
-            setStoredState({
-              adminDriveId: tmpAdminDrive.id.toString(),
-              adminDriveName: tmpAdminDrive.name,
-              adminBatchId: tmpAdminDrive.batchId.toString(),
-            })
-          }
-
-          setDrives(allDrives.filter(d => !d.isAdmin))
-          syncFiles()
-
-          if (adminDriveReadyCallback) {
-            adminDriveReadyCallback(Boolean(tmpAdminDrive), manager, batchId)
-          }
-        } else {
-          setAdminDrive(null)
-          setDrives([])
-          setFiles([])
-        }
-      }
-
-      manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
-      manager.emitter.on(FileManagerEvents.DRIVE_CREATED, async ({ driveInfo }: { driveInfo: DriveInfo }) => {
-        if (driveInfo.isAdmin) {
-          setAdminDrive(driveInfo)
-
-          setStoredState({
-            adminDriveId: driveInfo.id.toString(),
-            adminDriveName: driveInfo.name,
-            adminBatchId: driveInfo.batchId.toString(),
-          })
-
-          if (beeApi && !adminStamp) {
-            const usableStamps = await getUsableStamps(beeApi)
-            const match = usableStamps.find(s => s.batchID.toString() === driveInfo.batchId.toString()) || null
-            setAdminStamp(match)
-          }
-        }
-
-        setDrives(manager.getDrives().filter(d => !d.isAdmin))
-      })
-      manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, ({ driveInfo }) => {
-        if (driveInfo?.isAdmin) {
-          setAdminDrive(null)
-          setAdminStamp(null)
-        }
-        setDrives(manager.getDrives().filter(d => !d.isAdmin))
-        syncFiles()
-      })
-      manager.emitter.on(FileManagerEvents.FILE_UPLOADED, syncFiles)
-      manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, syncFiles)
-      manager.emitter.on(FileManagerEvents.FILE_TRASHED, syncFiles)
-      manager.emitter.on(FileManagerEvents.FILE_RECOVERED, syncFiles)
-      manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, syncFiles)
-
-      try {
-        await manager.initialize(batchId)
-
-        return true
-      } catch (error) {
-        return false
-      }
-    },
-    [apiUrl, beeApi, adminStamp],
-  )
+      return manager
+    } catch (error) {
+      return null
+    }
+  }, [apiUrl])
 
   const resyncFM = useCallback(async (): Promise<void> => {
-    if (!apiUrl) return
-
-    const stored = getStoredState()
     const prevDriveId = currentDrive?.id.toString()
+    const manager = await init()
 
-    await init(stored?.adminBatchId, (_hasAdmin, manager) => {
-      if (prevDriveId) {
-        const refreshedDrive = manager.getDrives().find(d => d.id.toString() === prevDriveId)
-
-        if (refreshedDrive) setCurrentDrive(refreshedDrive)
-      }
-    })
-  }, [apiUrl, currentDrive?.id, init, setCurrentDrive])
+    if (prevDriveId && manager) {
+      const refreshedDrive = manager.getDrives().find(d => d.id.toString() === prevDriveId)
+      setCurrentDrive(refreshedDrive)
+    }
+  }, [currentDrive?.id, init, setCurrentDrive])
 
   useEffect(() => {
     const pk = getSignerPk()
 
-    if (!apiUrl || !beeApi || !pk) return
-
-    if (fm) return
+    if (!pk || fm) return
 
     const initFromLocalState = async () => {
-      const storedState = getStoredState()
-
-      if (storedState?.adminBatchId) {
-        const usableStamps = await getUsableStamps(beeApi)
-        const adminBatch = usableStamps.find(s => s.batchID.toString() === storedState.adminBatchId)
-
-        if (adminBatch) {
-          await init(storedState.adminBatchId, () => {
-            setAdminStamp(adminBatch)
-          })
-        }
-      }
+      await init()
     }
 
     initFromLocalState()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl, beeApi, fm])
+  }, [fm, init])
 
   return (
     <Context.Provider
@@ -279,17 +181,13 @@ export function Provider({ children }: Props) {
         currentStamp,
         drives,
         adminDrive,
-        adminStamp,
         initializationError,
         setCurrentDrive,
         setCurrentStamp,
-        setAdminStamp,
         refreshFiles,
         refreshDrives,
         resyncFM,
         init,
-        getStoredState,
-        setStoredState,
         showUploadError,
         setShowUploadError,
       }}
