@@ -78,6 +78,23 @@ export function FileBrowser(): ReactElement {
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
 
+  const openTopbarMenu = (anchorEl: HTMLElement) => {
+    const r = anchorEl.getBoundingClientRect()
+    const bodyRect = bodyRef.current?.getBoundingClientRect()
+    const clickX = Math.round(r.right - 6)
+    const minY = (bodyRect?.top ?? 0) + 8
+    const clickY = Math.max(Math.round(r.bottom + 6), minY)
+    const fakeEvt = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      preventDefault: () => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      stopPropagation: () => {},
+      clientX: clickX,
+      clientY: clickY,
+    } as unknown as React.MouseEvent<HTMLDivElement>
+    handleContextMenu(fakeEvt)
+  }
+
   const { listToRender } = useFileFiltering({
     files,
     currentDrive: currentDrive || null,
@@ -293,7 +310,7 @@ export function FileBrowser(): ReactElement {
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
 
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
-        <FileBrowserTopBar />
+        <FileBrowserTopBar onOpenMenu={openTopbarMenu} canOpen={!isSearchMode && Boolean(currentDrive)} />
         <div
           className="fm-file-browser-content"
           data-search-mode={isSearchMode ? 'true' : 'false'}
@@ -338,7 +355,7 @@ export function FileBrowser(): ReactElement {
             {showContext && (
               <div
                 ref={contextRef}
-                className="fm-file-browser-context-menu"
+                className="fm-file-browser-context-menu fm-context-menu"
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
                 onMouseDown={e => e.stopPropagation()}
