@@ -101,15 +101,30 @@ export function FileBrowser(): ReactElement {
     })
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files
-    e.target.value = ''
+    const files = e.target.files
 
-    if (f?.length) uploadFiles(f)
+    if (files && files.length > 0) {
+      uploadFiles(files)
+    }
+    e.target.value = ''
   }
 
   const onContextUploadFile = () => {
-    const el = bulk.fileInputRef.current || legacyUploadRef.current
-    el?.click()
+    const el = legacyUploadRef.current
+
+    if (!el) return
+
+    try {
+      if (typeof (el as HTMLInputElement).showPicker === 'function') {
+        ;(el as HTMLInputElement).showPicker()
+      } else {
+        el.click()
+      }
+    } catch {
+      el.click()
+    }
+
+    requestAnimationFrame(() => handleCloseContext())
   }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
