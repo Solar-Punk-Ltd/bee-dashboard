@@ -87,6 +87,23 @@ export function FileBrowser(): ReactElement {
     return match?.name ?? ''
   }
 
+  const openTopbarMenu = (anchorEl: HTMLElement) => {
+    const r = anchorEl.getBoundingClientRect()
+    const bodyRect = bodyRef.current?.getBoundingClientRect()
+    const clickX = Math.round(r.right - 6)
+    const minY = (bodyRect?.top ?? 0) + 8
+    const clickY = Math.max(Math.round(r.bottom + 6), minY)
+    const fakeEvt = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      preventDefault: () => {},
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      stopPropagation: () => {},
+      clientX: clickX,
+      clientY: clickY,
+    } as unknown as React.MouseEvent<HTMLDivElement>
+    handleContextMenu(fakeEvt)
+  }
+
   const { listToRender } = useFileFiltering({
     files,
     currentDrive: currentDrive || null,
@@ -116,15 +133,30 @@ export function FileBrowser(): ReactElement {
     })
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files
-    e.target.value = ''
+    const files = e.target.files
 
-    if (f?.length) uploadFiles(f)
+    if (files && files.length > 0) {
+      uploadFiles(files)
+    }
+    e.target.value = ''
   }
 
   const onContextUploadFile = () => {
-    const el = bulk.fileInputRef.current || legacyUploadRef.current
-    el?.click()
+    const el = legacyUploadRef.current
+
+    if (!el) return
+
+    try {
+      if (typeof (el as HTMLInputElement).showPicker === 'function') {
+        ;(el as HTMLInputElement).showPicker()
+      } else {
+        el.click()
+      }
+    } catch {
+      el.click()
+    }
+
+    requestAnimationFrame(() => handleCloseContext())
   }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -137,7 +169,12 @@ export function FileBrowser(): ReactElement {
   }
 
   const handleFileBrowserContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.fm-file-item-content')) return
+    const t = e.target as HTMLElement
+
+    if (t.closest('.fm-file-item-context-menu, .fm-file-browser-context-menu')) return
+
+    if (!e.shiftKey && t.closest('.fm-file-item-content')) return
+
     e.preventDefault()
     e.stopPropagation()
     handleContextMenu(e)
@@ -207,6 +244,7 @@ export function FileBrowser(): ReactElement {
     const topLeft = containerRect
       ? { x: Math.round(sp.x - containerRect.left), y: Math.round(sp.y - containerRect.top + 2) }
       : sp
+
     setSafePos(topLeft)
     setDropDir(dd)
     rafIdRef.current = null
@@ -264,10 +302,8 @@ export function FileBrowser(): ReactElement {
   const doRefresh = async () => {
     handleCloseContext()
 
-    if (!isRefreshing) return
-
+    if (isRefreshing) return
     setIsRefreshing(true)
-
     try {
       await resyncFM()
     } finally {
@@ -289,7 +325,7 @@ export function FileBrowser(): ReactElement {
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
 
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
-        <FileBrowserTopBar />
+        <FileBrowserTopBar onOpenMenu={openTopbarMenu} canOpen={!isSearchMode && Boolean(currentDrive)} />
         <div
           className="fm-file-browser-content"
           data-search-mode={isSearchMode ? 'true' : 'false'}
@@ -345,9 +381,11 @@ export function FileBrowser(): ReactElement {
             {showContext && (
               <div
                 ref={contextRef}
-                className="fm-file-browser-context-menu"
+                className="fm-file-browser-context-menu fm-context-menu"
                 style={{ top: safePos.y, left: safePos.x }}
                 data-drop={dropDir}
+                onMouseDown={e => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
               >
                 <FileBrowserContextMenu
                   drives={drives}
