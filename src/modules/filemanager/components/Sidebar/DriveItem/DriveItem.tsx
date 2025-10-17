@@ -75,7 +75,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
   }, [drive.id])
-  // TODO: show trigger upgrade on upgrade success and upload success
+  // TODO: trigger on upgrade success and upload success
   const { capacityPct, usedSize, totalSize } = useMemo(
     () => calculateStampCapacityMetrics(stamp, drive),
     [stamp, drive],

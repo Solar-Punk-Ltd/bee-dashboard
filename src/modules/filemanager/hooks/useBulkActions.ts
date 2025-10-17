@@ -33,8 +33,11 @@ export function useBulkActions(opts: {
     setSelectedIds(prev => {
       const next = new Set(prev)
 
-      if (checked) next.add(id)
-      else next.delete(id)
+      if (checked) {
+        next.add(id)
+      } else {
+        next.delete(id)
+      }
 
       return next
     })
@@ -56,6 +59,7 @@ export function useBulkActions(opts: {
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
         const tracker = trackDownload(fi.name, prettySize, expected)
+
         await startDownloadingQueue(fm, [fi], tracker)
       }
     },
@@ -76,6 +80,7 @@ export function useBulkActions(opts: {
   const bulkRestore = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
+
       await Promise.allSettled(list.map(f => fm.recoverFile(f)))
       clearAll()
     },
@@ -87,6 +92,7 @@ export function useBulkActions(opts: {
       if (!fm || !list?.length) return
 
       await Promise.allSettled(list.map(f => fm.forgetFile(f)))
+
       clearAll()
     },
     [fm, clearAll],

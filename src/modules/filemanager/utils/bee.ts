@@ -153,6 +153,7 @@ export const calculateStampCapacityMetrics = (
     totalBytes = stamp.size.toBytes()
     remainingBytes = totalBytes - usedBytes
   }
+
   const usedSize = getHumanReadableFileSize(usedBytes)
   const totalSize = getHumanReadableFileSize(totalBytes)
 

@@ -126,7 +126,6 @@ export function FileItem({
   }
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       handleCloseContext()
@@ -187,7 +186,7 @@ export function FileItem({
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }, [currentDrive])
-  // TODO: do rename upload progress
+
   const doRename = useCallback(
     async (newName: string) => {
       if (!fm || !currentDrive) return

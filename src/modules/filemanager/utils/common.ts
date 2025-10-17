@@ -21,7 +21,6 @@ export const fromBytesConversion = (size: number, metric: string) => {
 }
 
 const lifetimeAdjustments = new Map<number, (date: Date) => void>([
-  //TODO: It needs to be discussed what the minimum value for value upgrade is
   [0, date => date.setDate(date.getDate() + 7)],
   [1, date => date.setMonth(date.getMonth() + 1)],
   [2, date => date.setMonth(date.getMonth() + 3)],

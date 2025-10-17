@@ -36,7 +36,7 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
     }
   }),
 ]
-// TODO: refactor InitialModal and Provider together
+
 export function InitialModal({ handleVisibility, handleShowError }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
@@ -61,8 +61,6 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
       if (isMountedRef.current) setter(value)
     }
 
-  // const safeSetProgress = safeSet(setIsAdminStampCreationInProgress)
-
   useEffect(() => {
     return () => {
       isMountedRef.current = false
@@ -70,9 +68,7 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
   }, [])
 
   const createAdminDrive = useCallback(async () => {
-    // TODO: check onerror, onsuccess, onloading... together with safeSetProgress for admin drive creation
-    // safeSetProgress(true)
-
+    // TODO: is onerror, onsuccess, onloading... together needed ?
     await handleCreateDrive(
       beeApi,
       fm,
@@ -87,11 +83,8 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
       () => handleVisibility(false),
       () => handleShowError(true),
     )
-
-    // safeSetProgress(false)
   }, [beeApi, fm, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleVisibility, handleShowError])
 
-  // TODO: merge ismoundedref with ismounted below
   useEffect(() => {
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)

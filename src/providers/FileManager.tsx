@@ -16,12 +16,12 @@ interface ContextInterface {
   initializationError: boolean
   setCurrentDrive: (d: DriveInfo) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
-  resyncFM: () => Promise<void>
+  resync: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
   showUploadError?: boolean
-  setShowUploadError: (show: boolean) => void // todo: this should not be global
+  setShowUploadError: (show: boolean) => void // todo: showUploadError should not be global
 }
-// TODO: is currentStamp and currentDrive necessary here? only used in sidebar
+
 const initialValues: ContextInterface = {
   fm: null,
   files: [],
@@ -32,7 +32,7 @@ const initialValues: ContextInterface = {
   initializationError: false,
   setCurrentDrive: () => {}, // eslint-disable-line
   setCurrentStamp: () => {}, // eslint-disable-line
-  resyncFM: async () => {}, // eslint-disable-line
+  resync: async () => {}, // eslint-disable-line
   init: async () => null, // eslint-disable-line
   showUploadError: false,
   setShowUploadError: () => {}, // eslint-disable-line
@@ -193,7 +193,7 @@ export function Provider({ children }: Props) {
     }
   }, [apiUrl, syncDrives, syncFiles])
 
-  const resyncFM = useCallback(async (): Promise<void> => {
+  const resync = useCallback(async (): Promise<void> => {
     const prevDriveId = currentDrive?.id.toString()
     const prevStamp = currentStamp
 
@@ -230,7 +230,7 @@ export function Provider({ children }: Props) {
         initializationError,
         setCurrentDrive,
         setCurrentStamp,
-        resyncFM,
+        resync,
         init,
         showUploadError,
         setShowUploadError,
