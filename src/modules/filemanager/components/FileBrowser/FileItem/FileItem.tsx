@@ -120,6 +120,11 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
+  const handleItemContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.shiftKey) return
+    handleContextMenu(e)
+  }
+
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
 
   const handleDownload = useCallback(
@@ -366,15 +371,24 @@ export function FileItem({
       const menu = contextRef.current
 
       if (!menu) return
+
+      const menuRect = menu.getBoundingClientRect()
+      const containerEl = (menu.offsetParent as HTMLElement) ?? null
+      const containerRect = containerEl?.getBoundingClientRect() ?? null
+
       const { safePos: s, dropDir: d } = computeContextMenuPosition({
         clickPos: pos,
-        menuRect: menu.getBoundingClientRect(),
+        menuRect: menuRect,
         viewport: { w: window.innerWidth, h: window.innerHeight },
         margin: 8,
+        containerRect,
       })
 
       if (isMountedRef.current) {
-        setSafePos(s)
+        const topLeft = containerRect
+          ? { x: Math.round(s.x - containerRect.left), y: Math.round(s.y - containerRect.top) }
+          : s
+        setSafePos(topLeft)
         setDropDir(d)
       }
       rafIdRef.current = null
@@ -393,7 +407,7 @@ export function FileItem({
   }
 
   return (
-    <div className="fm-file-item-content" onContextMenu={handleContextMenu} onClick={handleCloseContext}>
+    <div className="fm-file-item-content" onContextMenu={handleItemContextMenu} onClick={handleCloseContext}>
       <div className="fm-file-item-content-item fm-checkbox">
         <input
           type="checkbox"
