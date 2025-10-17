@@ -25,6 +25,7 @@ import {
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getHumanReadableFileSize } from '../../../../utils/file'
+import { Warning } from '@material-ui/icons'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
@@ -232,7 +233,9 @@ export function UpgradeDriveModal({
 
           <div className="fm-modal-white-section">
             <div className="fm-emphasized-text">Summary</div>
-            <div>Drive: {drive.name}</div>
+            <div>
+              Drive: {drive.name} {drive.isAdmin && <Warning style={{ fontSize: '16px' }} />}
+            </div>
             <div>
               BatchId: {stamp.label} ({shortBatchId})
             </div>

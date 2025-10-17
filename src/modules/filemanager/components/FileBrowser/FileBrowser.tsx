@@ -43,7 +43,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, refreshFiles, resyncFM, drives, fm, showUploadError } = useContext(FMContext)
+  const { files, currentDrive, resyncFM, drives, fm, showUploadError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -189,7 +189,6 @@ export function FileBrowser(): ReactElement {
       fm,
       currentDrive,
       () => {
-        refreshFiles()
         setShowDestroyDriveModal(false)
       },
       error => {

@@ -341,8 +341,11 @@ export function useTransfers() {
             ...Array.from(reserved),
             ...Array.from(progressNames),
           ])
-          const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
-          let remainingBytes = totalBytes - usedBytes
+          const { remainingBytes: remaining } = calculateStampCapacityMetrics(
+            currentStamp || null,
+            currentDrive || null,
+          )
+          let remainingBytes = remaining
 
           let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(
             file.name,
@@ -353,7 +356,14 @@ export function useTransfers() {
 
           if (file.size > remainingBytes) {
             // eslint-disable-next-line no-console
-            console.log('Skipping upload of file because there is not enough space in the current stamp')
+            console.log(
+              'Skipping upload of file because there is not enough space in the current stamp: ',
+              file.name,
+              ' size: ',
+              file.size,
+              ' remaining: ',
+              remainingBytes,
+            )
             setShowUploadError?.(true)
             break
           }
@@ -399,6 +409,7 @@ export function useTransfers() {
 
         return tasks
       }
+
       const runQueue = async () => {
         if (runningRef.current) return
         runningRef.current = true

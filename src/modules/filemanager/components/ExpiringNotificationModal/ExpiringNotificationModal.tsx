@@ -1,4 +1,5 @@
 import { ReactElement, useState } from 'react'
+import { Warning } from '@material-ui/icons'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 
@@ -18,7 +19,7 @@ interface ExpiringNotificationModalProps {
   drives: DriveInfo[]
   onCancelClick: () => void
 }
-// TODO: create an icon for the admin drive to distinguish it from the others
+
 export function ExpiringNotificationModal({
   stamps,
   drives,
@@ -60,7 +61,7 @@ export function ExpiringNotificationModal({
                   <DriveIcon size="20" color="rgb(237, 129, 49)" />
                   <div>
                     <div className="fm-expiring-notification-modal-section-left-header fm-emphasized-text">
-                      {stamp.label}
+                      {stamp.label} {drive.isAdmin && <Warning style={{ fontSize: '16px' }} />}
                     </div>
                     <div className="fm-expiring-notification-modal-section-left-value">
                       {Size.fromBytes(stamp.size.toBytes() * stamp.usage).toFormattedString()} /{' '}

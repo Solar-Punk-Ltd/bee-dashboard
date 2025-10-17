@@ -36,7 +36,7 @@ interface VersionHistoryModalProps {
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
-  const { fm, refreshFiles, files, currentDrive } = useContext(FMContext)
+  const { fm, files, currentDrive } = useContext(FMContext)
 
   const localTransfers = useTransfers()
   const trackDownload = onDownload ?? localTransfers.trackDownload
@@ -185,13 +185,6 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
     async (versionFi: FileInfo): Promise<void> => {
       if (!fm || !currentDrive) return
 
-      const doRefreshAndClose = () => {
-        onCancelClick()
-        setTimeout(() => {
-          refreshFiles()
-        }, 0)
-      }
-
       try {
         const restoredFrom = indexStrToBigint(versionFi.version)
 
@@ -218,13 +211,13 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
         }
 
         await fm.restoreVersion(withMeta)
-        doRefreshAndClose()
+        onCancelClick()
       } catch (e) {
         const msg = (e as Error)?.message || JSON.stringify(e)
         setError(msg)
       }
     },
-    [fm, refreshFiles, onCancelClick, currentDrive],
+    [fm, onCancelClick, currentDrive],
   )
 
   const restoreVersion = useCallback(

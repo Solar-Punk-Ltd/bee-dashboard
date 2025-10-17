@@ -28,7 +28,7 @@ export function Sidebar(): ReactElement {
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { fm, currentDrive, drives, setCurrentDrive, setCurrentStamp, refreshDrives } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, drives, setCurrentDrive, setCurrentStamp } = useContext(FMContext)
 
   useEffect(() => {
     let isMounted = true
@@ -51,13 +51,24 @@ export function Sidebar(): ReactElement {
   }, [beeApi, drives])
 
   useEffect(() => {
-    if (fm && !currentDrive) {
-      if (drives.length === 0) return
+    if (!fm || drives.length === 0) {
+      return
+    }
 
-      setCurrentDrive(drives[0])
+    if (!currentDrive) {
+      const firstDrive = drives[0]
+      setCurrentDrive(firstDrive)
       setView(ViewType.File)
     }
-  }, [fm, drives, currentDrive, setCurrentDrive, setView])
+
+    if (currentDrive && !currentStamp && usableStamps.length > 0) {
+      const correspondingStamp = usableStamps.find(s => s.batchID.toString() === currentDrive.batchId.toString())
+
+      if (correspondingStamp) {
+        setCurrentStamp(correspondingStamp)
+      }
+    }
+  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView])
 
   const isCurrent = (di: DriveInfo) => currentDrive?.id.toString() === di.id.toString()
 
@@ -77,7 +88,6 @@ export function Sidebar(): ReactElement {
             onDriveCreated={() => {
               setIsCreateDriveOpen(false)
               setIsDriveCreationInProgress(false)
-              refreshDrives()
             }}
             onCreationStarted={() => setIsDriveCreationInProgress(true)}
             onCreationError={() => setIsDriveCreationInProgress(false)}
@@ -159,6 +169,7 @@ export function Sidebar(): ReactElement {
           <div className="fm-drive-items-container fm-drive-items-container-open">
             {drives.map(d => {
               const selected = isCurrent(d) && view === ViewType.Trash
+              const stamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString() && !d.isAdmin)
 
               return (
                 <div
@@ -166,6 +177,7 @@ export function Sidebar(): ReactElement {
                   className={`fm-sidebar-item fm-trash-item${selected ? ' is-selected' : ''}`}
                   onClick={() => {
                     setCurrentDrive(d)
+                    setCurrentStamp(stamp)
                     setView(ViewType.Trash)
                   }}
                   title={`${d.name} Trash`}

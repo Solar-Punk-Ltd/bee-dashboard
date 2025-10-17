@@ -52,7 +52,7 @@ export function FileItem({
   onBulk,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, refreshFiles, currentDrive, files, drives } = useContext(FMContext)
+  const { fm, currentDrive, files, drives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
@@ -150,7 +150,8 @@ export function FileItem({
 
   const doTrash = useCallback(async () => {
     if (!fm) return
-    const withMeta = {
+
+    const withMeta: FileInfo = {
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
@@ -158,13 +159,14 @@ export function FileItem({
         lifecycleAt: new Date().toISOString(),
       },
     }
-    await fm.trashFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+
+    await fm.trashFile(withMeta)
+  }, [fm, fileInfo])
 
   const doRecover = useCallback(async () => {
     if (!fm) return
-    const withMeta = {
+
+    const withMeta: FileInfo = {
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
@@ -172,15 +174,14 @@ export function FileItem({
         lifecycleAt: new Date().toISOString(),
       },
     }
-    await fm.recoverFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+    await fm.recoverFile(withMeta)
+  }, [fm, fileInfo])
 
   const doForget = useCallback(async () => {
     if (!fm) return
+
     await fm.forgetFile(fileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+  }, [fm, fileInfo])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
@@ -209,10 +210,9 @@ export function FileItem({
           actHistoryAddress: fileInfo.file.historyRef,
         },
       )
-      // TODO: these resolves seem unnecessary
-      await Promise.resolve(refreshFiles())
     },
-    [fm, currentDrive, fileInfo, takenNames, refreshFiles],
+
+    [fm, currentDrive, fileInfo, takenNames],
   )
 
   const MenuItem = ({
@@ -554,8 +554,6 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                refreshFiles()
-
                 if (isMountedRef.current) {
                   setShowDestroyDriveModal(false)
                   setDestroyDrive(null)

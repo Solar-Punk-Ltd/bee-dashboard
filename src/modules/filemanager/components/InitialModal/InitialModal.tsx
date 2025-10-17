@@ -131,7 +131,8 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
       safeSet(setCost)('0')
       safeSet(setIsCreateEnabled)(false)
     }
-  }, [validityEndDate, beeApi, capacity, erasureCodeLevel, lifetimeIndex])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validityEndDate, beeApi, capacity, lifetimeIndex])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))

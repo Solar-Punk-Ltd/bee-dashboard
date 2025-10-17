@@ -14,7 +14,7 @@ export function useBulkActions(opts: {
 }) {
   const { listToRender, trackDownload } = opts
 
-  const { fm, refreshFiles } = useContext(FMContext)
+  const { fm } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const allIds = useMemo(() => listToRender.map(getFileId), [listToRender])
@@ -50,6 +50,7 @@ export function useBulkActions(opts: {
   const bulkDownload = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
+
       for (const fi of list) {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
@@ -64,31 +65,31 @@ export function useBulkActions(opts: {
   const bulkTrash = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
+
       await Promise.allSettled(list.map(f => fm.trashFile(f)))
-      await Promise.resolve(refreshFiles())
+
       clearAll()
     },
-    [fm, refreshFiles, clearAll],
+    [fm, clearAll],
   )
 
   const bulkRestore = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
       await Promise.allSettled(list.map(f => fm.recoverFile(f)))
-      await Promise.resolve(refreshFiles())
       clearAll()
     },
-    [fm, refreshFiles, clearAll],
+    [fm, clearAll],
   )
 
   const bulkForget = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
+
       await Promise.allSettled(list.map(f => fm.forgetFile(f)))
-      await Promise.resolve(refreshFiles())
       clearAll()
     },
-    [fm, refreshFiles, clearAll],
+    [fm, clearAll],
   )
 
   return useMemo(

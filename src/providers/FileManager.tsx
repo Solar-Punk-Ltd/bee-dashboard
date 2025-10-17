@@ -16,14 +16,12 @@ interface ContextInterface {
   initializationError: boolean
   setCurrentDrive: (d: DriveInfo) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
-  refreshFiles: () => void
-  refreshDrives: () => void
   resyncFM: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
   showUploadError?: boolean
   setShowUploadError: (show: boolean) => void // todo: this should not be global
 }
-
+// TODO: is currentStamp and currentDrive necessary here? only used in sidebar
 const initialValues: ContextInterface = {
   fm: null,
   files: [],
@@ -34,8 +32,6 @@ const initialValues: ContextInterface = {
   initializationError: false,
   setCurrentDrive: () => {}, // eslint-disable-line
   setCurrentStamp: () => {}, // eslint-disable-line
-  refreshFiles: () => {}, // eslint-disable-line
-  refreshDrives: () => {}, // eslint-disable-line
   resyncFM: async () => {}, // eslint-disable-line
   init: async () => null, // eslint-disable-line
   showUploadError: false,
@@ -49,97 +45,144 @@ interface Props {
   children: ReactNode
 }
 
+const findDrives = (allDrives: DriveInfo[]): { adminDrive: DriveInfo | null; userDrives: DriveInfo[] } => {
+  let adminDrive: DriveInfo | null = null
+  const userDrives: DriveInfo[] = []
+
+  allDrives.forEach(d => {
+    if (d.isAdmin) {
+      adminDrive = d
+    } else {
+      userDrives.push(d)
+    }
+  })
+
+  return { adminDrive, userDrives }
+}
+
 export function Provider({ children }: Props) {
   const { apiUrl } = useContext(SettingsContext)
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
-  // const [adminStamp, setAdminStamp] = useState<PostageBatch | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
+
   const [initializationError, setInitializationError] = useState<boolean>(false)
   const [showUploadError, setShowUploadError] = useState<boolean>(false)
+  // TODO: rethink this: maybe caching files/drives happen elsewhere
+  const syncFiles = useCallback((manager: FileManagerBase, fi?: FileInfo, remove?: boolean): void => {
+    // append/remove directly to avoid cache issues
+    if (fi) {
+      if (remove) {
+        setFiles(prev => prev.filter(f => f.topic.toString() !== fi.topic.toString()))
+      } else {
+        setFiles(prev => {
+          const existingIndex = prev.findIndex(f => f.topic.toString() === fi.topic.toString())
 
-  const refreshFiles = useCallback((): void => {
-    if (fm) {
-      setFiles([...fm.fileInfoList])
-    }
-  }, [fm])
+          if (existingIndex >= 0) {
+            const updated = [...prev]
+            updated[existingIndex] = fi
 
-  const refreshDrives = useCallback((): void => {
-    if (!fm) {
+            return updated
+          }
+
+          return [...prev, fi]
+        })
+      }
+
       return
     }
 
-    // TODO: optimize, do not call find() twice
-    const allDrives = fm.getDrives()
-    const tmpAdminDrive = allDrives.find(d => d.isAdmin)
-    const userDrives = allDrives.filter(d => !d.isAdmin)
-    setAdminDrive(tmpAdminDrive || null)
-    setDrives(userDrives)
-  }, [fm])
+    setFiles([...manager.fileInfoList])
+  }, [])
 
-  const init = useCallback(async (): // batchId?: string,
-  // adminDriveReadyCallback?: (hasExistingDrive: boolean, fm: FileManagerBase, batchId?: string) => void,
-  Promise<FileManagerBase | null> => {
+  const syncDrives = useCallback((manager: FileManagerBase, di?: DriveInfo, remove?: boolean): void => {
+    // append/remove directly to avoid cache issues
+    if (di) {
+      if (remove) {
+        setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+      } else {
+        if (di.isAdmin) {
+          setAdminDrive(di)
+        } else {
+          setDrives(prev => {
+            const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
+
+            if (existingIndex >= 0) {
+              const updated = [...prev]
+              updated[existingIndex] = di
+
+              return updated
+            }
+
+            return [...prev, di]
+          })
+        }
+      }
+
+      return
+    }
+
+    const { adminDrive: tmpAdminDrive, userDrives } = findDrives(manager.getDrives())
+    setAdminDrive(tmpAdminDrive)
+    setDrives(userDrives)
+  }, [])
+
+  const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
 
     if (!apiUrl || !pk) return null
 
-    // TODO: is reset everyting needed?
-    // setFm(null)
+    setFm(null)
+    setFiles([])
+    setDrives([])
+    setAdminDrive(null)
+    setInitializationError(false)
+    setCurrentDrive(undefined)
+    setCurrentStamp(undefined)
 
     const bee = new Bee(apiUrl, { signer: pk })
     const manager = new FileManagerBase(bee)
-
-    const syncFiles = () => {
-      setFiles([...manager.fileInfoList])
-    }
 
     const handleInitialized = (success: boolean) => {
       setInitializationError(!success)
 
       if (success) {
         setFm(manager)
-
-        // TODO: syncdrives is better
-        const allDrives = manager.getDrives()
-        const tmpAdminDrive = allDrives.find(d => d.isAdmin)
-        const userDrives = allDrives.filter(d => !d.isAdmin)
-        setAdminDrive(tmpAdminDrive || null)
-        setDrives(userDrives)
-        syncFiles()
-      } else {
-        setAdminDrive(null)
-        setDrives([])
-        setFiles([])
+        syncDrives(manager)
+        syncFiles(manager)
       }
     }
 
     const handleDriveCreated = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      if (driveInfo.isAdmin) {
-        setAdminDrive(driveInfo)
-
-        return
-      }
-
-      setDrives(manager.getDrives().filter(d => !d.isAdmin))
+      syncDrives(manager, driveInfo)
     }
 
     const handleDriveDestroyed = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      setDrives(manager.getDrives().filter(d => !d.isAdmin))
-      syncFiles()
+      syncDrives(manager, driveInfo, true)
+      syncFiles(manager)
     }
 
     manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
-    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, syncFiles)
-    manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, syncFiles)
-    manager.emitter.on(FileManagerEvents.FILE_TRASHED, syncFiles)
-    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, syncFiles)
-    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, syncFiles)
+    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileInfo }) =>
+      syncFiles(manager, fileInfo),
+    )
+    manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, ({ restored }: { restored: FileInfo }) =>
+      syncFiles(manager, restored),
+    )
+    manager.emitter.on(FileManagerEvents.FILE_TRASHED, ({ fileInfo }: { fileInfo: FileInfo }) =>
+      syncFiles(manager, fileInfo),
+    )
+    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, ({ fileInfo }: { fileInfo: FileInfo }) =>
+      syncFiles(manager, fileInfo),
+    )
+    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, ({ fileInfo }: { fileInfo: FileInfo }) =>
+      syncFiles(manager, fileInfo, true),
+    )
 
     try {
       await manager.initialize()
@@ -148,17 +191,20 @@ export function Provider({ children }: Props) {
     } catch (error) {
       return null
     }
-  }, [apiUrl])
+  }, [apiUrl, syncDrives, syncFiles])
 
   const resyncFM = useCallback(async (): Promise<void> => {
     const prevDriveId = currentDrive?.id.toString()
+    const prevStamp = currentStamp
+
     const manager = await init()
 
     if (prevDriveId && manager) {
       const refreshedDrive = manager.getDrives().find(d => d.id.toString() === prevDriveId)
       setCurrentDrive(refreshedDrive)
+      setCurrentStamp(prevStamp)
     }
-  }, [currentDrive?.id, init, setCurrentDrive])
+  }, [currentDrive?.id, currentStamp, init, setCurrentDrive, setCurrentStamp])
 
   useEffect(() => {
     const pk = getSignerPk()
@@ -184,8 +230,6 @@ export function Provider({ children }: Props) {
         initializationError,
         setCurrentDrive,
         setCurrentStamp,
-        refreshFiles,
-        refreshDrives,
         resyncFM,
         init,
         showUploadError,
