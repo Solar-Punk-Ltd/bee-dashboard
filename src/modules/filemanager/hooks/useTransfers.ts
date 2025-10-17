@@ -449,12 +449,6 @@ export function useTransfers() {
         queueRef.current = queueRef.current.concat(tasks)
         runQueue()
       })()
-
-      void (async () => {
-        const tasks = await preflight()
-        queueRef.current = queueRef.current.concat(tasks)
-        runQueue()
-      })()
     },
     [
       fm,
