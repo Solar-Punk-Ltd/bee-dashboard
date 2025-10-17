@@ -16,6 +16,7 @@ import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 interface InitialModalProps {
   handleVisibility: (isVisible: boolean) => void
+  handleShowError: (flag: boolean) => void
 }
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
@@ -36,7 +37,7 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
   }),
 ]
 // TODO: refactor InitialModal and Provider together
-export function InitialModal({ handleVisibility }: InitialModalProps): ReactElement {
+export function InitialModal({ handleVisibility, handleShowError }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
@@ -52,7 +53,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
 
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
-  const controllerRef = useRef<AbortController | null>(null)
 
   // TODO: use safeSet everywhere else in other components too
   const safeSet =
@@ -65,7 +65,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
 
   useEffect(() => {
     return () => {
-      controllerRef.current?.abort()
       isMountedRef.current = false
     }
   }, [])
@@ -73,9 +72,6 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const createAdminDrive = useCallback(async () => {
     // TODO: check onerror, onsuccess, onloading... together with safeSetProgress for admin drive creation
     // safeSetProgress(true)
-
-    controllerRef.current?.abort()
-    controllerRef.current = new AbortController()
 
     await handleCreateDrive(
       beeApi,
@@ -87,14 +83,13 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
       erasureCodeLevel,
       true,
       selectedBatch,
-      undefined, // safeSetProgress,
-      () => handleVisibility(false), // handleNewAdminDriveSuccess,
-      undefined,
-      controllerRef.current.signal,
+      () => handleVisibility(false),
+      () => handleVisibility(false),
+      () => handleShowError(true),
     )
 
     // safeSetProgress(false)
-  }, [beeApi, fm, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleVisibility])
+  }, [beeApi, fm, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleVisibility, handleShowError])
 
   // TODO: merge ismoundedref with ismounted below
   useEffect(() => {

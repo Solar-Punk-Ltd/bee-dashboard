@@ -21,7 +21,7 @@ interface ContextInterface {
   resyncFM: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
   showUploadError?: boolean
-  setShowUploadError: (show: boolean) => void
+  setShowUploadError: (show: boolean) => void // todo: this should not be global
 }
 
 const initialValues: ContextInterface = {

@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useState } from 'react'
+import { ReactElement, useContext, useEffect, useState } from 'react'
 import './FileManager.scss'
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
@@ -10,14 +10,41 @@ import { InitialModal } from '../../modules/filemanager/components/InitialModal/
 import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
+import { ErrorModal } from 'src/modules/filemanager/components/ErrorModal/ErrorModal'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAdminDrive, setIsAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
+  const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
+
   const { fm, adminDrive, initializationError, init } = useContext(FMContext)
 
-  // TODO: handle if fm is already set but not pk is set
+  useEffect(() => {
+    if (!hasPk) {
+      setIsLoading(false)
+
+      return
+    }
+
+    if (initializationError) {
+      setIsLoading(false)
+
+      return
+    }
+
+    if (fm) {
+      const hasAdminStamp = Boolean(fm.adminStamp)
+      setIsAdminDrive(hasAdminStamp)
+      setIsLoading(false)
+      setShowInitialModal(!hasAdminStamp)
+
+      return
+    }
+
+    setIsLoading(true)
+  }, [fm, hasPk, initializationError])
 
   if (!hasPk) {
     return (
@@ -32,6 +59,7 @@ export function FileManagerPage(): ReactElement {
               return
             }
 
+            setIsLoading(true)
             const manager = await init()
             setIsLoading(false)
 
@@ -52,10 +80,13 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (showInitialModal && !isLoading) {
+  if (showInitialModal && !isLoading && !isAdminDrive) {
     return (
       <div className="fm-main">
-        <InitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
+        <InitialModal
+          handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
+          handleShowError={(flag: boolean) => setShowErrorModal(flag)}
+        />
       </div>
     )
   }
@@ -72,7 +103,9 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  return (
+  return showErrorModal ? (
+    <ErrorModal label={'Error during admin stamp creation, reload and try again'} />
+  ) : (
     <SearchProvider>
       <ViewProvider>
         <div className="fm-main">
@@ -81,11 +114,7 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-          <AdminStatusBar
-            adminStamp={fm.adminStamp || null}
-            adminDrive={adminDrive}
-            loading={!fm.adminStamp || !adminDrive}
-          />
+          <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} />
         </div>
       </ViewProvider>
     </SearchProvider>
