@@ -10,7 +10,7 @@ import DownloadIcon from 'remixicon-react/Download2LineIcon'
 import { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import { Context as FMContext } from '../../../../../providers/FileManager'
-import { formatBytes, indexStrToBigint } from '../../../utils/common'
+import { capitalizeFirstLetter, formatBytes, indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
 import { ActionTag } from '../../../constants/fileTransfer'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
@@ -41,14 +41,14 @@ function formatMaybeIso(s?: string): string | undefined {
 
 type LifecycleMetaConf = { className: string; label: (fi: FileInfo) => string }
 const LIFECYCLE_META: Record<ActionTag, LifecycleMetaConf> = {
-  trashed: { className: 'vh-tag--trashed', label: () => 'Trashed' },
-  recovered: { className: 'vh-tag--recovered', label: () => 'Recovered' },
+  trashed: { className: 'vh-tag--trashed', label: () => capitalizeFirstLetter(ActionTag.Trashed) },
+  recovered: { className: 'vh-tag--recovered', label: () => capitalizeFirstLetter(ActionTag.Recovered) },
   restored: {
     className: 'vh-tag--restored',
     label: fi => {
       const from = fi.customMetadata?.lifecycleFrom?.trim()
 
-      return from ? `Restored ${from}` : 'Restored'
+      return from ? `Restored ${from}` : capitalizeFirstLetter(ActionTag.Restored)
     },
   },
 }
@@ -218,7 +218,8 @@ function MinimizedRow({
             v{idx.toString()}
           </span>
 
-          {(lifeLabel === 'Trashed' || lifeLabel === 'Recovered') && (
+          {(lifeLabel === capitalizeFirstLetter(ActionTag.Trashed) ||
+            lifeLabel === capitalizeFirstLetter(ActionTag.Recovered)) && (
             <>
               <span className="vh-dot">•</span>
               <span
@@ -230,17 +231,19 @@ function MinimizedRow({
             </>
           )}
 
-          {secLabel && (secLabel === 'Trashed' || secLabel === 'Recovered') && (
-            <>
-              <span className="vh-dot">•</span>
-              <span
-                className={`vh-tag vh-tag--lifecycle ${secClass ?? ''}`}
-                title={secAt ? `${secLabel} at ${secAt}` : secLabel}
-              >
-                {secLabel}
-              </span>
-            </>
-          )}
+          {secLabel &&
+            (secLabel === capitalizeFirstLetter(ActionTag.Trashed) ||
+              secLabel === capitalizeFirstLetter(ActionTag.Recovered)) && (
+              <>
+                <span className="vh-dot">•</span>
+                <span
+                  className={`vh-tag vh-tag--lifecycle ${secClass ?? ''}`}
+                  title={secAt ? `${secLabel} at ${secAt}` : secLabel}
+                >
+                  {secLabel}
+                </span>
+              </>
+            )}
         </div>
       </div>
     </div>

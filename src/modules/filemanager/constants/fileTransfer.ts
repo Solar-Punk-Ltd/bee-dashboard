@@ -22,7 +22,7 @@ export enum ViewType {
   File = 'file',
   Trash = 'trash',
 }
-// TODO: lifecycle shall use the same enum
+
 export enum ActionTag {
   Trashed = 'trashed',
   Recovered = 'recovered',

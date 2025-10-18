@@ -7,25 +7,44 @@ import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { Context as FMContext, getSignerPk } from '../../providers/FileManager'
+import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
+import { ErrorModal } from 'src/modules/filemanager/components/ErrorModal/ErrorModal'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAdminDrive, setIsAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
-  const { fm, adminDrive, initializationError, adminStamp, getStoredState, init } = useContext(FMContext)
+  const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
+
+  const { fm, adminDrive, initializationError, init } = useContext(FMContext)
 
   useEffect(() => {
-    if (!hasPk || fm) return
-    const storedState = getStoredState()
-    setShowInitialModal(!storedState?.adminBatchId)
-  }, [hasPk, fm, getStoredState])
+    if (!hasPk) {
+      setIsLoading(false)
 
-  useEffect(() => {
-    if (!hasPk) return
+      return
+    }
 
-    if (fm) setShowInitialModal(false)
-  }, [hasPk, fm])
+    if (initializationError) {
+      setIsLoading(false)
+
+      return
+    }
+
+    if (fm) {
+      const hasAdminStamp = Boolean(fm.adminStamp)
+      setIsAdminDrive(hasAdminStamp)
+      setIsLoading(false)
+      setShowInitialModal(!hasAdminStamp)
+
+      return
+    }
+
+    setIsLoading(true)
+  }, [fm, hasPk, initializationError])
 
   if (!hasPk) {
     return (
@@ -34,21 +53,24 @@ export function FileManagerPage(): ReactElement {
           onSaved={async () => {
             setHasPk(true)
 
-            const stored = getStoredState()
-            const batchId = stored?.adminBatchId
+            if (fm) {
+              setIsLoading(false)
 
-            setShowInitialModal(!batchId)
-
-            if (batchId) {
-              await init(batchId)
+              return
             }
+
+            setIsLoading(true)
+            const manager = await init()
+            setIsLoading(false)
+
+            setShowInitialModal(!manager?.adminStamp)
           }}
         />
       </div>
     )
   }
 
-  if (initializationError) {
+  if (initializationError && !isLoading) {
     return (
       <div className="fm-main">
         <div className="fm-loading">
@@ -58,10 +80,13 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (showInitialModal) {
+  if (showInitialModal && !isLoading && !isAdminDrive) {
     return (
       <div className="fm-main">
-        <InitialModal handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)} />
+        <InitialModal
+          handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
+          handleShowError={(flag: boolean) => setShowErrorModal(flag)}
+        />
       </div>
     )
   }
@@ -78,7 +103,9 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  return (
+  return showErrorModal ? (
+    <ErrorModal label={'Error during admin stamp creation, reload and try again'} />
+  ) : (
     <SearchProvider>
       <ViewProvider>
         <div className="fm-main">
@@ -87,7 +114,7 @@ export function FileManagerPage(): ReactElement {
             <Sidebar />
             <FileBrowser />
           </div>
-          <AdminStatusBar adminStamp={adminStamp} adminDrive={adminDrive} loading={!adminStamp || !adminDrive} />
+          <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} />
         </div>
       </ViewProvider>
     </SearchProvider>

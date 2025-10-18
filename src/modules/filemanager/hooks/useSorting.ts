@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 
-export type SortKey = 'name' | 'size' | 'timestamp' | 'drive'
-export type SortDir = 'asc' | 'desc'
+export enum SortKey {
+  Name = 'name',
+  Size = 'size',
+  Timestamp = 'timestamp',
+  Drive = 'drive',
+}
+
+export enum SortDir {
+  Asc = 'asc',
+  Desc = 'desc',
+}
+
 export type SortState = { key: SortKey; dir: SortDir }
 
 type Options = {
@@ -13,7 +23,7 @@ type Options = {
 }
 
 const STORAGE_KEY = 'fm.sort.v1'
-const DEFAULT_STATE: SortState = { key: 'timestamp', dir: 'desc' }
+const DEFAULT_STATE: SortState = { key: SortKey.Timestamp, dir: SortDir.Desc }
 
 const coerceNumber = (v: unknown): number => {
   if (typeof v === 'number' && Number.isFinite(v)) return v
@@ -40,8 +50,7 @@ const getSize = (fi: FileInfo): number => {
 const getTs = (fi: FileInfo): number => coerceNumber((fi as unknown as { timestamp?: number | string }).timestamp)
 
 const isValidState = (s: Partial<SortState>): s is SortState =>
-  (s.key === 'name' || s.key === 'size' || s.key === 'timestamp' || s.key === 'drive') &&
-  (s.dir === 'asc' || s.dir === 'desc')
+  Object.values(SortKey).includes(s.key as SortKey) && Object.values(SortDir).includes(s.dir as SortDir)
 
 export function useSorting(
   items: FileInfo[],
@@ -81,17 +90,21 @@ export function useSorting(
   }, [persist, storageKey, sort])
 
   const toggle = (key: SortKey): void => {
-    setSort(prev => (prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
+    setSort(prev =>
+      prev.key === key
+        ? { key, dir: prev.dir === SortDir.Asc ? SortDir.Desc : SortDir.Asc }
+        : { key, dir: SortDir.Asc },
+    )
   }
 
   const reset = (): void => setSort(defaultState)
 
   const sorted = useMemo<FileInfo[]>(() => {
     const arr = [...items]
-    const mul = sort.dir === 'asc' ? 1 : -1
+    const mul = sort.dir === SortDir.Asc ? 1 : -1
 
     arr.sort((a, b) => {
-      if (sort.key === 'name') {
+      if (sort.key === SortKey.Name) {
         const an = (a.name ?? '').toLocaleLowerCase()
         const bn = (b.name ?? '').toLocaleLowerCase()
 
@@ -102,7 +115,7 @@ export function useSorting(
         return 0
       }
 
-      if (sort.key === 'size') {
+      if (sort.key === SortKey.Size) {
         const av = getSize(a)
         const bv = getSize(b)
 
@@ -113,7 +126,7 @@ export function useSorting(
         return 0
       }
 
-      if (sort.key === 'drive') {
+      if (sort.key === SortKey.Drive) {
         const ad = (getDriveName?.(a) ?? '').toLocaleLowerCase()
         const bd = (getDriveName?.(b) ?? '').toLocaleLowerCase()
 

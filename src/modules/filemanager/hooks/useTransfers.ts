@@ -56,24 +56,6 @@ const buildUploadMeta = (files: File[] | FileList, path?: string): UploadMeta =>
   return meta
 }
 
-const makeUploadInfo = (args: {
-  name: string
-  files: File[]
-  meta: Record<string, string | number>
-  topic?: string
-}): FileInfoOptions => {
-  const info = {
-    name: args.name,
-    customMetadata: normalizeCustomMetadata(args.meta),
-    topic: args.topic,
-  }
-
-  return {
-    info,
-    files: args.files,
-  }
-}
-
 type UploadTask = {
   file: File
   finalName: string
@@ -285,12 +267,12 @@ export function useTransfers() {
   const processUploadTask = useCallback(
     async (task: UploadTask) => {
       if (!fm || !currentDrive) return
-      const info = makeUploadInfo({
+      const info: FileInfoOptions = {
         name: task.finalName,
         files: [task.file],
-        meta: buildUploadMeta([task.file]),
+        customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file])),
         topic: task.isReplace ? task.replaceTopic : undefined,
-      })
+      }
 
       const progressCb = trackUploadProgress(
         task.finalName,
@@ -359,8 +341,11 @@ export function useTransfers() {
             ...Array.from(reserved),
             ...Array.from(progressNames),
           ])
-          const { usedBytes, totalBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
-          let remainingBytes = totalBytes - usedBytes
+          const { remainingBytes: remaining } = calculateStampCapacityMetrics(
+            currentStamp || null,
+            currentDrive || null,
+          )
+          let remainingBytes = remaining
 
           let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(
             file.name,
@@ -371,7 +356,14 @@ export function useTransfers() {
 
           if (file.size > remainingBytes) {
             // eslint-disable-next-line no-console
-            console.log('Skipping upload of file because there is not enough space in the current stamp')
+            console.log(
+              'Skipping upload of file because there is not enough space in the current stamp: ',
+              file.name,
+              ' size: ',
+              file.size,
+              ' remaining: ',
+              remainingBytes,
+            )
             setShowUploadError?.(true)
             break
           }
@@ -417,6 +409,7 @@ export function useTransfers() {
 
         return tasks
       }
+
       const runQueue = async () => {
         if (runningRef.current) return
         runningRef.current = true

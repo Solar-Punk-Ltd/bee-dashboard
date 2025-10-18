@@ -85,27 +85,17 @@ export const handleCreateDrive = async (
   setLoading?: (loading: boolean) => void,
   onSuccess?: (batch?: PostageBatch) => void,
   onError?: (error: unknown) => void,
-  signal?: AbortSignal,
 ): Promise<void> => {
   if (!beeApi || !fm) return
 
-  const safe = (fn: () => void) => {
-    if (!signal?.aborted) fn()
-  }
-
   try {
-    safe(() => setLoading?.(true))
-
-    if (signal?.aborted) return
+    setLoading?.(true)
 
     let batchId: BatchId
     let batch: PostageBatch
 
     if (!existingBatch) {
-      // Buy a new stamp
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
-
-      if (signal?.aborted) return
 
       batch = await beeApi.getPostageBatch(batchId)
     } else {
@@ -113,23 +103,29 @@ export const handleCreateDrive = async (
       batch = existingBatch
     }
 
-    if (signal?.aborted) return
-
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
 
-    if (signal?.aborted) return
-
-    safe(() => onSuccess?.(batch))
+    onSuccess?.(batch)
   } catch (e) {
-    if (!signal?.aborted) {
-      safe(() => onError?.(e))
-    }
+    onError?.(e)
   } finally {
-    safe(() => setLoading?.(false))
+    setLoading?.(false)
   }
 }
 
-export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, drive?: DriveInfo | null) => {
+interface StampCapacityMetrics {
+  capacityPct: number
+  usedSize: string
+  totalSize: string
+  usedBytes: number
+  totalBytes: number
+  remainingBytes: number
+}
+
+export const calculateStampCapacityMetrics = (
+  stamp: PostageBatch | null,
+  drive?: DriveInfo | null,
+): StampCapacityMetrics => {
   if (!stamp) {
     return {
       capacityPct: 0,
@@ -137,23 +133,27 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, drive?
       totalSize: '—',
       usedBytes: 0,
       totalBytes: 0,
+      remainingBytes: 0,
     }
   }
 
   let usedBytes = 0
   let totalBytes = 0
   let capacityPct = 0
+  let remainingBytes = 0
 
   if (drive) {
     totalBytes = stamp.calculateSize(false, drive.redundancyLevel).toBytes()
-    const remainingBytes = stamp.calculateRemainingSize(false, drive.redundancyLevel).toBytes()
+    remainingBytes = stamp.calculateRemainingSize(false, drive.redundancyLevel).toBytes()
     usedBytes = totalBytes - remainingBytes
     capacityPct = ((totalBytes - remainingBytes) / totalBytes) * 100
   } else {
     capacityPct = stamp.usage * 100
     usedBytes = stamp.size.toBytes() - stamp.remainingSize.toBytes()
     totalBytes = stamp.size.toBytes()
+    remainingBytes = totalBytes - usedBytes
   }
+
   const usedSize = getHumanReadableFileSize(usedBytes)
   const totalSize = getHumanReadableFileSize(totalBytes)
 
@@ -163,6 +163,7 @@ export const calculateStampCapacityMetrics = (stamp: PostageBatch | null, drive?
     totalSize,
     usedBytes,
     totalBytes,
+    remainingBytes,
   }
 }
 

@@ -28,7 +28,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
-  const { fm, refreshDrives } = useContext(FMContext)
+  const { fm } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const isMountedRef = useRef(true)
   const [isUpgrading, setIsUpgrading] = useState(false)
@@ -59,11 +59,10 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
 
       if (driveId === id) setIsUpgrading(true)
     }
-    const onEnd = async (e: Event) => {
-      const { driveId, success } = (e as CustomEvent).detail || {}
+    const onEnd = (e: Event) => {
+      const { driveId } = (e as CustomEvent).detail || {}
 
       if (driveId === id) {
-        if (success) await Promise.resolve(refreshDrives())
         setIsUpgrading(false)
       }
     }
@@ -75,8 +74,8 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [drive.id, refreshDrives])
-
+  }, [drive.id])
+  // TODO: trigger on upgrade success and upload success
   const { capacityPct, usedSize, totalSize } = useMemo(
     () => calculateStampCapacityMetrics(stamp, drive),
     [stamp, drive],
@@ -156,19 +155,17 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
           <span>Upgrading drive…</span>
         </div>
       )}
-
       {isDestroyDriveModalOpen && (
         <DestroyDriveModal
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
           doDestroy={async () => {
+            // TODO: show errormodal everywhere the same way
             await handleDestroyDrive(
               beeApi,
               fm,
               drive,
               () => {
-                refreshDrives()
-
                 if (isMountedRef.current) {
                   setIsDestroyDriveModalOpen(false)
                 }

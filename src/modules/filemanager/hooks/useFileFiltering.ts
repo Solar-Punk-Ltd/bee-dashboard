@@ -141,6 +141,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
 
         if (a === undefined || b === undefined) {
           // TODO: Skip if version parsing fails?
+          // TODO: review keyof everywhere
         } else if (a > b || (a === b && Number(fi.timestamp || 0) > Number(prev.timestamp || 0))) {
           latest.set(k, fi)
         }

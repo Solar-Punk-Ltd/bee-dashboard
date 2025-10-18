@@ -1,8 +1,6 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
-import type { FileManagerBase } from '@solarpunkltd/file-manager-lib'
-import CircularProgress from '@material-ui/core/CircularProgress'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -18,6 +16,7 @@ import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 interface InitialModalProps {
   handleVisibility: (isVisible: boolean) => void
+  handleShowError: (flag: boolean) => void
 }
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
@@ -37,13 +36,12 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
     }
   }),
 ]
-// TODO: refactor InitialModal and Provider together
-export function InitialModal({ handleVisibility }: InitialModalProps): ReactElement {
+
+export function InitialModal({ handleVisibility, handleShowError }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
-  const [isAdminStampCreationInProgress, setIsAdminStampCreationInProgress] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
@@ -51,92 +49,17 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setAdminStamp, refreshDrives, init } = useContext(FMContext)
+  const { fm } = useContext(FMContext)
 
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
 
+  // TODO: use safeSet everywhere else in other components too
   const safeSet =
     <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
     (value: React.SetStateAction<T>) => {
       if (isMountedRef.current) setter(value)
     }
-
-  const safeSetProgress = safeSet(setIsAdminStampCreationInProgress)
-  const handleExistingAdminDrive = useCallback(() => {
-    if (!selectedBatch || !isMountedRef.current) return
-
-    setAdminStamp(selectedBatch)
-    refreshDrives()
-    handleVisibility(false)
-  }, [selectedBatch, setAdminStamp, refreshDrives, handleVisibility])
-
-  const handleNewAdminDriveSuccess = useCallback(
-    (batch?: PostageBatch) => {
-      if (!isMountedRef.current) return
-
-      setAdminStamp(batch || null)
-      refreshDrives()
-      handleVisibility(false)
-    },
-    [setAdminStamp, refreshDrives, handleVisibility],
-  )
-
-  const controllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    return () => controllerRef.current?.abort()
-  }, [])
-
-  const createNewAdminDriveWithFm = useCallback(
-    async (fmInstance: FileManagerBase) => {
-      controllerRef.current?.abort()
-      controllerRef.current = new AbortController()
-      await handleCreateDrive(
-        beeApi,
-        fmInstance,
-        Size.fromBytes(capacity),
-        Duration.fromEndDate(validityEndDate),
-        ADMIN_STAMP_LABEL,
-        false,
-        erasureCodeLevel,
-        true,
-        selectedBatch,
-        safeSetProgress,
-        handleNewAdminDriveSuccess,
-        undefined,
-        controllerRef.current.signal,
-      )
-    },
-    [beeApi, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleNewAdminDriveSuccess, safeSetProgress],
-  )
-
-  const handleAdminDriveReady = useCallback(
-    (hasExistingDrive: boolean, fmInstance: FileManagerBase) => {
-      if (hasExistingDrive) {
-        if (selectedBatch) {
-          handleExistingAdminDrive()
-        }
-      } else {
-        createNewAdminDriveWithFm(fmInstance)
-      }
-    },
-    [selectedBatch, handleExistingAdminDrive, createNewAdminDriveWithFm],
-  )
-
-  const handleFileManagerInit = useCallback(async () => {
-    safeSetProgress(true)
-
-    try {
-      const ok = await init(selectedBatch?.batchID.toString(), handleAdminDriveReady)
-
-      if (!ok) {
-        safeSetProgress(false)
-      }
-    } catch {
-      safeSetProgress(false)
-    }
-  }, [init, selectedBatch, handleAdminDriveReady, safeSetProgress])
 
   useEffect(() => {
     return () => {
@@ -144,23 +67,33 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     }
   }, [])
 
-  useEffect(() => {
-    let isMounted = true
+  const createAdminDrive = useCallback(async () => {
+    // TODO: is onerror, onsuccess, onloading... together needed ?
+    await handleCreateDrive(
+      beeApi,
+      fm,
+      Size.fromBytes(capacity),
+      Duration.fromEndDate(validityEndDate),
+      ADMIN_STAMP_LABEL,
+      false,
+      erasureCodeLevel,
+      true,
+      selectedBatch,
+      () => handleVisibility(false),
+      () => handleVisibility(false),
+      () => handleShowError(true),
+    )
+  }, [beeApi, fm, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleVisibility, handleShowError])
 
+  useEffect(() => {
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
 
-      if (isMounted) {
-        setUsableStamps([...stamps])
-      }
+      safeSet(setUsableStamps)([...stamps])
     }
 
     if (beeApi) {
       getStamps()
-    }
-
-    return () => {
-      isMounted = false
     }
   }, [beeApi])
 
@@ -179,23 +112,20 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
         erasureCodeLevel,
         beeApi,
         (cost: string) => {
-          if (isMountedRef.current) {
-            setCost(cost)
-          }
+          safeSet(setCost)(cost)
         },
         currentFetch,
       )
 
-      if (lifetimeIndex >= 0 && isMountedRef.current) {
-        setIsCreateEnabled(true)
+      if (lifetimeIndex >= 0) {
+        safeSet(setIsCreateEnabled)(true)
       }
     } else {
-      if (isMountedRef.current) {
-        setCost('0')
-        setIsCreateEnabled(false)
-      }
+      safeSet(setCost)('0')
+      safeSet(setIsCreateEnabled)(false)
     }
-  }, [validityEndDate, beeApi, capacity, erasureCodeLevel, lifetimeIndex])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validityEndDate, beeApi, capacity, lifetimeIndex])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -214,17 +144,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
     [selectedBatch],
   )
 
-  return isAdminStampCreationInProgress ? (
-    <div className="fm-initialization-modal-container">
-      <div className="fm-modal-window">
-        <div className="fm-initilization-progress-content">
-          <div>Your admin drive is being created...</div>
-
-          <CircularProgress size={18} />
-        </div>
-      </div>
-    </div>
-  ) : (
+  return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
@@ -233,7 +153,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
           <div className="fm-modal-window-input-container">
             <CustomDropdown
               id="batch-id-selector"
-              label="Selected existing batch ID:"
+              label="Select an existing batch ID or Create a new stamp for your Admin Drive:"
               options={createBatchIdOptions(usableStamps)}
               value={selectedBatchIndex}
               onChange={(index: number) => {
@@ -293,7 +213,7 @@ export function InitialModal({ handleVisibility }: InitialModalProps): ReactElem
             label={selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'}
             variant="primary"
             disabled={selectedBatch ? false : !isCreateEnabled}
-            onClick={handleFileManagerInit}
+            onClick={createAdminDrive}
           />
         </div>
       </div>

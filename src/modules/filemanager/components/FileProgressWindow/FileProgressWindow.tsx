@@ -5,6 +5,7 @@ import './FileProgressWindow.scss'
 import { GetIconElement } from '../../utils/GetIconElement'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { FileTransferType, TransferBarColor, TransferStatus } from '../../constants/fileTransfer'
+import { capitalizeFirstLetter } from '../../utils/common'
 
 type ProgressItem = {
   name: string
@@ -64,7 +65,7 @@ export function FileProgressWindow({
 
   const getTransferInfo = (item: ProgressItem, pct?: number) => {
     const transferType = item?.kind ?? type
-    const cap = transferType.charAt(0).toUpperCase() + transferType.slice(1)
+    const cap = capitalizeFirstLetter(transferType)
     let verb = `${cap}ing`
 
     if (cap.toLowerCase() === 'update') verb = 'Updating'

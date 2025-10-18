@@ -4,7 +4,7 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { ViewType } from '../../../constants/fileTransfer'
+import { ActionTag, ViewType } from '../../../constants/fileTransfer'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
@@ -17,7 +17,7 @@ import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
-import { Dir, formatBytes, isTrashed } from '../../../utils/common'
+import { capitalizeFirstLetter, Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
@@ -52,7 +52,7 @@ export function FileItem({
   onBulk,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, refreshFiles, currentDrive, files, drives } = useContext(FMContext)
+  const { fm, currentDrive, files, drives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
@@ -126,7 +126,6 @@ export function FileItem({
   }
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
-
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       handleCloseContext()
@@ -150,43 +149,44 @@ export function FileItem({
 
   const doTrash = useCallback(async () => {
     if (!fm) return
-    const withMeta = {
+
+    const withMeta: FileInfo = {
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
-        lifecycle: 'Trashed',
+        lifecycle: capitalizeFirstLetter(ActionTag.Trashed),
         lifecycleAt: new Date().toISOString(),
       },
     }
-    await fm.trashFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+
+    await fm.trashFile(withMeta)
+  }, [fm, fileInfo])
 
   const doRecover = useCallback(async () => {
     if (!fm) return
-    const withMeta = {
+
+    const withMeta: FileInfo = {
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
-        lifecycle: 'Recovered',
+        lifecycle: capitalizeFirstLetter(ActionTag.Recovered),
         lifecycleAt: new Date().toISOString(),
       },
     }
-    await fm.recoverFile(withMeta as FileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+    await fm.recoverFile(withMeta)
+  }, [fm, fileInfo])
 
   const doForget = useCallback(async () => {
     if (!fm) return
+
     await fm.forgetFile(fileInfo)
-    await Promise.resolve(refreshFiles())
-  }, [fm, fileInfo, refreshFiles])
+  }, [fm, fileInfo])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
     setShowDestroyDriveModal(true)
   }, [currentDrive])
-  // TODO: do rename upload progress
+
   const doRename = useCallback(
     async (newName: string) => {
       if (!fm || !currentDrive) return
@@ -196,24 +196,22 @@ export function FileItem({
       await fm.upload(
         currentDrive,
         {
-          info: {
-            name: newName,
-            topic: fileInfo.topic,
-            file: {
-              reference: fileInfo.file.reference,
-              historyRef: fileInfo.file.historyRef,
-            },
-            customMetadata: fileInfo.customMetadata,
+          name: newName,
+          topic: fileInfo.topic,
+          file: {
+            reference: fileInfo.file.reference,
+            historyRef: fileInfo.file.historyRef,
           },
+          customMetadata: fileInfo.customMetadata,
+          files: [],
         },
         {
           actHistoryAddress: fileInfo.file.historyRef,
         },
       )
-
-      await Promise.resolve(refreshFiles())
     },
-    [fm, currentDrive, fileInfo, takenNames, refreshFiles],
+
+    [fm, currentDrive, fileInfo, takenNames],
   )
 
   const MenuItem = ({
@@ -555,8 +553,6 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                refreshFiles()
-
                 if (isMountedRef.current) {
                   setShowDestroyDriveModal(false)
                   setDestroyDrive(null)

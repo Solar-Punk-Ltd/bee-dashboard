@@ -1,7 +1,8 @@
 import { ReactElement } from 'react'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import { useBulkActions } from '../../../hooks/useBulkActions'
-import type { SortDir, SortKey } from '../../../hooks/useSorting'
+import { SortDir, SortKey } from '../../../hooks/useSorting'
+import { capitalizeFirstLetter } from 'src/modules/filemanager/utils/common'
 
 interface FileBrowserHeaderProps {
   isSearchMode: boolean
@@ -15,11 +16,18 @@ interface FileBrowserHeaderProps {
   onClearSort: () => void
 }
 
+enum AriaSortValue {
+  Ascending = 'ascending',
+  Descending = 'descending',
+  None = 'none',
+}
+
 const Arrow = ({ active, dir }: { active: boolean; dir: SortDir }) => {
   let title: string | undefined
 
   if (active) {
-    title = dir === 'asc' ? 'Ascending' : 'Descending'
+    const sortValue = dir === SortDir.Asc ? AriaSortValue.Ascending : AriaSortValue.Descending
+    title = capitalizeFirstLetter(sortValue)
   } else {
     title = undefined
   }
@@ -50,7 +58,7 @@ function HeaderCell({
   dir: SortDir
   onToggle: () => void
   onClear: () => void
-  ariaSort: 'ascending' | 'descending' | 'none'
+  ariaSort: AriaSortValue
   'data-testid'?: string
 }) {
   return (
@@ -62,10 +70,18 @@ function HeaderCell({
         data-dir={isActive ? dir : undefined}
         aria-label={
           isActive
-            ? `Sort by ${label.toLowerCase()}, currently ${dir === 'asc' ? 'ascending' : 'descending'}`
+            ? `Sort by ${label.toLowerCase()}, currently ${
+                dir === SortDir.Asc ? AriaSortValue.Ascending : AriaSortValue.Descending
+              }`
             : `Sort by ${label.toLowerCase()}`
         }
-        title={isActive ? `Currently ${dir === 'asc' ? 'Ascending' : 'Descending'}` : 'Click to sort'}
+        title={
+          isActive
+            ? `Currently ${capitalizeFirstLetter(
+                dir === SortDir.Asc ? AriaSortValue.Ascending : AriaSortValue.Descending,
+              )}`
+            : 'Click to sort'
+        }
       >
         <span>{label}</span>
         <Arrow active={isActive} dir={dir} />
@@ -101,10 +117,10 @@ export function FileBrowserHeader({
   onSortDrive,
   onClearSort,
 }: FileBrowserHeaderProps): ReactElement {
-  const ariaSort = (thisKey: SortKey): 'ascending' | 'descending' | 'none' => {
-    if (sortKey !== thisKey) return 'none'
+  const ariaSort = (thisKey: SortKey): AriaSortValue => {
+    if (sortKey !== thisKey) return AriaSortValue.None
 
-    return sortDir === 'asc' ? 'ascending' : 'descending'
+    return sortDir === SortDir.Asc ? AriaSortValue.Ascending : AriaSortValue.Descending
   }
 
   return (
@@ -121,11 +137,11 @@ export function FileBrowserHeader({
       <div className="fm-file-browser-content-header-item fm-name">
         <HeaderCell
           label="Name"
-          isActive={sortKey === 'name'}
+          isActive={sortKey === SortKey.Name}
           dir={sortDir}
           onToggle={onSortName}
           onClear={onClearSort}
-          ariaSort={ariaSort('name')}
+          ariaSort={ariaSort(SortKey.Name)}
           data-testid="hdr-name"
         />
       </div>
@@ -134,11 +150,11 @@ export function FileBrowserHeader({
         <div className="fm-file-browser-content-header-item fm-drive">
           <HeaderCell
             label="Drive"
-            isActive={sortKey === 'drive'}
+            isActive={sortKey === SortKey.Drive}
             dir={sortDir}
             onToggle={onSortDrive}
             onClear={onClearSort}
-            ariaSort={ariaSort('drive')}
+            ariaSort={ariaSort(SortKey.Drive)}
             data-testid="hdr-drive"
           />
         </div>
@@ -147,11 +163,11 @@ export function FileBrowserHeader({
       <div className="fm-file-browser-content-header-item fm-size">
         <HeaderCell
           label="Size"
-          isActive={sortKey === 'size'}
+          isActive={sortKey === SortKey.Size}
           dir={sortDir}
           onToggle={onSortSize}
           onClear={onClearSort}
-          ariaSort={ariaSort('size')}
+          ariaSort={ariaSort(SortKey.Size)}
           data-testid="hdr-size"
         />
       </div>
@@ -159,11 +175,11 @@ export function FileBrowserHeader({
       <div className="fm-file-browser-content-header-item fm-date-mod">
         <HeaderCell
           label="Date mod."
-          isActive={sortKey === 'timestamp'}
+          isActive={sortKey === SortKey.Timestamp}
           dir={sortDir}
           onToggle={onSortDate}
           onClear={onClearSort}
-          ariaSort={ariaSort('timestamp')}
+          ariaSort={ariaSort(SortKey.Timestamp)}
           data-testid="hdr-date"
         />
       </div>

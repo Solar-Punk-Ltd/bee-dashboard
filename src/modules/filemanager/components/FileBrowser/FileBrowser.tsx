@@ -13,7 +13,7 @@ import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
-import { useSorting } from '../../hooks/useSorting'
+import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -45,7 +45,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, refreshFiles, resyncFM, drives, fm, showUploadError } = useContext(FMContext)
+  const { files, currentDrive, resync, drives, fm, showUploadError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -81,8 +81,7 @@ export function FileBrowser(): ReactElement {
   const isSearchMode = q.length > 0
 
   const getDriveName = (fi: FileInfo): string => {
-    const id = fi.driveId?.toString?.() ?? ''
-    const match = drives?.find(d => d.id?.toString?.() === id)
+    const match = drives.find(d => d.id.toString() === fi.driveId.toString())
 
     return match?.name ?? ''
   }
@@ -100,7 +99,7 @@ export function FileBrowser(): ReactElement {
       stopPropagation: () => {},
       clientX: clickX,
       clientY: clickY,
-    } as unknown as React.MouseEvent<HTMLDivElement>
+    } as React.MouseEvent<HTMLDivElement>
     handleContextMenu(fakeEvt)
   }
 
@@ -117,7 +116,7 @@ export function FileBrowser(): ReactElement {
 
   const { sorted, sort, toggle, reset } = useSorting(listToRender, {
     persist: false,
-    defaultState: { key: 'timestamp', dir: 'desc' },
+    defaultState: { key: SortKey.Timestamp, dir: SortDir.Desc },
     getDriveName,
   })
 
@@ -204,7 +203,6 @@ export function FileBrowser(): ReactElement {
       fm,
       currentDrive,
       () => {
-        refreshFiles()
         setShowDestroyDriveModal(false)
       },
       error => {
@@ -303,9 +301,11 @@ export function FileBrowser(): ReactElement {
     handleCloseContext()
 
     if (isRefreshing) return
+
     setIsRefreshing(true)
+
     try {
-      await resyncFM()
+      await resync()
     } finally {
       if (isMountedRef.current) {
         setIsRefreshing(false)
@@ -343,10 +343,10 @@ export function FileBrowser(): ReactElement {
             bulk={bulk}
             sortKey={sort.key}
             sortDir={sort.dir}
-            onSortName={() => toggle('name')}
-            onSortSize={() => toggle('size')}
-            onSortDate={() => toggle('timestamp')}
-            onSortDrive={() => toggle('drive')}
+            onSortName={() => toggle(SortKey.Name)}
+            onSortSize={() => toggle(SortKey.Size)}
+            onSortDate={() => toggle(SortKey.Timestamp)}
+            onSortDrive={() => toggle(SortKey.Drive)}
             onClearSort={reset}
           />
           <div

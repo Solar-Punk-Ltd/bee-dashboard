@@ -1,3 +1,4 @@
+import { PrivateKey } from '@ethersphere/bee-js'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 
 export function getDaysLeft(expiryDate: Date): number {
@@ -20,7 +21,6 @@ export const fromBytesConversion = (size: number, metric: string) => {
 }
 
 const lifetimeAdjustments = new Map<number, (date: Date) => void>([
-  //TODO: It needs to be discussed what the minimum value for value upgrade is
   [0, date => date.setDate(date.getDate() + 7)],
   [1, date => date.setMonth(date.getMonth() + 1)],
   [2, date => date.setMonth(date.getMonth() + 3)],
@@ -89,4 +89,22 @@ export function getFileId(fi: FileInfo): string {
 }
 
 export const KEY_STORAGE = 'privateKey'
-export const FM_STORAGE_STATE = 'fmState'
+
+export function getSignerPk(): PrivateKey | undefined {
+  try {
+    const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
+
+    return new PrivateKey(fromLocalPk)
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
+
+    return undefined
+  }
+}
+
+export function setSignerPk(pk: string): void {
+  localStorage.setItem(KEY_STORAGE, pk)
+}
+
+export const capitalizeFirstLetter = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1)
