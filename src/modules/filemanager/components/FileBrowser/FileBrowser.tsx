@@ -45,7 +45,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, resync, drives, fm, showUploadError } = useContext(FMContext)
+  const { files, currentDrive, resync, drives, fm, showUploadError, setShowUploadError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -374,7 +374,12 @@ export function FileBrowser(): ReactElement {
                 delete: () => setShowBulkDeleteModal(true),
               }}
             />
-            {showUploadError && <ErrorModal label="There is not enough space to continue the upload." />}
+            {showUploadError && (
+              <ErrorModal
+                label={'There is not enough space to continue the upload.'}
+                onClick={() => setShowUploadError(false)}
+              />
+            )}
 
             {showContext && (
               <div

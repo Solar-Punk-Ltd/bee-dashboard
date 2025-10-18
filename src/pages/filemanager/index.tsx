@@ -10,7 +10,7 @@ import { InitialModal } from '../../modules/filemanager/components/InitialModal/
 import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
-import { ErrorModal } from 'src/modules/filemanager/components/ErrorModal/ErrorModal'
+import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -104,7 +104,7 @@ export function FileManagerPage(): ReactElement {
   }
 
   return showErrorModal ? (
-    <ErrorModal label={'Error during admin stamp creation, reload and try again'} />
+    <ErrorModal label={'Error during admin stamp creation, try again'} onClick={() => setShowInitialModal(true)} />
   ) : (
     <SearchProvider>
       <ViewProvider>
