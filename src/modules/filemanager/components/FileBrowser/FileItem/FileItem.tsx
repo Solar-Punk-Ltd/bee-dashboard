@@ -77,6 +77,8 @@ export function FileItem({
   const statusLabel = isTrashedFile ? 'Trash' : 'Active'
 
   useEffect(() => {
+    isMountedRef.current = true
+
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
       const driveStamp = stamps.find(s =>
@@ -98,7 +100,8 @@ export function FileItem({
   }, [beeApi, drives, fileInfo.driveId])
 
   const openGetInfo = useCallback(async () => {
-    if (!fm) return
+    if (!fm || !isMountedRef.current) return
+
     const groups = await buildGetInfoGroups(fm, fileInfo, driveName, driveStamp)
     setInfoGroups(groups)
     setShowGetInfoModal(true)
@@ -124,9 +127,9 @@ export function FileItem({
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
-      handleCloseContext()
-
       if (!fm || !beeApi) return
+
+      handleCloseContext()
 
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
@@ -179,8 +182,8 @@ export function FileItem({
   }, [fm, fileInfo])
 
   const showDestroyDrive = useCallback(() => {
-    setDestroyDrive(currentDrive || null)
-    setShowDestroyDriveModal(true)
+    safeSetState(isMountedRef, setDestroyDrive)(currentDrive || null)
+    safeSetState(isMountedRef, setShowDestroyDriveModal)(true)
   }, [currentDrive])
 
   const doRename = useCallback(
@@ -267,7 +270,7 @@ export function FileItem({
             disabled={isBulk}
             onClick={() => {
               handleCloseContext()
-              setShowRenameModal(true)
+              safeSetState(isMountedRef, setShowRenameModal)(true)
             }}
           >
             Rename
@@ -277,7 +280,7 @@ export function FileItem({
             disabled={isBulk}
             onClick={() => {
               handleCloseContext()
-              setShowVersionHistory(true)
+              safeSetState(isMountedRef, setShowVersionHistory)(true)
             }}
           >
             Version history
@@ -288,7 +291,7 @@ export function FileItem({
               handleCloseContext()
 
               if (isBulk) onBulk.delete?.()
-              else setShowDeleteModal(true)
+              else safeSetState(isMountedRef, setShowDeleteModal)(true)
             }}
           >
             Delete
@@ -331,7 +334,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                setShowDestroyDriveModal(true)
+                safeSetState(isMountedRef, setShowDestroyDriveModal)(true)
               }}
             >
               Destroy
@@ -340,7 +343,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                setConfirmForget(true)
+                safeSetState(isMountedRef, setConfirmForget)(true)
               }}
             >
               Forget permanently
@@ -475,7 +478,7 @@ export function FileItem({
                 doTrash()
                 break
               case FileAction.Forget:
-                setConfirmForget(true)
+                safeSetState(isMountedRef, setConfirmForget)(true)
                 break
               case FileAction.Destroy:
                 showDestroyDrive()
