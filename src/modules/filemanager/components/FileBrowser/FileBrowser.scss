@@ -253,6 +253,65 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+.fm-file-browser-content-header-item {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fm-header-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* space between sort button and the × bubble */
+}
+
+.fm-header-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.fm-header-button[data-dir='asc'] .fm-file-browser-content-header-item-icon {
+  transform: rotate(180deg);
+}
+
+.fm-file-browser-content-header-item-icon.is-inactive {
+  opacity: 0.4;
+}
+
+.fm-sort-clear {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.fm-sort-clear:hover,
+.fm-sort-clear:focus-visible {
+  opacity: 1;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(237, 129, 49, 0.2);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(2px); }
   to { opacity: 1; transform: translateY(0); }
