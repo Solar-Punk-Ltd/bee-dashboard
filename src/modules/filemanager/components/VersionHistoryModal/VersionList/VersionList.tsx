@@ -12,7 +12,7 @@ import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { capitalizeFirstLetter, formatBytes, indexStrToBigint } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
-import { ActionTag } from '../../../constants/fileTransfer'
+import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../../constants/transfers'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 
@@ -28,7 +28,7 @@ export const truncateNameMiddle = (s: string, max = 42): string => {
 interface VersionListProps {
   versions: FileInfo[]
   headFi: FileInfo
-  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
+  onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   restoreVersion: (fi: FileInfo) => Promise<void>
 }
 
@@ -433,7 +433,11 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
       if (!fm || !beeApi) return
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
-      await startDownloadingQueue(fm, [fileInfo], onDownload(fileInfo.name, formatBytes(rawSize), expectedSize))
+      await startDownloadingQueue(
+        fm,
+        [fileInfo],
+        onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize }),
+      )
     },
     [handleCloseContext, fm, beeApi, onDownload],
   )

@@ -34,3 +34,14 @@ export enum FileAction {
   Forget = 'forget',
   Destroy = 'destroy',
 }
+
+export type TrackDownloadProps = {
+  name: string
+  size?: string
+  expectedSize?: number
+}
+
+export interface DownloadProgress {
+  progress: number
+  isDownloading: boolean
+}

@@ -10,13 +10,14 @@ import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Button } from '../../Button/Button'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
-import { ViewType } from '../../../constants/fileTransfer'
+import { ViewType } from '../../../constants/transfers'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
+import { safeSetState } from 'src/modules/filemanager/utils/common'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -166,17 +167,13 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
               fm,
               drive,
               () => {
-                if (isMountedRef.current) {
-                  setIsDestroyDriveModalOpen(false)
-                }
+                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
               },
               error => {
                 // eslint-disable-next-line no-console
                 console.error('Error destroying drive:', error)
 
-                if (isMountedRef.current) {
-                  setIsDestroyDriveModalOpen(false)
-                }
+                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
               },
             )
           }}

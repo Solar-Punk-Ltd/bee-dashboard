@@ -4,7 +4,7 @@ import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
 import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
 import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
-import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/fileTransfer'
+import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
 import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -15,7 +15,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
 import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 
-import { Point, Dir } from '../../utils/common'
+import { Point, Dir, safeSetState } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyDrive } from '../../utils/bee'
@@ -45,7 +45,7 @@ export function FileBrowser(): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, resync, drives, fm, showUploadError } = useContext(FMContext)
+  const { files, currentDrive, resync, drives, fm, showUploadError, setShowUploadError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -307,9 +307,7 @@ export function FileBrowser(): ReactElement {
     try {
       await resync()
     } finally {
-      if (isMountedRef.current) {
-        setIsRefreshing(false)
-      }
+      safeSetState(isMountedRef, setIsRefreshing)(false)
     }
   }
 
@@ -376,7 +374,12 @@ export function FileBrowser(): ReactElement {
                 delete: () => setShowBulkDeleteModal(true),
               }}
             />
-            {showUploadError && <ErrorModal label="There is not enough space to continue the upload." />}
+            {showUploadError && (
+              <ErrorModal
+                label={'There is not enough space to continue the upload.'}
+                onClick={() => setShowUploadError(false)}
+              />
+            )}
 
             {showContext && (
               <div

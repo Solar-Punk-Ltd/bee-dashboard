@@ -14,7 +14,7 @@ import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 import { indexStrToBigint } from '../../utils/common'
 import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
-import { ActionTag } from '../../constants/fileTransfer'
+import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../constants/transfers'
 import { useTransfers } from '../../hooks/useTransfers'
 
 const pageSize = 5
@@ -28,11 +28,7 @@ type RenameConfirmState = {
 interface VersionHistoryModalProps {
   fileInfo: FileInfo
   onCancelClick: () => void
-  onDownload?: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (progress: number, isDownloading: boolean) => void
+  onDownload?: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {

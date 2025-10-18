@@ -1,7 +1,7 @@
 import { ReactElement, useCallback } from 'react'
 import { FileItem } from '../FileItem/FileItem'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { ViewType } from '../../../constants/fileTransfer'
+import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
 
 interface FileBrowserContentProps {
@@ -10,11 +10,7 @@ interface FileBrowserContentProps {
   currentDrive: DriveInfo | null
   view: ViewType
   isSearchMode: boolean
-  trackDownload: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (progress: number, isDownloading: boolean) => void
+  trackDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   selectedIds?: Set<string>
   onToggleSelected?: (fi: FileInfo, checked: boolean) => void
   bulkSelectedCount?: number

@@ -1,7 +1,7 @@
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { ReactElement } from 'react'
 import '../FileBrowser.scss'
-import { ViewType } from '../../../constants/fileTransfer'
+import { ViewType } from '../../../constants/transfers'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface FileBrowserContextMenuProps {

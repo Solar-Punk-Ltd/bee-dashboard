@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { ViewType } from '../../modules/filemanager/constants/fileTransfer'
+import { ViewType } from '../../modules/filemanager/constants/transfers'
 
 interface ViewContextProps {
   view: ViewType

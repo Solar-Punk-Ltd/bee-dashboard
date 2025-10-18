@@ -3,7 +3,7 @@ import type { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { DeleteFileModal } from '../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../DestroyDriveModal/DestroyDriveModal'
-import { FileAction } from '../../constants/fileTransfer'
+import { FileAction } from '../../constants/transfers'
 
 interface FileBrowserModalsProps {
   showDeleteModal: boolean
