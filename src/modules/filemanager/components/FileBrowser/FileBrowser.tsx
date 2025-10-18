@@ -15,7 +15,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
 import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 
-import { Point, Dir } from '../../utils/common'
+import { Point, Dir, safeSetState } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyDrive } from '../../utils/bee'
@@ -307,9 +307,7 @@ export function FileBrowser(): ReactElement {
     try {
       await resync()
     } finally {
-      if (isMountedRef.current) {
-        setIsRefreshing(false)
-      }
+      safeSetState(isMountedRef, setIsRefreshing)(false)
     }
   }
 

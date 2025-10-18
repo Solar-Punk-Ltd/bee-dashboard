@@ -5,7 +5,7 @@ import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
 import { calculateStampCapacityMetrics, fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
-import { getExpiryDateByLifetime } from '../../utils/common'
+import { getExpiryDateByLifetime, safeSetState } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
@@ -54,13 +54,6 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
 
-  // TODO: use safeSet everywhere else in other components too
-  const safeSet =
-    <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
-    (value: React.SetStateAction<T>) => {
-      if (isMountedRef.current) setter(value)
-    }
-
   useEffect(() => {
     return () => {
       isMountedRef.current = false
@@ -89,7 +82,7 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
 
-      safeSet(setUsableStamps)([...stamps])
+      safeSetState(isMountedRef, setUsableStamps)([...stamps])
     }
 
     if (beeApi) {
@@ -112,17 +105,17 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
         erasureCodeLevel,
         beeApi,
         (cost: string) => {
-          safeSet(setCost)(cost)
+          safeSetState(isMountedRef, setCost)(cost)
         },
         currentFetch,
       )
 
       if (lifetimeIndex >= 0) {
-        safeSet(setIsCreateEnabled)(true)
+        safeSetState(isMountedRef, setIsCreateEnabled)(true)
       }
     } else {
-      safeSet(setCost)('0')
-      safeSet(setIsCreateEnabled)(false)
+      safeSetState(isMountedRef, setCost)('0')
+      safeSetState(isMountedRef, setIsCreateEnabled)(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validityEndDate, beeApi, capacity, lifetimeIndex])

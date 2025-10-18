@@ -2,7 +2,7 @@ import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
 import type { FileInfo, FileInfoOptions } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
-import { formatBytes } from '../utils/common'
+import { formatBytes, safeSetState } from '../utils/common'
 import { FileTransferType, TransferStatus } from '../constants/fileTransfer'
 import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
@@ -117,18 +117,18 @@ export function useTransfers() {
 
   const trackUploadProgress = useCallback(
     (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
+      if (!isMountedRef.current) {
+        return () => {
+          // no-op
+        }
+      }
+
       const driveName = currentDrive?.name
       const startedAt = Date.now()
 
       let lastTs = startedAt
       let lastProcessed = 0
       let lastEta: number | undefined
-
-      if (!isMountedRef.current) {
-        return () => {
-          /* no-op */
-        }
-      }
 
       setUploadItems(prev => {
         const idx = prev.findIndex(p => p.name === name)
@@ -152,7 +152,7 @@ export function useTransfers() {
       })
 
       const onProgress = (progress: { total: number; processed: number }) => {
-        if (cancelledUploadingRef.current.has(name)) return
+        if (cancelledUploadingRef.current.has(name) || !isMountedRef.current) return
 
         if (progress.total > 0) {
           const now = Date.now()
@@ -184,22 +184,17 @@ export function useTransfers() {
             etaSec = lastEta
           }
 
-          if (isMountedRef.current && !cancelledUploadingRef.current.has(name)) {
-            setUploadItems(prev =>
-              prev.map(it =>
-                it.name !== name || it.status === TransferStatus.Error
-                  ? it
-                  : { ...it, percent: Math.max(it.percent, pct), kind, etaSec },
-              ),
-            )
-          }
+          setUploadItems(prev =>
+            prev.map(it =>
+              it.name !== name || it.status === TransferStatus.Error
+                ? it
+                : { ...it, percent: Math.max(it.percent, pct), kind, etaSec },
+            ),
+          )
 
-          if (
-            progress.processed >= progress.total &&
-            isMountedRef.current &&
-            !cancelledUploadingRef.current.has(name)
-          ) {
+          if (progress.processed >= progress.total) {
             const finishedAt = Date.now()
+
             setUploadItems(prev =>
               prev.map(it =>
                 it.name === name && it.status !== TransferStatus.Error
@@ -464,13 +459,13 @@ export function useTransfers() {
     size?: string,
     expectedSize?: number,
   ): ((bytesDownloaded: number, downloadingFlag: boolean) => void) => {
-    const driveName = currentDrive?.name
-
     if (!isMountedRef.current) {
       return () => {
-        // No-op function for unmounted component
+        // No-op
       }
     }
+
+    const driveName = currentDrive?.name
 
     setDownloadItems(prev => {
       const row: TransferItem = {
@@ -499,9 +494,9 @@ export function useTransfers() {
     let lastEta: number | undefined
 
     const onProgress = (bytesDownloaded: number, downloadingFlag: boolean) => {
-      let percent = 0
-
       if (!isMountedRef.current) return
+
+      let percent = 0
 
       setDownloadItems(prev => {
         const now = Date.now()
@@ -584,7 +579,10 @@ export function useTransfers() {
   }
 
   const cancelOrDismissUpload = (name: string) => {
-    setUploadItems(prev => {
+    safeSetState(
+      isMountedRef,
+      setUploadItems,
+    )(prev => {
       const row = prev.find(r => r.name === name)
 
       if (!row) return prev
@@ -627,15 +625,14 @@ export function useTransfers() {
 
   const dismissAllUploads = () => {
     if (!isMountedRef.current) return
+
     setUploadItems([])
     cancelledNamesRef.current.clear()
     cancelledUploadingRef.current.clear()
   }
 
   const dismissAllDownloads = () => {
-    if (isMountedRef.current) {
-      setDownloadItems([])
-    }
+    safeSetState(isMountedRef, setDownloadItems)([])
   }
 
   useEffect(() => {

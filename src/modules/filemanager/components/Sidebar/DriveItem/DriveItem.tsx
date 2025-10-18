@@ -17,6 +17,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
+import { safeSetState } from 'src/modules/filemanager/utils/common'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -166,17 +167,13 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
               fm,
               drive,
               () => {
-                if (isMountedRef.current) {
-                  setIsDestroyDriveModalOpen(false)
-                }
+                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
               },
               error => {
                 // eslint-disable-next-line no-console
                 console.error('Error destroying drive:', error)
 
-                if (isMountedRef.current) {
-                  setIsDestroyDriveModalOpen(false)
-                }
+                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
               },
             )
           }}

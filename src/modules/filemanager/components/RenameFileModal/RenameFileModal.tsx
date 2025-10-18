@@ -5,6 +5,7 @@ import './RenameFileModal.scss'
 import { Button } from '../Button/Button'
 import EditIcon from 'remixicon-react/EditLineIcon'
 import { createPortal } from 'react-dom'
+import { safeSetState } from '../../utils/common'
 
 interface RenameFileModalProps {
   currentName: string
@@ -25,9 +26,8 @@ export function RenameFileModal({
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const isMountedRef = useRef(true)
-  useEffect(() => {
-    isMountedRef.current = true
 
+  useEffect(() => {
     return () => {
       isMountedRef.current = false
     }
@@ -74,7 +74,7 @@ export function RenameFileModal({
       setSubmitting(true)
       await onProceed(trimmed)
     } finally {
-      if (isMountedRef.current) setSubmitting(false)
+      safeSetState(isMountedRef, setSubmitting)(false)
     }
   }
 

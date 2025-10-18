@@ -17,7 +17,7 @@ import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
-import { capitalizeFirstLetter, Dir, formatBytes, isTrashed } from '../../../utils/common'
+import { capitalizeFirstLetter, Dir, formatBytes, isTrashed, safeSetState } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
@@ -55,23 +55,35 @@ export function FileItem({
   const { fm, currentDrive, files, drives } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
+
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
+  const [safePos, setSafePos] = useState(pos)
+  const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
+  const [showGetInfoModal, setShowGetInfoModal] = useState(false)
+  const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
+  const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
+  const [confirmForget, setConfirmForget] = useState(false)
 
   const isMountedRef = useRef(true)
   const rafIdRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    isMountedRef.current = true
+  const size = formatBytes(fileInfo.customMetadata?.size)
+  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
+  const isTrashedFile = isTrashed(fileInfo)
+  const statusLabel = isTrashedFile ? 'Trash' : 'Active'
 
+  useEffect(() => {
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
       const driveStamp = stamps.find(s =>
         drives.some(d => d.batchId.toString() === s.batchID.toString() && d.id === fileInfo.driveId),
       )
 
-      if (isMountedRef.current) {
-        setDriveStamp(driveStamp)
-      }
+      safeSetState(isMountedRef, setDriveStamp)(driveStamp)
     }
 
     getStamps()
@@ -84,22 +96,6 @@ export function FileItem({
       }
     }
   }, [beeApi, drives, fileInfo.driveId])
-
-  const size = formatBytes(fileInfo.customMetadata?.size)
-  const dateMod = new Date(fileInfo.timestamp || 0).toLocaleDateString()
-  const isTrashedFile = isTrashed(fileInfo)
-  const statusLabel = isTrashedFile ? 'Trash' : 'Active'
-
-  const [safePos, setSafePos] = useState(pos)
-  const [dropDir, setDropDir] = useState<Dir>(Dir.Down)
-  const [showGetInfoModal, setShowGetInfoModal] = useState(false)
-  const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
-  const [showVersionHistory, setShowVersionHistory] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showRenameModal, setShowRenameModal] = useState(false)
-  const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
-  const [destroyDrive, setDestroyDrive] = useState<DriveInfo | null>(null)
-  const [confirmForget, setConfirmForget] = useState(false)
 
   const openGetInfo = useCallback(async () => {
     if (!fm) return
@@ -146,7 +142,7 @@ export function FileItem({
     },
     [handleCloseContext, fm, beeApi, fileInfo, onDownload],
   )
-
+  // TODO: refactor doTrash, doRecover, doForget to a single function with action param and remove switch case mybe
   const doTrash = useCallback(async () => {
     if (!fm) return
 
@@ -383,13 +379,12 @@ export function FileItem({
         containerRect,
       })
 
-      if (isMountedRef.current) {
-        const topLeft = containerRect
-          ? { x: Math.round(s.x - containerRect.left), y: Math.round(s.y - containerRect.top) }
-          : s
-        setSafePos(topLeft)
-        setDropDir(d)
-      }
+      const topLeft = containerRect
+        ? { x: Math.round(s.x - containerRect.left), y: Math.round(s.y - containerRect.top) }
+        : s
+      setSafePos(topLeft)
+      setDropDir(d)
+
       rafIdRef.current = null
     })
 
@@ -451,7 +446,7 @@ export function FileItem({
           name={fileInfo.name}
           properties={infoGroups}
           onCancelClick={() => {
-            if (isMountedRef.current) setShowGetInfoModal(false)
+            safeSetState(isMountedRef, setShowGetInfoModal)(false)
           }}
         />
       )}
@@ -460,7 +455,7 @@ export function FileItem({
         <VersionHistoryModal
           fileInfo={fileInfo}
           onCancelClick={() => {
-            if (isMountedRef.current) setShowVersionHistory(false)
+            safeSetState(isMountedRef, setShowVersionHistory)(false)
           }}
           onDownload={onDownload}
         />
@@ -471,10 +466,10 @@ export function FileItem({
           name={fileInfo.name}
           currentDriveName={currentDrive.name}
           onCancelClick={() => {
-            if (isMountedRef.current) setShowDeleteModal(false)
+            safeSetState(isMountedRef, setShowDeleteModal)(false)
           }}
           onProceed={action => {
-            if (isMountedRef.current) setShowDeleteModal(false)
+            safeSetState(isMountedRef, setShowDeleteModal)(false)
             switch (action) {
               case FileAction.Trash:
                 doTrash()
@@ -502,14 +497,14 @@ export function FileItem({
             return new Set(names)
           })()}
           onCancelClick={() => {
-            if (isMountedRef.current) setShowRenameModal(false)
+            safeSetState(isMountedRef, setShowRenameModal)(false)
           }}
           onProceed={async newName => {
             try {
-              if (isMountedRef.current) setShowRenameModal(false)
+              safeSetState(isMountedRef, setShowRenameModal)(false)
               await doRename(newName)
             } catch {
-              if (isMountedRef.current) setShowRenameModal(true)
+              safeSetState(isMountedRef, setShowRenameModal)(true)
             }
           }}
         />
@@ -530,10 +525,10 @@ export function FileItem({
           onConfirm={async () => {
             await doForget()
 
-            if (isMountedRef.current) setConfirmForget(false)
+            safeSetState(isMountedRef, setConfirmForget)(false)
           }}
           onCancel={() => {
-            if (isMountedRef.current) setConfirmForget(false)
+            safeSetState(isMountedRef, setConfirmForget)(false)
           }}
         />
       )}
@@ -542,10 +537,8 @@ export function FileItem({
         <DestroyDriveModal
           drive={destroyDrive}
           onCancelClick={() => {
-            if (isMountedRef.current) {
-              setShowDestroyDriveModal(false)
-              setDestroyDrive(null)
-            }
+            safeSetState(isMountedRef, setShowDestroyDriveModal)(false)
+            safeSetState(isMountedRef, setDestroyDrive)(null)
           }}
           doDestroy={async () => {
             await handleDestroyDrive(
@@ -553,10 +546,8 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                if (isMountedRef.current) {
-                  setShowDestroyDriveModal(false)
-                  setDestroyDrive(null)
-                }
+                safeSetState(isMountedRef, setShowDestroyDriveModal)(false)
+                safeSetState(isMountedRef, setDestroyDrive)(null)
               },
               error => {
                 // eslint-disable-next-line no-console
