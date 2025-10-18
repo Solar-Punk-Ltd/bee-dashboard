@@ -13,6 +13,7 @@ import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
+import { useSorting } from '../../hooks/useSorting'
 
 import { Point, Dir } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -22,6 +23,7 @@ import { Context as SettingsContext } from '../../../../providers/Settings'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
 import { FileBrowserModals } from './FileBrowserModals'
 import { FileBrowserContextMenu } from './FileBrowserMenu/FileBrowserContextMenu'
+import { FileInfo } from '@solarpunkltd/file-manager-lib'
 
 const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
   const out: File[] = []
@@ -78,6 +80,13 @@ export function FileBrowser(): ReactElement {
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
 
+  const getDriveName = (fi: FileInfo): string => {
+    const id = fi.driveId?.toString?.() ?? ''
+    const match = drives?.find(d => d.id?.toString?.() === id)
+
+    return match?.name ?? ''
+  }
+
   const openTopbarMenu = (anchorEl: HTMLElement) => {
     const r = anchorEl.getBoundingClientRect()
     const bodyRect = bodyRef.current?.getBoundingClientRect()
@@ -104,6 +113,12 @@ export function FileBrowser(): ReactElement {
     scope,
     includeActive,
     includeTrashed,
+  })
+
+  const { sorted, sort, toggle, reset } = useSorting(listToRender, {
+    persist: false,
+    defaultState: { key: 'timestamp', dir: 'desc' },
+    getDriveName,
   })
 
   const bulk = useBulkActions({
@@ -323,7 +338,18 @@ export function FileBrowser(): ReactElement {
           onPaste={handlePaste}
           onContextMenu={handleFileBrowserContextMenu}
         >
-          <FileBrowserHeader key={isSearchMode ? 'hdr-search' : 'hdr-normal'} isSearchMode={isSearchMode} bulk={bulk} />
+          <FileBrowserHeader
+            key={isSearchMode ? 'hdr-search' : 'hdr-normal'}
+            isSearchMode={isSearchMode}
+            bulk={bulk}
+            sortKey={sort.key}
+            sortDir={sort.dir}
+            onSortName={() => toggle('name')}
+            onSortSize={() => toggle('size')}
+            onSortDate={() => toggle('timestamp')}
+            onSortDrive={() => toggle('drive')}
+            onClearSort={reset}
+          />
           <div
             className="fm-file-browser-content-body"
             ref={bodyRef}
@@ -334,7 +360,7 @@ export function FileBrowser(): ReactElement {
           >
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
-              listToRender={listToRender}
+              listToRender={sorted}
               drives={drives}
               currentDrive={currentDrive || null}
               view={view}
