@@ -152,7 +152,7 @@ export function Sidebar(): ReactElement {
 
         <div
           className="fm-sidebar-item"
-          onMouseEnter={() => setHovered('trash')}
+          onMouseEnter={() => setHovered(ViewType.Trash)}
           onMouseLeave={() => setHovered(null)}
           onClick={() => setIsTrashOpen(!isTrashOpen)}
         >
@@ -160,7 +160,7 @@ export function Sidebar(): ReactElement {
             {isTrashOpen ? <ArrowDown size="16px" /> : <ArrowRight size="16px" />}
           </div>
           <div className="fm-sidebar-item-icon">
-            {hovered === 'trash' ? <DeleteFill size="16px" /> : <Delete size="16px" />}
+            {hovered === ViewType.Trash ? <DeleteFill size="16px" /> : <Delete size="16px" />}
           </div>
           <div>Trash</div>
         </div>

@@ -106,3 +106,5 @@ export function getSignerPk(): PrivateKey | undefined {
 export function setSignerPk(pk: string): void {
   localStorage.setItem(KEY_STORAGE, pk)
 }
+
+export const capitalizeFirstLetter = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1)

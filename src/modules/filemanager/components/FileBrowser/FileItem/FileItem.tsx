@@ -4,7 +4,7 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { ViewType } from '../../../constants/fileTransfer'
+import { ActionTag, ViewType } from '../../../constants/fileTransfer'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
@@ -17,7 +17,7 @@ import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
-import { Dir, formatBytes, isTrashed } from '../../../utils/common'
+import { capitalizeFirstLetter, Dir, formatBytes, isTrashed } from '../../../utils/common'
 import { FileAction } from '../../../constants/fileTransfer'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
@@ -154,7 +154,7 @@ export function FileItem({
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
-        lifecycle: 'Trashed',
+        lifecycle: capitalizeFirstLetter(ActionTag.Trashed),
         lifecycleAt: new Date().toISOString(),
       },
     }
@@ -169,7 +169,7 @@ export function FileItem({
       ...fileInfo,
       customMetadata: {
         ...(fileInfo.customMetadata ?? {}),
-        lifecycle: 'Recovered',
+        lifecycle: capitalizeFirstLetter(ActionTag.Recovered),
         lifecycleAt: new Date().toISOString(),
       },
     }
