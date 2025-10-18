@@ -4,7 +4,7 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { ActionTag, ViewType } from '../../../constants/fileTransfer'
+import { ActionTag, DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
@@ -18,7 +18,7 @@ import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 
 import { capitalizeFirstLetter, Dir, formatBytes, isTrashed, safeSetState } from '../../../utils/common'
-import { FileAction } from '../../../constants/fileTransfer'
+import { FileAction } from '../../../constants/transfers'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
@@ -26,7 +26,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 
 interface FileItemProps {
   fileInfo: FileInfo
-  onDownload: (name: string, size?: string, expectedSize?: number) => (progress: number, isDownloading: boolean) => void
+  onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   showDriveColumn?: boolean
   driveName: string
   selected?: boolean
@@ -136,7 +136,7 @@ export function FileItem({
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        onDownload(fileInfo.name, formatBytes(rawSize), expectedSize),
+        onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize }),
         isNewWindow,
       )
     },

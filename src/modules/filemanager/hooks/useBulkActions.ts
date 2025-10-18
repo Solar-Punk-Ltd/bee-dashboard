@@ -3,14 +3,11 @@ import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes, getFileId } from '../utils/common'
+import { DownloadProgress, TrackDownloadProps } from '../constants/transfers'
 
 export function useBulkActions(opts: {
   listToRender: FileInfo[]
-  trackDownload: (
-    name: string,
-    size?: string,
-    expectedSize?: number,
-  ) => (bytesDownloaded: number, isDownloading: boolean) => void
+  trackDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
 }) {
   const { listToRender, trackDownload } = opts
 
@@ -58,7 +55,7 @@ export function useBulkActions(opts: {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
-        const tracker = trackDownload(fi.name, prettySize, expected)
+        const tracker = trackDownload({ name: fi.name, size: prettySize, expectedSize: expected })
 
         await startDownloadingQueue(fm, [fi], tracker)
       }

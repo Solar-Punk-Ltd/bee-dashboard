@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { ViewType } from '../constants/fileTransfer'
+import { ViewType } from '../constants/transfers'
 import { indexStrToBigint, isTrashed } from '../utils/common'
 
 interface UseFileFilteringProps {

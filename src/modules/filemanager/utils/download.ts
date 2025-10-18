@@ -1,6 +1,7 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
 import { AbortManager } from './abortManager'
+import { DownloadProgress } from '../constants/transfers'
 
 const downloadAborts = new AbortManager()
 
@@ -15,7 +16,7 @@ export function abortDownload(name: string): void {
 const processStream = async (
   stream: ReadableStream<Uint8Array>,
   fileHandle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (progress: DownloadProgress) => void,
   signal?: AbortSignal,
 ): Promise<void> => {
   const reader = stream.getReader()
@@ -37,11 +38,11 @@ const processStream = async (
       }
       done = streamDone
 
-      onDownloadProgress?.(progress, !done)
+      onDownloadProgress?.({ progress, isDownloading: !done })
     }
   } catch (e: unknown) {
     if ((e as { name?: string }).name === 'AbortError') {
-      onDownloadProgress?.(-1, false)
+      onDownloadProgress?.({ progress: -1, isDownloading: false })
 
       return
     }
@@ -66,7 +67,7 @@ const processStream = async (
 const streamToBlob = async (
   stream: ReadableStream<Uint8Array>,
   mimeType: string,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (dp: DownloadProgress) => void,
   signal?: AbortSignal,
 ): Promise<Blob | undefined> => {
   const reader = stream.getReader()
@@ -85,11 +86,11 @@ const streamToBlob = async (
         progress += value.length
       }
       done = streamDone
-      onDownloadProgress?.(progress, !done)
+      onDownloadProgress?.({ progress, isDownloading: !done })
     }
   } catch (error: unknown) {
     if ((error as { name?: string }).name === 'AbortError') {
-      onDownloadProgress?.(-1, false)
+      onDownloadProgress?.({ progress: -1, isDownloading: false })
     } else {
       // eslint-disable-next-line no-console
       console.error('Error during stream processing: ', error)
@@ -157,7 +158,7 @@ const getFileHandles = async (infoList: FileInfo[]): Promise<FileInfoWithHandle[
 const downloadToDisk = async (
   streams: ReadableStream<Uint8Array>[],
   handle: FileSystemFileHandle,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (progress: DownloadProgress) => void,
   signal?: AbortSignal,
 ): Promise<void> => {
   try {
@@ -175,7 +176,7 @@ const downloadToDisk = async (
 const downloadToBlob = async (
   streams: ReadableStream<Uint8Array>[],
   info: FileInfo,
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (progress: DownloadProgress) => void,
   isOpenWindow?: boolean,
   signal?: AbortSignal,
 ): Promise<void> => {
@@ -233,7 +234,7 @@ const downloadFromUrl = (url: string, fileName: string): void => {
 export const startDownloadingQueue = async (
   fm: FileManager,
   infoList: FileInfo[],
-  onDownloadProgress?: (progress: number, isDownloading: boolean) => void,
+  onDownloadProgress?: (progress: DownloadProgress) => void,
   isOpenWindow?: boolean,
 ): Promise<void> => {
   try {
@@ -249,7 +250,7 @@ export const startDownloadingQueue = async (
       const signal = downloadAborts.getSignal(name)
 
       if (fh.cancelled) {
-        onDownloadProgress?.(-1, false)
+        onDownloadProgress?.({ progress: -1, isDownloading: false })
       } else {
         await downloadAborts.withSignal(name, async () => {
           const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]

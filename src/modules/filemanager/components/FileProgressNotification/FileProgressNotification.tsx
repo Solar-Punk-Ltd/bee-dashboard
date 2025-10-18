@@ -3,7 +3,7 @@ import './FileProgressNotification.scss'
 import UpIcon from 'remixicon-react/ArrowUpSLineIcon'
 import DownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import { FileProgressWindow } from '../FileProgressWindow/FileProgressWindow'
-import { FileTransferType, TransferStatus } from '../../constants/fileTransfer'
+import { FileTransferType, TransferStatus } from '../../constants/transfers'
 
 type ProgressItem = {
   name: string

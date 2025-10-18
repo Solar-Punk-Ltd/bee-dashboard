@@ -1,7 +1,7 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
-import { ViewType } from '../../../../filemanager/constants/fileTransfer'
+import { ViewType } from '../../../constants/transfers'
 
 type Props = {
   onOpenMenu?: (anchorEl: HTMLElement) => void
