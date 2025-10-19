@@ -226,7 +226,7 @@ export function FileBrowser(): ReactElement {
     const menu = contextRef.current
     const body = bodyRef.current
 
-    if (!menu || !isMountedRef.current) return
+    if (!menu) return
 
     const rect = menu.getBoundingClientRect()
     const containerRect = body?.getBoundingClientRect() ?? null

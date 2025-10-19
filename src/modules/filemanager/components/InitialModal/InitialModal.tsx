@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BZZ, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -9,6 +9,8 @@ import { getExpiryDateByLifetime, safeSetState } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as SettingsContext } from '../../../../providers/Settings'
+import { Context as BeeContext } from '../../../../providers/Bee'
+
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
@@ -39,6 +41,7 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
 
 export function InitialModal({ handleVisibility, handleShowError }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
+  const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
@@ -48,6 +51,7 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
   const [selectedBatch, setSelectedBatch] = useState<PostageBatch | null>(null)
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
+  const { walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useContext(FMContext)
 
@@ -104,21 +108,25 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
         false,
         erasureCodeLevel,
         beeApi,
-        (cost: string) => {
-          safeSetState(isMountedRef, setCost)(cost)
+        (cost: BZZ) => {
+          if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
+            safeSetState(isMountedRef, setIsBalanceSufficient)(false)
+          }
+
+          safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
         },
         currentFetch,
       )
 
       if (lifetimeIndex >= 0) {
-        safeSetState(isMountedRef, setIsCreateEnabled)(true)
+        setIsCreateEnabled(true)
       }
     } else {
-      safeSetState(isMountedRef, setCost)('0')
-      safeSetState(isMountedRef, setIsCreateEnabled)(false)
+      setCost('0')
+      setIsCreateEnabled(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validityEndDate, beeApi, capacity, lifetimeIndex])
+  }, [validityEndDate, beeApi, capacity, lifetimeIndex, walletBalance])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -196,7 +204,9 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
             </div>
 
             <div>
-              <div>Estimated Cost: {cost} BZZ</div>
+              <div>
+                Estimated Cost: {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+              </div>
               <div>(Based on current network conditions)</div>
             </div>
           </div>
@@ -205,7 +215,7 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
           <Button
             label={selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'}
             variant="primary"
-            disabled={selectedBatch ? false : !isCreateEnabled}
+            disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient}
             onClick={createAdminDrive}
           />
         </div>

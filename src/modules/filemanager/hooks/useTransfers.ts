@@ -628,15 +628,13 @@ export function useTransfers() {
   }, [])
 
   const dismissAllUploads = useCallback(() => {
-    if (!isMountedRef.current) return
-
     setUploadItems([])
     cancelledNamesRef.current.clear()
     cancelledUploadingRef.current.clear()
   }, [])
 
   const dismissAllDownloads = useCallback(() => {
-    safeSetState(isMountedRef, setDownloadItems)([])
+    setDownloadItems([])
   }, [])
 
   useEffect(() => {

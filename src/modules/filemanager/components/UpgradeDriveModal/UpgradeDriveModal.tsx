@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useEffect, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
@@ -44,18 +44,27 @@ export function UpgradeDriveModal({
   drive,
 }: UpgradeDriveModalProps): ReactElement {
   const { nodeAddresses, walletBalance } = useContext(BeeContext)
+  const { beeApi } = useContext(SettingsContext)
+
+  const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(Size.fromBytes(0))
   const [capacityExtensionCost, setCapacityExtensionCost] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(0)
   const [durationExtensionCost, setDurationExtensionCost] = useState('')
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
-
   const [validityEndDate, setValidityEndDate] = useState(new Date())
-  const { beeApi } = useContext(SettingsContext)
-  const modalRoot = document.querySelector('.fm-main') || document.body
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const [extensionCost, setExtensionCost] = useState('0')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const modalRoot = document.querySelector('.fm-main') || document.body
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(Size.fromBytes(value))
@@ -76,6 +85,12 @@ export function UpgradeDriveModal({
       const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
       const costText = cost ? cost.toSignificantDigits(2) : '0'
 
+      if (!isMountedRef.current) return
+
+      if ((walletBalance && cost && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
+        setIsBalanceSufficient(false)
+      }
+
       if (isCapacityExtensionSet && isDurationExtensionSet) {
         setDurationExtensionCost('')
         setCapacityExtensionCost('')
@@ -94,7 +109,7 @@ export function UpgradeDriveModal({
         setExtensionCost('0')
       }
     },
-    [beeApi],
+    [beeApi, walletBalance],
   )
 
   useEffect(() => {
@@ -140,6 +155,7 @@ export function UpgradeDriveModal({
         isCapacitySet = false
         isDurationSet = false
       }
+
       handleCostCalculation(
         stamp.batchID,
         capacity,
@@ -151,6 +167,7 @@ export function UpgradeDriveModal({
         isDurationSet,
       )
     }
+
     fetchExtensionCost()
   }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, lifetimeIndex, stamp.batchID])
 
@@ -258,7 +275,10 @@ export function UpgradeDriveModal({
             </div>
 
             <div className="fm-upgrade-drive-modal-info fm-emphasized-text">
-              Total: <span className="fm-swarm-orange-font">{extensionCost} xBZZ</span>
+              Total:{' '}
+              <span className="fm-swarm-orange-font">
+                {extensionCost} xBZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+              </span>
             </div>
           </div>
         </div>
@@ -266,9 +286,10 @@ export function UpgradeDriveModal({
           <Button
             label={isSubmitting ? 'Confirming…' : 'Confirm upgrade'}
             variant="primary"
-            disabled={extensionCost === '0' || isSubmitting}
+            disabled={extensionCost === '0' || isSubmitting || !isBalanceSufficient}
             onClick={async () => {
-              if (!beeApi) return
+              if (!beeApi || !walletBalance) return
+
               try {
                 setIsSubmitting(true)
                 window.dispatchEvent(
