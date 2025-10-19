@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useContext, useEffect, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
@@ -58,6 +58,13 @@ export function UpgradeDriveModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const modalRoot = document.querySelector('.fm-main') || document.body
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(Size.fromBytes(value))
@@ -77,6 +84,8 @@ export function UpgradeDriveModal({
     ) => {
       const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
       const costText = cost ? cost.toSignificantDigits(2) : '0'
+
+      if (!isMountedRef.current) return
 
       if ((walletBalance && cost && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
         setIsBalanceSufficient(false)

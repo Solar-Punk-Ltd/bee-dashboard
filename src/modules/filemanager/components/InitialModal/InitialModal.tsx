@@ -110,7 +110,7 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
         beeApi,
         (cost: BZZ) => {
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
-            setIsBalanceSufficient(false)
+            safeSetState(isMountedRef, setIsBalanceSufficient)(false)
           }
 
           safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
@@ -119,11 +119,11 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
       )
 
       if (lifetimeIndex >= 0) {
-        safeSetState(isMountedRef, setIsCreateEnabled)(true)
+        setIsCreateEnabled(true)
       }
     } else {
-      safeSetState(isMountedRef, setCost)('0')
-      safeSetState(isMountedRef, setIsCreateEnabled)(false)
+      setCost('0')
+      setIsCreateEnabled(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validityEndDate, beeApi, capacity, lifetimeIndex, walletBalance])

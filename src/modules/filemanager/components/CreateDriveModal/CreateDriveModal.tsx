@@ -46,6 +46,13 @@ export function CreateDriveModal({
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacityIndex(index)
@@ -73,11 +80,11 @@ export function CreateDriveModal({
         erasureCodeLevel,
         beeApi,
         (cost: BZZ) => {
+          if (!isMountedRef.current) return
+
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             setIsBalanceSufficient(false)
           }
-          // TODO: ismountedref
-          // safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
           setCost(cost.toSignificantDigits(2))
         },
         currentFetch,

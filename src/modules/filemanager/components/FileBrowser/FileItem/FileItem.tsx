@@ -182,8 +182,8 @@ export function FileItem({
   }, [fm, fileInfo])
 
   const showDestroyDrive = useCallback(() => {
-    safeSetState(isMountedRef, setDestroyDrive)(currentDrive || null)
-    safeSetState(isMountedRef, setShowDestroyDriveModal)(true)
+    setDestroyDrive(currentDrive || null)
+    setShowDestroyDriveModal(true)
   }, [currentDrive])
 
   const doRename = useCallback(
@@ -270,7 +270,7 @@ export function FileItem({
             disabled={isBulk}
             onClick={() => {
               handleCloseContext()
-              safeSetState(isMountedRef, setShowRenameModal)(true)
+              setShowRenameModal(true)
             }}
           >
             Rename
@@ -280,7 +280,7 @@ export function FileItem({
             disabled={isBulk}
             onClick={() => {
               handleCloseContext()
-              safeSetState(isMountedRef, setShowVersionHistory)(true)
+              setShowVersionHistory(true)
             }}
           >
             Version history
@@ -291,7 +291,7 @@ export function FileItem({
               handleCloseContext()
 
               if (isBulk) onBulk.delete?.()
-              else safeSetState(isMountedRef, setShowDeleteModal)(true)
+              else setShowDeleteModal(true)
             }}
           >
             Delete
@@ -334,7 +334,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                safeSetState(isMountedRef, setShowDestroyDriveModal)(true)
+                setShowDestroyDriveModal(true)
               }}
             >
               Destroy
@@ -343,7 +343,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                safeSetState(isMountedRef, setConfirmForget)(true)
+                setConfirmForget(true)
               }}
             >
               Forget permanently
@@ -364,8 +364,6 @@ export function FileItem({
     }
 
     rafIdRef.current = requestAnimationFrame(() => {
-      if (!isMountedRef.current) return
-
       const menu = contextRef.current
 
       if (!menu) return
@@ -449,7 +447,7 @@ export function FileItem({
           name={fileInfo.name}
           properties={infoGroups}
           onCancelClick={() => {
-            safeSetState(isMountedRef, setShowGetInfoModal)(false)
+            setShowGetInfoModal(false)
           }}
         />
       )}
@@ -458,7 +456,7 @@ export function FileItem({
         <VersionHistoryModal
           fileInfo={fileInfo}
           onCancelClick={() => {
-            safeSetState(isMountedRef, setShowVersionHistory)(false)
+            setShowVersionHistory(false)
           }}
           onDownload={onDownload}
         />
@@ -469,16 +467,16 @@ export function FileItem({
           name={fileInfo.name}
           currentDriveName={currentDrive.name}
           onCancelClick={() => {
-            safeSetState(isMountedRef, setShowDeleteModal)(false)
+            setShowDeleteModal(false)
           }}
           onProceed={action => {
-            safeSetState(isMountedRef, setShowDeleteModal)(false)
+            setShowDeleteModal(false)
             switch (action) {
               case FileAction.Trash:
                 doTrash()
                 break
               case FileAction.Forget:
-                safeSetState(isMountedRef, setConfirmForget)(true)
+                setConfirmForget(true)
                 break
               case FileAction.Destroy:
                 showDestroyDrive()
@@ -500,11 +498,11 @@ export function FileItem({
             return new Set(names)
           })()}
           onCancelClick={() => {
-            safeSetState(isMountedRef, setShowRenameModal)(false)
+            setShowRenameModal(false)
           }}
           onProceed={async newName => {
             try {
-              safeSetState(isMountedRef, setShowRenameModal)(false)
+              setShowRenameModal(false)
               await doRename(newName)
             } catch {
               safeSetState(isMountedRef, setShowRenameModal)(true)
@@ -531,7 +529,7 @@ export function FileItem({
             safeSetState(isMountedRef, setConfirmForget)(false)
           }}
           onCancel={() => {
-            safeSetState(isMountedRef, setConfirmForget)(false)
+            setConfirmForget(false)
           }}
         />
       )}
@@ -540,8 +538,8 @@ export function FileItem({
         <DestroyDriveModal
           drive={destroyDrive}
           onCancelClick={() => {
-            safeSetState(isMountedRef, setShowDestroyDriveModal)(false)
-            safeSetState(isMountedRef, setDestroyDrive)(null)
+            setShowDestroyDriveModal(false)
+            setDestroyDrive(null)
           }}
           doDestroy={async () => {
             await handleDestroyDrive(
