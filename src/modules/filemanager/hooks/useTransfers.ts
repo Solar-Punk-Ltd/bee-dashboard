@@ -444,6 +444,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         const tasks: UploadTask[] = []
 
         const processFile = async (file: File): Promise<UploadTask | null> => {
+          if (!currentStamp || !currentStamp.usable) {
+            setErrorMessage?.('Stamp is not usable.')
+            setShowError(true)
+
+            return null
+          }
+
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
@@ -453,7 +460,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             ...Array.from(progressNames),
           ])
 
-          const { remainingBytes } = calculateStampCapacityMetrics(currentStamp || null, currentDrive || null)
+          const { remainingBytes } = calculateStampCapacityMetrics(currentStamp, currentDrive)
 
           if (file.size > remainingBytes) {
             // eslint-disable-next-line no-console
