@@ -18,8 +18,8 @@ interface ContextInterface {
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
-  showUploadError?: boolean
-  setShowUploadError: (show: boolean) => void // todo: showUploadError should not be global
+  showError?: boolean
+  setShowError: (show: boolean) => void
 }
 
 const initialValues: ContextInterface = {
@@ -34,8 +34,8 @@ const initialValues: ContextInterface = {
   setCurrentStamp: () => {}, // eslint-disable-line
   resync: async () => {}, // eslint-disable-line
   init: async () => null, // eslint-disable-line
-  showUploadError: false,
-  setShowUploadError: () => {}, // eslint-disable-line
+  showError: false,
+  setShowError: () => {}, // eslint-disable-line
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -70,7 +70,7 @@ export function Provider({ children }: Props) {
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
 
   const [initializationError, setInitializationError] = useState<boolean>(false)
-  const [showUploadError, setShowUploadError] = useState<boolean>(false)
+  const [showError, setShowError] = useState<boolean>(false)
   // TODO: rethink this: maybe caching files/drives happen elsewhere
   const syncFiles = useCallback((manager: FileManagerBase, fi?: FileInfo, remove?: boolean): void => {
     // append/remove directly to avoid cache issues
@@ -232,8 +232,8 @@ export function Provider({ children }: Props) {
         setCurrentStamp,
         resync,
         init,
-        showUploadError,
-        setShowUploadError,
+        showError,
+        setShowError,
       }}
     >
       {children}

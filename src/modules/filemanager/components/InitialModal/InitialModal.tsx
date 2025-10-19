@@ -109,6 +109,8 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
         erasureCodeLevel,
         beeApi,
         (cost: BZZ) => {
+          setIsBalanceSufficient(true)
+
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             safeSetState(isMountedRef, setIsBalanceSufficient)(false)
           }

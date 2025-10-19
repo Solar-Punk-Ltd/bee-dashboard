@@ -21,6 +21,7 @@ interface FileBrowserContentProps {
     destroy?: () => void
     delete?: () => void
   }
+  setErrorMessage?: (error: string) => void
 }
 
 export function FileBrowserContent({
@@ -34,6 +35,7 @@ export function FileBrowserContent({
   onToggleSelected,
   bulkSelectedCount,
   onBulk,
+  setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
@@ -72,11 +74,12 @@ export function FileBrowserContent({
             onToggleSelected={onToggleSelected}
             bulkSelectedCount={bulkSelectedCount}
             onBulk={onBulk}
+            setErrorMessage={setErrorMessage}
           />
         )
       })
     },
-    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk],
+    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk, setErrorMessage],
   )
 
   if (drives.length === 0) {

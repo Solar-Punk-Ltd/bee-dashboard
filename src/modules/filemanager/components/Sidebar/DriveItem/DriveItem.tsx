@@ -17,20 +17,21 @@ import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { safeSetState } from 'src/modules/filemanager/utils/common'
 
 interface DriveItemProps {
   drive: DriveInfo
   stamp: PostageBatch
   isSelected: boolean
+  setErrorMessage?: (error: string) => void
 }
 
-export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactElement {
+export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveItemProps): ReactElement {
+  const { fm, setShowError } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
+
   const [isHovered, setIsHovered] = useState(false)
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
-  const { fm } = useContext(FMContext)
-  const { beeApi } = useContext(SettingsContext)
   const isMountedRef = useRef(true)
   const [isUpgrading, setIsUpgrading] = useState(false)
 
@@ -58,10 +59,21 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
     const onStart = (e: Event) => {
       const { driveId } = (e as CustomEvent).detail || {}
 
-      if (driveId === id) setIsUpgrading(true)
+      if (driveId === id) {
+        setIsUpgrading(true)
+      }
     }
+
     const onEnd = (e: Event) => {
-      const { driveId } = (e as CustomEvent).detail || {}
+      const { driveId, success, error } = (e as CustomEvent).detail || {}
+
+      if (!success) {
+        if (error) {
+          setErrorMessage?.(error)
+        }
+
+        setShowError(true)
+      }
 
       if (driveId === id) {
         setIsUpgrading(false)
@@ -75,7 +87,7 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [drive.id])
+  }, [drive.id, setShowError, setErrorMessage])
   // TODO: trigger on upgrade success and upload success
   const { capacityPct, usedSize, totalSize } = useMemo(
     () => calculateStampCapacityMetrics(stamp, drive),
@@ -161,19 +173,17 @@ export function DriveItem({ drive, stamp, isSelected }: DriveItemProps): ReactEl
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
           doDestroy={async () => {
-            // TODO: show errormodal everywhere the same way
             await handleDestroyDrive(
               beeApi,
               fm,
               drive,
               () => {
-                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
+                setIsDestroyDriveModalOpen(false)
               },
-              error => {
-                // eslint-disable-next-line no-console
-                console.error('Error destroying drive:', error)
-
-                safeSetState(isMountedRef, setIsDestroyDriveModalOpen)(false)
+              e => {
+                setIsDestroyDriveModalOpen(false)
+                setErrorMessage?.(`Error destroying drive: ${drive.name}: ${e}`)
+                setShowError(true)
               },
             )
           }}

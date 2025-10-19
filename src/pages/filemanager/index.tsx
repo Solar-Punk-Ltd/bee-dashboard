@@ -18,6 +18,7 @@ export function FileManagerPage(): ReactElement {
   const [isAdminDrive, setIsAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string>('')
 
   const { fm, adminDrive, initializationError, init } = useContext(FMContext)
 
@@ -111,8 +112,8 @@ export function FileManagerPage(): ReactElement {
         <div className="fm-main">
           <Header />
           <div className="fm-main-content">
-            <Sidebar />
-            <FileBrowser />
+            <Sidebar errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
+            <FileBrowser errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
           </div>
           <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} />
         </div>

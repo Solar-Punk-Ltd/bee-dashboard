@@ -82,6 +82,8 @@ export function UpgradeDriveModal({
       isCapacityExtensionSet: boolean,
       isDurationExtensionSet: boolean,
     ) => {
+      setIsBalanceSufficient(true)
+
       const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
       const costText = cost ? cost.toSignificantDigits(2) : '0'
 
@@ -320,7 +322,11 @@ export function UpgradeDriveModal({
                 const msg = e instanceof Error ? e.message : 'Upgrade failed'
                 window.dispatchEvent(
                   new CustomEvent('fm:drive-upgrade-end', {
-                    detail: { driveId: drive.id.toString(), success: false, error: msg },
+                    detail: {
+                      driveId: drive.id.toString(),
+                      success: false,
+                      error: msg + ' (drive: ' + drive.name + ')',
+                    },
                   }),
                 )
               }

@@ -18,7 +18,12 @@ import { Context as FMContext } from '../../../../providers/FileManager'
 import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
-export function Sidebar(): ReactElement {
+interface SidebarProps {
+  errorMessage?: string
+  setErrorMessage?: (error: string) => void
+}
+
+export function Sidebar({ setErrorMessage }: SidebarProps): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
   const [isMyDrivesOpen, setIsMyDriveOpen] = useState(true)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
@@ -28,7 +33,8 @@ export function Sidebar(): ReactElement {
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { fm, currentDrive, currentStamp, drives, setCurrentDrive, setCurrentStamp } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, drives, setCurrentDrive, setCurrentStamp, setShowError } =
+    useContext(FMContext)
 
   useEffect(() => {
     let isMounted = true
@@ -90,7 +96,13 @@ export function Sidebar(): ReactElement {
               setIsDriveCreationInProgress(false)
             }}
             onCreationStarted={() => setIsDriveCreationInProgress(true)}
-            onCreationError={() => setIsDriveCreationInProgress(false)}
+            onCreationError={(name: string) => {
+              setIsDriveCreationInProgress(false)
+              setErrorMessage?.(`Error creating drive: ${name}`)
+              setShowError(true)
+
+              return
+            }}
           />
         )}
 
@@ -144,7 +156,7 @@ export function Sidebar(): ReactElement {
                     setView(ViewType.File)
                   }}
                 >
-                  <DriveItem drive={d} stamp={stamp} isSelected={isSelected} />
+                  <DriveItem drive={d} stamp={stamp} isSelected={isSelected} setErrorMessage={setErrorMessage} />
                 </div>
               )
             )
