@@ -10,9 +10,10 @@ import { calculateStampCapacityMetrics } from '../../utils/bee'
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
   adminDrive: DriveInfo | null
+  loading: boolean
 }
 // TODO: refresh admin drive and stamp info after upload, new drive etc.
-export function AdminStatusBar({ adminStamp, adminDrive }: AdminStatusBarProps): ReactElement {
+export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusBarProps): ReactElement {
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
 
@@ -52,7 +53,6 @@ export function AdminStatusBar({ adminStamp, adminDrive }: AdminStatusBarProps):
     [adminStamp],
   )
 
-  const loading = !adminStamp || !adminDrive
   const isBusy = loading || isUpgrading
   const blurCls = isBusy ? ' is-loading' : ''
 
@@ -90,7 +90,7 @@ export function AdminStatusBar({ adminStamp, adminDrive }: AdminStatusBarProps):
       {loading && (
         <div className="fm-drive-item-creating-overlay" aria-live="polite">
           <div className="fm-mini-spinner" />
-          <span>Creating admin drive…</span>
+          <span>Creating admin drive...</span>
         </div>
       )}
 

@@ -104,6 +104,8 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
+  const loading = !fm.adminStamp || !adminDrive
+
   return showErrorModal ? (
     <ErrorModal label={'Error during admin stamp creation, try again'} onClick={() => setShowInitialModal(true)} />
   ) : (
@@ -112,10 +114,10 @@ export function FileManagerPage(): ReactElement {
         <div className="fm-main">
           <Header />
           <div className="fm-main-content">
-            <Sidebar errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
+            <Sidebar errorMessage={errorMessage} setErrorMessage={setErrorMessage} loading={loading} />
             <FileBrowser errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
           </div>
-          <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} />
+          <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} loading={loading} />
         </div>
       </ViewProvider>
     </SearchProvider>

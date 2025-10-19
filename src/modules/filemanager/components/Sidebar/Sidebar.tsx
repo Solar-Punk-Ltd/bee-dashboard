@@ -19,11 +19,12 @@ import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
 interface SidebarProps {
+  loading: boolean
   errorMessage?: string
   setErrorMessage?: (error: string) => void
 }
 
-export function Sidebar({ setErrorMessage }: SidebarProps): ReactElement {
+export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElement {
   const [hovered, setHovered] = useState<string | null>(null)
   const [isMyDrivesOpen, setIsMyDriveOpen] = useState(true)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
@@ -81,12 +82,14 @@ export function Sidebar({ setErrorMessage }: SidebarProps): ReactElement {
   return (
     <div className="fm-sidebar">
       <div className="fm-sidebar-content">
-        <div className="fm-sidebar-item" onClick={() => setIsCreateDriveOpen(true)}>
-          <div className="fm-sidebar-item-icon">
-            <Add size="16px" />
+        {!loading && (
+          <div className="fm-sidebar-item" onClick={() => setIsCreateDriveOpen(true)}>
+            <div className="fm-sidebar-item-icon">
+              <Add size="16px" />
+            </div>
+            <div>Create new drive</div>
           </div>
-          <div>Create new drive</div>
-        </div>
+        )}
 
         {isCreateDriveOpen && (
           <CreateDriveModal
