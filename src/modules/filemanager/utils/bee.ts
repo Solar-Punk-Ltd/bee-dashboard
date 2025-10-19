@@ -1,4 +1,4 @@
-import { BatchId, Bee, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
+import { BatchId, Bee, BZZ, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import { FileManagerBase, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getHumanReadableFileSize } from '../../../utils/file'
 
@@ -22,7 +22,7 @@ export const fmGetStorageCost = async (
   encryption: boolean,
   erasureCodeLevel: RedundancyLevel,
   beeApi: Bee | null,
-): Promise<string | undefined> => {
+): Promise<BZZ | undefined> => {
   try {
     if (Size.fromBytes(capacity).toGigabytes() >= 0 && validityEndDate.getTime() >= new Date().getTime()) {
       const cost = await beeApi?.getStorageCost(
@@ -33,7 +33,7 @@ export const fmGetStorageCost = async (
         erasureCodeLevel,
       )
 
-      return cost ? cost.toSignificantDigits(2) : undefined
+      return cost
     }
 
     return undefined
@@ -48,7 +48,7 @@ export const fmFetchCost = async (
   encryption: boolean,
   erasureCodeLevel: RedundancyLevel,
   beeApi: Bee | null,
-  setCost: (cost: string) => void,
+  setCost: (cost: BZZ) => void,
   currentFetch: React.MutableRefObject<Promise<void> | null>,
 ) => {
   if (currentFetch.current) {
@@ -61,7 +61,7 @@ export const fmFetchCost = async (
     const cost = await fmGetStorageCost(capacity, validityEndDate, encryption, erasureCodeLevel, beeApi)
 
     if (isCurrentFetch) {
-      setCost(cost ?? '0')
+      setCost(cost ?? BZZ.fromDecimalString('0'))
     }
   })()
 

@@ -1,6 +1,6 @@
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
-import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BZZ, Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -8,6 +8,7 @@ import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
 import { getExpiryDateByLifetime } from '../../utils/common'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
+import { Context as BeeContext } from '../../../../providers/Bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -30,6 +31,7 @@ export function CreateDriveModal({
   onCreationError,
 }: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
+  const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(-1)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
@@ -40,6 +42,7 @@ export function CreateDriveModal({
   const [cost, setCost] = useState('0')
 
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
+  const { walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
@@ -63,7 +66,22 @@ export function CreateDriveModal({
 
   useEffect(() => {
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
-      fmFetchCost(capacity, validityEndDate, false, erasureCodeLevel, beeApi, setCost, currentFetch)
+      fmFetchCost(
+        capacity,
+        validityEndDate,
+        false,
+        erasureCodeLevel,
+        beeApi,
+        (cost: BZZ) => {
+          if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
+            setIsBalanceSufficient(false)
+          }
+          // TODO: ismountedref
+          // safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
+          setCost(cost.toSignificantDigits(2))
+        },
+        currentFetch,
+      )
 
       if (label && label.trim().length > 0) {
         setIsCreateEnabled(true)
@@ -75,7 +93,7 @@ export function CreateDriveModal({
       setIsCreateEnabled(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capacity, validityEndDate, beeApi, label])
+  }, [capacity, validityEndDate, beeApi, label, walletBalance])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -131,7 +149,9 @@ export function CreateDriveModal({
           </div>
 
           <div>
-            <div>Estimated Cost: {cost} BZZ</div>
+            <div>
+              Estimated Cost: {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+            </div>
             <div>(Based on current network conditions)</div>
           </div>
         </div>
@@ -139,9 +159,9 @@ export function CreateDriveModal({
           <Button
             label="Create drive"
             variant="primary"
-            disabled={!isCreateEnabled}
+            disabled={!isCreateEnabled || !isBalanceSufficient}
             onClick={async () => {
-              if (isCreateEnabled && fm && beeApi) {
+              if (isCreateEnabled && fm && beeApi && walletBalance) {
                 onCreationStarted()
                 onCancelClick()
 
