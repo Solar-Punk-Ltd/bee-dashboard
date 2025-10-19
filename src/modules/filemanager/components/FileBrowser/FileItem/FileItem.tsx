@@ -39,6 +39,7 @@ interface FileItemProps {
     destroy?: () => void
     delete?: () => void
   }
+  setErrorMessage?: (error: string) => void
 }
 
 export function FileItem({
@@ -50,9 +51,10 @@ export function FileItem({
   onToggleSelected,
   bulkSelectedCount,
   onBulk,
+  setErrorMessage,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, currentDrive, files, drives } = useContext(FMContext)
+  const { fm, currentDrive, files, drives, setShowError } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
 
@@ -547,12 +549,13 @@ export function FileItem({
               fm,
               destroyDrive,
               () => {
-                safeSetState(isMountedRef, setShowDestroyDriveModal)(false)
-                safeSetState(isMountedRef, setDestroyDrive)(null)
+                setShowDestroyDriveModal(false)
+                setDestroyDrive(null)
               },
-              error => {
-                // eslint-disable-next-line no-console
-                console.error('Error destroying drive:', error)
+              e => {
+                setShowDestroyDriveModal(false)
+                setErrorMessage?.(`Error destroying drive: ${destroyDrive.name}: ${e}`)
+                setShowError(true)
               },
             )
           }}

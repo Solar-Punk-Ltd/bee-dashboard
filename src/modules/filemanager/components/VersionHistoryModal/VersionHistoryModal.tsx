@@ -34,7 +34,7 @@ interface VersionHistoryModalProps {
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
   const { fm, files, currentDrive } = useContext(FMContext)
 
-  const localTransfers = useTransfers()
+  const localTransfers = useTransfers({})
   const trackDownload = onDownload ?? localTransfers.trackDownload
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()

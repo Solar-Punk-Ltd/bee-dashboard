@@ -136,8 +136,12 @@ const createTransferItem = (
   elapsedSec: undefined,
 })
 
-export function useTransfers() {
-  const { fm, currentDrive, currentStamp, files, setShowUploadError } = useContext(FMContext)
+interface TransferProps {
+  setErrorMessage?: (error: string) => void
+}
+
+export function useTransfers({ setErrorMessage }: TransferProps) {
+  const { fm, currentDrive, currentStamp, files, setShowError } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -461,7 +465,8 @@ export function useTransfers() {
               'remaining:',
               remainingBytes,
             )
-            setShowUploadError?.(true)
+            setErrorMessage?.('There is not enough space to continue the upload.')
+            setShowError(true)
 
             return null
           }
@@ -572,7 +577,8 @@ export function useTransfers() {
       ensureQueuedRow,
       processUploadTask,
       uploadItems,
-      setShowUploadError,
+      setShowError,
+      setErrorMessage,
     ],
   )
 

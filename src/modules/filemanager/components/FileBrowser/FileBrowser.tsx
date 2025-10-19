@@ -41,11 +41,16 @@ const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
   return out
 }
 
-export function FileBrowser(): ReactElement {
+interface FileBrowserProps {
+  errorMessage?: string
+  setErrorMessage?: (error: string) => void
+}
+
+export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, currentDrive, resync, drives, fm, showUploadError, setShowUploadError } = useContext(FMContext)
+  const { files, currentDrive, resync, drives, fm, showError, setShowError } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -58,7 +63,7 @@ export function FileBrowser(): ReactElement {
     cancelOrDismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
-  } = useTransfers()
+  } = useTransfers({ setErrorMessage })
 
   const { query, scope, includeActive, includeTrashed } = useSearch()
 
@@ -373,11 +378,17 @@ export function FileBrowser(): ReactElement {
                 destroy: () => setShowDestroyDriveModal(true),
                 delete: () => setShowBulkDeleteModal(true),
               }}
+              setErrorMessage={setErrorMessage}
             />
-            {showUploadError && (
+            {showError && (
               <ErrorModal
-                label={'There is not enough space to continue the upload.'}
-                onClick={() => setShowUploadError(false)}
+                label={errorMessage || 'An error occurred'}
+                onClick={() => {
+                  setShowError(false)
+                  setErrorMessage?.('')
+
+                  return
+                }}
               />
             )}
 

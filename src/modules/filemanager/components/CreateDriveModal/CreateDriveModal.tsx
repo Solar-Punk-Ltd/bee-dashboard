@@ -21,7 +21,7 @@ interface CreateDriveModalProps {
   onCancelClick: () => void
   onDriveCreated: () => void
   onCreationStarted: () => void
-  onCreationError: () => void
+  onCreationError: (name: string) => void
 }
 // TODO: select existing batch id or create a new one - just like in InitialModal
 export function CreateDriveModal({
@@ -35,7 +35,7 @@ export function CreateDriveModal({
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(-1)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
-  const [label, setLabel] = useState('')
+  const [driveName, setDriveName] = useState('')
   const [capacityIndex, setCapacityIndex] = useState(-1)
   const [encryptionEnabled] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
@@ -82,6 +82,8 @@ export function CreateDriveModal({
         (cost: BZZ) => {
           if (!isMountedRef.current) return
 
+          setIsBalanceSufficient(true)
+
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             setIsBalanceSufficient(false)
           }
@@ -90,7 +92,7 @@ export function CreateDriveModal({
         currentFetch,
       )
 
-      if (label && label.trim().length > 0) {
+      if (driveName && driveName.trim().length > 0) {
         setIsCreateEnabled(true)
       } else {
         setIsCreateEnabled(false)
@@ -100,7 +102,7 @@ export function CreateDriveModal({
       setIsCreateEnabled(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capacity, validityEndDate, beeApi, label, walletBalance])
+  }, [capacity, validityEndDate, beeApi, driveName, walletBalance])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -117,8 +119,8 @@ export function CreateDriveModal({
               type="text"
               id="drive-name"
               placeholder="My important files"
-              value={label}
-              onChange={e => setLabel(e.target.value)}
+              value={driveName}
+              onChange={e => setDriveName(e.target.value)}
             />
           </div>
           <div className="fm-modal-window-input-container">
@@ -177,14 +179,14 @@ export function CreateDriveModal({
                   fm,
                   Size.fromBytes(capacity),
                   Duration.fromEndDate(validityEndDate),
-                  label,
+                  driveName,
                   encryptionEnabled,
                   erasureCodeLevel,
                   false,
                   null,
                   undefined,
                   () => onDriveCreated(),
-                  () => onCreationError(),
+                  () => onCreationError(driveName),
                 )
               }
             }}
