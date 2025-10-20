@@ -5,6 +5,7 @@ import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-l
 import { Context as SettingsContext } from './Settings'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getSignerPk } from '../modules/filemanager/utils/common'
+import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -61,7 +62,8 @@ const findDrives = (allDrives: DriveInfo[]): { adminDrive: DriveInfo | null; use
 }
 
 export function Provider({ children }: Props) {
-  const { apiUrl } = useContext(SettingsContext)
+  const { apiUrl, beeApi } = useContext(SettingsContext)
+
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
@@ -202,9 +204,14 @@ export function Provider({ children }: Props) {
     if (prevDriveId && manager) {
       const refreshedDrive = manager.getDrives().find(d => d.id.toString() === prevDriveId)
       setCurrentDrive(refreshedDrive)
-      setCurrentStamp(prevStamp)
+
+      const isValidCurrentStamp = (await getUsableStamps(beeApi)).find(
+        s => s.batchID.toString() === prevStamp?.batchID.toString(),
+      )
+
+      setCurrentStamp(isValidCurrentStamp)
     }
-  }, [currentDrive?.id, currentStamp, init, setCurrentDrive, setCurrentStamp])
+  }, [currentDrive?.id, currentStamp, init, setCurrentDrive, setCurrentStamp, beeApi])
 
   useEffect(() => {
     const pk = getSignerPk()
