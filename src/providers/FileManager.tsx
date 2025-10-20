@@ -46,15 +46,20 @@ interface Props {
   children: ReactNode
 }
 
-const findDrives = (allDrives: DriveInfo[]): { adminDrive: DriveInfo | null; userDrives: DriveInfo[] } => {
+const findDrives = (
+  allDrives: DriveInfo[],
+  usableStamps: PostageBatch[],
+): { adminDrive: DriveInfo | null; userDrives: DriveInfo[] } => {
   let adminDrive: DriveInfo | null = null
   const userDrives: DriveInfo[] = []
 
   allDrives.forEach(d => {
-    if (d.isAdmin) {
-      adminDrive = d
-    } else {
-      userDrives.push(d)
+    if (usableStamps.some(s => s.batchID.toString() === d.batchId.toString())) {
+      if (d.isAdmin) {
+        adminDrive = d
+      } else {
+        userDrives.push(d)
+      }
     }
   })
 
@@ -100,37 +105,42 @@ export function Provider({ children }: Props) {
     setFiles([...manager.fileInfoList])
   }, [])
 
-  const syncDrives = useCallback((manager: FileManagerBase, di?: DriveInfo, remove?: boolean): void => {
-    // append/remove directly to avoid cache issues
-    if (di) {
-      if (remove) {
-        setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
-      } else {
-        if (di.isAdmin) {
-          setAdminDrive(di)
+  const syncDrives = useCallback(
+    async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean): Promise<void> => {
+      const usableStamps = await getUsableStamps(beeApi)
+
+      // append/remove directly to avoid cache issues
+      if (di && usableStamps.some(s => s.batchID.toString() === di.batchId.toString())) {
+        if (remove) {
+          setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
         } else {
-          setDrives(prev => {
-            const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
+          if (di.isAdmin) {
+            setAdminDrive(di)
+          } else {
+            setDrives(prev => {
+              const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
 
-            if (existingIndex >= 0) {
-              const updated = [...prev]
-              updated[existingIndex] = di
+              if (existingIndex >= 0) {
+                const updated = [...prev]
+                updated[existingIndex] = di
 
-              return updated
-            }
+                return updated
+              }
 
-            return [...prev, di]
-          })
+              return [...prev, di]
+            })
+          }
         }
+
+        return
       }
 
-      return
-    }
-
-    const { adminDrive: tmpAdminDrive, userDrives } = findDrives(manager.getDrives())
-    setAdminDrive(tmpAdminDrive)
-    setDrives(userDrives)
-  }, [])
+      const { adminDrive: tmpAdminDrive, userDrives } = findDrives(manager.getDrives(), usableStamps)
+      setAdminDrive(tmpAdminDrive)
+      setDrives(userDrives)
+    },
+    [beeApi],
+  )
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
