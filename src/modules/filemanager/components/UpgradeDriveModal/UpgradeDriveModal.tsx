@@ -13,9 +13,12 @@ import { desiredLifetimeOptions } from '../../constants/stamps'
 import { Context as BeeContext } from '../../../../providers/Bee'
 import { fromBytesConversion, getExpiryDateByLifetime } from '../../utils/common'
 import { Context as SettingsContext } from '../../../../providers/Settings'
+import { Context as FMContext } from '../../../../providers/FileManager'
+
 import {
   BatchId,
   BeeRequestOptions,
+  BZZ,
   capacityBreakpoints,
   Duration,
   PostageBatch,
@@ -32,6 +35,7 @@ interface UpgradeDriveModalProps {
   drive: DriveInfo
   onCancelClick: () => void
   containerColor?: string
+  setErrorMessage?: (error: string) => void
 }
 
 const defaultErasureCodeLevel = RedundancyLevel.OFF
@@ -42,9 +46,11 @@ export function UpgradeDriveModal({
   onCancelClick,
   containerColor,
   drive,
+  setErrorMessage,
 }: UpgradeDriveModalProps): ReactElement {
   const { nodeAddresses, walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
+  const { setShowError } = useContext(FMContext)
 
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(Size.fromBytes(0))
@@ -67,7 +73,7 @@ export function UpgradeDriveModal({
   }, [])
 
   const handleCapacityChange = (value: number, index: number) => {
-    setCapacity(Size.fromBytes(value))
+    setCapacity(Size.fromBytes(value === -1 ? 0 : value))
     setCapacityIndex(index)
   }
 
@@ -84,7 +90,17 @@ export function UpgradeDriveModal({
     ) => {
       setIsBalanceSufficient(true)
 
-      const cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
+      let cost: BZZ | undefined
+
+      try {
+        cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
+      } catch (e) {
+        setErrorMessage?.('Failed to calculate extension cost')
+        setShowError(true)
+
+        return
+      }
+
       const costText = cost ? cost.toSignificantDigits(2) : '0'
 
       if (!isMountedRef.current) return
@@ -93,25 +109,28 @@ export function UpgradeDriveModal({
         setIsBalanceSufficient(false)
       }
 
-      if (isCapacityExtensionSet && isDurationExtensionSet) {
-        setDurationExtensionCost('')
+      const bothExtensions = isCapacityExtensionSet && isDurationExtensionSet
+      const capacityOnly = isCapacityExtensionSet && !isDurationExtensionSet
+      const durationOnly = !isCapacityExtensionSet && isDurationExtensionSet
+      const noExtensions = !isCapacityExtensionSet && !isDurationExtensionSet
+
+      if (bothExtensions) {
         setCapacityExtensionCost('')
-        setExtensionCost(costText)
-      } else if (!isCapacityExtensionSet && isDurationExtensionSet) {
+        setDurationExtensionCost('')
+      } else if (capacityOnly) {
+        setCapacityExtensionCost(costText)
+        setDurationExtensionCost('0')
+      } else if (durationOnly) {
         setCapacityExtensionCost('0')
         setDurationExtensionCost(costText)
-        setExtensionCost(costText)
-      } else if (isCapacityExtensionSet && !isDurationExtensionSet) {
-        setDurationExtensionCost('0')
-        setCapacityExtensionCost(costText)
-        setExtensionCost(costText)
       } else {
-        setDurationExtensionCost('0')
         setCapacityExtensionCost('0')
-        setExtensionCost('0')
+        setDurationExtensionCost('0')
       }
+
+      setExtensionCost(noExtensions ? '0' : costText)
     },
-    [beeApi, walletBalance],
+    [beeApi, walletBalance, setErrorMessage, setShowError],
   )
 
   useEffect(() => {
@@ -124,7 +143,7 @@ export function UpgradeDriveModal({
       const newSizes = sizes.slice(fromIndex + 1)
 
       const updatedSizes = [
-        { value: 0, label: 'Select a value' },
+        { value: -1, label: 'No additional storage (0 GB)' },
         ...newSizes.map(size => ({
           value: size,
           label: getHumanReadableFileSize(size - stamp.size.toBytes()),
@@ -137,26 +156,10 @@ export function UpgradeDriveModal({
   }, [stamp.depth, stamp.size])
 
   useEffect(() => {
-    let isCapacitySet = false
-    let isDurationSet = false
-    let duration = Duration.ZERO
     const fetchExtensionCost = () => {
-      if (capacityIndex !== 0 && lifetimeIndex !== 0) {
-        isCapacitySet = true
-        isDurationSet = true
-        duration = Duration.fromEndDate(validityEndDate)
-      } else if (capacityIndex !== 0 && lifetimeIndex === 0) {
-        isCapacitySet = true
-        isDurationSet = false
-        duration = Duration.ZERO
-      } else if (capacityIndex === 0 && lifetimeIndex !== 0) {
-        isCapacitySet = false
-        isDurationSet = true
-        duration = Duration.fromEndDate(validityEndDate)
-      } else {
-        isCapacitySet = false
-        isDurationSet = false
-      }
+      const isCapacitySet = capacityIndex > 0
+      const isDurationSet = true
+      const duration = Duration.fromEndDate(validityEndDate)
 
       handleCostCalculation(
         stamp.batchID,
@@ -230,9 +233,8 @@ export function UpgradeDriveModal({
                 label="Additional storage"
                 icon={<DatabaseIcon size="14px" color="rgb(237, 129, 49)" />}
                 options={sizeMarks}
-                value={capacity.toBytes()}
+                value={capacityIndex === 0 ? -1 : capacity.toBytes()}
                 onChange={handleCapacityChange}
-                placeholder="Select a value"
               />
             </div>
             <div className="fm-modal-window-input-container">
@@ -245,7 +247,6 @@ export function UpgradeDriveModal({
                 onChange={(value, index) => {
                   setLifetimeIndex(value)
                 }}
-                placeholder="Select a value"
               />
             </div>
           </div>
@@ -261,19 +262,19 @@ export function UpgradeDriveModal({
             <div>Expiry: {stamp.duration.toEndDate().toLocaleDateString()}</div>
             <div>
               Additional storage:{' '}
-              {capacity.toBytes() === 0
-                ? 'Not selected'
-                : `${
-                    fromBytesConversion(Math.max(capacity.toBytes() - stamp.size.toBytes(), 0), 'GB').toFixed(3) + ' GB'
-                  } ${durationExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'}`}
+              {(() => {
+                if (capacityIndex === 0) return '0 GB'
+
+                return `${
+                  fromBytesConversion(Math.max(capacity.toBytes() - stamp.size.toBytes(), 0), 'GB').toFixed(3) + ' GB'
+                } ${durationExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'}`
+              })()}
             </div>
             <div>
               Extension period:{' '}
-              {durationExtensionCost === '0'
-                ? 'Not selected'
-                : `${desiredLifetimeOptions[lifetimeIndex]?.label} ${
-                    capacityExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'
-                  }`}
+              {`${desiredLifetimeOptions[lifetimeIndex]?.label} ${
+                capacityExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'
+              }`}
             </div>
 
             <div className="fm-upgrade-drive-modal-info fm-emphasized-text">
@@ -288,7 +289,7 @@ export function UpgradeDriveModal({
           <Button
             label={isSubmitting ? 'Confirming…' : 'Confirm upgrade'}
             variant="primary"
-            disabled={extensionCost === '0' || isSubmitting || !isBalanceSufficient}
+            disabled={isSubmitting || !isBalanceSufficient || !walletBalance || !beeApi}
             onClick={async () => {
               if (!beeApi || !walletBalance) return
 
@@ -313,6 +314,7 @@ export function UpgradeDriveModal({
                   defaultErasureCodeLevel,
                 )
 
+                // TODO: replace eventlisteners with seterrormessage and setshowerror modal
                 window.dispatchEvent(
                   new CustomEvent('fm:drive-upgrade-end', {
                     detail: { driveId: drive.id.toString(), success: true },

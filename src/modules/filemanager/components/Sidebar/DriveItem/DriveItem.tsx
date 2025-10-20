@@ -159,7 +159,12 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
         />
       </div>
       {isUpgradeDriveModalOpen && (
-        <UpgradeDriveModal stamp={stamp} drive={drive} onCancelClick={() => setIsUpgradeDriveModalOpen(false)} />
+        <UpgradeDriveModal
+          stamp={stamp}
+          drive={drive}
+          onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
+          setErrorMessage={setErrorMessage}
+        />
       )}
 
       {isUpgrading && (

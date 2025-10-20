@@ -11,9 +11,15 @@ interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
   adminDrive: DriveInfo | null
   loading: boolean
+  setErrorMessage?: (error: string) => void
 }
 // TODO: refresh admin drive and stamp info after upload, new drive etc.
-export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusBarProps): ReactElement {
+export function AdminStatusBar({
+  adminStamp,
+  adminDrive,
+  loading,
+  setErrorMessage,
+}: AdminStatusBarProps): ReactElement {
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
 
@@ -76,6 +82,7 @@ export function AdminStatusBar({ adminStamp, adminDrive, loading }: AdminStatusB
           stamp={adminStamp}
           drive={adminDrive}
           onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
+          setErrorMessage={setErrorMessage}
         />
       )}
 

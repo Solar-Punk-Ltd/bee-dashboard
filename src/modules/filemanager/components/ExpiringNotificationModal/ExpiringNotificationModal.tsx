@@ -18,12 +18,14 @@ interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
   drives: DriveInfo[]
   onCancelClick: () => void
+  setErrorMessage?: (error: string) => void
 }
 
 export function ExpiringNotificationModal({
   stamps,
   drives,
   onCancelClick,
+  setErrorMessage,
 }: ExpiringNotificationModalProps): ReactElement {
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | undefined>(undefined)
@@ -102,6 +104,7 @@ export function ExpiringNotificationModal({
           onCancelClick={onCancelClick}
           containerColor="none"
           drive={actualDrive}
+          setErrorMessage={setErrorMessage}
         />
       )}
     </div>,

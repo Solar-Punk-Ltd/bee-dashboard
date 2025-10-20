@@ -12,7 +12,11 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 const NUMBER_OF_DAYS_WARNING = 7
 const DAYS_TO_MILLISECONDS_MULTIPLIER = 24 * 60 * 60 * 1000
 
-export function NotificationBar(): ReactElement | null {
+interface NotificationBarProps {
+  setErrorMessage?: (error: string) => void
+}
+
+export function NotificationBar({ setErrorMessage }: NotificationBarProps): ReactElement | null {
   const [showExpiringModal, setShowExpiringModal] = useState(false)
   const [stampsToExpire, setStampsToExpire] = useState<PostageBatch[]>([])
   const [drivesToExpire, setDrivesToExpire] = useState<DriveInfo[]>([])
@@ -74,6 +78,7 @@ export function NotificationBar(): ReactElement | null {
           onCancelClick={() => {
             setShowExpiringModal(false)
           }}
+          setErrorMessage={setErrorMessage}
         />
       )}
     </>

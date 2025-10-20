@@ -485,7 +485,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             onRowClose={name => cancelOrDismissDownload(name)}
             onCloseAll={() => dismissAllDownloads()}
           />
-          <NotificationBar />
+          <NotificationBar setErrorMessage={setErrorMessage} />
         </div>
       </div>
     </>

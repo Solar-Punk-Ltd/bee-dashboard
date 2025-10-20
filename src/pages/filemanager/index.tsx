@@ -117,7 +117,12 @@ export function FileManagerPage(): ReactElement {
             <Sidebar errorMessage={errorMessage} setErrorMessage={setErrorMessage} loading={loading} />
             <FileBrowser errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
           </div>
-          <AdminStatusBar adminStamp={fm.adminStamp || null} adminDrive={adminDrive} loading={loading} />
+          <AdminStatusBar
+            adminStamp={fm.adminStamp || null}
+            adminDrive={adminDrive}
+            loading={loading}
+            setErrorMessage={setErrorMessage}
+          />
         </div>
       </ViewProvider>
     </SearchProvider>
