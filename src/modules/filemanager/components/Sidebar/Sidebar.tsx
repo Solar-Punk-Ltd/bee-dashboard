@@ -8,7 +8,10 @@ import ArrowRight from 'remixicon-react/ArrowRightSLineIcon'
 import ArrowDown from 'remixicon-react/ArrowDownSLineIcon'
 import Delete from 'remixicon-react/DeleteBin6LineIcon'
 import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
+import History from 'remixicon-react/HistoryLineIcon'
+import HistoryFill from 'remixicon-react/HistoryFillIcon'
 import { DriveItem } from './DriveItem/DriveItem'
+import { ExpiredDriveItem } from './DriveItem/ExpiredDriveItem'
 import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
 import { ViewType } from '../../constants/transfers'
 import { PostageBatch } from '@ethersphere/bee-js'
@@ -31,11 +34,21 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
   const [isCreateDriveOpen, setIsCreateDriveOpen] = useState(false)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [isDriveCreationInProgress, setIsDriveCreationInProgress] = useState(false)
+  const [isExpiredOpen, setIsExpiredOpen] = useState(true)
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
-  const { fm, currentDrive, currentStamp, drives, setCurrentDrive, setCurrentStamp, setShowError } =
-    useContext(FMContext)
+  const {
+    fm,
+    currentDrive,
+    currentStamp,
+    drives,
+    expiredDrives,
+    setCurrentDrive,
+    setCurrentStamp,
+    setShowError,
+    syncDrives,
+  } = useContext(FMContext)
 
   useEffect(() => {
     let isMounted = true
@@ -164,6 +177,35 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
               )
             )
           })}
+
+        {expiredDrives.length > 0 && (
+          <>
+            <div
+              className="fm-sidebar-item"
+              onMouseEnter={() => setHovered('expired')}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => setIsExpiredOpen(prev => !prev)}
+            >
+              <div className="fm-sidebar-item-icon">
+                {isExpiredOpen ? <ArrowDown size="16px" /> : <ArrowRight size="16px" />}
+              </div>
+              <div className="fm-sidebar-item-icon">
+                {hovered === 'expired' ? <HistoryFill size="16px" /> : <History size="16px" />}
+              </div>
+              <div>Expired drives</div>
+            </div>
+
+            {isExpiredOpen && (
+              <div className="fm-drive-items-container fm-drive-items-container-open">
+                {expiredDrives.map(d => (
+                  <div key={`${d.id.toString()}-expired`}>
+                    <ExpiredDriveItem drive={d} onForgot={async () => await syncDrives()} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
         <div
           className="fm-sidebar-item"

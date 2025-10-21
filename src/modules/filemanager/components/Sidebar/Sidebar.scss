@@ -54,7 +54,7 @@
 
   &.fm-drive-items-container-open {
     opacity: 1;
-    max-height: 200px;
+    max-height: 1000px;
   }
 }
 
@@ -97,6 +97,15 @@
   border: 2px solid rgba(0, 0, 0, 0.2);
   border-top-color: rgba(0, 0, 0, 0.7);
   animation: fmSpin 0.8s linear infinite;
+}
+
+.fm-drive-item-container.fm-expired {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.fm-drive-item-container.fm-expired .fm-drive-item-capacity {
+  color: #dc2626;
 }
 
 @keyframes fmSpin {

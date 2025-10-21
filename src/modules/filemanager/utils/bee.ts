@@ -192,3 +192,18 @@ export const handleDestroyDrive = async (
     onError?.(e)
   }
 }
+
+export const handleForgetDrive = async (
+  fm: FileManagerBase | null,
+  drive: DriveInfo,
+  onSuccess?: () => void,
+  onError?: (error: unknown) => void,
+): Promise<void> => {
+  if (!fm) return
+  try {
+    await fm.forgetDrive(drive)
+    onSuccess?.()
+  } catch (e) {
+    onError?.(e)
+  }
+}
