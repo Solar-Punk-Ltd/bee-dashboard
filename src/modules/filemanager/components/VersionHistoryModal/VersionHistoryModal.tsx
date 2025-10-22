@@ -17,7 +17,7 @@ import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
 import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../constants/transfers'
 import { useTransfers } from '../../hooks/useTransfers'
 
-const pageSize = 5
+const VERSION_HISTORY_PAGE_SIZE = 5
 
 type RenameConfirmState = {
   version: FileInfo
@@ -53,10 +53,10 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
     return indexStrToBigint(fileInfo.version) ?? BigInt(0)
   }, [fileInfo])
 
-  const totalPages = Math.max(1, Math.ceil(totalVersionsCount / pageSize))
+  const totalPages = Math.max(1, Math.ceil(totalVersionsCount / VERSION_HISTORY_PAGE_SIZE))
   const pageVersions = useMemo(() => {
-    const startIndex = currentPage * pageSize
-    const endIndex = startIndex + pageSize
+    const startIndex = currentPage * VERSION_HISTORY_PAGE_SIZE
+    const endIndex = startIndex + VERSION_HISTORY_PAGE_SIZE
 
     return allVersions.slice(startIndex, endIndex)
   }, [allVersions, currentPage])
@@ -65,15 +65,16 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
     async (page: number) => {
       if (!fm) return
 
-      const startIndex = page * pageSize
-      const endIndex = startIndex + pageSize
+      const startIndex = page * VERSION_HISTORY_PAGE_SIZE
+      const endIndex = startIndex + VERSION_HISTORY_PAGE_SIZE
 
       let hasVersionsForPage = false
       setAllVersions(prevVersions => {
         const currentTotal = Number(currentVersion + BigInt(1))
         hasVersionsForPage =
-          prevVersions.slice(startIndex, endIndex).length === pageSize ||
-          (page === Math.floor(currentTotal / pageSize) && currentTotal % pageSize > 0)
+          prevVersions.slice(startIndex, endIndex).length === VERSION_HISTORY_PAGE_SIZE ||
+          (page === Math.floor(currentTotal / VERSION_HISTORY_PAGE_SIZE) &&
+            currentTotal % VERSION_HISTORY_PAGE_SIZE > 0)
 
         return prevVersions
       })
@@ -85,8 +86,8 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
       setLoading(true)
       setError(null)
 
-      const startVersion = currentVersion - BigInt(page * pageSize)
-      const endVersion = startVersion - BigInt(pageSize - 1)
+      const startVersion = currentVersion - BigInt(page * VERSION_HISTORY_PAGE_SIZE)
+      const endVersion = startVersion - BigInt(VERSION_HISTORY_PAGE_SIZE - 1)
       const versions: FileInfo[] = []
 
       for (let i = startVersion; i >= BigInt(0) && i >= endVersion; i--) {
@@ -101,7 +102,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
 
       setAllVersions(prev => {
         const updated = [...prev]
-        const insertIndex = page * pageSize
+        const insertIndex = page * VERSION_HISTORY_PAGE_SIZE
 
         for (let idx = 0; idx < versions.length; idx++) {
           updated[insertIndex + idx] = versions[idx]
