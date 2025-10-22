@@ -10,6 +10,7 @@ export enum TransferStatus {
   Done = 'done',
   Error = 'error',
   Queued = 'queued',
+  Cancelled = 'cancelled',
 }
 
 export enum TransferBarColor {

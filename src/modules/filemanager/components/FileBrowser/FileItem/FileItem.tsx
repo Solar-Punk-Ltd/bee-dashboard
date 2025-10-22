@@ -194,25 +194,30 @@ export function FileItem({
 
       if (takenNames.has(newName)) throw new Error('name-taken')
 
-      await fm.upload(
-        currentDrive,
-        {
-          name: newName,
-          topic: fileInfo.topic,
-          file: {
-            reference: fileInfo.file.reference,
-            historyRef: fileInfo.file.historyRef,
+      try {
+        await fm.upload(
+          currentDrive,
+          {
+            name: newName,
+            topic: fileInfo.topic,
+            file: {
+              reference: fileInfo.file.reference,
+              historyRef: fileInfo.file.historyRef,
+            },
+            customMetadata: fileInfo.customMetadata,
+            files: [],
           },
-          customMetadata: fileInfo.customMetadata,
-          files: [],
-        },
-        {
-          actHistoryAddress: fileInfo.file.historyRef,
-        },
-      )
+          {
+            actHistoryAddress: fileInfo.file.historyRef,
+          },
+        )
+      } catch (e: unknown) {
+        setErrorMessage?.(`Error renaming file ${fileInfo.name}`)
+        setShowError(true)
+      }
     },
 
-    [fm, currentDrive, fileInfo, takenNames],
+    [fm, currentDrive, fileInfo, takenNames, setErrorMessage, setShowError],
   )
 
   const MenuItem = ({
