@@ -141,7 +141,7 @@ export function FileItem({
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize }),
+        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
         isNewWindow,
       )
     },

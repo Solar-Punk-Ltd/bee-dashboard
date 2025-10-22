@@ -436,7 +436,7 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize }),
+        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
       )
     },
     [handleCloseContext, fm, beeApi, onDownload],

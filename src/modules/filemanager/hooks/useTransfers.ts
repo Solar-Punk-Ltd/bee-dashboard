@@ -368,7 +368,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       setDownloadItems(prev => {
-        const row = createTransferItem(props.name, props.size, FileTransferType.Download, driveName)
+        const row = createTransferItem(
+          props.name,
+          props.size,
+          FileTransferType.Download,
+          driveName,
+          TransferStatus.Downloading,
+        )
         row.startedAt = undefined // Downloads start timing when first progress is received
         const idx = prev.findIndex(p => p.name === props.name)
 

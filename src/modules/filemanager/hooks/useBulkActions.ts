@@ -51,14 +51,16 @@ export function useBulkActions(opts: {
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
 
+      const trackers: Array<(progress: DownloadProgress) => void> = []
       for (const fi of list) {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
         const tracker = trackDownload({ name: fi.name, size: prettySize, expectedSize: expected })
-
-        await startDownloadingQueue(fm, [fi], tracker)
+        trackers.push(tracker)
       }
+
+      await startDownloadingQueue(fm, list, trackers)
     },
     [fm, trackDownload],
   )
