@@ -64,27 +64,13 @@ export function FileProgressWindow({
       : Array.from({ length: count }, (_, i) => ({ name: `Pending file ${i + 1}`, percent: 0, size: '' }))
 
   const getTransferInfo = (item: ProgressItem, pct?: number) => {
-    const transferType = item?.kind ?? type
-    const cap = capitalizeFirstLetter(transferType)
-    let verb = `${cap}ing`
-
-    if (cap.toLowerCase() === 'update') verb = 'Updating'
-
-    const isDone = pct === 100 || item.status === TransferStatus.Done
-    const isCancelled = item.status === TransferStatus.Error
-    const isQueued = item.status === TransferStatus.Queued
+    const transferType = capitalizeFirstLetter(item?.kind ?? type)
+    const verb = `${transferType}ing`
+    const actualStatus = item.status || (pct && pct >= 100 ? TransferStatus.Done : verb)
 
     return {
-      statusText: (() => {
-        if (isQueued) return 'Queued…'
-
-        if (isCancelled) return 'Cancelled…'
-
-        if (isDone) return 'Done'
-
-        return `${verb}…`
-      })(),
-      barColor: TransferBarColor[cap as keyof typeof TransferBarColor],
+      statusText: capitalizeFirstLetter(actualStatus),
+      barColor: TransferBarColor[transferType as keyof typeof TransferBarColor],
     }
   }
 
@@ -138,47 +124,49 @@ export function FileProgressWindow({
         </div>
       </div>
       <div className="fm-file-progress-window-list" ref={listRef}>
-        {rows.map((file, idx) => {
-          const pctNum = Number.isFinite(file.percent)
-            ? Math.max(0, Math.min(100, Math.round(file.percent as number)))
+        {rows.map((item, idx) => {
+          const pctNum = Number.isFinite(item.percent)
+            ? Math.max(0, Math.min(100, Math.round(item.percent as number)))
             : undefined
 
-          const isComplete = (pctNum ?? 0) >= 100 || file.status === TransferStatus.Done
+          const isComplete = (pctNum ?? 0) >= 100 || item.status === TransferStatus.Done
           const isActive =
-            file.status === TransferStatus.Uploading ||
-            file.status === TransferStatus.Downloading ||
-            file.status === TransferStatus.Queued
+            item.status === TransferStatus.Uploading ||
+            item.status === TransferStatus.Downloading ||
+            item.status === TransferStatus.Queued
 
-          const canDismiss = isActive || isComplete || file.status === TransferStatus.Error
           const rowActionLabel = isActive ? 'Cancel' : 'Dismiss'
 
-          const transferInfo = getTransferInfo(file, pctNum)
-          const uiName = file.name
+          const transferInfo = getTransferInfo(item, pctNum)
 
-          let centerText = ''
+          const getCenterText = () => {
+            if (!isComplete && typeof item.etaSec === 'number') return formatEta(item.etaSec)
 
-          if (!isComplete && typeof file.etaSec === 'number') centerText = formatEta(file.etaSec)
-          else if (isComplete && typeof file.elapsedSec === 'number') centerText = formatDuration(file.elapsedSec)
-          const centerDisplay = centerText || '\u00A0'
+            if (isComplete && typeof item.elapsedSec === 'number') return formatDuration(item.elapsedSec)
+
+            return ''
+          }
+
+          const centerDisplay = getCenterText() || '\u00A0'
 
           return (
             <div
               className="fm-file-progress-window-file-item"
-              key={`${file.name}`}
+              key={`${item.name}`}
               ref={idx === 0 ? firstRowRef : undefined}
             >
               <div className="fm-file-progress-window-file-type-icon">
-                <GetIconElement size="14" icon={uiName} color="black" />
+                <GetIconElement size="14" icon={item.name} color="black" />
               </div>
 
               <div className="fm-file-progress-window-file-datas">
                 <div className="fm-file-progress-window-file-item-header">
-                  <div className="fm-file-progress-window-name" title={uiName}>
-                    <div className="fm-file-progress-window-name-text">{uiName}</div>
-                    {file.driveName && (
+                  <div className="fm-file-progress-window-name" title={item.name}>
+                    <div className="fm-file-progress-window-name-text">{item.name}</div>
+                    {item.driveName && (
                       <div className="fm-drive-line">
-                        <span className="fm-drive-chip" title={`Drive: ${file.driveName}`}>
-                          {file.driveName}
+                        <span className="fm-drive-chip" title={`Drive: ${item.driveName}`}>
+                          {item.driveName}
                         </span>
                       </div>
                     )}
@@ -191,8 +179,7 @@ export function FileProgressWindow({
                   <button
                     className="fm-file-progress-window-row-close"
                     aria-label={rowActionLabel}
-                    disabled={!canDismiss}
-                    onClick={() => onRowClose?.(file.name)}
+                    onClick={() => onRowClose?.(item.name)}
                     type="button"
                   >
                     <CloseIcon size="14" />
@@ -207,7 +194,7 @@ export function FileProgressWindow({
                 />
 
                 <div className="fm-file-progress-window-file-item-footer">
-                  <div className="fm-file-progress-window-size">{file.size || '—'}</div>
+                  <div className="fm-file-progress-window-size">{item.size || '—'}</div>
                   <div className="fm-file-progress-window-center">{centerDisplay}</div>
                   <div className="fm-file-progress-window-status">{transferInfo.statusText}</div>
                 </div>

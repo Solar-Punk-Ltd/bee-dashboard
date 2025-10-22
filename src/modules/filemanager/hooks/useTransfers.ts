@@ -153,8 +153,12 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
 
-  const isUploading = uploadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
-  const isDownloading = downloadItems.some(i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error)
+  const isUploading = uploadItems.some(
+    i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error && i.status !== TransferStatus.Cancelled,
+  )
+  const isDownloading = downloadItems.some(
+    i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error && i.status !== TransferStatus.Cancelled,
+  )
 
   const clearAllFlagsFor = useCallback((name: string) => {
     cancelledNamesRef.current.delete(name)
@@ -559,7 +563,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               safeSetState(
                 isMountedRef,
                 setUploadItems,
-              )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Error }))
+              )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Cancelled }))
               cancelledNamesRef.current.delete(task.finalName)
               queueRef.current.shift()
             } else {
@@ -606,14 +610,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           cancelledNamesRef.current.add(name)
           queueRef.current = queueRef.current.filter(t => t.finalName !== name)
 
-          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
         }
 
         if (row.status === TransferStatus.Uploading) {
           cancelledUploadingRef.current.add(name)
           uploadAbortsRef.current.abort(name)
 
-          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
         }
 
         clearAllFlagsFor(name)
@@ -636,7 +640,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       if (row.status === TransferStatus.Downloading) {
         abortDownload(name)
 
-        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Error } : r))
+        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
       }
 
       return prev.filter(r => r.name !== name)
