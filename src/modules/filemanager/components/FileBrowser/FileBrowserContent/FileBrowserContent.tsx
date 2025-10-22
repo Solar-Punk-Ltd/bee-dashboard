@@ -59,25 +59,31 @@ export function FileBrowserContent({
 
   const renderFileList = useCallback(
     (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
-      return filesToRender.map(fi => {
-        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name || '-'
-        const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
+      return filesToRender
+        .map(fi => {
+          const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
 
-        return (
-          <FileItem
-            key={key}
-            fileInfo={fi}
-            onDownload={trackDownload}
-            showDriveColumn={showDriveColumn}
-            driveName={driveName}
-            selected={Boolean(selectedIds?.has(getFileId(fi)))}
-            onToggleSelected={onToggleSelected}
-            bulkSelectedCount={bulkSelectedCount}
-            onBulk={onBulk}
-            setErrorMessage={setErrorMessage}
-          />
-        )
-      })
+          return drive ? { fi, driveName: drive.name } : null
+        })
+        .filter((item): item is { fi: FileInfo; driveName: string } => item !== null)
+        .map(({ fi, driveName }) => {
+          const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
+
+          return (
+            <FileItem
+              key={key}
+              fileInfo={fi}
+              onDownload={trackDownload}
+              showDriveColumn={showDriveColumn}
+              driveName={driveName}
+              selected={Boolean(selectedIds?.has(getFileId(fi)))}
+              onToggleSelected={onToggleSelected}
+              bulkSelectedCount={bulkSelectedCount}
+              onBulk={onBulk}
+              setErrorMessage={setErrorMessage}
+            />
+          )
+        })
     },
     [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk, setErrorMessage],
   )
@@ -89,6 +95,14 @@ export function FileBrowserContent({
   if (!isSearchMode) {
     if (!currentDrive) {
       return <div className="fm-drop-hint">Select a drive to upload or view its files</div>
+    }
+
+    if (view === ViewType.Expired) {
+      return (
+        <div className="fm-drop-hint">
+          The stamp for drive &quot;{currentDrive?.name}&quot; is expired, no files can be found
+        </div>
+      )
     }
 
     if (listToRender.length === 0) {

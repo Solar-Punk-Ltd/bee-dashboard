@@ -5,7 +5,7 @@ import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-l
 import { Context as SettingsContext } from './Settings'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getSignerPk } from '../modules/filemanager/utils/common'
-import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { getUsableStamps } from '../../src/modules/filemanager/utils/bee'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -13,14 +13,16 @@ interface ContextInterface {
   currentDrive?: DriveInfo
   currentStamp?: PostageBatch
   drives: DriveInfo[]
+  expiredDrives: DriveInfo[]
   adminDrive: DriveInfo | null
   initializationError: boolean
-  setCurrentDrive: (d: DriveInfo) => void
+  setCurrentDrive: (d: DriveInfo | undefined) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
   showError?: boolean
   setShowError: (show: boolean) => void
+  syncDrives: () => Promise<void>
 }
 
 const initialValues: ContextInterface = {
@@ -29,6 +31,7 @@ const initialValues: ContextInterface = {
   currentDrive: undefined,
   currentStamp: undefined,
   drives: [],
+  expiredDrives: [],
   adminDrive: null,
   initializationError: false,
   setCurrentDrive: () => {}, // eslint-disable-line
@@ -37,6 +40,7 @@ const initialValues: ContextInterface = {
   init: async () => null, // eslint-disable-line
   showError: false,
   setShowError: () => {}, // eslint-disable-line
+  syncDrives: async () => {}, // eslint-disable-line
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -46,19 +50,30 @@ interface Props {
   children: ReactNode
 }
 
-const findDrives = (allDrives: DriveInfo[]): { adminDrive: DriveInfo | null; userDrives: DriveInfo[] } => {
+const findDrives = (
+  allDrives: DriveInfo[],
+  usableStamps: PostageBatch[],
+): { adminDrive: DriveInfo | null; userDrives: DriveInfo[]; expiredDrives: DriveInfo[] } => {
   let adminDrive: DriveInfo | null = null
   const userDrives: DriveInfo[] = []
+  const expiredDrives: DriveInfo[] = []
 
   allDrives.forEach(d => {
-    if (d.isAdmin) {
-      adminDrive = d
-    } else {
-      userDrives.push(d)
+    const isNotExpired = usableStamps.some(s => s.batchID.toString() === d.batchId.toString())
+
+    if (isNotExpired) {
+      if (d.isAdmin) {
+        adminDrive = d
+      } else {
+        userDrives.push(d)
+      }
+      // TODO: handle admin drive expiration!
+    } else if (!d.isAdmin) {
+      expiredDrives.push(d)
     }
   })
 
-  return { adminDrive, userDrives }
+  return { adminDrive, userDrives, expiredDrives }
 }
 
 export function Provider({ children }: Props) {
@@ -67,32 +82,34 @@ export function Provider({ children }: Props) {
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
+  const [expiredDrives, setExpiredDrives] = useState<DriveInfo[]>([])
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
   const [currentDrive, setCurrentDrive] = useState<DriveInfo | undefined>()
   const [currentStamp, setCurrentStamp] = useState<PostageBatch | undefined>()
 
   const [initializationError, setInitializationError] = useState<boolean>(false)
   const [showError, setShowError] = useState<boolean>(false)
-  // TODO: rethink this: maybe caching files/drives happen elsewhere
+
   const syncFiles = useCallback((manager: FileManagerBase, fi?: FileInfo, remove?: boolean): void => {
-    // append/remove directly to avoid cache issues
     if (fi) {
       if (remove) {
         setFiles(prev => prev.filter(f => f.topic.toString() !== fi.topic.toString()))
-      } else {
-        setFiles(prev => {
-          const existingIndex = prev.findIndex(f => f.topic.toString() === fi.topic.toString())
 
-          if (existingIndex >= 0) {
-            const updated = [...prev]
-            updated[existingIndex] = fi
-
-            return updated
-          }
-
-          return [...prev, fi]
-        })
+        return
       }
+
+      setFiles(prev => {
+        const existingIndex = prev.findIndex(f => f.topic.toString() === fi.topic.toString())
+
+        if (existingIndex >= 0) {
+          const updated = [...prev]
+          updated[existingIndex] = fi
+
+          return updated
+        }
+
+        return [...prev, fi]
+      })
 
       return
     }
@@ -100,15 +117,26 @@ export function Provider({ children }: Props) {
     setFiles([...manager.fileInfoList])
   }, [])
 
-  const syncDrives = useCallback((manager: FileManagerBase, di?: DriveInfo, remove?: boolean): void => {
-    // append/remove directly to avoid cache issues
-    if (di) {
-      if (remove) {
-        setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
-      } else {
-        if (di.isAdmin) {
-          setAdminDrive(di)
-        } else {
+  const syncDrives = useCallback(
+    async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean): Promise<void> => {
+      const usableStamps = await getUsableStamps(beeApi)
+
+      if (di) {
+        const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
+
+        if (isNotExpired) {
+          if (remove) {
+            setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+
+            return
+          }
+
+          if (di.isAdmin) {
+            setAdminDrive(di)
+
+            return
+          }
+
           setDrives(prev => {
             const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
 
@@ -121,16 +149,43 @@ export function Provider({ children }: Props) {
 
             return [...prev, di]
           })
+
+          return
         }
+
+        if (remove) {
+          setExpiredDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+
+          return
+        }
+
+        if (!di.isAdmin) {
+          setExpiredDrives(prev => {
+            const exists = prev.some(d => d.id.toString() === di.id.toString())
+
+            return exists ? prev : [...prev, di]
+          })
+
+          return
+        }
+
+        // TODO: handle admin drive expiration!
+        return
       }
 
-      return
-    }
+      const { adminDrive: tmpAdminDrive, userDrives, expiredDrives } = findDrives(manager.getDrives(), usableStamps)
+      setAdminDrive(tmpAdminDrive)
+      setDrives(userDrives)
+      setExpiredDrives(expiredDrives)
+    },
+    [beeApi],
+  )
 
-    const { adminDrive: tmpAdminDrive, userDrives } = findDrives(manager.getDrives())
-    setAdminDrive(tmpAdminDrive)
-    setDrives(userDrives)
-  }, [])
+  const syncDrivesPublic = useCallback(async () => {
+    if (fm) {
+      await syncDrives(fm)
+    }
+  }, [fm, syncDrives])
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
@@ -167,9 +222,15 @@ export function Provider({ children }: Props) {
       syncFiles(manager)
     }
 
+    const handleDriveForgotten = ({ driveInfo }: { driveInfo: DriveInfo }) => {
+      syncDrives(manager, driveInfo, true)
+      syncFiles(manager)
+    }
+
     manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
+    manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
     manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileInfo }) =>
       syncFiles(manager, fileInfo),
     )
@@ -233,6 +294,7 @@ export function Provider({ children }: Props) {
         currentDrive,
         currentStamp,
         drives,
+        expiredDrives,
         adminDrive,
         initializationError,
         setCurrentDrive,
@@ -241,6 +303,7 @@ export function Provider({ children }: Props) {
         init,
         showError,
         setShowError,
+        syncDrives: syncDrivesPublic,
       }}
     >
       {children}
