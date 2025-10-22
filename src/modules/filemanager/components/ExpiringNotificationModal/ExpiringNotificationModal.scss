@@ -1,6 +1,7 @@
 .fm-expiring-notification-modal-body {
-  overflow-y: scroll;
-  max-height: 474px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .fm-expiring-notification-modal-section-left {

@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useState, useMemo, useEffect } from 'react'
 import { Warning } from '@material-ui/icons'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
@@ -13,6 +13,8 @@ import { getDaysLeft } from '../../utils/common'
 
 import { PostageBatch, Size } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+
+const EXPIRING_ITEMS_PAGE_SIZE = 3
 
 interface ExpiringNotificationModalProps {
   stamps: PostageBatch[]
@@ -30,7 +32,25 @@ export function ExpiringNotificationModal({
   const [showUpgradeDriveModal, setShowUpgradeDriveModal] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | undefined>(undefined)
   const [actualDrive, setActualDrive] = useState<DriveInfo | undefined>(undefined)
+  const [currentPage, setCurrentPage] = useState(0)
   const modalRoot = document.querySelector('.fm-main') || document.body
+
+  const sortedStamps = useMemo(() => {
+    return [...stamps].sort((a, b) => {
+      const daysLeftA = getDaysLeft(a.duration.toEndDate())
+      const daysLeftB = getDaysLeft(b.duration.toEndDate())
+
+      return daysLeftA - daysLeftB
+    })
+  }, [stamps])
+
+  const totalPages = Math.ceil(sortedStamps.length / EXPIRING_ITEMS_PAGE_SIZE)
+  const startIndex = currentPage * EXPIRING_ITEMS_PAGE_SIZE
+  const paginatedStamps = sortedStamps.slice(startIndex, startIndex + EXPIRING_ITEMS_PAGE_SIZE)
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [stamps])
 
   if (stamps.length === 0) return <></>
 
@@ -43,7 +63,7 @@ export function ExpiringNotificationModal({
         <div>The following drives will expire soon. Extend them to keep your data accessible.</div>
 
         <div className="fm-modal-window-body fm-expiring-notification-modal-body">
-          {stamps.map(stamp => {
+          {paginatedStamps.map((stamp, index) => {
             const daysLeft = getDaysLeft(stamp.duration.toEndDate())
             let daysClass = ''
 
@@ -58,7 +78,10 @@ export function ExpiringNotificationModal({
             }
 
             return (
-              <div key={stamp.label} className="fm-modal-white-section fm-space-between">
+              <div
+                key={`${stamp.batchID.toString()}-${currentPage}-${index}`}
+                className="fm-modal-white-section fm-space-between"
+              >
                 <div className="fm-expiring-notification-modal-section-left fm-space-between">
                   <DriveIcon size="20" color="rgb(237, 129, 49)" />
                   <div>
@@ -82,7 +105,7 @@ export function ExpiringNotificationModal({
                       variant="primary"
                       onClick={() => {
                         setActualStamp(stamp)
-                        setActualDrive(drive)
+                        setActualDrive(undefined)
                         setShowUpgradeDriveModal(true)
                       }}
                     />
@@ -96,6 +119,19 @@ export function ExpiringNotificationModal({
           <div className="fm-expiring-notification-modal-footer-one-button">
             <Button label="Cancel" variant="secondary" onClick={onCancelClick} />
           </div>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span>
+                Page {currentPage + 1} / {totalPages} · total {sortedStamps.length}
+              </span>
+              {currentPage > 0 && (
+                <Button label="Previous" variant="secondary" onClick={() => setCurrentPage(prev => prev - 1)} />
+              )}
+              {currentPage + 1 < totalPages && (
+                <Button label="Next" variant="primary" onClick={() => setCurrentPage(prev => prev + 1)} />
+              )}
+            </div>
+          )}
         </div>
       </div>
       {showUpgradeDriveModal && actualStamp && actualDrive && (
