@@ -97,6 +97,14 @@ export function FileBrowserContent({
       return <div className="fm-drop-hint">Select a drive to upload or view its files</div>
     }
 
+    if (view === ViewType.Expired) {
+      return (
+        <div className="fm-drop-hint">
+          The stamp for drive &quot;{currentDrive?.name}&quot; is expired, no files can be found
+        </div>
+      )
+    }
+
     if (listToRender.length === 0) {
       if (view === ViewType.Trash) {
         return (

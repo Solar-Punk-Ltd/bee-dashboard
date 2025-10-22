@@ -21,6 +21,7 @@ export enum TransferBarColor {
 export enum ViewType {
   File = 'file',
   Trash = 'trash',
+  Expired = 'expired',
 }
 
 export enum ActionTag {

@@ -198,8 +198,22 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
             {isExpiredOpen && (
               <div className="fm-drive-items-container fm-drive-items-container-open">
                 {expiredDrives.map(d => (
-                  <div key={`${d.id.toString()}-expired`}>
-                    <ExpiredDriveItem drive={d} onForgot={async () => await syncDrives()} />
+                  <div
+                    key={`${d.id.toString()}-expired`}
+                    onClick={() => {
+                      setCurrentDrive(d)
+                      setView(ViewType.Expired)
+                    }}
+                  >
+                    <ExpiredDriveItem
+                      drive={d}
+                      onForgot={async () => {
+                        await syncDrives()
+                        setCurrentDrive(drives.length > 0 ? drives[0] : undefined)
+                        setView(ViewType.File)
+                      }}
+                      setErrorMessage={setErrorMessage}
+                    />
                   </div>
                 ))}
               </div>

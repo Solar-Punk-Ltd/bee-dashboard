@@ -14,10 +14,11 @@ import './DriveItem.scss'
 interface Props {
   drive: DriveInfo
   onForgot?: () => Promise<void> | void
+  setErrorMessage?: (error: string) => void
 }
 
-export function ExpiredDriveItem({ drive, onForgot }: Props): ReactElement {
-  const { fm } = useContext(FMContext)
+export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): ReactElement {
+  const { fm, setShowError } = useContext(FMContext)
   const [isHovered, setIsHovered] = useState(false)
   const [showForgetConfirm, setShowForgetConfirm] = useState(false)
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
@@ -80,8 +81,8 @@ export function ExpiredDriveItem({ drive, onForgot }: Props): ReactElement {
           title="Forget drive?"
           message={
             <>
-              This will remove metadata for drive with expired stamp <b>Drive Name: {drive.name}</b>{' '}
-              <b>Batch Id: {drive.batchId}</b>
+              This will remove metadata for the drive with expired stamp <b>Drive Name: {drive.name}</b>{' '}
+              <b>Batch Id: {`${drive.batchId.toString().slice(0, 4)}...${drive.batchId.toString().slice(-4)}`}</b>
             </>
           }
           confirmLabel="Forget drive"
@@ -89,9 +90,20 @@ export function ExpiredDriveItem({ drive, onForgot }: Props): ReactElement {
           onCancel={() => setShowForgetConfirm(false)}
           onConfirm={async () => {
             if (!fm) return
-            await handleForgetDrive(fm, drive)
-            setShowForgetConfirm(false)
-            await onForgot?.()
+
+            await handleForgetDrive(
+              fm,
+              drive,
+              async () => {
+                setShowForgetConfirm(false)
+                await onForgot?.()
+              },
+              () => {
+                setShowForgetConfirm(false)
+                setErrorMessage?.(`Failed to forget drive ${drive.name}`)
+                setShowError(true)
+              },
+            )
           }}
         />
       )}

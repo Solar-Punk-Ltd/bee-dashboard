@@ -16,7 +16,7 @@ interface ContextInterface {
   expiredDrives: DriveInfo[]
   adminDrive: DriveInfo | null
   initializationError: boolean
-  setCurrentDrive: (d: DriveInfo) => void
+  setCurrentDrive: (d: DriveInfo | undefined) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
@@ -59,14 +59,15 @@ const findDrives = (
   const expiredDrives: DriveInfo[] = []
 
   allDrives.forEach(d => {
-    const isUsable = usableStamps.some(s => s.batchID.toString() === d.batchId.toString())
+    const isNotExpired = usableStamps.some(s => s.batchID.toString() === d.batchId.toString())
 
-    if (isUsable) {
+    if (isNotExpired) {
       if (d.isAdmin) {
         adminDrive = d
       } else {
         userDrives.push(d)
       }
+      // TODO: handle admin drive expiration!
     } else if (!d.isAdmin) {
       expiredDrives.push(d)
     }
@@ -88,25 +89,27 @@ export function Provider({ children }: Props) {
 
   const [initializationError, setInitializationError] = useState<boolean>(false)
   const [showError, setShowError] = useState<boolean>(false)
-  // TODO: rethink this: maybe caching files/drives happen elsewhere
+
   const syncFiles = useCallback((manager: FileManagerBase, fi?: FileInfo, remove?: boolean): void => {
     if (fi) {
       if (remove) {
         setFiles(prev => prev.filter(f => f.topic.toString() !== fi.topic.toString()))
-      } else {
-        setFiles(prev => {
-          const existingIndex = prev.findIndex(f => f.topic.toString() === fi.topic.toString())
 
-          if (existingIndex >= 0) {
-            const updated = [...prev]
-            updated[existingIndex] = fi
-
-            return updated
-          }
-
-          return [...prev, fi]
-        })
+        return
       }
+
+      setFiles(prev => {
+        const existingIndex = prev.findIndex(f => f.topic.toString() === fi.topic.toString())
+
+        if (existingIndex >= 0) {
+          const updated = [...prev]
+          updated[existingIndex] = fi
+
+          return updated
+        }
+
+        return [...prev, fi]
+      })
 
       return
     }
@@ -119,41 +122,54 @@ export function Provider({ children }: Props) {
       const usableStamps = await getUsableStamps(beeApi)
 
       if (di) {
-        const isUsable = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
+        const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
 
-        if (isUsable) {
+        if (isNotExpired) {
           if (remove) {
             setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
-          } else {
-            if (di.isAdmin) {
-              setAdminDrive(di)
-            } else {
-              setDrives(prev => {
-                const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
 
-                if (existingIndex >= 0) {
-                  const updated = [...prev]
-                  updated[existingIndex] = di
+            return
+          }
 
-                  return updated
-                }
+          if (di.isAdmin) {
+            setAdminDrive(di)
 
-                return [...prev, di]
-              })
+            return
+          }
+
+          setDrives(prev => {
+            const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
+
+            if (existingIndex >= 0) {
+              const updated = [...prev]
+              updated[existingIndex] = di
+
+              return updated
             }
-          }
-        } else {
-          if (remove) {
-            setExpiredDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
-          } else if (!di.isAdmin) {
-            setExpiredDrives(prev => {
-              const exists = prev.some(d => d.id.toString() === di.id.toString())
 
-              return exists ? prev : [...prev, di]
-            })
-          }
+            return [...prev, di]
+          })
+
+          return
         }
 
+        if (remove) {
+          setExpiredDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+
+          return
+        }
+
+        if (!di.isAdmin) {
+          setExpiredDrives(prev => {
+            const exists = prev.some(d => d.id.toString() === di.id.toString())
+
+            return exists ? prev : [...prev, di]
+          })
+
+          return
+        }
+
+        // TODO: handle admin drive expiration!
         return
       }
 

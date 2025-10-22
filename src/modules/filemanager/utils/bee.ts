@@ -200,6 +200,7 @@ export const handleForgetDrive = async (
   onError?: (error: unknown) => void,
 ): Promise<void> => {
   if (!fm) return
+
   try {
     await fm.forgetDrive(drive)
     onSuccess?.()
