@@ -1,4 +1,4 @@
-import { ReactElement, useState, useMemo, useEffect } from 'react'
+import { ReactElement, useState, useMemo, useEffect, useRef, useContext } from 'react'
 import './AdminStatusBar.scss'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { Tooltip } from '../Tooltip/Tooltip'
@@ -6,6 +6,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { calculateStampCapacityMetrics } from '../../utils/bee'
+import { Context as FMContext } from '../../../../providers/FileManager'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -13,31 +14,66 @@ interface AdminStatusBarProps {
   loading: boolean
   setErrorMessage?: (error: string) => void
 }
-// TODO: refresh admin drive and stamp info after upload, new drive etc.
+
 export function AdminStatusBar({
   adminStamp,
   adminDrive,
   loading,
   setErrorMessage,
 }: AdminStatusBarProps): ReactElement {
+  const { setShowError, refreshStamp } = useContext(FMContext)
+
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
+  const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    setActualStamp(adminStamp)
+  }, [adminStamp])
 
   useEffect(() => {
     if (!adminDrive) return
 
     const id = adminDrive.id.toString()
+    const batchId = adminStamp?.batchID.toString() || ''
 
     const onStart = (e: Event) => {
       const { driveId } = (e as CustomEvent).detail || {}
 
-      if (driveId === id) setIsUpgrading(true)
+      if (driveId === id) {
+        setIsUpgrading(true)
+      }
     }
 
-    const onEnd = (e: Event) => {
-      const { driveId } = (e as CustomEvent).detail || {}
+    const onEnd = async (e: Event) => {
+      const { driveId, success, error } = (e as CustomEvent).detail || {}
 
-      if (driveId === id) setIsUpgrading(false)
+      if (!success) {
+        if (error) {
+          setErrorMessage?.(error)
+        }
+
+        setShowError(true)
+      }
+
+      if (driveId === id && batchId) {
+        setIsUpgrading(false)
+
+        const upgradedStamp = await refreshStamp(batchId)
+
+        if (!isMountedRef.current) return
+
+        if (upgradedStamp) {
+          setActualStamp(upgradedStamp)
+        }
+      }
     }
 
     window.addEventListener('fm:drive-upgrade-start', onStart as EventListener)
@@ -47,16 +83,16 @@ export function AdminStatusBar({
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [adminDrive])
+  }, [adminDrive, adminStamp?.batchID, setErrorMessage, setShowError, refreshStamp])
 
   const { capacityPct, usedSize, totalSize } = useMemo(
-    () => calculateStampCapacityMetrics(adminStamp, adminDrive),
-    [adminStamp, adminDrive],
+    () => calculateStampCapacityMetrics(actualStamp, adminDrive),
+    [actualStamp, adminDrive],
   )
 
   const expiresAt = useMemo(
-    () => (adminStamp ? adminStamp.duration.toEndDate().toLocaleDateString() : '—'),
-    [adminStamp],
+    () => (actualStamp ? actualStamp.duration.toEndDate().toLocaleDateString() : '—'),
+    [actualStamp],
   )
 
   const isBusy = loading || isUpgrading
@@ -77,9 +113,9 @@ export function AdminStatusBar({
         />
       </div>
 
-      {isUpgradeDriveModalOpen && adminStamp && adminDrive && (
+      {isUpgradeDriveModalOpen && actualStamp && adminDrive && (
         <UpgradeDriveModal
-          stamp={adminStamp}
+          stamp={actualStamp}
           drive={adminDrive}
           onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
           setErrorMessage={setErrorMessage}
@@ -88,7 +124,7 @@ export function AdminStatusBar({
 
       <div
         className="fm-admin-status-bar-upgrade-button"
-        onClick={() => !isBusy && adminStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
+        onClick={() => !isBusy && actualStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
         aria-disabled={isBusy ? 'true' : 'false'}
       >
         {isBusy ? 'Working…' : 'Manage'}

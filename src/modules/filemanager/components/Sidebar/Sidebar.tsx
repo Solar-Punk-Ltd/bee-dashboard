@@ -34,7 +34,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
   const [isCreateDriveOpen, setIsCreateDriveOpen] = useState(false)
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [isDriveCreationInProgress, setIsDriveCreationInProgress] = useState(false)
-  const [isExpiredOpen, setIsExpiredOpen] = useState(true)
+  const [isExpiredOpen, setIsExpiredOpen] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
   const { setView, view } = useView()
@@ -160,7 +160,8 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
         {isMyDrivesOpen &&
           drives.map(d => {
             const isSelected = isCurrent(d) && view === ViewType.File
-            const stamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString() && !d.isAdmin)
+            const localStamp = usableStamps.find(s => s.batchID.toString() === d.batchId.toString() && !d.isAdmin)
+            const stamp = isSelected && currentStamp ? currentStamp : localStamp
 
             return (
               stamp && (

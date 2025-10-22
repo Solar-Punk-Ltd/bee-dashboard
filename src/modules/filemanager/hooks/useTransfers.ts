@@ -141,7 +141,7 @@ interface TransferProps {
 }
 
 export function useTransfers({ setErrorMessage }: TransferProps) {
-  const { fm, currentDrive, currentStamp, files, setShowError } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -328,6 +328,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
           )
         })
+
+        if (currentStamp) {
+          await refreshStamp(currentStamp.batchID.toString())
+        }
       } catch {
         safeSetState(
           isMountedRef,
@@ -339,7 +343,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         cancelledNamesRef.current.delete(task.finalName)
       }
     },
-    [fm, currentDrive, trackUpload],
+    [fm, currentDrive, currentStamp, trackUpload, refreshStamp],
   )
 
   const trackDownload = useCallback(
@@ -443,6 +447,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         const reserved = new Set<string>()
         const tasks: UploadTask[] = []
 
+        let remainingBytes = calculateStampCapacityMetrics(currentStamp || null, currentDrive).remainingBytes
+
         const processFile = async (file: File): Promise<UploadTask | null> => {
           if (!currentStamp || !currentStamp.usable) {
             setErrorMessage?.('Stamp is not usable.')
@@ -460,8 +466,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             ...Array.from(progressNames),
           ])
 
-          const { remainingBytes } = calculateStampCapacityMetrics(currentStamp, currentDrive)
-
           if (file.size > remainingBytes) {
             // eslint-disable-next-line no-console
             console.log(
@@ -472,7 +476,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               'remaining:',
               remainingBytes,
             )
-            setErrorMessage?.('There is not enough space to continue the upload.')
+            setErrorMessage?.('There is not enough space to upload: ' + file.name)
             setShowError(true)
 
             return null
@@ -503,6 +507,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
             if (!retryInvalidCombo && !retryInvalidName) {
               reserved.add(finalName)
+              remainingBytes -= file.size
 
               ensureQueuedRow(
                 finalName,
@@ -530,9 +535,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
           if (task) {
             tasks.push(task)
-          } else if (
-            file.size > calculateStampCapacityMetrics(currentStamp || null, currentDrive || null).remainingBytes
-          ) {
+          } else if (file.size > remainingBytes) {
             break
           }
         }
