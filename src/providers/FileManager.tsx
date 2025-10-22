@@ -5,7 +5,7 @@ import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-l
 import { Context as SettingsContext } from './Settings'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getSignerPk } from '../modules/filemanager/utils/common'
-import { getUsableStamps } from 'src/modules/filemanager/utils/bee'
+import { getUsableStamps } from '../../src/modules/filemanager/utils/bee'
 
 interface ContextInterface {
   fm: FileManagerBase | null
