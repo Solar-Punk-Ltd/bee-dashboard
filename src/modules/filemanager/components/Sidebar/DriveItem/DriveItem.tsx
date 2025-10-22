@@ -26,7 +26,7 @@ interface DriveItemProps {
 }
 
 export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveItemProps): ReactElement {
-  const { fm, setShowError } = useContext(FMContext)
+  const { fm, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [isHovered, setIsHovered] = useState(false)
@@ -34,6 +34,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const isMountedRef = useRef(true)
   const [isUpgrading, setIsUpgrading] = useState(false)
+  const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
@@ -44,6 +45,10 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       isMountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    setActualStamp(stamp)
+  }, [stamp])
 
   function handleMenuClick(e: React.MouseEvent) {
     setShowContext(true)
@@ -56,6 +61,8 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
 
   useEffect(() => {
     const id = drive.id.toString()
+    const batchId = stamp.batchID.toString()
+
     const onStart = (e: Event) => {
       const { driveId } = (e as CustomEvent).detail || {}
 
@@ -64,7 +71,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       }
     }
 
-    const onEnd = (e: Event) => {
+    const onEnd = async (e: Event) => {
       const { driveId, success, error } = (e as CustomEvent).detail || {}
 
       if (!success) {
@@ -77,6 +84,14 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
 
       if (driveId === id) {
         setIsUpgrading(false)
+
+        const upgradedStamp = await refreshStamp(batchId)
+
+        if (!isMountedRef.current) return
+
+        if (upgradedStamp) {
+          setActualStamp(upgradedStamp)
+        }
       }
     }
 
@@ -87,11 +102,11 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [drive.id, setShowError, setErrorMessage])
-  // TODO: trigger on upgrade success and upload success
+  }, [drive.id, setShowError, setErrorMessage, stamp.batchID, refreshStamp])
+
   const { capacityPct, usedSize, totalSize } = useMemo(
-    () => calculateStampCapacityMetrics(stamp, drive),
-    [stamp, drive],
+    () => calculateStampCapacityMetrics(actualStamp, drive),
+    [actualStamp, drive],
   )
 
   return (
@@ -115,7 +130,9 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           <div className="fm-drive-item-capacity">
             Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
           </div>
-          <div className="fm-drive-item-capacity">Expiry date: {stamp.duration.toEndDate().toLocaleDateString()}</div>
+          <div className="fm-drive-item-capacity">
+            Expiry date: {actualStamp.duration.toEndDate().toLocaleDateString()}
+          </div>
         </div>
       </div>
       <div className="fm-drive-item-actions">
@@ -160,7 +177,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       </div>
       {isUpgradeDriveModalOpen && (
         <UpgradeDriveModal
-          stamp={stamp}
+          stamp={actualStamp}
           drive={drive}
           onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
           setErrorMessage={setErrorMessage}

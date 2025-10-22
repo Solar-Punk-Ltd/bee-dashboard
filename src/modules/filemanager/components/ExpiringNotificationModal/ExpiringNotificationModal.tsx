@@ -105,7 +105,7 @@ export function ExpiringNotificationModal({
                       variant="primary"
                       onClick={() => {
                         setActualStamp(stamp)
-                        setActualDrive(undefined)
+                        setActualDrive(drive)
                         setShowUpgradeDriveModal(true)
                       }}
                     />

@@ -16,13 +16,14 @@ interface ContextInterface {
   expiredDrives: DriveInfo[]
   adminDrive: DriveInfo | null
   initializationError: boolean
+  showError?: boolean
   setCurrentDrive: (d: DriveInfo | undefined) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
-  showError?: boolean
   setShowError: (show: boolean) => void
   syncDrives: () => Promise<void>
+  refreshStamp: (batchId: string) => Promise<PostageBatch | undefined>
 }
 
 const initialValues: ContextInterface = {
@@ -34,13 +35,14 @@ const initialValues: ContextInterface = {
   expiredDrives: [],
   adminDrive: null,
   initializationError: false,
+  showError: false,
   setCurrentDrive: () => {}, // eslint-disable-line
   setCurrentStamp: () => {}, // eslint-disable-line
   resync: async () => {}, // eslint-disable-line
   init: async () => null, // eslint-disable-line
-  showError: false,
   setShowError: () => {}, // eslint-disable-line
   syncDrives: async () => {}, // eslint-disable-line
+  refreshStamp: async () => undefined, // eslint-disable-line
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -187,6 +189,20 @@ export function Provider({ children }: Props) {
     }
   }, [fm, syncDrives])
 
+  const refreshStamp = useCallback(
+    async (batchId: string): Promise<PostageBatch | undefined> => {
+      const usableStamps = await getUsableStamps(beeApi)
+      const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
+
+      if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
+        setCurrentStamp(refreshedStamp)
+      }
+
+      return refreshedStamp
+    },
+    [beeApi, currentStamp],
+  )
+
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
 
@@ -304,6 +320,7 @@ export function Provider({ children }: Props) {
         showError,
         setShowError,
         syncDrives: syncDrivesPublic,
+        refreshStamp,
       }}
     >
       {children}

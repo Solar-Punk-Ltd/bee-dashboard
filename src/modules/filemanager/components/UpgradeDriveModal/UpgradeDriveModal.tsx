@@ -314,7 +314,7 @@ export function UpgradeDriveModal({
                   defaultErasureCodeLevel,
                 )
 
-                // TODO: replace eventlisteners with seterrormessage and setshowerror modal
+                // TODO: replace eventlisteners with a better maintainable solution
                 window.dispatchEvent(
                   new CustomEvent('fm:drive-upgrade-end', {
                     detail: { driveId: drive.id.toString(), success: true },
