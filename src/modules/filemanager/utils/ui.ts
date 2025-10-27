@@ -7,16 +7,17 @@ export function computeContextMenuPosition(args: {
   margin?: number
   containerRect?: DOMRect | null
 }): { safePos: Point; dropDir: Dir } {
-  const { clickPos: pos, menuRect: rect, viewport, containerRect } = args
+  const { clickPos: pos, menuRect: rect, viewport } = args
   const margin = args.margin ?? 8
   const left = Math.max(margin, Math.min(pos.x, viewport.w - rect.width - margin))
   const vh = viewport.h
   let top = pos.y
   let dir: Dir = Dir.Down
-  const midY = containerRect ? containerRect.top + containerRect.height / 2 : viewport.h * 0.5
 
-  if (pos.y > midY || pos.y + rect.height + margin > vh) {
-    top = Math.max(margin, pos.y - rect.height)
+  const spaceBelow = vh - pos.y
+
+  if (spaceBelow < rect.height * 1.4) {
+    top = Math.max(margin, pos.y - rect.height - margin)
     dir = Dir.Up
   } else {
     top = Math.max(margin, Math.min(pos.y, vh - rect.height - margin))
