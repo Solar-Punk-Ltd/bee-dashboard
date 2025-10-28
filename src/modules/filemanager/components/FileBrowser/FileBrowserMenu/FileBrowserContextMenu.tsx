@@ -67,7 +67,13 @@ export function FileBrowserContextMenu({
   }
 
   if (view === ViewType.Trash) {
-    return <div className="fm-context-item"></div>
+    return (
+      <ContextMenu>
+        <div className="fm-context-item" onClick={onRefresh}>
+          Refresh
+        </div>
+      </ContextMenu>
+    )
   }
 
   return (
