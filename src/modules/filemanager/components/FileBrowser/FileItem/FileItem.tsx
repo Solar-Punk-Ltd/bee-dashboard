@@ -341,11 +341,24 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                setShowDestroyDriveModal(true)
+
+                const parentDrive = drives.find(d => d.id.toString() === fileInfo.driveId.toString())
+
+                if (parentDrive) {
+                  setDestroyDrive(parentDrive)
+                  setShowDestroyDriveModal(true)
+                } else if (currentDrive) {
+                  setDestroyDrive(currentDrive)
+                  setShowDestroyDriveModal(true)
+                } else {
+                  setErrorMessage?.('Unable to resolve drive for this file.')
+                  setShowError(true)
+                }
               }}
             >
               Destroy
             </MenuItem>
+
             <MenuItem
               danger
               onClick={() => {
@@ -361,7 +374,20 @@ export function FileItem({
         {getInfoItem}
       </>
     )
-  }, [isBulk, view, handleDownload, handleCloseContext, openGetInfo, doRecover, onBulk])
+  }, [
+    isBulk,
+    view,
+    handleDownload,
+    handleCloseContext,
+    openGetInfo,
+    doRecover,
+    onBulk,
+    currentDrive,
+    drives,
+    fileInfo.driveId,
+    setErrorMessage,
+    setShowError,
+  ])
 
   useLayoutEffect(() => {
     if (!showContext) return
