@@ -16,3 +16,20 @@
   justify-content: space-between;
   align-items: center;
 }
+
+.fm-warning-text {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 0, 0, 0.08);
+  border-radius: 6px;
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+.fm-modal-window-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 8px;
+}

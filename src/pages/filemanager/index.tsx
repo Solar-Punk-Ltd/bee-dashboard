@@ -7,6 +7,7 @@ import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
+import { ReinitializeModal } from '../../modules/filemanager/components/InitialModal/ReinitializeModal/ReinitializeModal'
 import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
@@ -19,6 +20,7 @@ export function FileManagerPage(): ReactElement {
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [showReinitializeModal, setShowReinitializeModal] = useState(false)
 
   const { fm, adminDrive, initializationError, init } = useContext(FMContext)
 
@@ -87,6 +89,26 @@ export function FileManagerPage(): ReactElement {
         <InitialModal
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
           handleShowError={(flag: boolean) => setShowErrorModal(flag)}
+        />
+      </div>
+    )
+  }
+
+  if (showReinitializeModal && !isLoading) {
+    return (
+      <div className="fm-main">
+        <ReinitializeModal
+          onConfirm={() => {
+            setShowReinitializeModal(false)
+            try {
+              //await fm?.reinitialize?.()
+              //window.location.reload()
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.error('Reinitialization failed', e)
+            }
+          }}
+          onCancel={() => setShowReinitializeModal(false)}
         />
       </div>
     )
