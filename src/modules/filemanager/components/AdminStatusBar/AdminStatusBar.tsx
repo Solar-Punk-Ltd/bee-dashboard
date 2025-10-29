@@ -7,6 +7,7 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { calculateStampCapacityMetrics } from '../../utils/bee'
 import { Context as FMContext } from '../../../../providers/FileManager'
+import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -26,7 +27,14 @@ export function AdminStatusBar({
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+
   const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    if (loading) setShowProgressModal(true)
+    else setShowProgressModal(false)
+  }, [loading])
 
   useEffect(() => {
     return () => {
@@ -130,17 +138,27 @@ export function AdminStatusBar({
         {isBusy ? 'Working…' : 'Manage'}
       </div>
 
-      {loading && (
-        <div className="fm-drive-item-creating-overlay" aria-live="polite">
-          <div className="fm-mini-spinner" />
-          <span>Creating admin drive...</span>
-        </div>
-      )}
-
       {isUpgrading && (
         <div className="fm-drive-item-creating-overlay" aria-live="polite">
           <div className="fm-mini-spinner" />
           <span>Upgrading admin drive…</span>
+        </div>
+      )}
+
+      {showProgressModal && (
+        <ConfirmModal
+          title="Admin Drive Creation"
+          isProgress
+          spinnerMessage="Creating admin drive… please wait"
+          showFooter={false}
+          showMinimize
+          onMinimize={() => setShowProgressModal(false)}
+        />
+      )}
+
+      {!showProgressModal && loading && (
+        <div className="fm-admin-status-progress-pill" onClick={() => setShowProgressModal(true)}>
+          Creating admin drive…
         </div>
       )}
     </div>

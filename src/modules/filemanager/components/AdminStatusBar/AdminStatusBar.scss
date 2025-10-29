@@ -51,3 +51,49 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+.fm-admin-status-progress-pill {
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  z-index: 999;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+  &::after {
+    content: '›';
+    font-size: 14px;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover::after {
+    transform: translateX(2px);
+    opacity: 1;
+  }
+}
+
+.fm-admin-status-bar-container.is-loading .fm-admin-status-progress-pill {
+  filter: none;
+}

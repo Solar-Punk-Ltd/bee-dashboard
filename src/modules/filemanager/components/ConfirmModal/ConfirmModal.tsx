@@ -6,11 +6,16 @@ import { createPortal } from 'react-dom'
 
 interface ConfirmModalProps {
   title?: string
-  message: React.ReactNode
+  message?: React.ReactNode
   confirmLabel?: string
   cancelLabel?: string
-  onConfirm: () => void | Promise<void>
-  onCancel: () => void
+  onConfirm?: () => void | Promise<void>
+  onCancel?: () => void
+  showFooter?: boolean
+  isProgress?: boolean
+  spinnerMessage?: string
+  showMinimize?: boolean
+  onMinimize?: () => void
 }
 
 export function ConfirmModal({
@@ -20,6 +25,11 @@ export function ConfirmModal({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
+  showFooter = true,
+  isProgress = false,
+  spinnerMessage,
+  showMinimize = false,
+  onMinimize,
 }: ConfirmModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
 
@@ -27,13 +37,25 @@ export function ConfirmModal({
     <div className="fm-modal-container fm-confirm-modal">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">{title}</div>
+
         <div className="fm-modal-window-body">
-          <div className="fm-modal-white-section">{message}</div>
+          {isProgress ? (
+            <div className="fm-spinner-center">
+              <div className="fm-mini-spinner" />
+              <p>{spinnerMessage || 'Working…'}</p>
+              {showMinimize && <Button label="Minimize" variant="secondary" onClick={onMinimize} />}
+            </div>
+          ) : (
+            <div className="fm-modal-white-section">{message}</div>
+          )}
         </div>
-        <div className="fm-modal-window-footer">
-          <Button label={cancelLabel} variant="secondary" onClick={onCancel} />
-          <Button label={confirmLabel} variant="primary" onClick={() => void onConfirm()} />
-        </div>
+
+        {showFooter && (onCancel || onConfirm) && (
+          <div className="fm-modal-window-footer">
+            {onCancel && <Button label={cancelLabel} variant="secondary" onClick={onCancel} />}
+            {onConfirm && <Button label={confirmLabel} variant="primary" onClick={() => void onConfirm()} />}
+          </div>
+        )}
       </div>
     </div>,
     modalRoot,
