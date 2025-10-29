@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BZZ, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
@@ -17,6 +18,7 @@ import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 interface InitialModalProps {
+  resetState: boolean
   handleVisibility: (isVisible: boolean) => void
   handleShowError: (flag: boolean) => void
 }
@@ -39,7 +41,7 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
   }),
 ]
 
-export function InitialModal({ handleVisibility, handleShowError }: InitialModalProps): ReactElement {
+export function InitialModal({ resetState, handleVisibility, handleShowError }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
@@ -65,7 +67,8 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
   }, [])
 
   const createAdminDrive = useCallback(async () => {
-    // TODO: is onerror, onsuccess, onloading... together needed ?
+    console.log('bagoy createAdminDrive onclick')
+
     await handleCreateDrive(
       beeApi,
       fm,
@@ -75,12 +78,22 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
       false,
       erasureCodeLevel,
       true,
+      resetState,
       selectedBatch,
-      () => handleVisibility(false),
-      () => handleVisibility(false),
-      () => handleShowError(true),
+      () => handleVisibility(false), // onSuccess
+      () => handleShowError(true), // onError
     )
-  }, [beeApi, fm, capacity, validityEndDate, erasureCodeLevel, selectedBatch, handleVisibility, handleShowError])
+  }, [
+    beeApi,
+    fm,
+    capacity,
+    validityEndDate,
+    erasureCodeLevel,
+    resetState,
+    selectedBatch,
+    handleVisibility,
+    handleShowError,
+  ])
 
   useEffect(() => {
     const getStamps = async () => {
@@ -151,7 +164,11 @@ export function InitialModal({ handleVisibility, handleShowError }: InitialModal
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
-        <div>You are now initializing the file manager</div>
+        {resetState ? (
+          <div>Your FileManager State is Invalid, please reset it.</div>
+        ) : (
+          <div>You are now initializing the file manager</div>
+        )}
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-input-container">
             <CustomDropdown

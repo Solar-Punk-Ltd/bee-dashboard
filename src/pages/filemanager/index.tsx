@@ -15,12 +15,12 @@ import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorMod
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAdminDrive, setIsAdminDrive] = useState(false)
+  const [hasAdminDrive, setHasAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
 
-  const { fm, adminDrive, initializationError, init } = useContext(FMContext)
+  const { fm, shallReset, adminDrive, initializationError, init } = useContext(FMContext)
 
   useEffect(() => {
     if (!hasPk) {
@@ -37,15 +37,16 @@ export function FileManagerPage(): ReactElement {
 
     if (fm) {
       const hasAdminStamp = Boolean(fm.adminStamp)
-      setIsAdminDrive(hasAdminStamp)
+      const tmpHasAdminDrive = Boolean(adminDrive)
+      setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
       setIsLoading(false)
-      setShowInitialModal(!hasAdminStamp)
+      setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
 
       return
     }
 
     setIsLoading(true)
-  }, [fm, hasPk, initializationError])
+  }, [fm, hasPk, initializationError, adminDrive])
 
   if (!hasPk) {
     return (
@@ -64,14 +65,16 @@ export function FileManagerPage(): ReactElement {
             const manager = await init()
             setIsLoading(false)
 
-            setShowInitialModal(!manager?.adminStamp)
+            const hasAdminStamp = Boolean(manager?.adminStamp)
+            const hasAdminDrive = Boolean(adminDrive)
+            setShowInitialModal(!(hasAdminStamp || hasAdminDrive))
           }}
         />
       </div>
     )
   }
 
-  if (initializationError && !isLoading) {
+  if (initializationError && !isLoading && !shallReset) {
     return (
       <div className="fm-main">
         <div className="fm-loading">
@@ -81,10 +84,11 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (showInitialModal && !isLoading && !isAdminDrive) {
+  if ((showInitialModal && !isLoading && !hasAdminDrive) || (shallReset && fm)) {
     return (
       <div className="fm-main">
         <InitialModal
+          resetState={shallReset}
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
           handleShowError={(flag: boolean) => setShowErrorModal(flag)}
         />
