@@ -250,8 +250,8 @@ export function Provider({ children }: Props) {
       setShallReset(isInvalid)
     }
 
-    manager.emitter.on(FileManagerEvents.FILEMANAGER_STATE_INVALID, handleResetState)
-    manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
+    manager.emitter.on(FileManagerEvents.STATE_INVALID, handleResetState)
+    manager.emitter.on(FileManagerEvents.INITIALIZED, handleInitialized)
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
