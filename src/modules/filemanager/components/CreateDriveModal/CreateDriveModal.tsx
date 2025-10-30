@@ -187,10 +187,10 @@ export function CreateDriveModal({
                   encryptionEnabled,
                   erasureCodeLevel,
                   false,
+                  false,
                   null,
-                  undefined,
-                  () => onDriveCreated(),
-                  () => onCreationError(driveName),
+                  () => onDriveCreated(), // onSuccess
+                  () => onCreationError(driveName), // onError
                 )
               }
             }}

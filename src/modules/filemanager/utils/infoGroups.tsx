@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import type { ReactElement } from 'react'
 import { FileStatus, FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'

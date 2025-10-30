@@ -81,16 +81,14 @@ export const handleCreateDrive = async (
   encryption: boolean,
   erasureCodeLevel: RedundancyLevel,
   isAdmin: boolean,
+  resetState: boolean,
   existingBatch: PostageBatch | null,
-  setLoading?: (loading: boolean) => void,
-  onSuccess?: (batch?: PostageBatch) => void,
+  onSuccess?: () => void,
   onError?: (error: unknown) => void,
 ): Promise<void> => {
   if (!beeApi || !fm) return
 
   try {
-    setLoading?.(true)
-
     let batchId: BatchId
     let batch: PostageBatch
 
@@ -103,13 +101,13 @@ export const handleCreateDrive = async (
       batch = existingBatch
     }
 
-    await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel)
+    await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel, resetState)
 
-    onSuccess?.(batch)
+    onSuccess?.()
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Error creating drive:', e)
     onError?.(e)
-  } finally {
-    setLoading?.(false)
   }
 }
 

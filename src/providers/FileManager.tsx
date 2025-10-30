@@ -17,6 +17,7 @@ interface ContextInterface {
   adminDrive: DriveInfo | null
   initializationError: boolean
   showError?: boolean
+  shallReset: boolean
   setCurrentDrive: (d: DriveInfo | undefined) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
@@ -36,6 +37,7 @@ const initialValues: ContextInterface = {
   adminDrive: null,
   initializationError: false,
   showError: false,
+  shallReset: false,
   setCurrentDrive: () => {}, // eslint-disable-line
   setCurrentStamp: () => {}, // eslint-disable-line
   resync: async () => {}, // eslint-disable-line
@@ -82,6 +84,7 @@ export function Provider({ children }: Props) {
   const { apiUrl, beeApi } = useContext(SettingsContext)
 
   const [fm, setFm] = useState<FileManagerBase | null>(null)
+  const [shallReset, setShallReset] = useState<boolean>(false)
   const [files, setFiles] = useState<FileInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [expiredDrives, setExpiredDrives] = useState<DriveInfo[]>([])
@@ -243,7 +246,12 @@ export function Provider({ children }: Props) {
       syncFiles(manager)
     }
 
-    manager.emitter.on(FileManagerEvents.FILEMANAGER_INITIALIZED, handleInitialized)
+    const handleResetState = (isInvalid: boolean) => {
+      setShallReset(isInvalid)
+    }
+
+    manager.emitter.on(FileManagerEvents.STATE_INVALID, handleResetState)
+    manager.emitter.on(FileManagerEvents.INITIALIZED, handleInitialized)
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
@@ -313,11 +321,12 @@ export function Provider({ children }: Props) {
         expiredDrives,
         adminDrive,
         initializationError,
+        showError,
+        shallReset,
         setCurrentDrive,
         setCurrentStamp,
         resync,
         init,
-        showError,
         setShowError,
         syncDrives: syncDrivesPublic,
         refreshStamp,
