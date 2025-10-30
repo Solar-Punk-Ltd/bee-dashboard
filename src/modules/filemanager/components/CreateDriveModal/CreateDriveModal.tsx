@@ -131,8 +131,12 @@ export function CreateDriveModal({
               value={capacity}
               onChange={handleCapacityChange}
               placeholder="Select a value"
-              infoText="Amount of data you can store on the drive. Later you can upgrade it."
+              infoText="Amount of data you can store on the drive. Usable capacity
+              may differ slightly. Later you can upgrade it."
             />
+          </div>
+          <div className="fm-modal-info-warning">
+            Drive sizes shown above are system-calculated based on your current stamp configuration
           </div>
           <div className="fm-modal-window-input-container">
             <CustomDropdown
