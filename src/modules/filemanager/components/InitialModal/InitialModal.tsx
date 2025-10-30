@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BZZ, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
@@ -67,8 +66,6 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
   }, [])
 
   const createAdminDrive = useCallback(async () => {
-    console.log('bagoy createAdminDrive onclick')
-
     await handleCreateDrive(
       beeApi,
       fm,

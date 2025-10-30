@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import './NotificationBar.scss'
 import UpIcon from 'remixicon-react/ArrowUpSLineIcon'
