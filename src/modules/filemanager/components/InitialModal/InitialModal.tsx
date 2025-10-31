@@ -18,6 +18,7 @@ import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 interface InitialModalProps {
   resetState: boolean
+  onProceed?: () => void
   handleVisibility: (isVisible: boolean) => void
   handleShowError: (flag: boolean) => void
 }
@@ -40,7 +41,12 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
   }),
 ]
 
-export function InitialModal({ resetState, handleVisibility, handleShowError }: InitialModalProps): ReactElement {
+export function InitialModal({
+  resetState,
+  handleVisibility,
+  handleShowError,
+  onProceed,
+}: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
@@ -157,15 +163,25 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
     [selectedBatch],
   )
 
+  if (resetState && onProceed) {
+    return (
+      <div className="fm-initialization-modal-container">
+        <div className="fm-modal-window">
+          <div className="fm-modal-window-header">Welcome to File Manager</div>
+          <div>Your FileManager State is Invalid, please reset it.</div>
+          <div className="fm-modal-window-footer">
+            <Button label="Proceed" variant="primary" onClick={onProceed} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
-        {resetState ? (
-          <div>Your FileManager State is Invalid, please reset it.</div>
-        ) : (
-          <div>You are now initializing the file manager</div>
-        )}
+        <div>You are now initializing the file manager</div>
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-input-container">
             <CustomDropdown
