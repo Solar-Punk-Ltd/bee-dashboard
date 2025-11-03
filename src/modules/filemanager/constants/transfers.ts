@@ -37,6 +37,13 @@ export enum FileAction {
   Destroy = 'destroy',
 }
 
+export enum DownloadState {
+  InProgress = 'in-progress',
+  Completed = 'completed',
+  Cancelled = 'cancelled',
+  Error = 'error',
+}
+
 export type TrackDownloadProps = {
   name: string
   size?: string
@@ -46,4 +53,5 @@ export type TrackDownloadProps = {
 export interface DownloadProgress {
   progress: number
   isDownloading: boolean
+  state?: DownloadState
 }

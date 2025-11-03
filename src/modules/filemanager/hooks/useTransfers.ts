@@ -3,7 +3,13 @@ import { Context as FMContext } from '../../../providers/FileManager'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState } from '../utils/common'
-import { DownloadProgress, FileTransferType, TrackDownloadProps, TransferStatus } from '../constants/transfers'
+import {
+  DownloadProgress,
+  DownloadState,
+  FileTransferType,
+  TrackDownloadProps,
+  TransferStatus,
+} from '../constants/transfers'
 import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
@@ -427,8 +433,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             const currentItem = prev.find(it => it.name === props.name)
             const elapsedSec = currentItem?.startedAt ? Math.round((finishedAt - currentItem.startedAt) / 1000) : 0
 
-            if (dp.progress === -1 || dp.progress === -2) {
-              const wasCancelled = dp.progress === -2 || cancelledDownloadingRef.current.has(props.name)
+            if (dp.state === DownloadState.Cancelled || dp.state === DownloadState.Error) {
+              const wasCancelled =
+                dp.state === DownloadState.Cancelled || cancelledDownloadingRef.current.has(props.name)
 
               cancelledDownloadingRef.current.delete(props.name)
 
