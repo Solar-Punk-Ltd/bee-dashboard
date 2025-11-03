@@ -26,15 +26,15 @@ export function FileManagerPage(): ReactElement {
   const { fm, shallReset, adminDrive, initializationError, init } = useContext(FMContext)
 
   useEffect(() => {
-    if (shallReset) {
-      setShowInitialModal(true)
-      setShowResetModal(true)
+    if (!hasPk) {
+      setIsLoading(false)
 
       return
     }
 
-    if (!hasPk) {
-      setIsLoading(false)
+    if (shallReset) {
+      setShowInitialModal(true)
+      setShowResetModal(true)
 
       return
     }
