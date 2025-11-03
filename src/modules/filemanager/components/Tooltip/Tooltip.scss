@@ -2,32 +2,61 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  margin-left: 4px;
+}
 
-  & .fm-tooltip-container {
-    visibility: hidden;
-    opacity: 0;
-    width: max-content;
-    max-width: 550px;
-    background: #fff;
-    color: #222;
-    text-align: center;
-    border-radius: 4px;
-    padding: 6px 12px;
-    position: absolute;
-    z-index: 10;
-    bottom: 125%;
-    right: 0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    font-size: 13px;
-    pointer-events: none;
-    transition: opacity 0.2s, visibility 0.2s;
-    border: 1px solid rgb(209, 213, 219);
-  }
+.fm-tooltip-trigger {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  color: rgb(107, 114, 128);
+}
 
-  &:hover .fm-tooltip-container,
-  .fm-tooltip-container:hover {
-    visibility: visible;
-    opacity: 1;
-    pointer-events: auto;
-  }
+.fm-tooltip-wrapper:hover .fm-tooltip-trigger svg {
+  color: rgb(55, 65, 81);
+}
+
+.fm-tooltip-container {
+  visibility: hidden;
+  opacity: 0;
+  width: max-content;
+  max-width: 360px;
+  background: #fff;
+  color: #222;
+  text-align: left;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 30;
+  top: 50%;
+  left: calc(100% + 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 400; /* ensure no bold styling */
+  pointer-events: none;
+  transition: opacity 0.16s ease-in-out, visibility 0.16s ease-in-out, transform 0.16s ease-in-out;
+  border: 1px solid rgb(209, 213, 219);
+  transform: translateY(-50%) translateX(4px);
+}
+
+.fm-tooltip-wrapper:hover .fm-tooltip-container {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.fm-inline-label-with-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fm-flex-column {
+  display: flex;
+  flex-direction: column;
 }

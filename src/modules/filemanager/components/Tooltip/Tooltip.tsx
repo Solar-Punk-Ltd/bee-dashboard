@@ -9,9 +9,15 @@ interface TooltipProps {
 
 export function Tooltip({ label, iconSize = '16px' }: TooltipProps): ReactElement {
   return (
-    <div className="fm-tooltip-wrapper">
-      <InfoIcon size={iconSize} />
-      <div className="fm-tooltip-container">{label}</div>
-    </div>
+    <span className="fm-tooltip-wrapper" aria-label="info tooltip">
+      <span className="fm-tooltip-trigger" role="button" tabIndex={0}>
+        <InfoIcon size={iconSize} />
+      </span>
+      <span
+        className="fm-tooltip-container"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: label }}
+      />
+    </span>
   )
 }
