@@ -314,7 +314,7 @@ export const startDownloadingQueue = async (
 
         try {
           if (fh.cancelled) {
-            tracker?.({ progress: -1, isDownloading: false })
+            tracker?.({ progress: -2, isDownloading: false })
           } else {
             await downloadAborts.withSignal(name, async () => {
               const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
