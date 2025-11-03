@@ -113,7 +113,7 @@ export function FileManagerPage(): ReactElement {
     return (
       <div className="fm-main">
         <InitialModal
-          resetState={false}
+          resetState={shallReset}
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
           handleShowError={(flag: boolean) => setShowErrorModal(flag)}
         />

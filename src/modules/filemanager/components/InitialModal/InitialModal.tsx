@@ -17,8 +17,7 @@ import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 interface InitialModalProps {
-  resetState: boolean
-  onProceed?: () => void
+  resetState?: boolean
   handleVisibility: (isVisible: boolean) => void
   handleShowError: (flag: boolean) => void
 }
@@ -42,10 +41,9 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
 ]
 
 export function InitialModal({
-  resetState,
+  resetState = false,
   handleVisibility,
   handleShowError,
-  onProceed,
 }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
@@ -92,10 +90,10 @@ export function InitialModal({
     capacity,
     validityEndDate,
     erasureCodeLevel,
-    resetState,
     selectedBatch,
     handleVisibility,
     handleShowError,
+    resetState,
   ])
 
   useEffect(() => {
@@ -162,20 +160,6 @@ export function InitialModal({
     () => calculateStampCapacityMetrics(selectedBatch),
     [selectedBatch],
   )
-
-  if (resetState && onProceed) {
-    return (
-      <div className="fm-initialization-modal-container">
-        <div className="fm-modal-window">
-          <div className="fm-modal-window-header">Welcome to File Manager</div>
-          <div>Your FileManager State is Invalid, please reset it.</div>
-          <div className="fm-modal-window-footer">
-            <Button label="Proceed" variant="primary" onClick={onProceed} />
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="fm-initialization-modal-container">
