@@ -86,10 +86,10 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
     capacity,
     validityEndDate,
     erasureCodeLevel,
-    resetState,
     selectedBatch,
     handleVisibility,
     handleShowError,
+    resetState,
   ])
 
   useEffect(() => {
@@ -161,11 +161,7 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to File Manager</div>
-        {resetState ? (
-          <div>Your FileManager State is Invalid, please reset it.</div>
-        ) : (
-          <div>You are now initializing the file manager</div>
-        )}
+        <div>You are now {resetState ? 'resetting' : 'initializing'} the file manager</div>
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-input-container">
             <CustomDropdown
