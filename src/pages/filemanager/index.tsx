@@ -32,9 +32,10 @@ export function FileManagerPage(): ReactElement {
       return
     }
 
+    setShowResetModal(shallReset)
+
     if (shallReset) {
       setShowInitialModal(true)
-      setShowResetModal(true)
 
       return
     }
@@ -88,7 +89,7 @@ export function FileManagerPage(): ReactElement {
     return (
       <div className="fm-main">
         <div className="fm-loading">
-          <div className="fm-loading-title">Failed to initialize File Manager</div>
+          <div className="fm-loading-title">Failed to initialize File Manager, reload and try again </div>
         </div>
       </div>
     )
@@ -96,16 +97,18 @@ export function FileManagerPage(): ReactElement {
 
   if (showResetModal) {
     return (
-      <ConfirmModal
-        title="Reset File Manager State"
-        message="Your File Manager state appears invalid. Please reset it to continue."
-        confirmLabel="Proceed"
-        cancelLabel="Cancel"
-        onConfirm={() => {
-          setShowResetModal(false)
-        }}
-        onCancel={() => setShowResetModal(false)}
-      />
+      <div className="fm-main">
+        <ConfirmModal
+          title="Reset File Manager State"
+          message="Your File Manager state appears invalid. Please reset it to continue."
+          confirmLabel="Proceed"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            setShowResetModal(false)
+          }}
+          onCancel={() => setShowResetModal(false)}
+        />
+      </div>
     )
   }
 

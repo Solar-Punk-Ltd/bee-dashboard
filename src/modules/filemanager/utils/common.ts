@@ -103,7 +103,14 @@ export function getSigner(input: string): PrivateKey {
 
 export function getSignerPk(): PrivateKey | undefined {
   try {
-    const fromLocalPk = localStorage.getItem(KEY_STORAGE) || ''
+    const fromLocalPk = localStorage.getItem(KEY_STORAGE)
+
+    if (!fromLocalPk) {
+      // eslint-disable-next-line no-console
+      console.error('Private key not found, cannot initialize')
+
+      return undefined
+    }
 
     return new PrivateKey(fromLocalPk)
   } catch (err) {
