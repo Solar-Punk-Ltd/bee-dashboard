@@ -66,7 +66,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Enter Private Key</div>
-        <div>To use the File Manager, we need a private key to initialized it.</div>
+        <div>To use the File Manager, we need a private key to initialize it.</div>
 
         <div className="fm-modal-window-body">
           <div className="fm-modal-window-input-container">
