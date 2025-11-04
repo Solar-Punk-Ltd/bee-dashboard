@@ -11,7 +11,11 @@ export const TOOLTIPS = {
 
   ADMIN_ESTIMATED_COST: `This is the total xBZZ tokens that will be deposited against the Private Key. This amount is used to pay network rent. The cost is calculated based on the processing and storage required for the Desired Lifetime at your chosen Security Level.`,
 
-  ADMIN_PURCHASE_BUTTON: `Click to create your Private Key, that serves as your digital seal, allowing you to create and manage your drives.`,
+  ADMIN_PURCHASE_BUTTON: `Creates your <b>Admin Drive</b>, the root space that stores your identity and metadata on the network.
+<br/><br/>
+💡 Once created, all other drives and files you add will be linked under this Admin Drive.
+<br/><br/>
+⚠️ Note: This step sets up the foundation for your File Manager workspace. Ensure the network balance and configuration are correct before proceeding.`,
 
   // Drive Creation
   DRIVE_NAME: `Set a human-readable label for this drive. This name is part of the metadata stored against your Private Key and helps you organize your drives.`,
