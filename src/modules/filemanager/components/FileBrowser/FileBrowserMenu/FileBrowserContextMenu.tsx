@@ -3,6 +3,7 @@ import { ReactElement } from 'react'
 import '../FileBrowser.scss'
 import { ViewType } from '../../../constants/transfers'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { Tooltip } from '../../Tooltip/Tooltip'
 
 interface FileBrowserContextMenuProps {
   drives: DriveInfo[]
@@ -99,13 +100,10 @@ export function FileBrowserContextMenu({
           e.stopPropagation()
         }}
       >
-        <span>Paste</span>
-        <span
-          className="fm-info fm-info--inline"
-          data-tip="Tip: Use ⌘V / Ctrl+V or Browser → Edit → Paste."
-          aria-label="Paste help"
-        >
-          i
+        <span>
+          <Tooltip label="Tip: Use ⌘V / Ctrl+V or Browser → Edit → Paste." iconSize="14px" gapPx={6} disableMargin>
+            Paste
+          </Tooltip>
         </span>
       </div>
       <div className="fm-context-item-border" />

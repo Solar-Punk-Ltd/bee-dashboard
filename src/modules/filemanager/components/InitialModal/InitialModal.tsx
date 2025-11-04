@@ -15,6 +15,8 @@ import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
+import { Tooltip } from '../Tooltip/Tooltip'
+import { TOOLTIPS } from '../../constants/tooltips'
 
 interface InitialModalProps {
   resetState: boolean
@@ -193,19 +195,23 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
         {!selectedBatch && (
           <div className="fm-modal-window-body">
             <div className="fm-modal-window-input-container">
+              <label htmlFor="admin-desired-lifetime" className="fm-input-label">
+                Desired lifetime: <Tooltip label={TOOLTIPS.ADMIN_DESIRED_LIFETIME} />
+              </label>
               <CustomDropdown
-                id="drive-type"
-                label="Desired lifetime:"
+                id="admin-desired-lifetime"
                 options={desiredLifetimeOptions}
                 value={lifetimeIndex}
                 onChange={setLifetimeIndex}
                 placeholder="Select a value"
-                infoText="Might change over time depending on the network"
               />
             </div>
             <div className="fm-modal-window-input-container">
+              <label htmlFor="admin-security-level" className="fm-input-label">
+                Security Level <Tooltip label={TOOLTIPS.ADMIN_SECURITY_LEVEL} />
+              </label>
               <FMSlider
-                label="Security Level"
+                id="admin-security-level"
                 defaultValue={0}
                 marks={erasureCodeMarks}
                 onChange={value => setErasureCodeLevel(value)}
@@ -214,10 +220,12 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
                 step={1}
               />
             </div>
-
-            <div>
+            <div className="fm-modal-window-input-container">
+              <label className="fm-input-label">
+                Estimated Cost: <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
+              </label>
               <div>
-                Estimated Cost: {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
               </div>
               <div>(Based on current network conditions)</div>
             </div>
@@ -230,6 +238,7 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
             disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient}
             onClick={createAdminDrive}
           />
+          <Tooltip label={TOOLTIPS.ADMIN_PURCHASE_BUTTON} />
         </div>
       </div>
     </div>

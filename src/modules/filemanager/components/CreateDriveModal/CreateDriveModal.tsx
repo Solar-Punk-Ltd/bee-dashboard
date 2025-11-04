@@ -13,6 +13,8 @@ import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FMSlider } from '../Slider/Slider'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { getHumanReadableFileSize } from '../../../../utils/file'
+import { Tooltip } from '../Tooltip/Tooltip'
+import { TOOLTIPS } from '../../constants/tooltips'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
@@ -114,7 +116,9 @@ export function CreateDriveModal({
         <div className="fm-modal-window-header">Create new drive</div>
         <div className="fm-modal-window-body">
           <div className="fm-modal-window-input-container">
-            <label htmlFor="drive-name">Drive name:</label>
+            <label htmlFor="drive-name" className="fm-input-label">
+              Drive name: <Tooltip label={TOOLTIPS.DRIVE_NAME} />
+            </label>
             <input
               type="text"
               id="drive-name"
@@ -124,34 +128,38 @@ export function CreateDriveModal({
             />
           </div>
           <div className="fm-modal-window-input-container">
+            <label htmlFor="drive-initial-capacity" className="fm-input-label">
+              Initial capacity: <Tooltip label={TOOLTIPS.DRIVE_INITIAL_CAPACITY} />
+            </label>
             <CustomDropdown
-              id="drive-type"
-              label="Initial capacity:"
+              id="drive-initial-capacity"
               options={sizeMarks}
               value={capacity}
               onChange={handleCapacityChange}
               placeholder="Select a value"
-              infoText="Amount of data you can store on the drive. Usable capacity
-              may differ slightly. Later you can upgrade it."
             />
           </div>
           <div className="fm-modal-info-warning">
             Drive sizes shown above are system-calculated based on your current stamp configuration
           </div>
           <div className="fm-modal-window-input-container">
+            <label htmlFor="drive-desired-lifetime" className="fm-input-label">
+              Desired lifetime: <Tooltip label={TOOLTIPS.DRIVE_DESIRED_LIFETIME} />
+            </label>
             <CustomDropdown
-              id="drive-type"
-              label="Desired lifetime:"
+              id="drive-desired-lifetime"
               options={desiredLifetimeOptions}
               value={lifetimeIndex}
               onChange={setLifetimeIndex}
               placeholder="Select a value"
-              infoText="Might change over time depending on the network"
             />
           </div>
           <div className="fm-modal-window-input-container">
+            <label htmlFor="drive-security-level" className="fm-input-label">
+              Security Level <Tooltip label={TOOLTIPS.DRIVE_SECURITY_LEVEL} />
+            </label>
             <FMSlider
-              label="Security Level"
+              id="drive-security-level"
               defaultValue={0}
               marks={erasureCodeMarks}
               onChange={value => setErasureCodeLevel(value)}
@@ -162,8 +170,11 @@ export function CreateDriveModal({
           </div>
 
           <div>
+            <label className="fm-input-label">
+              Estimated Cost: <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} />
+            </label>
             <div>
-              Estimated Cost: {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+              {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
             </div>
             <div>(Based on current network conditions)</div>
           </div>
