@@ -12,7 +12,7 @@ import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKey
 import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
 import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
 import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
-import { Button } from 'src/modules/filemanager/components/Button/Button'
+import { Button } from '../../modules/filemanager/components/Button/Button'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
