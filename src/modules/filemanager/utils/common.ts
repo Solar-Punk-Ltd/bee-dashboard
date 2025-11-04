@@ -1,5 +1,7 @@
 import { PrivateKey } from '@ethersphere/bee-js'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
+import { keccak256 } from '@ethersproject/keccak256'
+import { toUtf8Bytes } from '@ethersproject/strings'
 
 export function getDaysLeft(expiryDate: Date): number {
   const now = new Date()
@@ -90,6 +92,14 @@ export function getFileId(fi: FileInfo): string {
 }
 
 export const KEY_STORAGE = 'privateKey'
+
+export function getSigner(input: string): PrivateKey {
+  const normalized = input.trim().toLowerCase()
+  const hash = keccak256(toUtf8Bytes(normalized))
+  const privateKeyHex = hash.slice(2)
+
+  return new PrivateKey(privateKeyHex)
+}
 
 export function getSignerPk(): PrivateKey | undefined {
   try {
