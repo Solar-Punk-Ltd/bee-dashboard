@@ -80,7 +80,10 @@ export function FileProgressWindow({
       const pct = Number.isFinite(r.percent) ? Math.round(r.percent as number) : undefined
 
       return (
-        r.status === TransferStatus.Done || r.status === TransferStatus.Error || (typeof pct === 'number' && pct >= 100)
+        r.status === TransferStatus.Done ||
+        r.status === TransferStatus.Error ||
+        r.status === TransferStatus.Cancelled ||
+        (typeof pct === 'number' && pct >= 100)
       )
     })
 

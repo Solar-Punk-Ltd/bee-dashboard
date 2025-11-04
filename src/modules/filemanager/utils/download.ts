@@ -1,7 +1,7 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
 import { getExtensionFromName, guessMime, VIEWERS } from './view'
 import { AbortManager } from './abortManager'
-import { DownloadProgress } from '../constants/transfers'
+import { DownloadProgress, DownloadState } from '../constants/transfers'
 
 const downloadAborts = new AbortManager()
 
@@ -27,12 +27,13 @@ const processStream = async (
 ): Promise<void> => {
   const reader = stream.getReader()
   let writable: WritableStreamDefaultWriter<Uint8Array> | undefined
+  let progress = 0
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     writable = (await (fileHandle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
 
     let done = false
-    let progress = 0
     while (!done) {
       if (signal?.aborted) throw new DOMException('Aborted', Errors.AbortError)
 
@@ -48,11 +49,12 @@ const processStream = async (
     }
   } catch (e: unknown) {
     if ((e as { name?: string }).name === Errors.AbortError) {
-      onDownloadProgress?.({ progress: -1, isDownloading: false })
+      onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Cancelled })
 
       return
     }
 
+    onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Error })
     // eslint-disable-next-line no-console
     console.error('Failed to process stream: ', e)
   } finally {
@@ -78,9 +80,10 @@ const streamToBlob = async (
 ): Promise<Blob | undefined> => {
   const reader = stream.getReader()
   const chunks: Uint8Array[] = []
+  let progress = 0
+
   try {
     let done = false
-    let progress = 0
 
     while (!done) {
       if (signal?.aborted) throw new DOMException('Aborted', Errors.AbortError)
@@ -96,8 +99,9 @@ const streamToBlob = async (
     }
   } catch (error: unknown) {
     if ((error as { name?: string }).name === Errors.AbortError) {
-      onDownloadProgress?.({ progress: -1, isDownloading: false })
+      onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Cancelled })
     } else {
+      onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Error })
       // eslint-disable-next-line no-console
       console.error('Error during stream processing: ', error)
     }
@@ -314,7 +318,7 @@ export const startDownloadingQueue = async (
 
         try {
           if (fh.cancelled) {
-            tracker?.({ progress: -1, isDownloading: false })
+            tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Cancelled })
           } else {
             await downloadAborts.withSignal(name, async () => {
               const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]

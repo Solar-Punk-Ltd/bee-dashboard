@@ -3,7 +3,13 @@ import { Context as FMContext } from '../../../providers/FileManager'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState } from '../utils/common'
-import { DownloadProgress, FileTransferType, TrackDownloadProps, TransferStatus } from '../constants/transfers'
+import {
+  DownloadProgress,
+  DownloadState,
+  FileTransferType,
+  TrackDownloadProps,
+  TransferStatus,
+} from '../constants/transfers'
 import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
@@ -149,6 +155,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const runningRef = useRef(false)
   const cancelledNamesRef = useRef<Set<string>>(new Set())
   const cancelledUploadingRef = useRef<Set<string>>(new Set())
+  const cancelledDownloadingRef = useRef<Set<string>>(new Set())
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
@@ -337,10 +344,16 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           await refreshStamp(currentStamp.batchID.toString())
         }
       } catch {
+        const wasCancelled = cancelledUploadingRef.current.has(task.finalName)
+
         safeSetState(
           isMountedRef,
           setUploadItems,
-        )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Error }))
+        )(prev =>
+          updateTransferItems(prev, task.finalName, {
+            status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
+          }),
+        )
       } finally {
         uploadAbortsRef.current.abort(task.finalName)
         cancelledUploadingRef.current.delete(task.finalName)
@@ -420,9 +433,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             const currentItem = prev.find(it => it.name === props.name)
             const elapsedSec = currentItem?.startedAt ? Math.round((finishedAt - currentItem.startedAt) / 1000) : 0
 
-            if (dp.progress === -1) {
+            if (dp.state === DownloadState.Cancelled || dp.state === DownloadState.Error) {
+              const wasCancelled =
+                dp.state === DownloadState.Cancelled || cancelledDownloadingRef.current.has(props.name)
+
+              cancelledDownloadingRef.current.delete(props.name)
+
               return updateTransferItems(prev, props.name, {
-                status: TransferStatus.Error,
+                status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
                 etaSec: undefined,
                 elapsedSec: 0,
                 percent: currentItem?.percent ?? 0,
@@ -644,10 +662,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       if (!row) return prev
 
       if (row.status === TransferStatus.Downloading) {
+        cancelledDownloadingRef.current.add(name)
         abortDownload(name)
 
         return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
       }
+
+      cancelledDownloadingRef.current.delete(name)
 
       return prev.filter(r => r.name !== name)
     })
@@ -661,6 +682,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
   const dismissAllDownloads = useCallback(() => {
     setDownloadItems([])
+    cancelledDownloadingRef.current.clear()
   }, [])
 
   useEffect(() => {

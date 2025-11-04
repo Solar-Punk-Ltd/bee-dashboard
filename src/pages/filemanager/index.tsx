@@ -11,6 +11,7 @@ import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
 import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
+import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -20,11 +21,20 @@ export function FileManagerPage(): ReactElement {
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
 
+  const [showResetModal, setShowResetModal] = useState<boolean>(false)
+
   const { fm, shallReset, adminDrive, initializationError, init } = useContext(FMContext)
 
   useEffect(() => {
     if (!hasPk) {
       setIsLoading(false)
+
+      return
+    }
+
+    if (shallReset) {
+      setShowInitialModal(true)
+      setShowResetModal(true)
 
       return
     }
@@ -46,7 +56,7 @@ export function FileManagerPage(): ReactElement {
     }
 
     setIsLoading(true)
-  }, [fm, hasPk, initializationError, adminDrive])
+  }, [fm, hasPk, initializationError, adminDrive, shallReset])
 
   if (!hasPk) {
     return (
@@ -81,6 +91,21 @@ export function FileManagerPage(): ReactElement {
           <div className="fm-loading-title">Failed to initialize File Manager</div>
         </div>
       </div>
+    )
+  }
+
+  if (showResetModal) {
+    return (
+      <ConfirmModal
+        title="Reset File Manager State"
+        message="Your File Manager state appears invalid. Please reset it to continue."
+        confirmLabel="Proceed"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowResetModal(false)
+        }}
+        onCancel={() => setShowResetModal(false)}
+      />
     )
   }
 
