@@ -9,9 +9,10 @@ import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/Fi
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { Context as FMContext } from '../../providers/FileManager'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-import { getSignerPk } from '../../../src/modules/filemanager/utils/common'
+import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
 import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
 import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
+import { Button } from 'src/modules/filemanager/components/Button/Button'
 
 export function FileManagerPage(): ReactElement {
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -90,6 +91,19 @@ export function FileManagerPage(): ReactElement {
       <div className="fm-main">
         <div className="fm-loading">
           <div className="fm-loading-title">Failed to initialize File Manager, reload and try again </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+            <div style={{ minWidth: '120px' }}>
+              <Button
+                label={'OK'}
+                variant="primary"
+                disabled={false}
+                onClick={() => {
+                  removeSignerPk()
+                  setHasPk(false)
+                }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     )
