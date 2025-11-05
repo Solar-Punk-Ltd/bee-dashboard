@@ -16,6 +16,7 @@ interface ConfirmModalProps {
   spinnerMessage?: string
   showMinimize?: boolean
   onMinimize?: () => void
+  background?: boolean
 }
 
 export function ConfirmModal({
@@ -30,19 +31,22 @@ export function ConfirmModal({
   spinnerMessage,
   showMinimize = false,
   onMinimize,
+  background = true,
 }: ConfirmModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(
-    <div className="fm-modal-container fm-confirm-modal">
+    <div className={`fm-modal-container fm-confirm-modal ${background ? '' : 'fm-modal-no-background'}`}>
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">{title}</div>
 
         <div className="fm-modal-window-body">
           {isProgress ? (
             <div className="fm-spinner-center">
-              <div className="fm-mini-spinner" />
-              <p>{spinnerMessage || 'Working…'}</p>
+              <div className="fm-spinner-message">
+                <div>{spinnerMessage || 'Working…'}</div>
+                <div className="fm-mini-spinner" />
+              </div>
               {showMinimize && <Button label="Minimize" variant="secondary" onClick={onMinimize} />}
             </div>
           ) : (

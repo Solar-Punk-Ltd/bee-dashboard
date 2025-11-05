@@ -68,6 +68,7 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
   }, [])
 
   const createAdminDrive = useCallback(async () => {
+    handleVisibility(false)
     await handleCreateDrive(
       beeApi,
       fm,
@@ -79,8 +80,12 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
       true,
       resetState,
       selectedBatch,
-      () => handleVisibility(false), // onSuccess
-      () => handleShowError(true), // onError
+      () => {
+        handleVisibility(false)
+      }, // onSuccess
+      () => {
+        handleShowError(true)
+      }, // onError
     )
   }, [
     beeApi,

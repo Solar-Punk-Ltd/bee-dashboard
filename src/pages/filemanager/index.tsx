@@ -116,11 +116,10 @@ export function FileManagerPage(): ReactElement {
           title="Reset File Manager State"
           message="Your File Manager state appears invalid. Please reset it to continue."
           confirmLabel="Proceed"
-          cancelLabel="Cancel"
           onConfirm={() => {
             setShowResetModal(false)
           }}
-          onCancel={() => setShowResetModal(false)}
+          background={false}
         />
       </div>
     )
@@ -150,7 +149,7 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  const loading = !fm.adminStamp || !adminDrive
+  const loading = !fm?.adminStamp || !adminDrive
 
   return showErrorModal ? (
     <ErrorModal label={'Error during admin stamp creation, try again'} onClick={() => setShowInitialModal(true)} />
@@ -164,7 +163,7 @@ export function FileManagerPage(): ReactElement {
             <FileBrowser errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
           </div>
           <AdminStatusBar
-            adminStamp={fm.adminStamp || null}
+            adminStamp={fm?.adminStamp || null}
             adminDrive={adminDrive}
             loading={loading}
             setErrorMessage={setErrorMessage}
