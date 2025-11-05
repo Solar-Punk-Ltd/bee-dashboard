@@ -90,15 +90,11 @@ export const handleCreateDrive = async (
 
   try {
     let batchId: BatchId
-    let batch: PostageBatch
 
     if (!existingBatch) {
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
-
-      batch = await beeApi.getPostageBatch(batchId)
     } else {
       batchId = existingBatch.batchID
-      batch = existingBatch
     }
 
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel, resetState)
@@ -106,7 +102,7 @@ export const handleCreateDrive = async (
     onSuccess?.()
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('Error creating drive:', e)
+    console.error('Error creating drive:', e instanceof Error ? e.message : String(e))
     onError?.(e)
   }
 }

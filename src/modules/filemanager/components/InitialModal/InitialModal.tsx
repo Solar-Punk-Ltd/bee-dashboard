@@ -22,6 +22,7 @@ interface InitialModalProps {
   resetState: boolean
   handleVisibility: (isVisible: boolean) => void
   handleShowError: (flag: boolean) => void
+  setIsCreationInProgress: (isCreating: boolean) => void
 }
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
@@ -42,7 +43,12 @@ const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
   }),
 ]
 
-export function InitialModal({ resetState, handleVisibility, handleShowError }: InitialModalProps): ReactElement {
+export function InitialModal({
+  resetState,
+  setIsCreationInProgress,
+  handleVisibility,
+  handleShowError,
+}: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
@@ -68,6 +74,9 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
   }, [])
 
   const createAdminDrive = useCallback(async () => {
+    setIsCreationInProgress?.(true)
+    handleVisibility(false)
+
     await handleCreateDrive(
       beeApi,
       fm,
@@ -79,8 +88,14 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
       true,
       resetState,
       selectedBatch,
-      () => handleVisibility(false), // onSuccess
-      () => handleShowError(true), // onError
+      () => {
+        handleVisibility(false)
+        setIsCreationInProgress(false)
+      }, // onSuccess
+      () => {
+        handleShowError(true)
+        setIsCreationInProgress(false)
+      }, // onError
     )
   }, [
     beeApi,
@@ -91,6 +106,7 @@ export function InitialModal({ resetState, handleVisibility, handleShowError }: 
     selectedBatch,
     handleVisibility,
     handleShowError,
+    setIsCreationInProgress,
     resetState,
   ])
 

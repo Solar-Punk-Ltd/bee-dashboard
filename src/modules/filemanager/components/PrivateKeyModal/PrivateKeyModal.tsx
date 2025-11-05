@@ -4,6 +4,7 @@ import { Button } from '../Button/Button'
 import { setSignerPk, getSigner } from '../../utils/common'
 import { PrivateKey } from '@ethersphere/bee-js'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
+import CheckDoubleLineIcon from 'remixicon-react/CheckDoubleLineIcon'
 
 type Props = { onSaved: () => void }
 
@@ -98,15 +99,17 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
                 onBlur={handleBlur}
                 spellCheck={false}
               />
-              <button
-                className="fm-copy-btn"
-                onClick={handleCopyPrivateKey}
-                aria-label="Copy private key"
-                type="button"
-                title={copied ? 'Copied!' : 'Copy'}
-              >
-                <ClipboardIcon size="16px" />
-              </button>
+              {
+                <button
+                  className="fm-copy-btn"
+                  onClick={handleCopyPrivateKey}
+                  aria-label="Copy private key"
+                  type="button"
+                  title={copied ? 'Copied!' : 'Copy'}
+                >
+                  {copied ? <CheckDoubleLineIcon size="16px" /> : <ClipboardIcon size="16px" />}
+                </button>
+              }
             </div>
             <div className="fm-input-hint-error">{showError ? 'Invalid private key.' : ''}</div>
           </div>

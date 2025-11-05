@@ -28,3 +28,13 @@
     max-height: 56vh;
   }
 }
+
+.fm-modal-no-background {
+  background: transparent;
+}
+
+.fm-spinner-message {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}

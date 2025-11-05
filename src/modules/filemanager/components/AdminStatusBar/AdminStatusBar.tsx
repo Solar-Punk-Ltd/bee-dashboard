@@ -13,6 +13,7 @@ interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
   adminDrive: DriveInfo | null
   loading: boolean
+  isCreationInProgress: boolean
   setErrorMessage?: (error: string) => void
 }
 
@@ -20,6 +21,7 @@ export function AdminStatusBar({
   adminStamp,
   adminDrive,
   loading,
+  isCreationInProgress,
   setErrorMessage,
 }: AdminStatusBarProps): ReactElement {
   const { setShowError, refreshStamp } = useContext(FMContext)
@@ -27,20 +29,19 @@ export function AdminStatusBar({
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
-  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(isCreationInProgress)
 
   const isMountedRef = useRef(true)
-
-  useEffect(() => {
-    if (loading) setShowProgressModal(true)
-    else setShowProgressModal(false)
-  }, [loading])
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    setShowProgressModal(isCreationInProgress)
+  }, [isCreationInProgress])
 
   useEffect(() => {
     setActualStamp(adminStamp)
@@ -105,60 +106,64 @@ export function AdminStatusBar({
 
   const isBusy = loading || isUpgrading
   const blurCls = isBusy ? ' is-loading' : ''
+  const statusText = isCreationInProgress ? 'Creating admin drive...' : 'Loading admin drive...'
 
   return (
-    <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={isBusy ? 'true' : 'false'}>
-      <div className="fm-admin-status-bar-left">
-        <div className="fm-drive-item-capacity">
-          Capacity <ProgressBar value={capacityPct} width="150px" /> {usedSize} / {totalSize}
-        </div>
+    <div>
+      <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={isBusy ? 'true' : 'false'}>
+        <div className="fm-admin-status-bar-left">
+          <div className="fm-drive-item-capacity">
+            Capacity <ProgressBar value={capacityPct} width="150px" /> {usedSize} / {totalSize}
+          </div>
 
-        <div>File Manager Available: Until: {expiresAt}</div>
+          <div>File Manager Available: Until: {expiresAt}</div>
 
-        <Tooltip
-          label="The File Manager works only while your storage remains valid. If it expires, all catalogue metadata is
+          <Tooltip
+            label="The File Manager works only while your storage remains valid. If it expires, all catalogue metadata is
             permanently lost."
-        />
-      </div>
-
-      {isUpgradeDriveModalOpen && actualStamp && adminDrive && (
-        <UpgradeDriveModal
-          stamp={actualStamp}
-          drive={adminDrive}
-          onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
-          setErrorMessage={setErrorMessage}
-        />
-      )}
-
-      <div
-        className="fm-admin-status-bar-upgrade-button"
-        onClick={() => !isBusy && actualStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
-        aria-disabled={isBusy ? 'true' : 'false'}
-      >
-        {isBusy ? 'Working…' : 'Manage'}
-      </div>
-
-      {isUpgrading && (
-        <div className="fm-drive-item-creating-overlay" aria-live="polite">
-          <div className="fm-mini-spinner" />
-          <span>Upgrading admin drive…</span>
+          />
         </div>
-      )}
 
-      {showProgressModal && (
-        <ConfirmModal
-          title="Admin Drive Creation"
-          isProgress
-          spinnerMessage="Creating admin drive… please wait"
-          showFooter={false}
-          showMinimize
-          onMinimize={() => setShowProgressModal(false)}
-        />
-      )}
+        {isUpgradeDriveModalOpen && actualStamp && adminDrive && (
+          <UpgradeDriveModal
+            stamp={actualStamp}
+            drive={adminDrive}
+            onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
+            setErrorMessage={setErrorMessage}
+          />
+        )}
 
+        <div
+          className="fm-admin-status-bar-upgrade-button"
+          onClick={() => !isBusy && actualStamp && adminDrive && setIsUpgradeDriveModalOpen(true)}
+          aria-disabled={isBusy ? 'true' : 'false'}
+        >
+          {isBusy ? 'Working…' : 'Manage'}
+        </div>
+
+        {isUpgrading && (
+          <div className="fm-drive-item-creating-overlay" aria-live="polite">
+            <div className="fm-mini-spinner" />
+            <span>Upgrading admin drive…</span>
+          </div>
+        )}
+
+        {showProgressModal && (
+          <ConfirmModal
+            title="Admin Drive Creation"
+            isProgress
+            spinnerMessage={statusText}
+            showFooter={false}
+            showMinimize={true}
+            onMinimize={() => setShowProgressModal(false)}
+          />
+        )}
+      </div>
       {!showProgressModal && loading && (
-        <div className="fm-admin-status-progress-pill" onClick={() => setShowProgressModal(true)}>
-          Creating admin drive…
+        <div className="fm-admin-status-bar-progress-pill-container">
+          <div className="fm-admin-status-progress-pill" onClick={() => setShowProgressModal(true)}>
+            {statusText}
+          </div>
         </div>
       )}
     </div>
