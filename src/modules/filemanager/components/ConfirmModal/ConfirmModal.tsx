@@ -29,7 +29,7 @@ export function ConfirmModal({
   showFooter = true,
   isProgress = false,
   spinnerMessage,
-  showMinimize = false,
+  showMinimize = true,
   onMinimize,
   background = true,
 }: ConfirmModalProps): ReactElement {
@@ -57,7 +57,7 @@ export function ConfirmModal({
         {showFooter && (onCancel || onConfirm) && (
           <div className="fm-modal-window-footer">
             {onCancel && <Button label={cancelLabel} variant="secondary" onClick={onCancel} />}
-            {onConfirm && <Button label={confirmLabel} variant="primary" onClick={() => void onConfirm()} />}
+            {onConfirm && <Button label={confirmLabel} variant="primary" onClick={() => onConfirm()} />}
           </div>
         )}
       </div>

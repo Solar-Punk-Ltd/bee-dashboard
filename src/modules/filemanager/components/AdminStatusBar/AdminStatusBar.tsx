@@ -13,6 +13,7 @@ interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
   adminDrive: DriveInfo | null
   loading: boolean
+  isCreationInProgress: boolean
   setErrorMessage?: (error: string) => void
 }
 
@@ -20,6 +21,7 @@ export function AdminStatusBar({
   adminStamp,
   adminDrive,
   loading,
+  isCreationInProgress,
   setErrorMessage,
 }: AdminStatusBarProps): ReactElement {
   const { setShowError, refreshStamp } = useContext(FMContext)
@@ -27,20 +29,19 @@ export function AdminStatusBar({
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
-  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(isCreationInProgress)
 
   const isMountedRef = useRef(true)
-
-  useEffect(() => {
-    if (loading) setShowProgressModal(true)
-    else setShowProgressModal(false)
-  }, [loading])
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    setShowProgressModal(isCreationInProgress)
+  }, [isCreationInProgress])
 
   useEffect(() => {
     setActualStamp(adminStamp)
@@ -105,6 +106,7 @@ export function AdminStatusBar({
 
   const isBusy = loading || isUpgrading
   const blurCls = isBusy ? ' is-loading' : ''
+  const statusText = isCreationInProgress ? 'Creating admin drive...' : 'Loading admin drive...'
 
   return (
     <div>
@@ -150,9 +152,9 @@ export function AdminStatusBar({
           <ConfirmModal
             title="Admin Drive Creation"
             isProgress
-            spinnerMessage="Creating admin drive… please wait"
+            spinnerMessage={statusText}
             showFooter={false}
-            showMinimize
+            showMinimize={true}
             onMinimize={() => setShowProgressModal(false)}
           />
         )}
@@ -160,7 +162,7 @@ export function AdminStatusBar({
       {!showProgressModal && loading && (
         <div className="fm-admin-status-bar-progress-pill-container">
           <div className="fm-admin-status-progress-pill" onClick={() => setShowProgressModal(true)}>
-            Creating admin drive…
+            {statusText}
           </div>
         </div>
       )}

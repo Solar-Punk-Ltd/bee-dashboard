@@ -1,4 +1,4 @@
-import { ReactElement, useContext, useEffect, useState } from 'react'
+import { ReactElement, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import './FileManager.scss'
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
@@ -8,6 +8,7 @@ import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatus
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { Context as FMContext } from '../../providers/FileManager'
+import { Context as BeeContext, CheckState } from '../../providers/Bee'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
 import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
@@ -15,16 +16,26 @@ import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/
 import { Button } from '../../modules/filemanager/components/Button/Button'
 
 export function FileManagerPage(): ReactElement {
+  const isMountedRef = useRef(true)
   const [showInitialModal, setShowInitialModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasAdminDrive, setHasAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
-
   const [showResetModal, setShowResetModal] = useState<boolean>(false)
+  const [isCreationInProgress, setIsCreationInProgress] = useState<boolean>(false)
 
+  const { status } = useContext(BeeContext)
   const { fm, shallReset, adminDrive, initializationError, init } = useContext(FMContext)
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!hasPk) {
@@ -52,6 +63,7 @@ export function FileManagerPage(): ReactElement {
       const tmpHasAdminDrive = Boolean(adminDrive)
       setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
       setIsLoading(false)
+
       setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
 
       return
@@ -60,28 +72,51 @@ export function FileManagerPage(): ReactElement {
     setIsLoading(true)
   }, [fm, hasPk, initializationError, adminDrive, shallReset])
 
+  const handlePrivateKeySaved = useCallback(async () => {
+    if (!isMountedRef.current) return
+
+    setHasPk(true)
+
+    if (fm) {
+      if (!isMountedRef.current) return
+
+      setIsLoading(false)
+
+      return
+    }
+
+    setIsLoading(true)
+    const manager = await init()
+
+    if (!isMountedRef.current) return
+
+    setIsLoading(false)
+
+    const hasAdminStamp = Boolean(manager?.adminStamp)
+    const tmpHasAdminDrive = Boolean(adminDrive)
+
+    setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
+  }, [fm, adminDrive, init])
+
+  const isEmptyState = useMemo(() => {
+    return showInitialModal && !isLoading && !hasAdminDrive
+  }, [showInitialModal, isLoading, hasAdminDrive])
+  const isInvalidState = useMemo(() => shallReset && fm, [shallReset, fm])
+
+  if (status.all !== CheckState.OK) {
+    return (
+      <div className="fm-main">
+        <div className="fm-loading">
+          <div className="fm-loading-title">Bee node error - cannot load File Manager</div>
+        </div>
+      </div>
+    )
+  }
+
   if (!hasPk) {
     return (
       <div className="fm-main">
-        <PrivateKeyModal
-          onSaved={async () => {
-            setHasPk(true)
-
-            if (fm) {
-              setIsLoading(false)
-
-              return
-            }
-
-            setIsLoading(true)
-            const manager = await init()
-            setIsLoading(false)
-
-            const hasAdminStamp = Boolean(manager?.adminStamp)
-            const hasAdminDrive = Boolean(adminDrive)
-            setShowInitialModal(!(hasAdminStamp || hasAdminDrive))
-          }}
-        />
+        <PrivateKeyModal onSaved={handlePrivateKeySaved} />
       </div>
     )
   }
@@ -125,13 +160,14 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if ((showInitialModal && !isLoading && !hasAdminDrive) || (shallReset && fm)) {
+  if (!showErrorModal && (isEmptyState || isInvalidState)) {
     return (
       <div className="fm-main">
         <InitialModal
           resetState={shallReset}
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
           handleShowError={(flag: boolean) => setShowErrorModal(flag)}
+          setIsCreationInProgress={(isCreating: boolean) => setIsCreationInProgress(isCreating)}
         />
       </div>
     )
@@ -151,9 +187,19 @@ export function FileManagerPage(): ReactElement {
 
   const loading = !fm?.adminStamp || !adminDrive
 
-  return showErrorModal ? (
-    <ErrorModal label={'Error during admin stamp creation, try again'} onClick={() => setShowInitialModal(true)} />
-  ) : (
+  if (showErrorModal) {
+    return (
+      <ErrorModal
+        label={'Error during admin state creation, try again'}
+        onClick={() => {
+          setShowErrorModal(false)
+          setShowInitialModal(true)
+        }}
+      />
+    )
+  }
+
+  return (
     <SearchProvider>
       <ViewProvider>
         <div className="fm-main">
@@ -166,6 +212,7 @@ export function FileManagerPage(): ReactElement {
             adminStamp={fm?.adminStamp || null}
             adminDrive={adminDrive}
             loading={loading}
+            isCreationInProgress={isCreationInProgress}
             setErrorMessage={setErrorMessage}
           />
         </div>
