@@ -203,6 +203,8 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const handleDestroyDriveConfirm = async () => {
     if (!currentDrive) return
 
+    setShowDestroyDriveModal(false)
+
     await handleDestroyDrive(
       beeApi,
       fm,
@@ -210,9 +212,9 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
       () => {
         setShowDestroyDriveModal(false)
       },
-      error => {
-        // eslint-disable-next-line no-console
-        console.error('Error destroying drive:', error)
+      e => {
+        setErrorMessage?.(`Error destroying drive: ${currentDrive.name}: ${e}`)
+        setShowError(true)
       },
     )
   }

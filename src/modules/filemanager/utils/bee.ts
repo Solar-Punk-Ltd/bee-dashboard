@@ -176,7 +176,17 @@ export const handleDestroyDrive = async (
     const stamp = (await getUsableStamps(beeApi)).find(s => s.batchID.toString() === drive.batchId.toString())
 
     if (!stamp) {
-      throw new Error('Postage stamp for the current drive not found')
+      throw new Error(`Postage stamp (${drive.batchId}) for the current drive (${drive.name}) not found`)
+    }
+
+    const ttlDays = stamp.duration.toDays()
+
+    if (ttlDays <= 2) {
+      // eslint-disable-next-line no-console
+      console.warn(`Stamp TTL ${ttlDays} <= 2 days, skipping drive destruction: forgetting the drive.`)
+      await fm.forgetDrive(drive)
+
+      return
     }
 
     await fm.destroyDrive(drive, stamp)
