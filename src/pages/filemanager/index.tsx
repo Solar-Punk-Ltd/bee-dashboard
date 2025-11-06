@@ -14,6 +14,7 @@ import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/ut
 import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
 import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
 import { Button } from '../../modules/filemanager/components/Button/Button'
+import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
 
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
@@ -103,6 +104,10 @@ export function FileManagerPage(): ReactElement {
   }, [showInitialModal, isLoading, hasAdminDrive])
   const isInvalidState = useMemo(() => shallReset && fm, [shallReset, fm])
 
+  const loading = !fm?.adminStamp || !adminDrive
+
+  const isFormbricksActive = Boolean(fm && fm.adminStamp && adminDrive && !showInitialModal && !loading)
+
   if (status.all !== CheckState.OK) {
     return (
       <div className="fm-main">
@@ -185,8 +190,6 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  const loading = !fm?.adminStamp || !adminDrive
-
   if (showErrorModal) {
     return (
       <ErrorModal
@@ -203,6 +206,7 @@ export function FileManagerPage(): ReactElement {
     <SearchProvider>
       <ViewProvider>
         <div className="fm-main">
+          <FormbricksIntegration isActive={isFormbricksActive} />
           <Header />
           <div className="fm-main-content">
             <Sidebar errorMessage={errorMessage} setErrorMessage={setErrorMessage} loading={loading} />
