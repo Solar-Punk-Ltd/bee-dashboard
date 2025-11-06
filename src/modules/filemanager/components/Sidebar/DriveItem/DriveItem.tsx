@@ -195,6 +195,8 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           drive={drive}
           onCancelClick={() => setIsDestroyDriveModalOpen(false)}
           doDestroy={async () => {
+            setIsDestroyDriveModalOpen(false)
+
             await handleDestroyDrive(
               beeApi,
               fm,

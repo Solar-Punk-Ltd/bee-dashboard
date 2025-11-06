@@ -575,6 +575,8 @@ export function FileItem({
             setDestroyDrive(null)
           }}
           doDestroy={async () => {
+            setShowDestroyDriveModal(false)
+
             await handleDestroyDrive(
               beeApi,
               fm,
