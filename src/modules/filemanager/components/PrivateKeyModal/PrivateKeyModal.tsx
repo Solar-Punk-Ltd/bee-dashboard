@@ -5,6 +5,8 @@ import { setSignerPk, getSigner } from '../../utils/common'
 import { PrivateKey } from '@ethersphere/bee-js'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
 import CheckDoubleLineIcon from 'remixicon-react/CheckDoubleLineIcon'
+import { Tooltip } from '../Tooltip/Tooltip'
+import { TOOLTIPS } from '../../constants/tooltips'
 
 type Props = { onSaved: () => void }
 
@@ -66,13 +68,22 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
   return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
-        <div className="fm-modal-window-header">Enter Private Key</div>
-        <div>To use the File Manager, we need a private key to initialize it.</div>
-
+        <div className="fm-modal-window-header">
+          <div>Create Private Key</div>
+          <Tooltip label={TOOLTIPS.PRIVATE_KEY_MODAL_HEADER} />
+        </div>
+        <div>This key grants access to this File Manager instance. Save it before continuing..</div>
+        <div className="fm-modal-info-warning flex-column">
+          <span className="fm-modal-info-warning-text-header">CRITICAL: Key Cannot Be Recovered</span>
+          <span>
+            Swarm does not store this key and <strong>cannot</strong> retrieve it. Loss of the key will result in
+            permanent loss of access to this File Manager instance.
+          </span>
+        </div>
         <div className="fm-modal-window-body">
           <div className="fm-modal-window-input-container">
             <label htmlFor="fm-private-key" className="fm-emphasized-text fm-private-key-label">
-              <span>Private key</span>
+              <span>1. New Private key</span>
               <button
                 onClick={handleGenerateNew}
                 type="button"
@@ -110,30 +121,46 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
                   {copied ? <CheckDoubleLineIcon size="16px" /> : <ClipboardIcon size="16px" />}
                 </button>
               }
+              <Tooltip label={TOOLTIPS.PRIVATE_KEY_MODAL_GENERATED_KEY} />
             </div>
             <div className="fm-input-hint-error">{showError ? 'Invalid private key.' : ''}</div>
           </div>
 
-          <div className="fm-modal-window-input-container fm-confirm-key-container">
+          <div className="fm-modal-window-input-container">
             <label htmlFor="fm-private-key-confirm" className="fm-emphasized-text fm-confirm-key-label">
               Confirm Private Key
             </label>
-            <input
-              id="fm-private-key-confirm"
-              type="text"
-              className="fm-input fm-confirm-key-input"
-              placeholder="Paste or type your private key again"
-              autoComplete="off"
-              value={confirmValue}
-              onChange={e => setConfirmValue(e.target.value)}
-              spellCheck={false}
-            />
+            <div className="fm-private-key-input-row">
+              <input
+                id="fm-private-key-confirm"
+                type="text"
+                className="fm-input fm-confirm-key-input"
+                placeholder="Paste or type your private key again"
+                autoComplete="off"
+                value={confirmValue}
+                onChange={e => setConfirmValue(e.target.value)}
+                spellCheck={false}
+              />
+              <Tooltip label={TOOLTIPS.PRIVATE_KEY_MODAL_CONFIRM_KEY} />
+            </div>
             <div className="fm-input-hint fm-confirm-key-hint">
               {confirmValue && value === confirmValue
                 ? '✓ Private keys match!'
                 : 'Save the private key securely, then paste or type it again to confirm.'}
             </div>
           </div>
+        </div>
+
+        <div className="fm-modal-window-body">
+          <div className="flex-row">
+            <div>
+              <b>Key Storage:</b>
+            </div>
+            <Tooltip label={TOOLTIPS.PRIVATE_KEY_MODAL_KEY_INFO} />
+          </div>
+          The key is saved only in this browser&apos;s local storage. If browser data is cleared, a different browser is
+          used, or the OS is updated, this local copy might be deleted. The key will be required to access this File
+          Manager instance after that.
         </div>
 
         <div className="fm-modal-window-footer">
