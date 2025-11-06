@@ -9,6 +9,7 @@ interface TooltipProps {
   gapPx?: number
   children?: React.ReactNode
   disableMargin?: boolean
+  bottomTooltip?: boolean
 }
 
 export function Tooltip({
@@ -18,6 +19,7 @@ export function Tooltip({
   gapPx = 6,
   children,
   disableMargin = false,
+  bottomTooltip = false,
 }: TooltipProps): ReactElement {
   const [alignLeft, setAlignLeft] = useState(false)
   const wrapperRef = useRef<HTMLSpanElement>(null)
@@ -54,8 +56,8 @@ export function Tooltip({
       <span className="fm-tooltip-trigger" role="button" tabIndex={0}>
         <InfoIcon size={iconSize} />
       </span>
-      <span
-        className="fm-tooltip-container"
+      <div
+        className={`fm-tooltip-container${bottomTooltip ? ' bottom' : ''}`}
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: label }}
       />
