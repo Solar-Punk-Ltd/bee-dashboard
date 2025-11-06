@@ -170,11 +170,13 @@ export function CreateDriveModal({
           </div>
 
           <div>
-            <label className="fm-input-label">
-              Estimated Cost: <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} />
-            </label>
-            <div>
-              {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+            <div className="fm-modal-estimated-cost-container">
+              <div className="fm-emphasized-text">Estimated Cost:</div>
+              <div>
+                {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+              </div>
+
+              <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} bottomTooltip={true} />
             </div>
             <div>(Based on current network conditions)</div>
           </div>

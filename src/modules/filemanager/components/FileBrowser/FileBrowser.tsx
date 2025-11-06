@@ -406,6 +406,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
                   view={view}
                   selectedFilesCount={bulk.selectedFiles.length}
                   onRefresh={doRefresh}
+                  enableRefresh={Boolean(fm?.adminStamp)}
                   onUploadFile={onContextUploadFile}
                   onBulkDownload={() => bulk.bulkDownload(bulk.selectedFiles)}
                   onBulkRestore={() => bulk.bulkRestore(bulk.selectedFiles)}

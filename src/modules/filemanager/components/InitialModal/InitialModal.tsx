@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { BZZ, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -28,11 +28,11 @@ interface InitialModalProps {
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
-const BATCH_ID_PLACEHOLDER = 'Select a batch ID'
+const BATCH_ID_PLACEHOLDER = 'Existing Admin Drive selection...'
 
-const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
+const createBatchIdOptions = (stamps: PostageBatch[]) => [
   { label: BATCH_ID_PLACEHOLDER, value: -1 },
-  ...usableStamps.map((stamp, index) => {
+  ...stamps.map((stamp, index) => {
     const batchId = stamp.batchID.toHex().slice(0, 8)
     const label = `${batchId}${stamp.label ? ` - ${stamp.label}` : ''}`
 
@@ -51,6 +51,7 @@ export function InitialModal({
 }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
+  const [isxDaiBalanceSufficient, setIsxDaiBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
@@ -112,7 +113,11 @@ export function InitialModal({
 
   useEffect(() => {
     const getStamps = async () => {
-      const stamps = await getUsableStamps(beeApi)
+      const stamps = (await getUsableStamps(beeApi)).filter(s => {
+        const { capacityPct } = calculateStampCapacityMetrics(s)
+
+        return capacityPct < 100
+      })
 
       safeSetState(isMountedRef, setUsableStamps)([...stamps])
     }
@@ -138,9 +143,16 @@ export function InitialModal({
         beeApi,
         (cost: BZZ) => {
           setIsBalanceSufficient(true)
+          setIsxDaiBalanceSufficient(true)
 
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             safeSetState(isMountedRef, setIsBalanceSufficient)(false)
+          }
+
+          const zeroDAI = DAI.fromDecimalString('0')
+
+          if ((walletBalance && zeroDAI.eq(walletBalance.nativeTokenBalance)) || !walletBalance) {
+            safeSetState(isMountedRef, setIsxDaiBalanceSufficient)(false)
           }
 
           safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
@@ -175,44 +187,54 @@ export function InitialModal({
     [selectedBatch],
   )
 
+  const initText = resetState ? 'Resetting' : 'Initializing'
+  const createText = resetState ? 'Reset' : 'Create'
+
   return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
-        <div className="fm-modal-window-header">Welcome to File Manager</div>
-        <div>You are now {resetState ? 'resetting' : 'initializing'} the file manager</div>
+        <div className="fm-modal-window-header">Welcome to your Swarm File Manager</div>
+        <div>{initText} the File Manager</div>
         {usableStamps.length > 0 && (
-          <div className="fm-modal-window-input-container">
-            <CustomDropdown
-              id="batch-id-selector"
-              label="Select an existing batch ID or Create a new stamp for your Admin Drive:"
-              options={createBatchIdOptions(usableStamps)}
-              value={selectedBatchIndex}
-              onChange={(index: number) => {
-                setSelectedBatchIndex(index)
+          <div className="fm-modal-window-body">
+            <div className="fm-modal-window-input-container">
+              <label htmlFor="admin-desired-lifetime" className="fm-input-label">
+                If you have previously created an Admin Drive, you can continue using it{' '}
+                <Tooltip label={TOOLTIPS.ADMIN_PREVIOUSLY_CREATED} />
+              </label>
+              <br />
+              <CustomDropdown
+                id="batch-id-selector"
+                options={createBatchIdOptions(usableStamps)}
+                value={selectedBatchIndex}
+                label="Use an existing Admin Drive:"
+                onChange={(index: number) => {
+                  setSelectedBatchIndex(index)
 
-                if (index === -1) {
-                  setSelectedBatch(null)
-                }
-              }}
-              placeholder={BATCH_ID_PLACEHOLDER}
-            />
-            {selectedBatch && (
-              <div className="fm-drive-item-content">
-                <div className="fm-drive-item-capacity">
-                  Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
+                  if (index === -1) {
+                    setSelectedBatch(null)
+                  }
+                }}
+                placeholder={BATCH_ID_PLACEHOLDER}
+              />
+              {selectedBatch && (
+                <div className="fm-drive-item-content">
+                  <div className="fm-drive-item-capacity">
+                    Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
+                  </div>
+                  <div className="fm-drive-item-capacity">
+                    Expiry date: {selectedBatch.duration.toEndDate().toLocaleDateString()}
+                  </div>
                 </div>
-                <div className="fm-drive-item-capacity">
-                  Expiry date: {selectedBatch.duration.toEndDate().toLocaleDateString()}
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
         {!selectedBatch && (
           <div className="fm-modal-window-body">
             <div className="fm-modal-window-input-container">
               <label htmlFor="admin-desired-lifetime" className="fm-input-label">
-                Desired lifetime: <Tooltip label={TOOLTIPS.ADMIN_DESIRED_LIFETIME} />
+                Create a new Admin Drive with desired lifetime: <Tooltip label={TOOLTIPS.ADMIN_DESIRED_LIFETIME} />
               </label>
               <CustomDropdown
                 id="admin-desired-lifetime"
@@ -237,11 +259,13 @@ export function InitialModal({
               />
             </div>
             <div className="fm-modal-window-input-container">
-              <label className="fm-input-label">
-                Estimated Cost: <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
-              </label>
-              <div>
-                {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+              <div className="fm-modal-estimated-cost-container">
+                <div className="fm-emphasized-text">Estimated Cost:</div>
+                <div>
+                  {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                  {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
+                </div>
+                <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
               </div>
               <div>(Based on current network conditions)</div>
             </div>
@@ -249,12 +273,18 @@ export function InitialModal({
         )}
         <div className="fm-modal-window-footer">
           <Button
-            label={selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'}
+            label={selectedBatch ? `${createText} Drive` : `Purchase Stamp & ${createText} Drive`}
             variant="primary"
             disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient}
             onClick={createAdminDrive}
           />
-          <Tooltip label={TOOLTIPS.ADMIN_PURCHASE_BUTTON} />
+          <Tooltip
+            label={
+              selectedBatch
+                ? TOOLTIPS.ADMIN_PURCHASE_BUTTON_ALREADY_EXISTED_ADMIN_DRIVE
+                : TOOLTIPS.ADMIN_PURCHASE_BUTTON
+            }
+          />
         </div>
       </div>
     </div>

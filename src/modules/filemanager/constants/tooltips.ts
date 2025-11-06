@@ -1,46 +1,113 @@
 // Tooltip content for File Manager
 export const TOOLTIPS = {
   // Admin Stamp Creation
-  ADMIN_DESIRED_LIFETIME: `Sets the initial funding period. This determines the Estimated Cost to deposit.
-<br/><br/>
-⚠️ Warning: This is your root identity. If it expires, you will lose access to your entire files.`,
+  ADMIN_PREVIOUSLY_CREATED: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Use Existing Admin Drive</div>
+An existing Admin Drive from a previous session can be selected here. This will link the File Manager to that Admin Drive.
+<br/>
+<br/>
+Otherwise, leave this blank and configure a new Admin Drive below.`,
+  ADMIN_DESIRED_LIFETIME: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">What is Desired Lifetime?</div>
+To create the Admin Drive, a one-time deposit is required to pay for its storage on the network.
+<br/>
+<br/>
+This sets the initial period the Admin Drive's information will be paid for on the network. This is not a fixed expiry date. It's the estimated time it will take for the drive's balance to be depleted. You can top up any time to extend the lifetime.
+<br/>
+<br/>
+<b>Warning:</b> The Admin Drive is critical for managing files. If its deposit runs out and it is not renewed, the network will no longer store its data, and access to the File Manager instance will be permanently lost.`,
 
-  ADMIN_SECURITY_LEVEL: `Choose how resiliently your identity’s core information is protected across the network. A higher level makes extra backup copies and spreads them widely. This provides extra protection against data loss in the improbable event of substantial network outages.
-<br/><br/>
-⚖️ Trade-off: More backup copies result in increasing the Estimated Cost for the same Desired Lifetime. Choose the balance of safety and cost you're comfortable with.`,
+  ADMIN_SECURITY_LEVEL: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">What is Security Level?</div>
+This controls how many redundant copies of the Admin Drive's core information are created and spread across the network.
+<br/>
+<br/>
+A higher level provides extra protection against data loss in the improbable event of large-scale network disruptions.
+<br/>
+<br/>
+<b>Trade-off:</b> Higher redundancy levels decrease your initial storage, while keeping the initial deposit cost the same for the same Desired Lifetime.`,
 
-  ADMIN_ESTIMATED_COST: `This is the total xBZZ tokens that will be deposited against the Private Key. This amount is used to pay network rent. The cost is calculated based on the processing and storage required for the Desired Lifetime at your chosen Security Level.`,
+  ADMIN_ESTIMATED_COST: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">How is this cost calculated?</div>
+This is the one-time deposit of xBZZ tokens required to create the Admin Drive.
+<br/>
+<br/>
+It is calculated based on two factors:<br/>
+1. <b>Desired Lifetime:</b> The desired storage duration.<br/>
+2. <b>Current Network Price:</b> The cost of storage at this moment.
+<br/>
+<br/>
+This deposit is used to pay storage fees on the network over time. The cost is not a one-time purchase but a deposit that will be gradually consumed over time based on the network's storage fees.
+<br/>
+<br/>
+As the deposit depletes, the Admin Drive's lifetime decreases. You can top up the deposit at any time to extend its lifetime.
+<br/>
+<br/>
+<b>Note:</b> This estimate is based on current network conditions and the deposit's depletion rate is subject to change and is contingent upon prevailing market conditions.`,
 
-  ADMIN_PURCHASE_BUTTON: `Creates your <b>Admin Drive</b>, the root space that stores your identity and metadata on the network.
-<br/><br/>
-💡 Once created, all other drives and files you add will be linked under this Admin Drive.
-<br/><br/>
-⚠️ Note: This step sets up the foundation for your File Manager workspace. Ensure the network balance and configuration are correct before proceeding.`,
+  ADMIN_PURCHASE_BUTTON: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Create Admin Drive</div>
+This action will do two things:
+<br/>
+<br/>
+1. It will make a one-time transaction to deposit the Estimated Cost.<br/>
+2. It will create the Admin Drive.`,
+
+  ADMIN_PURCHASE_BUTTON_ALREADY_EXISTED_ADMIN_DRIVE: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Create Admin Drive</div>
+
+It will create the Admin Drive.`,
 
   // Drive Creation
-  DRIVE_NAME: `Set a human-readable label for this drive. This name is part of the metadata stored against your Private Key and helps you organize your drives.`,
+  DRIVE_NAME: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">About Drive Name</div>
+Set a human-readable label for this drive (e.g. Personal files). This name is stored as metadata.`,
 
-  DRIVE_INITIAL_CAPACITY: `Select the total storage size you anticipate needing for this drive. You can generally count on having this amount of space available. You can increase the size later.
-<br/><br/>
-⚠️ Warning: Be aware that in rare cases the drive might indicate it's full sooner than expected. This happens because of how files are arranged internally.
-<br/><br/>
-💡 Recommendation: Choosing a size that gives you a bit more room than your absolute minimum need provides extra flexibility and helps avoid these uncommon scenarios.`,
-
-  DRIVE_DESIRED_LIFETIME: `Select the initial funding period for this drive. This is not a fixed expiry date. It's the estimated time it will take for the drive's balance to be depleted. You can top up any time to extend the lifetime.
-<br/><br/>
-⚠️ Warning: If it runs out, the drive expires. Your data is no longer paid for and will be permanently deleted by the network. Please be advised that the expiry date, along with other pertinent factors, is contingent upon prevailing market conditions.`,
-
-  DRIVE_SECURITY_LEVEL: `Select the desired level of data resilience for the files on this drive. Elevated levels generate additional backup copies (parity chunks) of your data, distributing them across the network to enhance security, mitigating risks even in the improbable event of substantial network outages.
-<br/><br/>
-⚖️ Trade-Off: You pay a network storage fee for every piece of data stored (original + backups). Higher security means more backup copies, increasing the initial cost.`,
-
-  DRIVE_ESTIMATED_COST: `This cost is derived from a three-way multiplication among:
+  DRIVE_INITIAL_CAPACITY: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">What is Initial Storage?</div>
+This sets the initial storage capacity. This value is used in combination with lifetime and redundancy, to calculate the initial deposit.
 <br/>
-• Capacity: How much you can store.
 <br/>
-• Security Level: How resilient your data is.
+<b>Warning:</b> Be aware that in rare cases the drive might indicate it's full sooner than expected.
 <br/>
-• Lifetime: How long your data is paid for.
-<br/><br/>
-To increase one, it is necessary to either increase the cost or decrease one of the other factors.`,
+<br/>
+<b>Tip:</b> Selecting a size with a little extra room provides the best flexibility.`,
+
+  DRIVE_DESIRED_LIFETIME: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">What is Desired Lifetime?</div>
+This sets the initial period the drive's information will be paid for on the network. This is not a fixed expiry date. It's the estimated time it will take for the drive's balance to be depleted. You can top up any time to extend the lifetime.
+<br/>
+<br/>
+<b>Warning:</b> If the deposit balance runs out, the drive's data is no longer paid for and will be scheduled for permanent deletion by the network. The rate of depletion is depends upon actual market conditions.`,
+
+  DRIVE_SECURITY_LEVEL: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">What is Security Level?</div>
+This controls the level of data redundancy for your drive's data.
+<br/>
+<br/>
+Higher levels provide maximum protection against data loss, even in the unlikely event of large-scale network disruptions.
+<br/>
+<br/>
+<b>Trade-off:</b> Higher redundancy levels decreases your initial storage, while keeping the initial deposit cost the same for the same Desired Lifetime.`,
+
+  DRIVE_ESTIMATED_COST: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">How is this cost calculated?</div>
+This is the one-time deposit of xBZZ tokens required to fund the drive's storage.
+<br/>
+<br/>
+It is calculated based on:
+<br/>
+1. <b>Initial Storage</b> (Storage size)
+<br/>
+2. <b>Desired Lifetime</b> (Persistence duration)<br/>
+3. <b>Current Network Price</b> (Dynamic storage costs)
+<br/>
+<br/>
+This deposit is used to pay storage fees on the network over time. The cost is not a one-time purchase but a deposit that will be gradually consumed over time based on the network's storage fees.
+<br/>
+<br/>
+As the deposit depletes, the drive's lifetime decreases. You can top up the deposit at any time to extend its lifetime.
+<br/>
+<br/>
+<b>Note:</b> This estimate is based on current network conditions and the deposit's depletion rate is subject to change and is contingent upon prevailing market conditions.`,
+
+  PRIVATE_KEY_MODAL_HEADER: `The Private Key ensures exclusive access to this File Manager instance. It is the user's responsibity to store in a secure and tamper-proof way.`,
+  PRIVATE_KEY_MODAL_GENERATED_KEY: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Generated Key</div>
+A unique, 64-character secure key has been generated.
+<br/>
+<br/>
+Advanced users can delete this and input a custom key.`,
+  PRIVATE_KEY_MODAL_CONFIRM_KEY: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Confirmation Step</div>
+This is a final safety check to ensure a copy of the key has been saved before proceeding.`,
+  PRIVATE_KEY_MODAL_KEY_INFO: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">On This Device Only</div>
+For convenience, an encrypted copy of this key is saved in this browser's local storage. This avoids needing to enter it on every visit.`,
 }
