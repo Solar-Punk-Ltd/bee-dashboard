@@ -144,7 +144,6 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                 <div className="fm-drive-item-icon">
                   <Folder size="16px" />
                 </div>
-                <div>Creating drive…</div>
               </div>
               <div className="fm-drive-item-content">
                 <div className="fm-drive-item-capacity">Initializing drive metadata</div>
@@ -262,7 +261,9 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
         )}
       </div>
 
-      {isDriveCreationInProgress && <div className="fm-sidebar-drive-creation">Creating drive . . .</div>}
+      {isDriveCreationInProgress && (
+        <div className="fm-sidebar-drive-creation">Creating drive, please do not reload</div>
+      )}
     </div>
   )
 }
