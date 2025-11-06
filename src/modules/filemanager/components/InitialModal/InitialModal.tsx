@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { BZZ, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -30,9 +30,9 @@ const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
 const BATCH_ID_PLACEHOLDER = 'Existing Admin Drive selection...'
 
-const createBatchIdOptions = (usableStamps: PostageBatch[]) => [
+const createBatchIdOptions = (stamps: PostageBatch[]) => [
   { label: BATCH_ID_PLACEHOLDER, value: -1 },
-  ...usableStamps.map((stamp, index) => {
+  ...stamps.map((stamp, index) => {
     const batchId = stamp.batchID.toHex().slice(0, 8)
     const label = `${batchId}${stamp.label ? ` - ${stamp.label}` : ''}`
 
@@ -51,6 +51,7 @@ export function InitialModal({
 }: InitialModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
+  const [isxDaiBalanceSufficient, setIsxDaiBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
@@ -112,7 +113,11 @@ export function InitialModal({
 
   useEffect(() => {
     const getStamps = async () => {
-      const stamps = await getUsableStamps(beeApi)
+      const stamps = (await getUsableStamps(beeApi)).filter(s => {
+        const { capacityPct } = calculateStampCapacityMetrics(s)
+
+        return capacityPct < 100
+      })
 
       safeSetState(isMountedRef, setUsableStamps)([...stamps])
     }
@@ -138,9 +143,16 @@ export function InitialModal({
         beeApi,
         (cost: BZZ) => {
           setIsBalanceSufficient(true)
+          setIsxDaiBalanceSufficient(true)
 
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             safeSetState(isMountedRef, setIsBalanceSufficient)(false)
+          }
+
+          const zeroDAI = DAI.fromDecimalString('0')
+
+          if ((walletBalance && zeroDAI.eq(walletBalance.nativeTokenBalance)) || !walletBalance) {
+            safeSetState(isMountedRef, setIsxDaiBalanceSufficient)(false)
           }
 
           safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
@@ -175,11 +187,14 @@ export function InitialModal({
     [selectedBatch],
   )
 
+  const initText = resetState ? 'Resetting' : 'Initializing'
+  const createText = resetState ? 'Reset' : 'Create'
+
   return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
         <div className="fm-modal-window-header">Welcome to your Swarm File Manager</div>
-        <div>{resetState ? 'Resetting' : 'Initializing'} the File Manager</div>
+        <div>{initText} the File Manager</div>
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-body">
             <div className="fm-modal-window-input-container">
@@ -248,6 +263,7 @@ export function InitialModal({
                 <div className="fm-emphasized-text">Estimated Cost:</div>
                 <div>
                   {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                  {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
                 </div>
                 <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
               </div>
@@ -257,7 +273,7 @@ export function InitialModal({
         )}
         <div className="fm-modal-window-footer">
           <Button
-            label={selectedBatch ? 'Create Drive' : 'Purchase Stamp & Create Drive'}
+            label={selectedBatch ? `${createText} Drive` : `Purchase Stamp & ${createText} Drive`}
             variant="primary"
             disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient}
             onClick={createAdminDrive}

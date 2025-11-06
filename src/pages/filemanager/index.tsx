@@ -99,9 +99,12 @@ export function FileManagerPage(): ReactElement {
   }, [fm, adminDrive, init])
 
   const isEmptyState = useMemo(() => {
-    return showInitialModal && !isLoading && !hasAdminDrive
-  }, [showInitialModal, isLoading, hasAdminDrive])
-  const isInvalidState = useMemo(() => shallReset && fm, [shallReset, fm])
+    return showInitialModal && !isLoading && !hasAdminDrive && !isCreationInProgress
+  }, [showInitialModal, isLoading, hasAdminDrive, isCreationInProgress])
+  const isInvalidState = useMemo(
+    () => shallReset && fm && !isCreationInProgress,
+    [shallReset, fm, isCreationInProgress],
+  )
 
   if (status.all !== CheckState.OK) {
     return (

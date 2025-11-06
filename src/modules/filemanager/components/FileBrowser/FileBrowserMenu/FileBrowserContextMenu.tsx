@@ -16,6 +16,7 @@ interface FileBrowserContextMenuProps {
   onBulkDelete: () => void
   onBulkDestroy: () => void
   onBulkForget: () => void
+  enableRefresh?: boolean
 }
 
 export function FileBrowserContextMenu({
@@ -29,8 +30,13 @@ export function FileBrowserContextMenu({
   onBulkDelete,
   onBulkDestroy,
   onBulkForget,
+  enableRefresh,
 }: FileBrowserContextMenuProps): ReactElement {
   if (drives.length === 0) {
+    if (!enableRefresh) {
+      return <></>
+    }
+
     return (
       <ContextMenu>
         <div className="fm-context-item" onClick={onRefresh}>
