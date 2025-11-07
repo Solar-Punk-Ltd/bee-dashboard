@@ -320,22 +320,33 @@ export const startDownloadingQueue = async (
           if (fh.cancelled) {
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Cancelled })
           } else {
-            await downloadAborts.withSignal(name, async () => {
-              const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
+            const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
 
-              if (isOpenWindow || !fh.handle) {
-                await downloadToBlob(dataStreams, fh.info, tracker, isOpenWindow, signal)
-              } else {
-                await downloadToDisk(dataStreams, fh.handle, tracker, signal)
-              }
-            })
+            if (isOpenWindow || !fh.handle) {
+              await downloadToBlob(dataStreams, fh.info, tracker, isOpenWindow, signal)
+            } else {
+              await downloadToDisk(dataStreams, fh.handle, tracker, signal)
+            }
+
+            // Ensure the tracker shows completion
+            if (tracker) {
+              const size = fh.info.customMetadata?.size
+              const finalProgress = size ? Number(size) : 0
+
+              tracker({ progress: finalProgress, isDownloading: false })
+            }
           }
         } catch (error: unknown) {
-          if ((error as { name?: string }).name !== Errors.AbortError) {
-            // Download error - tracker will handle UI update
+          const isAbortError = (error as { name?: string }).name === Errors.AbortError
+
+          // Ensure the tracker shows completion
+          if (!isAbortError) {
+            tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Error })
+          } else {
+            tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Cancelled })
           }
         } finally {
-          abortDownload(name)
+          downloadAborts.abort(name)
         }
       }),
     )
