@@ -332,13 +332,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       uploadAbortsRef.current.create(task.finalName)
 
       try {
-        await uploadAbortsRef.current.withSignal(task.finalName, async () => {
-          await fm.upload(
-            currentDrive,
-            { ...info, onUploadProgress: progressCb },
-            { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
-          )
-        })
+        await fm.upload(
+          currentDrive,
+          { ...info, onUploadProgress: progressCb },
+          { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
+        )
 
         if (currentStamp) {
           await refreshStamp(currentStamp.batchID.toString())
