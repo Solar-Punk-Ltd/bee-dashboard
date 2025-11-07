@@ -275,7 +275,7 @@ export function InitialModal({
           <Button
             label={selectedBatch ? `${createText} Drive` : `Purchase Stamp & ${createText} Drive`}
             variant="primary"
-            disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient}
+            disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient}
             onClick={createAdminDrive}
           />
           <Tooltip
