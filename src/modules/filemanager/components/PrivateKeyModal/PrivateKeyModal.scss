@@ -79,6 +79,12 @@
   background: #f5f5f5;
 }
 
+.fm-initialization-modal-container {
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 .fm-initialization-modal-container .fm-modal-window {
   width: 600px;
 }
