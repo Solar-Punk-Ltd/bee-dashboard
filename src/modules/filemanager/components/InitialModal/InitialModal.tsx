@@ -28,7 +28,7 @@ interface InitialModalProps {
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
-const BATCH_ID_PLACEHOLDER = 'Existing Admin Drive selection...'
+const BATCH_ID_PLACEHOLDER = 'Choose a saved Drive, or leave blank to create a new one'
 
 const createBatchIdOptions = (stamps: PostageBatch[]) => [
   { label: BATCH_ID_PLACEHOLDER, value: -1 },
@@ -198,16 +198,15 @@ export function InitialModal({
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-body">
             <div className="fm-modal-window-input-container">
-              <label htmlFor="admin-desired-lifetime" className="fm-input-label">
-                If you have previously created an Admin Drive, you can continue using it{' '}
-                <Tooltip label={TOOLTIPS.ADMIN_PREVIOUSLY_CREATED} />
+              {/* <label htmlFor="admin-desired-lifetime" className="fm-input-label">
+                Link an existing Admin Drive (optional)
               </label>
-              <br />
+              <br /> */}
               <CustomDropdown
                 id="batch-id-selector"
                 options={createBatchIdOptions(usableStamps)}
                 value={selectedBatchIndex}
-                label="Use an existing Admin Drive:"
+                label="Link an existing Admin Drive (optional)"
                 onChange={(index: number) => {
                   setSelectedBatchIndex(index)
 
