@@ -153,12 +153,12 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
         <div className="fm-modal-window-body">
           <div className="flex-row">
             <div>
-              <b>Local Key Copy</b>
+              <b>Safety Reminder:</b>
             </div>
           </div>
           <span>
-            For convenience, an encrypted copy of your private key is saved in this browser. It’s not a backup -
-            clearing browser data or switching devices will remove it.{' '}
+            A copy of your private key is stored in this browser for convenience, but it’s not a backup - clearing
+            browser data or switching devices will remove it.{' '}
             <b>Make sure you’ve saved your private key before continuing.</b>
           </span>
         </div>
