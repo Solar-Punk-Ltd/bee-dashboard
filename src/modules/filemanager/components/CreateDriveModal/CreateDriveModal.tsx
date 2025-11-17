@@ -25,7 +25,7 @@ interface CreateDriveModalProps {
   onCreationStarted: () => void
   onCreationError: (name: string) => void
 }
-// TODO: select existing batch id or create a new one - just like in InitialModal
+
 export function CreateDriveModal({
   onCancelClick,
   onDriveCreated,
@@ -46,9 +46,19 @@ export function CreateDriveModal({
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const { walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
-  const { fm } = useContext(FMContext)
+  const { fm, drives, expiredDrives, adminDrive } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
+  const [touched, setTouched] = useState(false)
+
+  const trimmedName = driveName.trim()
+  const allExistingDriveNames = new Set(
+    [...(drives || []), ...(expiredDrives || []), ...(adminDrive ? [adminDrive] : [])].map(d =>
+      d.name.trim().toLowerCase(),
+    ),
+  )
+  const nameExists = trimmedName.length > 0 && allExistingDriveNames.has(trimmedName.toLowerCase())
+  const validationError = touched && nameExists ? 'Drive name already exists. Please choose another name.' : ''
 
   useEffect(() => {
     return () => {
@@ -94,17 +104,13 @@ export function CreateDriveModal({
         currentFetch,
       )
 
-      if (driveName && driveName.trim().length > 0) {
-        setIsCreateEnabled(true)
-      } else {
-        setIsCreateEnabled(false)
-      }
+      const canCreate = Boolean(trimmedName) && !nameExists
+      setIsCreateEnabled(canCreate)
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capacity, validityEndDate, beeApi, driveName, walletBalance])
+  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -125,7 +131,9 @@ export function CreateDriveModal({
               placeholder="My important files"
               value={driveName}
               onChange={e => setDriveName(e.target.value)}
+              onBlur={() => setTouched(true)}
             />
+            {validationError && <div className="fm-error-text">{validationError}</div>}
           </div>
           <div className="fm-modal-window-input-container">
             <label htmlFor="drive-initial-capacity" className="fm-input-label">
@@ -187,6 +195,12 @@ export function CreateDriveModal({
             variant="primary"
             disabled={!isCreateEnabled || !isBalanceSufficient}
             onClick={async () => {
+              if (!trimmedName || nameExists) {
+                setTouched(true)
+
+                return
+              }
+
               if (isCreateEnabled && fm && beeApi && walletBalance) {
                 onCreationStarted()
                 onCancelClick()
@@ -196,14 +210,14 @@ export function CreateDriveModal({
                   fm,
                   Size.fromBytes(capacity),
                   Duration.fromEndDate(validityEndDate),
-                  driveName,
+                  trimmedName,
                   encryptionEnabled,
                   erasureCodeLevel,
                   false,
                   false,
                   null,
                   () => onDriveCreated(), // onSuccess
-                  () => onCreationError(driveName), // onError
+                  () => onCreationError(trimmedName), // onError
                 )
               }
             }}
