@@ -159,9 +159,10 @@ export function UpgradeDriveModal({
     const fetchExtensionCost = () => {
       const isCapacitySet = capacityIndex > 0
       const isDurationSet = true
-      const extendDuration = durationExtensionCost === '0'
-        ? Duration.ZERO
-        : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate());
+      const extendDuration =
+        durationExtensionCost === '0'
+          ? Duration.ZERO
+          : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate())
 
       handleCostCalculation(
         stamp.batchID,
@@ -267,14 +268,16 @@ export function UpgradeDriveModal({
               {(() => {
                 if (capacityIndex === 0) return '0 GB'
 
-                return `${fromBytesConversion(Math.max(capacity.toBytes() - stamp.size.toBytes(), 0), 'GB').toFixed(3) + ' GB'
-                  } ${durationExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'}`
+                return `${
+                  fromBytesConversion(Math.max(capacity.toBytes() - stamp.size.toBytes(), 0), 'GB').toFixed(3) + ' GB'
+                } ${durationExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'}`
               })()}
             </div>
             <div>
               Extension period:{' '}
-              {`${desiredLifetimeOptions[lifetimeIndex]?.label} ${capacityExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'
-                }`}
+              {`${desiredLifetimeOptions[lifetimeIndex]?.label} ${
+                capacityExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'
+              }`}
             </div>
 
             <div className="fm-upgrade-drive-modal-info fm-emphasized-text">
