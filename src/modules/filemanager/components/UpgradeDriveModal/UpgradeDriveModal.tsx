@@ -301,14 +301,7 @@ export function UpgradeDriveModal({
                   }),
                 )
 
-                onCancelClick();
-                const millisecondsExtension = validityEndDate.getTime() - stamp.duration.toEndDate().getTime();
-                const extendDuration = Duration.fromMilliseconds(millisecondsExtension);
-                const aux = durationExtensionCost === '0'
-                  ? Duration.ZERO
-                  : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate());
-                const aux1 = capacity;
-                debugger;
+                onCancelClick()
 
                 await beeApi.extendStorage(
                   stamp.batchID,
