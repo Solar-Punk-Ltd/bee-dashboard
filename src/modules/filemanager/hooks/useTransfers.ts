@@ -53,6 +53,8 @@ type UploadTask = {
   isReplace: boolean
   replaceTopic?: string
   replaceHistory?: string
+  driveId: string
+  driveName: string
 }
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
@@ -120,8 +122,17 @@ const calculateETA = (
   }
 }
 
-const updateTransferItems = <T extends TransferItem>(items: T[], name: string, update: Partial<T>): T[] => {
-  return items.map(item => (item.name === name ? { ...item, ...update } : item))
+const updateTransferItems = <T extends TransferItem>(
+  items: T[],
+  name: string,
+  update: Partial<T>,
+  driveName?: string,
+): T[] => {
+  return items.map(item => {
+    const matches = driveName ? item.name === name && item.driveName === driveName : item.name === name
+
+    return matches ? { ...item, ...update } : item
+  })
 }
 
 const createTransferItem = (
@@ -147,7 +158,7 @@ interface TransferProps {
 }
 
 export function useTransfers({ setErrorMessage }: TransferProps) {
-  const { fm, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, files, setShowError } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -167,23 +178,33 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error && i.status !== TransferStatus.Cancelled,
   )
 
-  const clearAllFlagsFor = useCallback((name: string) => {
+  const clearAllFlagsFor = useCallback((name: string, driveName?: string) => {
     cancelledNamesRef.current.delete(name)
     cancelledUploadingRef.current.delete(name)
     uploadAbortsRef.current.abort(name)
-    queueRef.current = queueRef.current.filter(t => t.finalName !== name)
+    queueRef.current = queueRef.current.filter(t => {
+      if (driveName) {
+        return !(t.finalName === name && t.driveName === driveName)
+      }
+
+      return t.finalName !== name
+    })
   }, [])
 
   const ensureQueuedRow = useCallback(
     (name: string, kind: FileTransferType, size?: string, driveName?: string) => {
-      clearAllFlagsFor(name)
-
       safeSetState(
         isMountedRef,
         setUploadItems,
       )(prev => {
-        const idx = prev.findIndex(p => p.name === name)
+        const idx = prev.findIndex(
+          p => p.name === name && p.driveName === driveName && p.status !== TransferStatus.Done,
+        )
         const base = createTransferItem(name, size, kind, driveName, TransferStatus.Queued)
+
+        if (idx !== -1) {
+          clearAllFlagsFor(name, driveName)
+        }
 
         if (idx === -1) return [...prev, base]
         const copy = [...prev]
@@ -237,14 +258,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   )
 
   const trackUpload = useCallback(
-    (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload) => {
+    (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload, driveName?: string) => {
       if (!isMountedRef.current) {
         return () => {
           // no-op
         }
       }
 
-      const driveName = currentDrive?.name
       const startedAt = Date.now()
 
       let etaState: ETAState = {
@@ -254,8 +274,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       setUploadItems(prev => {
-        const idx = prev.findIndex(p => p.name === name)
-        const base = createTransferItem(name, size, kind, driveName, TransferStatus.Uploading)
+        const existing = prev.find(p => p.name === name && p.driveName === driveName)
+        const actualDriveName = existing?.driveName || driveName
+
+        const idx = prev.findIndex(p => p.name === name && p.driveName === actualDriveName)
+        const base = createTransferItem(name, size, kind, actualDriveName, TransferStatus.Uploading)
 
         if (idx === -1) return [...prev, base]
         const copy = [...prev]
@@ -274,36 +297,56 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           const { etaSec, updatedState } = calculateETA(etaState, progress, startedAt, now)
           etaState = updatedState
 
-          setUploadItems(prev =>
-            updateTransferItems(prev, name, {
-              percent: Math.max(prev.find(it => it.name === name)?.percent || 0, chunkPercentage),
-              kind,
-              etaSec,
-            }),
-          )
+          setUploadItems(prev => {
+            const existing = prev.find(
+              it => it.name === name && it.driveName === driveName && it.status === TransferStatus.Uploading,
+            )
+
+            return updateTransferItems(
+              prev,
+              name,
+              {
+                percent: Math.max(existing?.percent || 0, chunkPercentage),
+                kind,
+                etaSec,
+              },
+              driveName,
+            )
+          })
 
           if (progress.processed >= progress.total) {
             const finishedAt = Date.now()
-            setUploadItems(prev =>
-              updateTransferItems(prev, name, {
-                percent: 100,
-                status: TransferStatus.Done,
-                etaSec: 0,
-                elapsedSec: Math.round((finishedAt - startedAt) / 1000),
-              }),
-            )
+            setUploadItems(prev => {
+              return updateTransferItems(
+                prev,
+                name,
+                {
+                  percent: 100,
+                  status: TransferStatus.Done,
+                  etaSec: 0,
+                  elapsedSec: Math.round((finishedAt - startedAt) / 1000),
+                },
+                driveName,
+              )
+            })
           }
         }
       }
 
       return onProgress
     },
-    [currentDrive?.name],
+    [],
   )
 
   const processUploadTask = useCallback(
     async (task: UploadTask) => {
-      if (!fm || !currentDrive) return
+      if (!fm) return
+
+      const taskDrive = fm.getDrives().find(d => d.id.toString() === task.driveId)
+
+      if (!taskDrive) {
+        return
+      }
 
       const info: FileInfoOptions = {
         name: task.finalName,
@@ -316,31 +359,33 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         task.finalName,
         task.prettySize,
         task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+        taskDrive.name,
       )
 
       safeSetState(
         isMountedRef,
         setUploadItems,
       )(prev =>
-        updateTransferItems(prev, task.finalName, {
-          status: TransferStatus.Uploading,
-          kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
-          startedAt: Date.now(),
-        }),
+        updateTransferItems(
+          prev,
+          task.finalName,
+          {
+            status: TransferStatus.Uploading,
+            kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+            startedAt: Date.now(),
+          },
+          task.driveName,
+        ),
       )
 
       uploadAbortsRef.current.create(task.finalName)
 
       try {
         await fm.upload(
-          currentDrive,
+          taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
-
-        if (currentStamp) {
-          await refreshStamp(currentStamp.batchID.toString())
-        }
       } catch {
         const wasCancelled = cancelledUploadingRef.current.has(task.finalName)
 
@@ -348,9 +393,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           isMountedRef,
           setUploadItems,
         )(prev =>
-          updateTransferItems(prev, task.finalName, {
-            status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
-          }),
+          updateTransferItems(
+            prev,
+            task.finalName,
+            {
+              status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
+            },
+            task.driveName,
+          ),
         )
       } finally {
         uploadAbortsRef.current.abort(task.finalName)
@@ -358,7 +408,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         cancelledNamesRef.current.delete(task.finalName)
       }
     },
-    [fm, currentDrive, currentStamp, trackUpload, refreshStamp],
+    [fm, trackUpload],
   )
 
   const trackDownload = useCallback(
@@ -386,7 +436,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           driveName,
           TransferStatus.Downloading,
         )
-        row.startedAt = undefined // Downloads start timing when first progress is received
+        row.startedAt = undefined
         const idx = prev.findIndex(p => p.name === props.name)
 
         if (idx === -1) return [...prev, row]
@@ -467,9 +517,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       if (filesArr.length === 0 || !fm || !currentDrive) return
 
       const preflight = async (): Promise<UploadTask[]> => {
-        const progressNames = new Set<string>(uploadItems.map(u => u.name))
-        const sameDrive = collectSameDrive(currentDrive.id.toString())
-        const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
+        const progressNames = new Set<string>(
+          uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
+        )
         const reserved = new Set<string>()
         const tasks: UploadTask[] = []
 
@@ -486,22 +536,15 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
+          const sameDrive = collectSameDrive(currentDrive.id.toString())
+
           const allTaken = new Set<string>([
-            ...Array.from(onDiskNames),
+            ...Array.from(sameDrive.map(fi => fi.name)),
             ...Array.from(reserved),
             ...Array.from(progressNames),
           ])
 
           if (file.size > remainingBytes) {
-            // eslint-disable-next-line no-console
-            console.log(
-              'Skipping upload - insufficient space:',
-              file.name,
-              'size:',
-              file.size,
-              'remaining:',
-              remainingBytes,
-            )
             setErrorMessage?.('There is not enough space to upload: ' + file.name)
             setShowError(true)
 
@@ -549,6 +592,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
                 isReplace: Boolean(isReplace),
                 replaceTopic,
                 replaceHistory,
+                driveId: currentDrive.id.toString(),
+                driveName: currentDrive.name,
               }
             }
           }
@@ -570,7 +615,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       const runQueue = async () => {
-        if (runningRef.current) return
+        if (runningRef.current) {
+          return
+        }
         runningRef.current = true
 
         try {
@@ -585,7 +632,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               safeSetState(
                 isMountedRef,
                 setUploadItems,
-              )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Cancelled }))
+              )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Cancelled }, task.driveName))
               cancelledNamesRef.current.delete(task.finalName)
               queueRef.current.shift()
             } else {
@@ -595,12 +642,17 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           }
         } finally {
           runningRef.current = false
+
+          if (queueRef.current.length > 0) {
+            void runQueue()
+          }
         }
       }
 
       void (async () => {
         const tasks = await preflight()
         queueRef.current = queueRef.current.concat(tasks)
+
         runQueue()
       })()
     },
@@ -630,9 +682,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
         if (row.status === TransferStatus.Queued) {
           cancelledNamesRef.current.add(name)
-          queueRef.current = queueRef.current.filter(t => t.finalName !== name)
+          queueRef.current = queueRef.current.filter(t => !(t.finalName === name && t.driveName === row.driveName))
 
-          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
+          return prev.map(r =>
+            r.name === name && r.driveName === row.driveName ? { ...r, status: TransferStatus.Cancelled } : r,
+          )
         }
 
         if (row.status === TransferStatus.Uploading) {
