@@ -285,8 +285,6 @@ export function UpgradeDriveModal({
               Extension period:{' '}
               {`${desiredLifetimeOptions[lifetimeIndex]?.label} ${capacityExtensionCost === '' ? '' : '(' + extensionCost + ' xBZZ)'
                 }`}
-            </div>
-
             <div className="fm-upgrade-drive-modal-info fm-emphasized-text">
               Total:{' '}
               <span className="fm-swarm-orange-font">
