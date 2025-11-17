@@ -49,16 +49,14 @@ export function CreateDriveModal({
   const { fm, drives, expiredDrives, adminDrive } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
-  const [touched, setTouched] = useState(false)
+  const [duplicate, setDuplicate] = useState(false)
 
   const trimmedName = driveName.trim()
   const allExistingDriveNames = new Set(
-    [...(drives || []), ...(expiredDrives || []), ...(adminDrive ? [adminDrive] : [])].map(d =>
-      d.name.trim().toLowerCase(),
-    ),
+    [...(drives || []), ...(expiredDrives || []), ...(adminDrive ? [adminDrive] : [])].map(d => d.name.trim()),
   )
-  const nameExists = trimmedName.length > 0 && allExistingDriveNames.has(trimmedName.toLowerCase())
-  const validationError = touched && nameExists ? 'Drive name already exists. Please choose another name.' : ''
+  const nameExists = trimmedName.length > 0 && allExistingDriveNames.has(trimmedName)
+  const validationError = duplicate && nameExists ? 'Drive alreadys exists. Please choose another name.' : ''
 
   useEffect(() => {
     return () => {
@@ -131,7 +129,7 @@ export function CreateDriveModal({
               placeholder="My important files"
               value={driveName}
               onChange={e => setDriveName(e.target.value)}
-              onBlur={() => setTouched(true)}
+              onBlur={() => setDuplicate(true)}
             />
             {validationError && <div className="fm-error-text">{validationError}</div>}
           </div>
@@ -196,7 +194,7 @@ export function CreateDriveModal({
             disabled={!isCreateEnabled || !isBalanceSufficient}
             onClick={async () => {
               if (!trimmedName || nameExists) {
-                setTouched(true)
+                setDuplicate(true)
 
                 return
               }
