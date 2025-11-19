@@ -101,8 +101,12 @@ export const handleCreateDrive = async (
 
     onSuccess?.()
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('Error creating drive:', e instanceof Error ? e.message : String(e))
+    if (e instanceof Error && e.constructor.name === 'AdminStampCapacityError') {
+      onError?.(e)
+
+      return
+    }
+
     onError?.(e)
   }
 }

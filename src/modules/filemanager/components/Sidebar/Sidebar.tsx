@@ -21,6 +21,31 @@ import { Context as FMContext } from '../../../../providers/FileManager'
 import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 
+type CreateDriveButtonProps = { disabled: boolean; onClick: () => void }
+
+function CreateDriveButton({ disabled, onClick }: CreateDriveButtonProps): ReactElement {
+  return (
+    <>
+      <div
+        className={`fm-sidebar-item${disabled ? ' is-disabled' : ''}`}
+        onClick={!disabled ? onClick : undefined}
+        title={disabled ? 'Admin drive is full. Top up the admin drive to create new drives.' : undefined}
+      >
+        <div className="fm-sidebar-item-icon">
+          <Add size="16px" />
+        </div>
+        <div>Create new drive</div>
+      </div>
+
+      {disabled && (
+        <div className="fm-sidebar-hint">
+          Admin drive capacity is full. Please top up the admin drive to create new drives.
+        </div>
+      )}
+    </>
+  )
+}
+
 interface SidebarProps {
   loading: boolean
   errorMessage?: string
@@ -49,6 +74,9 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     setShowError,
     syncDrives,
   } = useContext(FMContext)
+
+  const capacityCheck = fm?.canCreateDrive()
+  const isCreateDisabled = !capacityCheck?.canCreate
 
   useEffect(() => {
     let isMounted = true
@@ -95,14 +123,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
   return (
     <div className="fm-sidebar">
       <div className="fm-sidebar-content">
-        {!loading && (
-          <div className="fm-sidebar-item" onClick={() => setIsCreateDriveOpen(true)}>
-            <div className="fm-sidebar-item-icon">
-              <Add size="16px" />
-            </div>
-            <div>Create new drive</div>
-          </div>
-        )}
+        {!loading && <CreateDriveButton disabled={isCreateDisabled} onClick={() => setIsCreateDriveOpen(true)} />}
 
         {isCreateDriveOpen && (
           <CreateDriveModal
@@ -131,7 +152,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
           <div className="fm-sidebar-item-icon">
             {isMyDrivesOpen ? <ArrowDown size="16px" /> : <ArrowRight size="16px" />}
           </div>
-          <div className="fm-sidebar-item-icon" style={{ opacity: hovered === 'my-drives' ? 1 : 1 }}>
+          <div className="fm-sidebar-item-icon">
             {hovered === 'my-drives' ? <FolderFill size="16px" /> : <Folder size="16px" />}
           </div>
           <div>My Drives</div>
