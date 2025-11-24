@@ -211,6 +211,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       const existing = taken[0]
       const isTrashedExisting = existing ? isTrashed(existing) : false
 
+      if (!existing && allTakenNames.has(originalName)) {
+        return { cancelled: false, finalName: originalName, isReplace: false }
+      }
+
       const choice = await openConflict({
         originalName,
         existingNames: allTakenNames,
