@@ -56,13 +56,19 @@ export function CreateDriveModal({
     [...(drives || []), ...(expiredDrives || []), ...(adminDrive ? [adminDrive] : [])].map(d => d.name.trim()),
   )
   const nameExists = trimmedName.length > 0 && allExistingDriveNames.has(trimmedName)
-  const validationError = duplicate && nameExists ? 'Drive alreadys exists. Please choose another name.' : ''
+  const validationError = duplicate && nameExists ? 'Drive already exists. Please choose another name.' : ''
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    if (duplicate && !nameExists) {
+      setDuplicate(false)
+    }
+  }, [duplicate, nameExists])
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacityIndex(index)
