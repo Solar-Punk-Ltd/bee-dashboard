@@ -520,6 +520,23 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       if (filesArr.length === 0 || !fm || !currentDrive) return
 
+      const MAX_UPLOAD_FILES = 10
+      const currentlyQueued = queueRef.current.length
+      const newFilesCount = filesArr.length
+      const totalAfterAdd = currentlyQueued + newFilesCount
+
+      if (totalAfterAdd > MAX_UPLOAD_FILES) {
+        setErrorMessage?.(
+          `Cannot upload ${newFilesCount} file${newFilesCount !== 1 ? 's' : ''}. ` +
+            `Currently ${currentlyQueued} file${currentlyQueued !== 1 ? 's are' : ' is'} in queue. ` +
+            `Total after upload will be ${totalAfterAdd} files, but maximum is ${MAX_UPLOAD_FILES}. ` +
+            `Please wait for uploads to complete or reduce the number of files.`,
+        )
+        setShowError(true)
+
+        return
+      }
+
       const preflight = async (): Promise<UploadTask[]> => {
         const progressNames = new Set<string>(
           uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
