@@ -118,8 +118,8 @@ export function CreateDriveModal({
     } else {
       setCost('0')
       setIsCreateEnabled(false)
-    } 
- }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName, isAdminFull])
+    }
+  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName, isAdminFull])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
