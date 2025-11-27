@@ -60,6 +60,7 @@ export function InitialModal({
   const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
   const [selectedBatch, setSelectedBatch] = useState<PostageBatch | null>(null)
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
+  const [isNodeSyncing, setIsNodeSyncing] = useState(true)
 
   const { walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
@@ -113,13 +114,18 @@ export function InitialModal({
 
   useEffect(() => {
     const getStamps = async () => {
-      const stamps = (await getUsableStamps(beeApi)).filter(s => {
-        const { capacityPct } = calculateStampCapacityMetrics(s)
+      try {
+        const stamps = (await getUsableStamps(beeApi)).filter(s => {
+          const { capacityPct } = calculateStampCapacityMetrics(s)
 
-        return capacityPct < 100
-      })
+          return capacityPct < 100
+        })
 
-      safeSetState(isMountedRef, setUsableStamps)([...stamps])
+        safeSetState(isMountedRef, setUsableStamps)([...stamps])
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to fetch stamps, node may still be syncing:', error)
+      }
     }
 
     if (beeApi) {
@@ -142,6 +148,7 @@ export function InitialModal({
         erasureCodeLevel,
         beeApi,
         (cost: BZZ) => {
+          safeSetState(isMountedRef, setIsNodeSyncing)(false)
           setIsBalanceSufficient(true)
           setIsxDaiBalanceSufficient(true)
 
@@ -158,17 +165,22 @@ export function InitialModal({
           safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
         },
         currentFetch,
+        () => {
+          safeSetState(isMountedRef, setIsNodeSyncing)(true)
+          safeSetState(isMountedRef, setCost)('0')
+        },
       )
 
-      if (lifetimeIndex >= 0) {
+      if (lifetimeIndex >= 0 && !isNodeSyncing) {
         setIsCreateEnabled(true)
+      } else {
+        setIsCreateEnabled(false)
       }
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [validityEndDate, beeApi, capacity, lifetimeIndex, walletBalance])
+  }, [validityEndDate, erasureCodeLevel, beeApi, capacity, lifetimeIndex, walletBalance, isNodeSyncing])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -232,6 +244,16 @@ export function InitialModal({
         )}
         {!selectedBatch && (
           <div className="fm-modal-window-body">
+            {isNodeSyncing && (
+              <div className="fm-modal-info-warning" style={{ marginBottom: '16px' }}>
+                The node is still syncing. Please wait until the node is fully initialized before creating an admin
+                stamp.
+                <br />
+                <br />
+                This usually takes a few moments after the node starts. The button will be enabled automatically once
+                the node is ready.
+              </div>
+            )}
             <div className="fm-modal-window-input-container">
               <label htmlFor="admin-desired-lifetime" className="fm-input-label">
                 Create a new Admin Drive with desired lifetime: <Tooltip label={TOOLTIPS.ADMIN_DESIRED_LIFETIME} />
@@ -262,8 +284,14 @@ export function InitialModal({
               <div className="fm-modal-estimated-cost-container">
                 <div className="fm-emphasized-text">Estimated Cost:</div>
                 <div>
-                  {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
-                  {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
+                  {isNodeSyncing ? (
+                    <span style={{ color: '#999' }}>Calculating...</span>
+                  ) : (
+                    <>
+                      {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                      {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
+                    </>
+                  )}
                 </div>
                 <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
               </div>
@@ -275,15 +303,23 @@ export function InitialModal({
           <Button
             label={selectedBatch ? `${createText} Drive` : `Purchase Stamp & ${createText} Drive`}
             variant="primary"
-            disabled={selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient}
+            disabled={
+              selectedBatch
+                ? false
+                : !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient || isNodeSyncing
+            }
             onClick={createAdminDrive}
           />
           <Tooltip
-            label={
-              selectedBatch
+            label={(() => {
+              if (isNodeSyncing && !selectedBatch) {
+                return 'Please wait for the node to finish syncing before creating an admin stamp.'
+              }
+
+              return selectedBatch
                 ? TOOLTIPS.ADMIN_PURCHASE_BUTTON_ALREADY_EXISTED_ADMIN_DRIVE
                 : TOOLTIPS.ADMIN_PURCHASE_BUTTON
-            }
+            })()}
           />
         </div>
       </div>
