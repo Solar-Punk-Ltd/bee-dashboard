@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.33.2](https://github.com/ethersphere/bee-dashboard/compare/v0.33.1...v0.33.2) (2025-11-14)
+
+
+### Bug Fixes
+
+* clarify installation instructions in README ([#707](https://github.com/ethersphere/bee-dashboard/issues/707)) ([82e7c78](https://github.com/ethersphere/bee-dashboard/commit/82e7c78a818b46031b040f92e9a9491003c9bd92))
+
+## [0.33.1](https://github.com/ethersphere/bee-dashboard/compare/v0.33.0...v0.33.1) (2025-11-13)
+
+
+### Bug Fixes
+
+* put back external wallet balance context ([#704](https://github.com/ethersphere/bee-dashboard/issues/704)) ([096522a](https://github.com/ethersphere/bee-dashboard/commit/096522aa8a2f11afb0061a6fedbae241967408ef))
+
+## [0.33.0](https://github.com/ethersphere/bee-dashboard/compare/v0.32.0...v0.33.0) (2025-11-12)
+
+
+### Features
+
+* bee-js revamp ([#690](https://github.com/ethersphere/bee-dashboard/issues/690)) ([1249c0d](https://github.com/ethersphere/bee-dashboard/commit/1249c0df71baec331cb3f2661e0a08648d924406))
+* FileManager ([#98](https://github.com/ethersphere/bee-dashboard/issues/98)) ([#703](https://github.com/ethersphere/bee-dashboard/issues/703)) ([5bfe2a0](https://github.com/ethersphere/bee-dashboard/commit/5bfe2a033118dde43b4cd221830741a427882922))
+
 ## [0.32.0](https://github.com/ethersphere/bee-dashboard/compare/v0.31.0...v0.32.0) (2025-02-12)
 
 

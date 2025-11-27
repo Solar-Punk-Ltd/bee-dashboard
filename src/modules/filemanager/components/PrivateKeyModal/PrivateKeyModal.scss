@@ -100,7 +100,7 @@
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .fm-initialization-modal-container .fm-modal-window-header {

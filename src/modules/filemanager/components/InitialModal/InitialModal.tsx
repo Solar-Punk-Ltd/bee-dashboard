@@ -28,7 +28,7 @@ interface InitialModalProps {
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 
-const BATCH_ID_PLACEHOLDER = 'Existing Admin Drive selection...'
+const BATCH_ID_PLACEHOLDER = 'Choose a saved Drive, or leave blank to create a new one'
 
 const createBatchIdOptions = (stamps: PostageBatch[]) => [
   { label: BATCH_ID_PLACEHOLDER, value: -1 },

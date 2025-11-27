@@ -673,7 +673,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       void (async () => {
         const tasks = await preflight()
         queueRef.current = queueRef.current.concat(tasks)
-
         runQueue()
       })()
     },
