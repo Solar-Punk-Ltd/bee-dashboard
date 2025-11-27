@@ -16,11 +16,22 @@ interface GetInfoModalProps {
 export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const timeoutRef = useState<{ [key: string]: NodeJS.Timeout }>({})[0]
+
   const handleCopy = async (prop: FileProperty) => {
     try {
       await navigator.clipboard.writeText(prop.raw ?? prop.value)
+
+      if (timeoutRef[prop.key]) {
+        clearTimeout(timeoutRef[prop.key])
+      }
+
       setCopiedKey(prop.key)
-      window.setTimeout(() => setCopiedKey(null), 1200)
+
+      timeoutRef[prop.key] = setTimeout(() => {
+        setCopiedKey(prev => (prev === prop.key ? null : prev))
+        delete timeoutRef[prop.key]
+      }, 2000)
     } catch {
       /* noop */
     }
@@ -45,20 +56,20 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
                 {group.properties.map(prop => (
                   <div key={prop.key} className="fm-get-info-modal-property-row">
                     <span className="fm-get-info-modal-property-label">{prop.label}</span>
-                    <span className="fm-get-info-modal-property-value">
-                      {prop.value}
-                      {(prop.raw || prop.value.includes('...')) && (
-                        <button
-                          className="fm-copy-btn"
-                          onClick={() => handleCopy(prop)}
-                          aria-label={`Copy ${prop.label}`}
-                          type="button"
-                          title={copiedKey === prop.key ? 'Copied!' : 'Copy'}
-                        >
-                          <ClipboardIcon size="14px" />
-                        </button>
-                      )}
-                    </span>
+                    {prop.raw || prop.value.includes('...') ? (
+                      <button
+                        className="fm-get-info-modal-property-value fm-copyable-value"
+                        onClick={() => handleCopy(prop)}
+                        aria-label={`Copy ${prop.label}`}
+                        type="button"
+                      >
+                        <ClipboardIcon size="12px" />
+                        <span className="fm-copyable-value-text">{prop.value}</span>
+                        {copiedKey === prop.key && <span className="fm-copied-indicator">Copied!</span>}
+                      </button>
+                    ) : (
+                      <span className="fm-get-info-modal-property-value">{prop.value}</span>
+                    )}
                   </div>
                 ))}
               </div>
