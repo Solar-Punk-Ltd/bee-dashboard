@@ -47,6 +47,11 @@ export function CreateDriveModal({
   const { walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm, drives, expiredDrives, adminDrive } = useContext(FMContext)
+
+  const capacityCheck = fm?.canCreateDrive()
+  const isAdminFull = !capacityCheck?.canCreate
+  const adminCapacityMessage = capacityCheck?.message
+
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
   const [duplicate, setDuplicate] = useState(false)
@@ -108,13 +113,13 @@ export function CreateDriveModal({
         currentFetch,
       )
 
-      const canCreate = Boolean(trimmedName) && !nameExists
+      const canCreate = Boolean(trimmedName) && !nameExists && !isAdminFull
       setIsCreateEnabled(canCreate)
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName])
+  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName, isAdminFull])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -194,10 +199,16 @@ export function CreateDriveModal({
           </div>
         </div>
         <div className="fm-modal-window-footer">
+          {isAdminFull && (
+            <div className="fm-modal-info-warning" style={{ marginRight: 'auto', color: '#b45309' }}>
+              {adminCapacityMessage ||
+                'Admin drive capacity is full. Please top up the admin drive to create new drives.'}
+            </div>
+          )}
           <Button
             label="Create drive"
             variant="primary"
-            disabled={!isCreateEnabled || !isBalanceSufficient}
+            disabled={!isCreateEnabled || !isBalanceSufficient || isAdminFull}
             onClick={async () => {
               if (!trimmedName || nameExists) {
                 setDuplicate(true)
