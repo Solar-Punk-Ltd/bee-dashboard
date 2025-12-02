@@ -1,6 +1,6 @@
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
-import { BZZ, Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BeeModes, BZZ, DAI, Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './CreateDriveModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -22,7 +22,7 @@ const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 interface CreateDriveModalProps {
   onCancelClick: () => void
   onDriveCreated: () => void
-  onCreationStarted: () => void
+  onCreationStarted: (driveName: string) => void
   onCreationError: (name: string) => void
 }
 // TODO: select existing batch id or create a new one - just like in InitialModal
@@ -34,6 +34,7 @@ export function CreateDriveModal({
 }: CreateDriveModalProps): ReactElement {
   const [isCreateEnabled, setIsCreateEnabled] = useState(false)
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
+  const [isxDaiBalanceSufficient, setIsxDaiBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(0)
   const [lifetimeIndex, setLifetimeIndex] = useState(-1)
   const [validityEndDate, setValidityEndDate] = useState(new Date())
@@ -44,7 +45,7 @@ export function CreateDriveModal({
   const [cost, setCost] = useState('0')
 
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
-  const { walletBalance } = useContext(BeeContext)
+  const { walletBalance, nodeInfo } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm, drives, expiredDrives, adminDrive } = useContext(FMContext)
   const currentFetch = useRef<Promise<void> | null>(null)
@@ -99,11 +100,18 @@ export function CreateDriveModal({
           if (!isMountedRef.current) return
 
           setIsBalanceSufficient(true)
+          setIsxDaiBalanceSufficient(true)
 
           if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
             setIsBalanceSufficient(false)
           }
           setCost(cost.toSignificantDigits(2))
+
+          const zeroDAI = DAI.fromDecimalString('0')
+
+          if ((walletBalance && zeroDAI.eq(walletBalance.nativeTokenBalance)) || !walletBalance) {
+            setIsxDaiBalanceSufficient(false)
+          }
         },
         currentFetch,
       )
@@ -119,6 +127,9 @@ export function CreateDriveModal({
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
   }, [lifetimeIndex])
+
+  const isUltraLightNode = nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT
+  const isCreateDriveDisabled = isUltraLightNode || !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient
 
   return (
     <div className="fm-modal-container">
@@ -186,18 +197,31 @@ export function CreateDriveModal({
               <div className="fm-emphasized-text">Estimated Cost:</div>
               <div>
                 {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
               </div>
-
               <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} bottomTooltip={true} />
             </div>
             <div>(Based on current network conditions)</div>
+            {isUltraLightNode && (
+              <div>
+                Creating a drive requires running a light node. Please{' '}
+                <a
+                  href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  upgrade
+                </a>{' '}
+                to continue.
+              </div>
+            )}
           </div>
         </div>
         <div className="fm-modal-window-footer">
           <Button
             label="Create drive"
             variant="primary"
-            disabled={!isCreateEnabled || !isBalanceSufficient}
+            disabled={isCreateDriveDisabled}
             onClick={async () => {
               if (!trimmedName || nameExists) {
                 setDuplicate(true)
@@ -206,7 +230,7 @@ export function CreateDriveModal({
               }
 
               if (isCreateEnabled && fm && beeApi && walletBalance) {
-                onCreationStarted()
+                onCreationStarted(driveName)
                 onCancelClick()
 
                 await handleCreateDrive(

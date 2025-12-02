@@ -93,6 +93,8 @@
   align-items: center;
   padding: 24px;
   box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .fm-initialization-modal-container .fm-modal-window {

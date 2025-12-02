@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { BeeModes, BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import './InitialModal.scss'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
 import { Button } from '../Button/Button'
@@ -62,7 +62,7 @@ export function InitialModal({
   const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
   const [isNodeSyncing, setIsNodeSyncing] = useState(true)
 
-  const { walletBalance } = useContext(BeeContext)
+  const { walletBalance, nodeInfo } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm } = useContext(FMContext)
 
@@ -202,6 +202,13 @@ export function InitialModal({
   const initText = resetState ? 'Resetting' : 'Initializing'
   const createText = resetState ? 'Reset' : 'Create'
 
+  const isUltraLightNode = nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT
+
+  const isCreateDriveDisabled =
+    isUltraLightNode ||
+    isNodeSyncing ||
+    (selectedBatch ? false : !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient)
+
   return (
     <div className="fm-initialization-modal-container">
       <div className="fm-modal-window">
@@ -210,16 +217,15 @@ export function InitialModal({
         {usableStamps.length > 0 && (
           <div className="fm-modal-window-body">
             <div className="fm-modal-window-input-container">
-              <label htmlFor="admin-desired-lifetime" className="fm-input-label">
-                If you have previously created an Admin Drive, you can continue using it{' '}
-                <Tooltip label={TOOLTIPS.ADMIN_PREVIOUSLY_CREATED} />
+              {/* <label htmlFor="admin-desired-lifetime" className="fm-input-label">
+                Link an existing Admin Drive (optional)
               </label>
-              <br />
+              <br /> */}
               <CustomDropdown
                 id="batch-id-selector"
                 options={createBatchIdOptions(usableStamps)}
                 value={selectedBatchIndex}
-                label="Use an existing Admin Drive:"
+                label="Link an existing Admin Drive (optional)"
                 onChange={(index: number) => {
                   setSelectedBatchIndex(index)
 
@@ -244,16 +250,6 @@ export function InitialModal({
         )}
         {!selectedBatch && (
           <div className="fm-modal-window-body">
-            {isNodeSyncing && (
-              <div className="fm-modal-info-warning" style={{ marginBottom: '16px' }}>
-                The node is still syncing. Please wait until the node is fully initialized before creating an admin
-                stamp.
-                <br />
-                <br />
-                This usually takes a few moments after the node starts. The button will be enabled automatically once
-                the node is ready.
-              </div>
-            )}
             <div className="fm-modal-window-input-container">
               <label htmlFor="admin-desired-lifetime" className="fm-input-label">
                 Create a new Admin Drive with desired lifetime: <Tooltip label={TOOLTIPS.ADMIN_DESIRED_LIFETIME} />
@@ -284,18 +280,44 @@ export function InitialModal({
               <div className="fm-modal-estimated-cost-container">
                 <div className="fm-emphasized-text">Estimated Cost:</div>
                 <div>
-                  {isNodeSyncing ? (
-                    <span style={{ color: '#999' }}>Calculating...</span>
-                  ) : (
-                    <>
-                      {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
-                      {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
-                    </>
-                  )}
+                  {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                  {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
                 </div>
                 <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
               </div>
               <div>(Based on current network conditions)</div>
+              {isUltraLightNode && selectedBatch && (
+                <div>
+                  {resetState ? 'Resetting' : 'Creating'} a drive requires running a light node. Please{' '}
+                  <a
+                    href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    upgrade
+                  </a>{' '}
+                  to continue.
+                </div>
+              )}
+              {isUltraLightNode && !selectedBatch && (
+                <div>
+                  Purchasing a stamp and {resetState ? 'resetting' : 'creating'} a drive requires running a light node.
+                  Please{' '}
+                  <a
+                    href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    upgrade
+                  </a>{' '}
+                  to continue.
+                </div>
+              )}
+              {isNodeSyncing && !selectedBatch && (
+                <div className="fm-modal-info-warning" style={{ marginBottom: '16px' }}>
+                  Node is syncing. Please wait until sync completes before purchasing a stamp.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -303,23 +325,15 @@ export function InitialModal({
           <Button
             label={selectedBatch ? `${createText} Drive` : `Purchase Stamp & ${createText} Drive`}
             variant="primary"
-            disabled={
-              selectedBatch
-                ? false
-                : !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient || isNodeSyncing
-            }
+            disabled={isCreateDriveDisabled}
             onClick={createAdminDrive}
           />
           <Tooltip
-            label={(() => {
-              if (isNodeSyncing && !selectedBatch) {
-                return 'Please wait for the node to finish syncing before creating an admin stamp.'
-              }
-
-              return selectedBatch
+            label={
+              selectedBatch
                 ? TOOLTIPS.ADMIN_PURCHASE_BUTTON_ALREADY_EXISTED_ADMIN_DRIVE
                 : TOOLTIPS.ADMIN_PURCHASE_BUTTON
-            })()}
+            }
           />
         </div>
       </div>

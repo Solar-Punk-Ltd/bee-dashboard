@@ -158,7 +158,7 @@ interface TransferProps {
 }
 
 export function useTransfers({ setErrorMessage }: TransferProps) {
-  const { fm, currentDrive, currentStamp, files, setShowError } = useContext(FMContext)
+  const { fm, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -390,6 +390,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
+
+        if (currentStamp) {
+          await refreshStamp(currentStamp.batchID.toString())
+        }
       } catch {
         const wasCancelled = cancelledUploadingRef.current.has(task.finalName)
 
@@ -412,7 +416,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         cancelledNamesRef.current.delete(task.finalName)
       }
     },
-    [fm, trackUpload],
+    [fm, currentStamp, trackUpload, refreshStamp],
   )
 
   const trackDownload = useCallback(
@@ -440,7 +444,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           driveName,
           TransferStatus.Downloading,
         )
-        row.startedAt = undefined
+        row.startedAt = undefined // Downloads start timing when first progress is received
         const idx = prev.findIndex(p => p.name === props.name)
 
         if (idx === -1) return [...prev, row]
@@ -541,6 +545,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         const progressNames = new Set<string>(
           uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
         )
+        const sameDrive = collectSameDrive(currentDrive.id.toString())
+        const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
         const reserved = new Set<string>()
         const tasks: UploadTask[] = []
 
@@ -557,15 +563,22 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
-          const sameDrive = collectSameDrive(currentDrive.id.toString())
-
           const allTaken = new Set<string>([
-            ...Array.from(sameDrive.map(fi => fi.name)),
+            ...Array.from(onDiskNames),
             ...Array.from(reserved),
             ...Array.from(progressNames),
           ])
 
           if (file.size > remainingBytes) {
+            // eslint-disable-next-line no-console
+            console.log(
+              'Skipping upload - insufficient space:',
+              file.name,
+              'size:',
+              file.size,
+              'remaining:',
+              remainingBytes,
+            )
             setErrorMessage?.('There is not enough space to upload: ' + file.name)
             setShowError(true)
 
@@ -636,9 +649,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       const runQueue = async () => {
-        if (runningRef.current) {
-          return
-        }
+        if (runningRef.current) return
         runningRef.current = true
 
         try {
