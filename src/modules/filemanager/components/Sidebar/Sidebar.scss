@@ -38,6 +38,17 @@
     padding: 8px;
     padding-left: 36px;
   }
+
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.fm-sidebar-hint {
+  color: #b45309;
+  font-size: 12px;
+  margin: 6px 12px;
 }
 
 .fm-sidebar-drive-creation {

@@ -43,6 +43,58 @@ const createBatchIdOptions = (stamps: PostageBatch[]) => [
   }),
 ]
 
+const checkBalances = (
+  walletBalance: { bzzBalance: BZZ; nativeTokenBalance: DAI } | null | undefined,
+  cost: BZZ,
+  setIsBalanceSufficient: (value: boolean) => void,
+  setIsxDaiBalanceSufficient: (value: boolean) => void,
+) => {
+  setIsBalanceSufficient(true)
+  setIsxDaiBalanceSufficient(true)
+
+  if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
+    setIsBalanceSufficient(false)
+  }
+
+  const zeroDAI = DAI.fromDecimalString('0')
+
+  if ((walletBalance && zeroDAI.eq(walletBalance.nativeTokenBalance)) || !walletBalance) {
+    setIsxDaiBalanceSufficient(false)
+  }
+}
+
+const renderUltraLightNodeWarning = (selectedBatch: PostageBatch | null, resetState: boolean) => {
+  if (selectedBatch) {
+    return (
+      <div>
+        {resetState ? 'Resetting' : 'Creating'} a drive requires running a light node. Please{' '}
+        <a
+          href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+          target="_blank"
+          rel="noreferrer"
+        >
+          upgrade
+        </a>{' '}
+        to continue.
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      Purchasing a stamp and {resetState ? 'resetting' : 'creating'} a drive requires running a light node. Please{' '}
+      <a
+        href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+        target="_blank"
+        rel="noreferrer"
+      >
+        upgrade
+      </a>{' '}
+      to continue.
+    </div>
+  )
+}
+
 export function InitialModal({
   resetState,
   setIsCreationInProgress,
@@ -149,19 +201,7 @@ export function InitialModal({
         beeApi,
         (cost: BZZ) => {
           safeSetState(isMountedRef, setIsNodeSyncing)(false)
-          setIsBalanceSufficient(true)
-          setIsxDaiBalanceSufficient(true)
-
-          if ((walletBalance && cost.gte(walletBalance.bzzBalance)) || !walletBalance) {
-            safeSetState(isMountedRef, setIsBalanceSufficient)(false)
-          }
-
-          const zeroDAI = DAI.fromDecimalString('0')
-
-          if ((walletBalance && zeroDAI.eq(walletBalance.nativeTokenBalance)) || !walletBalance) {
-            safeSetState(isMountedRef, setIsxDaiBalanceSufficient)(false)
-          }
-
+          checkBalances(walletBalance, cost, setIsBalanceSufficient, setIsxDaiBalanceSufficient)
           safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
         },
         currentFetch,
@@ -171,11 +211,7 @@ export function InitialModal({
         },
       )
 
-      if (lifetimeIndex >= 0 && !isNodeSyncing) {
-        setIsCreateEnabled(true)
-      } else {
-        setIsCreateEnabled(false)
-      }
+      setIsCreateEnabled(lifetimeIndex >= 0 && !isNodeSyncing)
     } else {
       setCost('0')
       setIsCreateEnabled(false)
@@ -286,33 +322,7 @@ export function InitialModal({
                 <Tooltip label={TOOLTIPS.ADMIN_ESTIMATED_COST} />
               </div>
               <div>(Based on current network conditions)</div>
-              {isUltraLightNode && selectedBatch && (
-                <div>
-                  {resetState ? 'Resetting' : 'Creating'} a drive requires running a light node. Please{' '}
-                  <a
-                    href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    upgrade
-                  </a>{' '}
-                  to continue.
-                </div>
-              )}
-              {isUltraLightNode && !selectedBatch && (
-                <div>
-                  Purchasing a stamp and {resetState ? 'resetting' : 'creating'} a drive requires running a light node.
-                  Please{' '}
-                  <a
-                    href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    upgrade
-                  </a>{' '}
-                  to continue.
-                </div>
-              )}
+              {isUltraLightNode && renderUltraLightNodeWarning(selectedBatch, resetState)}
               {isNodeSyncing && !selectedBatch && (
                 <div className="fm-modal-info-warning" style={{ marginBottom: '16px' }}>
                   Node is syncing. Please wait until sync completes before purchasing a stamp.

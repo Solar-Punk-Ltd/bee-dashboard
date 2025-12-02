@@ -20,6 +20,28 @@ import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { ADMIN_DRIVE_FULL_MESSAGE, ADMIN_DRIVE_FULL_TOOLTIP } from '../../constants/common'
+
+type CreateDriveButtonProps = { disabled: boolean; onClick: () => void }
+
+function CreateDriveButton({ disabled, onClick }: CreateDriveButtonProps): ReactElement {
+  return (
+    <>
+      <div
+        className={`fm-sidebar-item${disabled ? ' is-disabled' : ''}`}
+        onClick={!disabled ? onClick : undefined}
+        title={disabled ? ADMIN_DRIVE_FULL_TOOLTIP : undefined}
+      >
+        <div className="fm-sidebar-item-icon">
+          <Add size="16px" />
+        </div>
+        <div>Create new drive</div>
+      </div>
+
+      {disabled && <div className="fm-sidebar-hint">{ADMIN_DRIVE_FULL_MESSAGE}</div>}
+    </>
+  )
+}
 
 interface SidebarProps {
   loading: boolean
@@ -50,6 +72,9 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     setShowError,
     syncDrives,
   } = useContext(FMContext)
+
+  const capacityCheck = fm?.canCreateDrive()
+  const isCreateDisabled = !capacityCheck?.canCreate
 
   useEffect(() => {
     let isMounted = true
@@ -106,15 +131,10 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
       <div className="fm-sidebar-content">
         {!loading && (
           <>
-            <div
-              className={`fm-sidebar-item ${isDriveCreationInProgress ? 'disabled' : ''}`}
-              onClick={() => handleCreateNewDrive()}
-            >
-              <div className="fm-sidebar-item-icon">
-                <Add size="16px" />
-              </div>
-              <div>Create new drive</div>
-            </div>
+            <CreateDriveButton
+              disabled={isCreateDisabled || isDriveCreationInProgress}
+              onClick={handleCreateNewDrive}
+            />
             {isDriveCreationInProgress && (
               <div className="fm-sidebar-item-description">
                 wait while drive creation for {creatingDriveName} is in progress
@@ -157,7 +177,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
           <div className="fm-sidebar-item-icon">
             {isMyDrivesOpen ? <ArrowDown size="16px" /> : <ArrowRight size="16px" />}
           </div>
-          <div className="fm-sidebar-item-icon" style={{ opacity: hovered === 'my-drives' ? 1 : 1 }}>
+          <div className="fm-sidebar-item-icon">
             {hovered === 'my-drives' ? <FolderFill size="16px" /> : <Folder size="16px" />}
           </div>
           <div>My Drives</div>

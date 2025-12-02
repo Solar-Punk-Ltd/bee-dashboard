@@ -15,6 +15,7 @@ import { Context as FMContext } from '../../../../providers/FileManager'
 import { getHumanReadableFileSize } from '../../../../utils/file'
 import { Tooltip } from '../Tooltip/Tooltip'
 import { TOOLTIPS } from '../../constants/tooltips'
+import { ADMIN_DRIVE_FULL_MESSAGE } from '../../constants/common'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
@@ -48,6 +49,11 @@ export function CreateDriveModal({
   const { walletBalance, nodeInfo } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
   const { fm, drives, expiredDrives, adminDrive } = useContext(FMContext)
+
+  const capacityCheck = fm?.canCreateDrive()
+  const isAdminFull = !capacityCheck?.canCreate
+  const adminCapacityMessage = capacityCheck?.message
+
   const currentFetch = useRef<Promise<void> | null>(null)
   const isMountedRef = useRef(true)
   const [duplicate, setDuplicate] = useState(false)
@@ -116,20 +122,21 @@ export function CreateDriveModal({
         currentFetch,
       )
 
-      const canCreate = Boolean(trimmedName) && !nameExists
+      const canCreate = Boolean(trimmedName) && !nameExists && !isAdminFull
       setIsCreateEnabled(canCreate)
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName])
+  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName, isAdminFull])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
   }, [lifetimeIndex])
 
   const isUltraLightNode = nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT
-  const isCreateDriveDisabled = isUltraLightNode || !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient
+  const isCreateDriveDisabled =
+    isUltraLightNode || !isCreateEnabled || !isBalanceSufficient || !isxDaiBalanceSufficient || isAdminFull
 
   return (
     <div className="fm-modal-container">
@@ -218,6 +225,11 @@ export function CreateDriveModal({
           </div>
         </div>
         <div className="fm-modal-window-footer">
+          {isAdminFull && (
+            <div className="fm-modal-info-warning" style={{ marginRight: 'auto', color: '#b45309' }}>
+              {adminCapacityMessage || ADMIN_DRIVE_FULL_MESSAGE}
+            </div>
+          )}
           <Button
             label="Create drive"
             variant="primary"
