@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement, useState, useEffect } from 'react'
 import './GetInfoModal.scss'
 import { Button } from '../Button/Button'
 import { createPortal } from 'react-dom'
@@ -17,6 +17,12 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const timeoutRef = useState<{ [key: string]: NodeJS.Timeout }>({})[0]
+
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRef).forEach(timeout => clearTimeout(timeout))
+    }
+  }, [timeoutRef])
 
   const handleCopy = async (prop: FileProperty) => {
     try {
