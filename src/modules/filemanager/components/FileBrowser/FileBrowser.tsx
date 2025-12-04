@@ -200,23 +200,25 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     }
   }
 
+  // TODO: useCallback
   const handleDestroyDriveConfirm = async () => {
     if (!currentDrive) return
 
     setShowDestroyDriveModal(false)
 
-    await handleDestroyDrive(
+    await handleDestroyDrive({
       beeApi,
       fm,
-      currentDrive,
-      () => {
+      drive: currentDrive,
+      drives,
+      onSuccess: () => {
         setShowDestroyDriveModal(false)
       },
-      e => {
+      onError: e => {
         setErrorMessage?.(`Error destroying drive: ${currentDrive.name}: ${e}`)
         setShowError(true)
       },
-    )
+    })
   }
 
   const handleUploadClose = (name: string) => {

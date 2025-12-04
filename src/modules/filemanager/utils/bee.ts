@@ -1,5 +1,5 @@
 import { BatchId, Bee, BZZ, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
-import { FileManagerBase, DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileManagerBase, DriveInfo, FileInfo, estimateDriveListMetadataSize } from '@solarpunkltd/file-manager-lib'
 import { getHumanReadableFileSize } from '../../../utils/file'
 import { indexStrToBigint } from './common'
 
@@ -86,21 +86,44 @@ export const fmFetchCost = async (
   currentFetch.current = null
 }
 
-export const handleCreateDrive = async (
-  beeApi: Bee | null,
-  fm: FileManagerBase | null,
-  size: Size,
-  duration: Duration,
-  label: string,
-  encryption: boolean,
-  erasureCodeLevel: RedundancyLevel,
-  isAdmin: boolean,
-  resetState: boolean,
-  existingBatch: PostageBatch | null,
-  onSuccess?: () => void,
-  onError?: (error: unknown) => void,
-): Promise<void> => {
-  if (!beeApi || !fm) return
+export interface CreateDriveOptions {
+  beeApi: Bee | null
+  fm: FileManagerBase | null
+  size: Size
+  duration: Duration
+  label: string
+  encryption: boolean
+  erasureCodeLevel: RedundancyLevel
+  isAdmin: boolean
+  resetState: boolean
+  existingBatch: PostageBatch | null
+  drives?: DriveInfo[]
+  onSuccess?: () => void
+  onError?: (error: unknown) => void
+}
+
+export const handleCreateDrive = async (options: CreateDriveOptions): Promise<void> => {
+  const {
+    beeApi,
+    fm,
+    size,
+    duration,
+    label,
+    encryption,
+    erasureCodeLevel,
+    isAdmin,
+    resetState,
+    existingBatch,
+    drives,
+    onSuccess,
+    onError,
+  } = { ...options }
+
+  if (!beeApi || !fm) {
+    onError?.('Error creating drive: Bee API or FM is invalid!')
+
+    return
+  }
 
   try {
     let batchId: BatchId
@@ -109,6 +132,17 @@ export const handleCreateDrive = async (
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, erasureCodeLevel)
     } else {
       batchId = existingBatch.batchID
+
+      const estimatedDlSize = estimateDriveListMetadataSize(drives || [])
+      const remainingBytes = existingBatch.remainingSize.toBytes()
+
+      if (remainingBytes < estimatedDlSize) {
+        onError?.(
+          `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes`,
+        )
+
+        return
+      }
     }
 
     await fm.createDrive(batchId, label, isAdmin, erasureCodeLevel, resetState)
@@ -201,14 +235,21 @@ export const calculateStampCapacityMetrics = (
   }
 }
 
-export const handleDestroyDrive = async (
-  beeApi: Bee | null,
-  fm: FileManagerBase | null,
-  drive: DriveInfo,
-  onSuccess?: () => void,
-  onError?: (error: unknown) => void,
-): Promise<void> => {
-  if (!beeApi || !fm) {
+export interface DestroyDriveOptions {
+  beeApi?: Bee | null
+  fm: FileManagerBase | null
+  drive: DriveInfo
+  drives: DriveInfo[]
+  onSuccess?: () => void
+  onError?: (error: unknown) => void
+}
+
+export const handleDestroyDrive = async (options: DestroyDriveOptions): Promise<void> => {
+  const { beeApi, drives, fm, drive, onSuccess, onError } = { ...options }
+
+  if (!beeApi || !fm || !fm.adminStamp) {
+    onError?.('Error destroying drive: Bee API or FM is invalid!')
+
     return
   }
 
@@ -217,6 +258,17 @@ export const handleDestroyDrive = async (
 
     if (!stamp) {
       throw new Error(`Postage stamp (${drive.batchId}) for the current drive (${drive.name}) not found`)
+    }
+
+    const estimatedDlSize = estimateDriveListMetadataSize(drives)
+    const remainingBytes = fm.adminStamp.remainingSize.toBytes()
+
+    if (remainingBytes < estimatedDlSize) {
+      onError?.(
+        `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+      )
+
+      return
     }
 
     const ttlDays = stamp.duration.toDays()
@@ -237,12 +289,9 @@ export const handleDestroyDrive = async (
   }
 }
 
-export const handleForgetDrive = async (
-  fm: FileManagerBase | null,
-  drive: DriveInfo,
-  onSuccess?: () => void,
-  onError?: (error: unknown) => void,
-): Promise<void> => {
+export const handleForgetDrive = async (options: DestroyDriveOptions): Promise<void> => {
+  const { fm, drive, onSuccess, onError } = { ...options }
+
   if (!fm) return
 
   try {

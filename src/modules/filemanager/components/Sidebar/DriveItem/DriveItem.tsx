@@ -26,7 +26,7 @@ interface DriveItemProps {
 }
 
 export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveItemProps): ReactElement {
-  const { fm, setShowError, refreshStamp, files } = useContext(FMContext)
+  const { fm, drives, setShowError, refreshStamp, files } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [isHovered, setIsHovered] = useState(false)
@@ -197,19 +197,20 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           doDestroy={async () => {
             setIsDestroyDriveModalOpen(false)
 
-            await handleDestroyDrive(
+            await handleDestroyDrive({
               beeApi,
               fm,
               drive,
-              () => {
+              drives,
+              onSuccess: () => {
                 setIsDestroyDriveModalOpen(false)
               },
-              e => {
+              onError: e => {
                 setIsDestroyDriveModalOpen(false)
                 setErrorMessage?.(`Error destroying drive: ${drive.name}: ${e}`)
                 setShowError(true)
               },
-            )
+            })
           }}
         />
       )}

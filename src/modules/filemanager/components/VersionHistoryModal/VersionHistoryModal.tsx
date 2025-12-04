@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
 import { Context as FMContext } from '../../../../providers/FileManager'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { estimateFileInfoMetadataSize, FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FeedIndex } from '@ethersphere/bee-js'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
@@ -32,7 +32,7 @@ interface VersionHistoryModalProps {
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
-  const { fm, files, currentDrive } = useContext(FMContext)
+  const { fm, files, currentDrive, currentStamp } = useContext(FMContext)
 
   const localTransfers = useTransfers({})
   const trackDownload = onDownload ?? localTransfers.trackDownload
@@ -180,7 +180,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
 
   const doRestore = useCallback(
     async (versionFi: FileInfo): Promise<void> => {
-      if (!fm || !currentDrive) return
+      if (!fm || !currentDrive || !currentStamp) return
 
       try {
         const restoredFrom = indexStrToBigint(versionFi.version)
@@ -207,6 +207,21 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           },
         }
 
+        const estimatedDlSize = estimateFileInfoMetadataSize()
+        const remainingBytes = currentStamp.remainingSize.toBytes()
+
+        if (remainingBytes < estimatedDlSize) {
+          // TODO: display error
+          // setErrorMessage?.( `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`)
+          // setShowError(true)
+          // eslint-disable-next-line no-console
+          console.error(
+            `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+          )
+
+          return
+        }
+
         await fm.restoreVersion(withMeta)
         onCancelClick()
       } catch (e) {
@@ -214,7 +229,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
         setError(msg)
       }
     },
-    [fm, onCancelClick, currentDrive],
+    [fm, currentStamp, currentDrive, onCancelClick],
   )
 
   const restoreVersion = useCallback(

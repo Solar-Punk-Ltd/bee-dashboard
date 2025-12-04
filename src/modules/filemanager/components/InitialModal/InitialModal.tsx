@@ -111,26 +111,26 @@ export function InitialModal({
     setIsCreationInProgress?.(true)
     handleVisibility(false)
 
-    await handleCreateDrive(
+    await handleCreateDrive({
       beeApi,
       fm,
-      Size.fromBytes(capacity),
-      Duration.fromEndDate(validityEndDate),
-      ADMIN_STAMP_LABEL,
-      false,
+      size: Size.fromBytes(capacity),
+      duration: Duration.fromEndDate(validityEndDate),
+      label: ADMIN_STAMP_LABEL,
+      encryption: false,
       erasureCodeLevel,
-      true,
+      isAdmin: true,
       resetState,
-      selectedBatch,
-      () => {
+      existingBatch: selectedBatch,
+      onSuccess: () => {
         handleVisibility(false)
         setIsCreationInProgress(false)
-      }, // onSuccess
-      () => {
+      },
+      onError: () => {
         handleShowError(true)
         setIsCreationInProgress(false)
-      }, // onError
-    )
+      }, //
+    })
   }, [
     beeApi,
     fm,

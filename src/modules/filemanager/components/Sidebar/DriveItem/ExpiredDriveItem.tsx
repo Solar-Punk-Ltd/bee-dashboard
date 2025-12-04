@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): ReactElement {
-  const { fm, setShowError } = useContext(FMContext)
+  const { fm, drives, setShowError } = useContext(FMContext)
   const [isHovered, setIsHovered] = useState(false)
   const [showForgetConfirm, setShowForgetConfirm] = useState(false)
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
@@ -91,19 +91,20 @@ export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): R
           onConfirm={async () => {
             if (!fm) return
 
-            await handleForgetDrive(
+            await handleForgetDrive({
               fm,
               drive,
-              async () => {
+              drives,
+              onSuccess: async () => {
                 setShowForgetConfirm(false)
                 await onForgot?.()
               },
-              () => {
+              onError: () => {
                 setShowForgetConfirm(false)
                 setErrorMessage?.(`Failed to forget drive ${drive.name}`)
                 setShowError(true)
               },
-            )
+            })
           }}
         />
       )}

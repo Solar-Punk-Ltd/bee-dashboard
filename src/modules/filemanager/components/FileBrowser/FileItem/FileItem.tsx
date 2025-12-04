@@ -12,7 +12,12 @@ import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
-import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import {
+  estimateDriveListMetadataSize,
+  estimateFileInfoMetadataSize,
+  DriveInfo,
+  FileInfo,
+} from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
@@ -149,7 +154,7 @@ export function FileItem({
   )
   // TODO: refactor doTrash, doRecover, doForget to a single function with action param and remove switch case mybe
   const doTrash = useCallback(async () => {
-    if (!fm) return
+    if (!fm || !driveStamp) return
 
     const withMeta: FileInfo = {
       ...fileInfo,
@@ -160,11 +165,23 @@ export function FileItem({
       },
     }
 
+    const estimatedFiSize = estimateFileInfoMetadataSize()
+    const remainingBytes = driveStamp.remainingSize.toBytes()
+
+    if (remainingBytes < estimatedFiSize) {
+      setErrorMessage?.(
+        `Insufficient drive capacity. Required: ~${estimatedFiSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+      )
+      setShowError(true)
+
+      return
+    }
+
     await fm.trashFile(withMeta)
-  }, [fm, fileInfo])
+  }, [fm, driveStamp, fileInfo, setErrorMessage, setShowError])
 
   const doRecover = useCallback(async () => {
-    if (!fm) return
+    if (!fm || !driveStamp) return
 
     const withMeta: FileInfo = {
       ...fileInfo,
@@ -174,14 +191,39 @@ export function FileItem({
         lifecycleAt: new Date().toISOString(),
       },
     }
+
+    const estimatedFiSize = estimateFileInfoMetadataSize()
+    const remainingBytes = driveStamp.remainingSize.toBytes()
+
+    if (remainingBytes < estimatedFiSize) {
+      setErrorMessage?.(
+        `Insufficient drive capacity. Required: ~${estimatedFiSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+      )
+      setShowError(true)
+
+      return
+    }
+
     await fm.recoverFile(withMeta)
-  }, [fm, fileInfo])
+  }, [fm, driveStamp, fileInfo, setErrorMessage, setShowError])
 
   const doForget = useCallback(async () => {
-    if (!fm) return
+    if (!fm || !fm.adminStamp) return
+
+    const estimatedDlSize = estimateDriveListMetadataSize(drives)
+    const remainingBytes = fm.adminStamp.remainingSize.toBytes()
+
+    if (remainingBytes < estimatedDlSize) {
+      setErrorMessage?.(
+        `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+      )
+      setShowError(true)
+
+      return
+    }
 
     await fm.forgetFile(fileInfo)
-  }, [fm, fileInfo])
+  }, [fm, drives, fileInfo, setErrorMessage, setShowError])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
@@ -190,9 +232,26 @@ export function FileItem({
 
   const doRename = useCallback(
     async (newName: string) => {
-      if (!fm || !currentDrive) return
+      if (!fm || !driveStamp || !currentDrive) {
+        setErrorMessage?.('Invalid FM or Current Drive')
+        setShowError(true)
+
+        return
+      }
 
       if (takenNames.has(newName)) throw new Error('name-taken')
+
+      const estimatedDlSize = estimateFileInfoMetadataSize()
+      const remainingBytes = driveStamp.remainingSize.toBytes()
+
+      if (remainingBytes < estimatedDlSize) {
+        setErrorMessage?.(
+          `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes`,
+        )
+        setShowError(true)
+
+        return
+      }
 
       try {
         await fm.upload(
@@ -217,7 +276,7 @@ export function FileItem({
       }
     },
 
-    [fm, currentDrive, fileInfo, takenNames, setErrorMessage, setShowError],
+    [fm, driveStamp, currentDrive, fileInfo, takenNames, setErrorMessage, setShowError],
   )
 
   const MenuItem = ({
@@ -504,6 +563,7 @@ export function FileItem({
           }}
           onProceed={action => {
             setShowDeleteModal(false)
+
             switch (action) {
               case FileAction.Trash:
                 doTrash()
@@ -577,20 +637,21 @@ export function FileItem({
           doDestroy={async () => {
             setShowDestroyDriveModal(false)
 
-            await handleDestroyDrive(
+            await handleDestroyDrive({
               beeApi,
               fm,
-              destroyDrive,
-              () => {
+              drive: destroyDrive,
+              drives,
+              onSuccess: () => {
                 setShowDestroyDriveModal(false)
                 setDestroyDrive(null)
               },
-              e => {
+              onError: e => {
                 setShowDestroyDriveModal(false)
                 setErrorMessage?.(`Error destroying drive: ${destroyDrive.name}: ${e}`)
                 setShowError(true)
               },
-            )
+            })
           }}
         />
       )}
