@@ -17,6 +17,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
+import { truncateNameMiddle } from '../../../utils/common'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -124,7 +125,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       >
         <div className="fm-drive-item-header">
           <div className="fm-drive-item-icon">{isHovered ? <DriveFill size="16px" /> : <Drive size="16px" />}</div>
-          <div>{drive.name}</div>
+          <div>{truncateNameMiddle(drive.name, 35, 8, 8)}</div>
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
