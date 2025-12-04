@@ -18,6 +18,7 @@ import { TOOLTIPS } from '../../constants/tooltips'
 
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
+const maxDriveNameLength = 40
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
@@ -147,6 +148,7 @@ export function CreateDriveModal({
               value={driveName}
               onChange={e => setDriveName(e.target.value)}
               onBlur={() => setDuplicate(true)}
+              maxLength={maxDriveNameLength}
             />
             {validationError && <div className="fm-error-text">{validationError}</div>}
           </div>
