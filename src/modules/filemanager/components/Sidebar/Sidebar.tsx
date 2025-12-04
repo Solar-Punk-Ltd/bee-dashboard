@@ -18,7 +18,7 @@ import { PostageBatch } from '@ethersphere/bee-js'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
-import { getUsableStamps } from '../../utils/bee'
+import { getUsableStamps, validateStampStillExists } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { truncateNameMiddle } from '../../utils/common'
 
@@ -87,10 +87,23 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
       const correspondingStamp = usableStamps.find(s => s.batchID.toString() === currentDrive.batchId.toString())
 
       if (correspondingStamp) {
-        setCurrentStamp(correspondingStamp)
+        validateStampStillExists(beeApi, correspondingStamp.batchID).then(isValid => {
+          if (isValid) {
+            setCurrentStamp(correspondingStamp)
+          } else {
+            getUsableStamps(beeApi).then(freshStamps => {
+              setUsableStamps(freshStamps)
+              const validStamp = freshStamps.find(s => s.batchID.toString() === currentDrive.batchId.toString())
+
+              if (validStamp) {
+                setCurrentStamp(validStamp)
+              }
+            })
+          }
+        })
       }
     }
-  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView])
+  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView, beeApi])
 
   const handleCreateNewDrive = () => {
     if (isDriveCreationInProgress) {
