@@ -7,7 +7,7 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { ActionTag, DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
+import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
@@ -18,19 +18,13 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
-import {
-  capitalizeFirstLetter,
-  Dir,
-  formatBytes,
-  isTrashed,
-  safeSetState,
-  truncateNameMiddle,
-} from '../../../utils/common'
+import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
 import { FileAction } from '../../../constants/transfers'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
 import { guessMime } from '../../../utils/view'
+import { performFileOperation, FileOperation } from '../../../utils/fileOperations'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -149,96 +143,40 @@ export function FileItem({
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
+        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize, driveName })],
         isNewWindow,
       )
     },
-    [handleCloseContext, fm, beeApi, fileInfo, onDownload],
+    [handleCloseContext, fm, beeApi, fileInfo, onDownload, driveName],
   )
-  // TODO: refactor doTrash, doRecover, doForget to a single function with action param and remove switch case mybe
-  const doTrash = useCallback(async () => {
-    if (!fm || !driveStamp || !currentDrive) return
 
-    const withMeta: FileInfo = {
-      ...fileInfo,
-      customMetadata: {
-        ...(fileInfo.customMetadata ?? {}),
-        lifecycle: capitalizeFirstLetter(ActionTag.Trashed),
-        lifecycleAt: new Date().toISOString(),
-      },
-    }
+  const handleFileAction = useCallback(
+    async (operation: FileOperation) => {
+      if (!fm || !driveStamp || !currentDrive) return
 
-    const { ok } = verifyDriveSpace({
-      fm,
-      redundancyLevel: currentDrive.redundancyLevel,
-      stamp: driveStamp,
-      useInfoSize: true,
-      driveId: currentDrive.id.toString(),
-      cb: err => {
-        setErrorMessage?.(err)
-        setShowError(true)
-      },
-    })
+      await performFileOperation({
+        fm,
+        file: fileInfo,
+        redundancyLevel: currentDrive.redundancyLevel,
+        driveId: currentDrive.id.toString(),
+        stamp: driveStamp,
+        adminStamp: fm.adminStamp,
+        operation,
+        onError: err => {
+          setErrorMessage?.(err)
+          setShowError(true)
+        },
+        onSuccess: () => {
+          const stampToRefresh = operation === FileOperation.Forget ? fm.adminStamp : driveStamp
 
-    if (!ok) return
-
-    await fm.trashFile(withMeta)
-
-    refreshStamp(driveStamp.batchID.toString())
-  }, [fm, driveStamp, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
-
-  const doRecover = useCallback(async () => {
-    if (!fm || !driveStamp || !currentDrive) return
-
-    const withMeta: FileInfo = {
-      ...fileInfo,
-      customMetadata: {
-        ...(fileInfo.customMetadata ?? {}),
-        lifecycle: capitalizeFirstLetter(ActionTag.Recovered),
-        lifecycleAt: new Date().toISOString(),
-      },
-    }
-
-    const { ok } = verifyDriveSpace({
-      fm,
-      redundancyLevel: currentDrive.redundancyLevel,
-      stamp: driveStamp,
-      useInfoSize: true,
-      driveId: currentDrive.id.toString(),
-      cb: err => {
-        setErrorMessage?.(err)
-        setShowError(true)
-      },
-    })
-
-    if (!ok) return
-
-    await fm.recoverFile(withMeta)
-
-    refreshStamp(driveStamp.batchID.toString())
-  }, [fm, driveStamp, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
-
-  const doForget = useCallback(async () => {
-    if (!fm || !fm.adminStamp || !currentDrive) return
-
-    const { ok } = verifyDriveSpace({
-      fm,
-      redundancyLevel: currentDrive.redundancyLevel,
-      stamp: fm.adminStamp,
-      useDlSize: true,
-      driveId: currentDrive.id.toString(),
-      cb: err => {
-        setErrorMessage?.(err)
-        setShowError(true)
-      },
-    })
-
-    if (!ok) return
-
-    await fm.forgetFile(fileInfo)
-
-    refreshStamp(fm.adminStamp.batchID.toString())
-  }, [fm, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
+          if (stampToRefresh) {
+            refreshStamp(stampToRefresh.batchID.toString())
+          }
+        },
+      })
+    },
+    [fm, driveStamp, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError],
+  )
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
@@ -408,7 +346,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-                doRecover()
+                handleFileAction(FileOperation.Recover)
               }}
             >
               Restore
@@ -456,7 +394,7 @@ export function FileItem({
     handleDownload,
     handleCloseContext,
     openGetInfo,
-    doRecover,
+    handleFileAction,
     onBulk,
     currentDrive,
     drives,
@@ -585,7 +523,7 @@ export function FileItem({
 
             switch (action) {
               case FileAction.Trash:
-                doTrash()
+                handleFileAction(FileOperation.Trash)
                 break
               case FileAction.Forget:
                 setConfirmForget(true)
@@ -636,7 +574,7 @@ export function FileItem({
           confirmLabel="Forget"
           cancelLabel="Cancel"
           onConfirm={async () => {
-            await doForget()
+            await handleFileAction(FileOperation.Forget)
 
             safeSetState(isMountedRef, setConfirmForget)(false)
           }}

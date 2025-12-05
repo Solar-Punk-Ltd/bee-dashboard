@@ -5,8 +5,9 @@ import { Context as SettingsContext } from '../../../providers/Settings'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes, getFileId, safeSetState } from '../utils/common'
 import { DownloadProgress, TrackDownloadProps } from '../constants/transfers'
-import { getUsableStamps, verifyDriveSpace } from '../utils/bee'
-import { PostageBatch, RedundancyLevel } from '@ethersphere/bee-js'
+import { getUsableStamps } from '../utils/bee'
+import { PostageBatch } from '@ethersphere/bee-js'
+import { performBulkFileOperation, FileOperation } from '../utils/fileOperations'
 
 interface BulkOptions {
   listToRender: FileInfo[]
@@ -79,86 +80,56 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
-        const tracker = trackDownload({ name: fi.name, size: prettySize, expectedSize: expected })
+        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name
+        const tracker = trackDownload({ name: fi.name, size: prettySize, expectedSize: expected, driveName })
         trackers.push(tracker)
       }
 
       await startDownloadingQueue(fm, list, trackers)
     },
-    [fm, trackDownload],
+    [fm, trackDownload, drives],
   )
 
   const bulkTrash = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
 
-      for (const file of list) {
-        try {
-          // TOOD: refactor usage..
-          const currentStamp = driveStamps?.find(s => s.batchID.toString() === file.batchId.toString())
-
-          if (currentStamp) {
-            const { ok } = verifyDriveSpace({
-              fm,
-              redundancyLevel: file.redundancyLevel || RedundancyLevel.OFF,
-              stamp: currentStamp,
-              useInfoSize: true,
-              driveId: file.driveId,
-              cb: () => {
-                setErrorMessage?.('Could not trash file due to insufficient space: ' + file.name)
-                setShowError(true)
-              },
-            })
-
-            if (!ok) break
-
-            // TODO: do not await
-            await fm.trashFile(file)
-          }
-        } catch {
-          // no-op
-        } finally {
+      await performBulkFileOperation({
+        fm,
+        files: list,
+        operation: FileOperation.Trash,
+        stamps: driveStamps || [],
+        onError: error => {
+          setErrorMessage?.(error)
+          setShowError(true)
+        },
+        onFileComplete: file => {
           refreshStamp(file.batchId.toString())
-        }
-      }
+        },
+      })
 
       clearAll()
     },
-    [fm, driveStamps, clearAll, refreshStamp, setShowError, setErrorMessage],
+    [fm, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
   )
 
   const bulkRestore = useCallback(
     async (list: FileInfo[]) => {
       if (!fm || !list?.length) return
 
-      for (const file of list) {
-        try {
-          const currentStamp = driveStamps?.find(s => s.batchID.toString() === file.batchId.toString())
-
-          if (currentStamp) {
-            const { ok } = verifyDriveSpace({
-              fm,
-              redundancyLevel: file.redundancyLevel || RedundancyLevel.OFF,
-              stamp: currentStamp,
-              useInfoSize: true,
-              driveId: file.driveId,
-              cb: () => {
-                setErrorMessage?.('Could not restore file due to insufficient space: ' + file.name)
-                setShowError(true)
-              },
-            })
-
-            if (!ok) break
-
-            // TODO: do not await
-            await fm.recoverFile(file)
-          }
-        } catch {
-          // no-op
-        } finally {
+      await performBulkFileOperation({
+        fm,
+        files: list,
+        operation: FileOperation.Recover,
+        stamps: driveStamps || [],
+        onError: error => {
+          setErrorMessage?.(error)
+          setShowError(true)
+        },
+        onFileComplete: file => {
           refreshStamp(file.batchId.toString())
-        }
-      }
+        },
+      })
 
       clearAll()
     },
@@ -169,33 +140,26 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
     async (list: FileInfo[]) => {
       if (!fm || !fm.adminStamp || !adminDrive || !list?.length) return
 
-      for (const file of list) {
-        try {
-          const { ok } = verifyDriveSpace({
-            fm,
-            redundancyLevel: adminDrive.redundancyLevel,
-            stamp: fm.adminStamp,
-            useDlSize: true,
-            driveId: file.driveId,
-            cb: () => {
-              setErrorMessage?.('Could not restore file due to insufficient space: ' + file.name)
-              setShowError(true)
-            },
-          })
-
-          if (!ok) break
-
-          await fm.forgetFile(file)
-        } catch {
-          // no-op
-        } finally {
-          refreshStamp(fm.adminStamp.batchID.toString())
-        }
-      }
+      await performBulkFileOperation({
+        fm,
+        files: list,
+        operation: FileOperation.Forget,
+        stamps: driveStamps || [],
+        adminStamp: fm.adminStamp,
+        onError: error => {
+          setErrorMessage?.(error)
+          setShowError(true)
+        },
+        onFileComplete: () => {
+          if (fm.adminStamp) {
+            refreshStamp(fm.adminStamp.batchID.toString())
+          }
+        },
+      })
 
       clearAll()
     },
-    [fm, adminDrive, clearAll, refreshStamp, setShowError, setErrorMessage],
+    [fm, adminDrive, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
   )
 
   return useMemo(

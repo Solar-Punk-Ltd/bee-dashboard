@@ -311,7 +311,7 @@ export function InitialModal({
                   </div>
                 </div>
               )}
-              {setSecurityLevel(setErasureCodeLevel)}
+              {selectedBatch && setSecurityLevel(setErasureCodeLevel)}
             </div>
           </div>
         )}

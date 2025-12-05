@@ -430,7 +430,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
       }
 
-      const driveName = currentDrive?.name
+      const driveName = props.driveName ?? currentDrive?.name
 
       let startedAt: number | undefined
       let etaState: ETAState = {
@@ -447,7 +447,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           driveName,
           TransferStatus.Downloading,
         )
-        row.startedAt = undefined // Downloads start timing when first progress is received
+        row.startedAt = undefined
         const idx = prev.findIndex(p => p.name === props.name)
 
         if (idx === -1) return [...prev, row]
@@ -518,7 +518,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       return onProgress
     },
-    [currentDrive?.name],
+    // currentDrive casues rerenders and flickering during the progress tracking
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 
   const uploadFiles = useCallback(
@@ -686,15 +688,17 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           return
         }
 
-        const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
+        if (beeApi) {
+          const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
 
-        if (!stampValid) {
-          setErrorMessage?.(
-            'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
-          )
-          setShowError(true)
+          if (!stampValid) {
+            setErrorMessage?.(
+              'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
+            )
+            setShowError(true)
 
-          return
+            return
+          }
         }
 
         const tasks = await preflight()

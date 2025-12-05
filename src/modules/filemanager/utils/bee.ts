@@ -21,11 +21,7 @@ export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> 
   }
 }
 
-export const validateStampStillExists = async (bee: Bee | null, batchId: BatchId): Promise<boolean> => {
-  if (!bee) {
-    return false
-  }
-
+export const validateStampStillExists = async (bee: Bee, batchId: BatchId): Promise<boolean> => {
   try {
     const stamp = await bee.getPostageBatch(batchId.toString())
 
@@ -289,7 +285,7 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
     onError?.(e)
   }
 }
-// TODO: reuse verification code
+
 export interface DriveSpaceOptions {
   fm: FileManagerBase
   driveId?: string
@@ -327,7 +323,6 @@ export const verifyDriveSpace = (
   const ok = remainingBytes >= totalSize
 
   if (!ok) {
-    // TODO: use cb and check for throw everywhere
     cb?.(
       `Insufficient capacity. Required: ~${getHumanReadableFileSize(
         totalSize,

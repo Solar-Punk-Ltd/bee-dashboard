@@ -223,7 +223,8 @@ export function Provider({ children }: Props) {
       setInitializationError(!success)
 
       if (success) {
-        if (manager.adminStamp) {
+        // need to wait for beeApi to init cause it can set invalid state incorrectly
+        if (manager.adminStamp && beeApi) {
           const isAdminStampValid = await validateStampStillExists(beeApi, manager.adminStamp.batchID)
 
           if (!isAdminStampValid) {
