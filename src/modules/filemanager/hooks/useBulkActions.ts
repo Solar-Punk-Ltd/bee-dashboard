@@ -1,30 +1,52 @@
-import { useCallback, useMemo, useRef, useState, useContext } from 'react'
+import { useCallback, useMemo, useRef, useState, useContext, useEffect } from 'react'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../providers/FileManager'
+import { Context as SettingsContext } from '../../../providers/Settings'
 import { startDownloadingQueue } from '../utils/download'
-import { formatBytes, getFileId } from '../utils/common'
+import { formatBytes, getFileId, safeSetState } from '../utils/common'
 import { DownloadProgress, TrackDownloadProps } from '../constants/transfers'
-import { verifyDriveSpace } from '../utils/bee'
-// TODO: pass currentdrive and drivestamp
-export function useBulkActions(opts: {
+import { getUsableStamps, verifyDriveSpace } from '../utils/bee'
+import { PostageBatch, RedundancyLevel } from '@ethersphere/bee-js'
+
+interface BulkOptions {
   listToRender: FileInfo[]
   trackDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
-}) {
-  const { listToRender, trackDownload } = opts
+  setErrorMessage?: (error: string) => void
+}
 
-  const { fm, adminDrive, refreshStamp } = useContext(FMContext)
+export function useBulkActions({ listToRender, setErrorMessage, trackDownload }: BulkOptions) {
+  const { fm, adminDrive, drives, refreshStamp, setShowError } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [driveStamps, setDriveStamps] = useState<PostageBatch[] | undefined>(undefined)
   const allIds = useMemo(() => listToRender.map(getFileId), [listToRender])
   const selectedCount = useMemo(() => allIds.filter(id => selectedIds.has(id)).length, [allIds, selectedIds])
   const allChecked = useMemo(() => allIds.length > 0 && selectedCount === allIds.length, [allIds.length, selectedCount])
   const someChecked = useMemo(() => selectedCount > 0 && !allChecked, [selectedCount, allChecked])
+  const isMountedRef = useRef(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const selectedFiles = useMemo(
     () => listToRender.filter(fi => selectedIds.has(getFileId(fi))),
     [listToRender, selectedIds],
   )
+  useEffect(() => {
+    isMountedRef.current = true
+
+    const getStamps = async () => {
+      const stamps = await getUsableStamps(beeApi)
+      const stampList = stamps.filter(s => drives.some(d => d.batchId.toString() === s.batchID.toString()))
+
+      safeSetState(isMountedRef, setDriveStamps)(stampList)
+    }
+
+    getStamps()
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [beeApi, drives])
 
   const toggleOne = useCallback((fi: FileInfo, checked: boolean) => {
     const id = getFileId(fi)
@@ -72,19 +94,27 @@ export function useBulkActions(opts: {
 
       for (const file of list) {
         try {
-          // TODO: set errormessage for space error cb()
           // TOOD: refactor usage..
-          // const { ok } = verifyDriveSpace({
-          //   fm,
-          //   redundancyLevel: currentDrive.redundancyLevel,
-          //   stamp: driveStamp,
-          //   useInfoSize: true,
-          //   driveId: file.driveId,
-          // })
+          const currentStamp = driveStamps?.find(s => s.batchID.toString() === file.batchId.toString())
 
-          // if (!ok) return
+          if (currentStamp) {
+            const { ok } = verifyDriveSpace({
+              fm,
+              redundancyLevel: file.redundancyLevel || RedundancyLevel.OFF,
+              stamp: currentStamp,
+              useInfoSize: true,
+              driveId: file.driveId,
+              cb: () => {
+                setErrorMessage?.('Could not trash file due to insufficient space: ' + file.name)
+                setShowError(true)
+              },
+            })
 
-          await fm.trashFile(file)
+            if (!ok) break
+
+            // TODO: do not await
+            await fm.trashFile(file)
+          }
         } catch {
           // no-op
         } finally {
@@ -94,7 +124,7 @@ export function useBulkActions(opts: {
 
       clearAll()
     },
-    [fm, clearAll, refreshStamp],
+    [fm, driveStamps, clearAll, refreshStamp, setShowError, setErrorMessage],
   )
 
   const bulkRestore = useCallback(
@@ -103,17 +133,26 @@ export function useBulkActions(opts: {
 
       for (const file of list) {
         try {
-          // const { ok } = verifyDriveSpace({
-          //   fm,
-          //   redundancyLevel: currentDrive.redundancyLevel,
-          //   stamp: driveStamp,
-          //   useInfoSize: true,
-          //   driveId: file.driveId,
-          // })
+          const currentStamp = driveStamps?.find(s => s.batchID.toString() === file.batchId.toString())
 
-          // if (!ok) return
+          if (currentStamp) {
+            const { ok } = verifyDriveSpace({
+              fm,
+              redundancyLevel: file.redundancyLevel || RedundancyLevel.OFF,
+              stamp: currentStamp,
+              useInfoSize: true,
+              driveId: file.driveId,
+              cb: () => {
+                setErrorMessage?.('Could not restore file due to insufficient space: ' + file.name)
+                setShowError(true)
+              },
+            })
 
-          await fm.recoverFile(file)
+            if (!ok) break
+
+            // TODO: do not await
+            await fm.recoverFile(file)
+          }
         } catch {
           // no-op
         } finally {
@@ -123,7 +162,7 @@ export function useBulkActions(opts: {
 
       clearAll()
     },
-    [fm, refreshStamp, clearAll],
+    [fm, driveStamps, refreshStamp, clearAll, setErrorMessage, setShowError],
   )
 
   const bulkForget = useCallback(
@@ -138,9 +177,13 @@ export function useBulkActions(opts: {
             stamp: fm.adminStamp,
             useDlSize: true,
             driveId: file.driveId,
+            cb: () => {
+              setErrorMessage?.('Could not restore file due to insufficient space: ' + file.name)
+              setShowError(true)
+            },
           })
 
-          if (!ok) return
+          if (!ok) break
 
           await fm.forgetFile(file)
         } catch {
@@ -152,7 +195,7 @@ export function useBulkActions(opts: {
 
       clearAll()
     },
-    [fm, adminDrive, clearAll, refreshStamp],
+    [fm, adminDrive, clearAll, refreshStamp, setShowError, setErrorMessage],
   )
 
   return useMemo(

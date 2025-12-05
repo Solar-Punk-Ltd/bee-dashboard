@@ -238,7 +238,7 @@ export function FileItem({
     await fm.forgetFile(fileInfo)
 
     refreshStamp(fm.adminStamp.batchID.toString())
-  }, [fm, drives, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
+  }, [fm, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
@@ -417,7 +417,7 @@ export function FileItem({
               danger
               onClick={() => {
                 handleCloseContext()
-
+                // TODO: isn't parentDrive === currentDrive?
                 const parentDrive = drives.find(d => d.id.toString() === fileInfo.driveId.toString())
 
                 if (parentDrive) {

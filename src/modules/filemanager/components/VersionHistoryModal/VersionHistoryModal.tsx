@@ -7,11 +7,12 @@ import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
 import { Context as FMContext } from '../../../../providers/FileManager'
-import { estimateFileInfoMetadataSize, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { FeedIndex } from '@ethersphere/bee-js'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
+import { verifyDriveSpace } from '../../utils/bee'
 import { indexStrToBigint, truncateNameMiddle } from '../../utils/common'
 import { VersionsList } from './VersionList/VersionList'
 import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../constants/transfers'
@@ -32,7 +33,7 @@ interface VersionHistoryModalProps {
 }
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
-  const { fm, files, currentDrive, currentStamp } = useContext(FMContext)
+  const { fm, files, currentDrive, currentStamp, refreshStamp } = useContext(FMContext)
 
   const localTransfers = useTransfers({})
   const trackDownload = onDownload ?? localTransfers.trackDownload
@@ -207,24 +208,27 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           },
         }
 
-        // TOOD: use verifyspace instead
-        const estimatedDlSize = estimateFileInfoMetadataSize()
-        const remainingBytes = currentStamp.remainingSize.toBytes()
-
-        if (remainingBytes < estimatedDlSize) {
-          throw new Error(
-            `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the drive.`,
-          )
-        }
+        verifyDriveSpace({
+          fm,
+          redundancyLevel: currentDrive.redundancyLevel,
+          stamp: currentStamp,
+          useInfoSize: true,
+          driveId: versionFi.driveId,
+          cb: err => {
+            throw new Error(err)
+          },
+        })
 
         await fm.restoreVersion(withMeta)
+
+        refreshStamp(versionFi.batchId.toString())
         onCancelClick()
       } catch (e) {
         const msg = (e as Error)?.message || JSON.stringify(e)
         setError(msg)
       }
     },
-    [fm, currentStamp, currentDrive, onCancelClick],
+    [fm, currentStamp, currentDrive, refreshStamp, onCancelClick],
   )
 
   const restoreVersion = useCallback(
