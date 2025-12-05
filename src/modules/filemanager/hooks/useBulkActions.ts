@@ -4,14 +4,15 @@ import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes, getFileId } from '../utils/common'
 import { DownloadProgress, TrackDownloadProps } from '../constants/transfers'
-
+import { verifyDriveSpace } from '../utils/bee'
+// TODO: pass currentdrive and drivestamp
 export function useBulkActions(opts: {
   listToRender: FileInfo[]
   trackDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
 }) {
   const { listToRender, trackDownload } = opts
 
-  const { fm } = useContext(FMContext)
+  const { fm, adminDrive, refreshStamp } = useContext(FMContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const allIds = useMemo(() => listToRender.map(getFileId), [listToRender])
@@ -71,15 +72,29 @@ export function useBulkActions(opts: {
 
       for (const file of list) {
         try {
+          // TODO: set errormessage for space error cb()
+          // TOOD: refactor usage..
+          // const { ok } = verifyDriveSpace({
+          //   fm,
+          //   redundancyLevel: currentDrive.redundancyLevel,
+          //   stamp: driveStamp,
+          //   useInfoSize: true,
+          //   driveId: file.driveId,
+          // })
+
+          // if (!ok) return
+
           await fm.trashFile(file)
         } catch {
           // no-op
+        } finally {
+          refreshStamp(file.batchId.toString())
         }
       }
 
       clearAll()
     },
-    [fm, clearAll],
+    [fm, clearAll, refreshStamp],
   )
 
   const bulkRestore = useCallback(
@@ -88,32 +103,56 @@ export function useBulkActions(opts: {
 
       for (const file of list) {
         try {
+          // const { ok } = verifyDriveSpace({
+          //   fm,
+          //   redundancyLevel: currentDrive.redundancyLevel,
+          //   stamp: driveStamp,
+          //   useInfoSize: true,
+          //   driveId: file.driveId,
+          // })
+
+          // if (!ok) return
+
           await fm.recoverFile(file)
         } catch {
           // no-op
+        } finally {
+          refreshStamp(file.batchId.toString())
         }
       }
 
       clearAll()
     },
-    [fm, clearAll],
+    [fm, refreshStamp, clearAll],
   )
 
   const bulkForget = useCallback(
     async (list: FileInfo[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !fm.adminStamp || !adminDrive || !list?.length) return
 
       for (const file of list) {
         try {
+          const { ok } = verifyDriveSpace({
+            fm,
+            redundancyLevel: adminDrive.redundancyLevel,
+            stamp: fm.adminStamp,
+            useDlSize: true,
+            driveId: file.driveId,
+          })
+
+          if (!ok) return
+
           await fm.forgetFile(file)
         } catch {
           // no-op
+        } finally {
+          refreshStamp(fm.adminStamp.batchID.toString())
         }
       }
 
       clearAll()
     },
-    [fm, clearAll],
+    [fm, adminDrive, clearAll, refreshStamp],
   )
 
   return useMemo(

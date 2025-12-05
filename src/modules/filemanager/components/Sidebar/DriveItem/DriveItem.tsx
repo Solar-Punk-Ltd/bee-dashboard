@@ -15,7 +15,7 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
+import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 
 interface DriveItemProps {
@@ -197,10 +197,11 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           doDestroy={async () => {
             setIsDestroyDriveModalOpen(false)
 
-            await handleDestroyDrive({
+            await handleDestroyAndForgetDrive({
               beeApi,
               fm,
               drive,
+              isDestroy: true,
               onSuccess: () => {
                 setIsDestroyDriveModalOpen(false)
               },

@@ -192,19 +192,16 @@ export function Provider({ children }: Props) {
     }
   }, [fm, syncDrives])
 
-  const refreshStamp = useCallback(
-    async (batchId: string): Promise<PostageBatch | undefined> => {
-      const usableStamps = await getUsableStamps(beeApi)
-      const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
+  const refreshStamp = async (batchId: string): Promise<PostageBatch | undefined> => {
+    const usableStamps = await getUsableStamps(beeApi)
+    const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
 
-      if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
-        setCurrentStamp(refreshedStamp)
-      }
+    if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
+      setCurrentStamp(refreshedStamp)
+    }
 
-      return refreshedStamp
-    },
-    [beeApi, currentStamp],
-  )
+    return refreshedStamp
+  }
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()

@@ -1,6 +1,5 @@
 import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
-import { estimateDriveListMetadataSize, estimateFileInfoMetadataSize } from '@solarpunkltd/file-manager-lib'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState } from '../utils/common'
@@ -11,11 +10,10 @@ import {
   TrackDownloadProps,
   TransferStatus,
 } from '../constants/transfers'
-import { calculateStampCapacityMetrics } from '../utils/bee'
+import { verifyDriveSpace } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
-import { getHumanReadableFileSize } from 'src/utils/file'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -549,11 +547,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         const reserved = new Set<string>()
         const tasks: UploadTask[] = []
 
-        const filesPerDriveLen = fm.fileInfoList.filter(fi => fi.driveId === currentDrive.id).length
-        const estimatedFiSize = estimateFileInfoMetadataSize()
-        const estimatedDlSize = estimateDriveListMetadataSize(fm.getDrives().length, filesPerDriveLen)
+        const allTaken = new Set<string>([
+          ...Array.from(onDiskNames),
+          ...Array.from(reserved),
+          ...Array.from(progressNames),
+        ])
 
-        let { remainingBytes } = calculateStampCapacityMetrics(currentStamp, currentDrive.redundancyLevel)
+        // Track cumulative file sizes for capacity verification
+        let fileSizeSum = 0
 
         const processFile = async (file: File): Promise<UploadTask | null> => {
           if (!currentStamp || !currentStamp.usable) {
@@ -566,20 +567,23 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
-          const allTaken = new Set<string>([
-            ...Array.from(onDiskNames),
-            ...Array.from(reserved),
-            ...Array.from(progressNames),
-          ])
+          fileSizeSum += file.size
 
-          if (file.size + estimatedDlSize + estimatedFiSize > remainingBytes) {
-            const fileSizeStr = getHumanReadableFileSize(file.size)
-            const remainingSizeStr = getHumanReadableFileSize(remainingBytes)
-            const errMsg =
-              'There is not enough space to upload: ' + file.name + ' (' + fileSizeStr + '/' + remainingSizeStr + ')'
-            setErrorMessage?.(errMsg)
-            setShowError(true)
+          const { ok } = verifyDriveSpace({
+            fm,
+            redundancyLevel: currentDrive.redundancyLevel,
+            stamp: currentStamp,
+            useInfoSize: true,
+            useDlSize: true,
+            driveId: currentDrive.id.toString(),
+            fileSize: fileSizeSum,
+            cb: err => {
+              setErrorMessage?.(err + ' (' + file.name + ')')
+              setShowError(true)
+            },
+          })
 
+          if (!ok) {
             return null
           }
 
@@ -608,7 +612,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
             if (!retryInvalidCombo && !retryInvalidName) {
               reserved.add(finalName)
-              remainingBytes -= file.size
 
               ensureQueuedRow(
                 finalName,
@@ -638,7 +641,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
           if (task) {
             tasks.push(task)
-          } else if (file.size > remainingBytes) {
+          } else {
+            // Stop processing remaining files if capacity check failed
             break
           }
         }
@@ -674,7 +678,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           runningRef.current = false
 
           if (queueRef.current.length > 0) {
-            void runQueue()
+            runQueue()
           }
         }
       }

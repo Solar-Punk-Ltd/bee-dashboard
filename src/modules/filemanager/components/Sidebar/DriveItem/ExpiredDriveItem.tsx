@@ -7,7 +7,7 @@ import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
-import { handleForgetDrive } from '../../../utils/bee'
+import { handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 import './DriveItem.scss'
 
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): ReactElement {
-  const { fm, drives, setShowError } = useContext(FMContext)
+  const { fm, setShowError } = useContext(FMContext)
   const [isHovered, setIsHovered] = useState(false)
   const [showForgetConfirm, setShowForgetConfirm] = useState(false)
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
@@ -91,10 +91,10 @@ export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): R
           onConfirm={async () => {
             if (!fm) return
 
-            await handleForgetDrive({
+            await handleDestroyAndForgetDrive({
               fm,
               drive,
-              drives,
+              isDestroy: false,
               onSuccess: async () => {
                 setShowForgetConfirm(false)
                 await onForgot?.()

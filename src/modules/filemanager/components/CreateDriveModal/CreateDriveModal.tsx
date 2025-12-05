@@ -240,7 +240,7 @@ export function CreateDriveModal({
                   duration: Duration.fromEndDate(validityEndDate),
                   label: trimmedName,
                   encryption: encryptionEnabled,
-                  erasureCodeLevel,
+                  redundancyLevel: erasureCodeLevel,
                   isAdmin: false,
                   resetState: false,
                   existingBatch: null,

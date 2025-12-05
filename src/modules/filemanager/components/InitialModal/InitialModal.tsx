@@ -137,7 +137,7 @@ export function InitialModal({
       duration: Duration.fromEndDate(validityEndDate),
       label: ADMIN_STAMP_LABEL,
       encryption: false,
-      erasureCodeLevel,
+      redundancyLevel: erasureCodeLevel,
       isAdmin: true,
       resetState,
       existingBatch: selectedBatch,

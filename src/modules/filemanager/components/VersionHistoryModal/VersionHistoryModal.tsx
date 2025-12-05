@@ -211,15 +211,9 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
         const remainingBytes = currentStamp.remainingSize.toBytes()
 
         if (remainingBytes < estimatedDlSize) {
-          // TODO: display error
-          // setErrorMessage?.( `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`)
-          // setShowError(true)
-          // eslint-disable-next-line no-console
-          console.error(
-            `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
+          throw new Error(
+            `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes. Please top up the drive.`,
           )
-
-          return
         }
 
         await fm.restoreVersion(withMeta)

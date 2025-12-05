@@ -1,11 +1,6 @@
 import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
-import {
-  estimateFileInfoMetadataSize,
-  DriveInfo,
-  FileInfo,
-  estimateDriveListMetadataSize,
-} from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
 
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
@@ -27,7 +22,7 @@ import { capitalizeFirstLetter, Dir, formatBytes, isTrashed, safeSetState } from
 import { FileAction } from '../../../constants/transfers'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
-import { calculateStampCapacityMetrics, getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
+import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -59,7 +54,7 @@ export function FileItem({
   setErrorMessage,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { fm, currentDrive, files, drives, setShowError } = useContext(FMContext)
+  const { fm, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
 
@@ -165,20 +160,24 @@ export function FileItem({
       },
     }
 
-    const estimatedFiSize = estimateFileInfoMetadataSize()
-    const { remainingBytes } = calculateStampCapacityMetrics(driveStamp, currentDrive.redundancyLevel)
+    const { ok } = verifyDriveSpace({
+      fm,
+      redundancyLevel: currentDrive.redundancyLevel,
+      stamp: driveStamp,
+      useInfoSize: true,
+      driveId: currentDrive.id.toString(),
+      cb: err => {
+        setErrorMessage?.(err)
+        setShowError(true)
+      },
+    })
 
-    if (remainingBytes < estimatedFiSize) {
-      setErrorMessage?.(
-        `Insufficient drive capacity. Required: ~${estimatedFiSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
-      )
-      setShowError(true)
-
-      return
-    }
+    if (!ok) return
 
     await fm.trashFile(withMeta)
-  }, [fm, driveStamp, currentDrive, fileInfo, setErrorMessage, setShowError])
+
+    refreshStamp(driveStamp.batchID.toString())
+  }, [fm, driveStamp, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
 
   const doRecover = useCallback(async () => {
     if (!fm || !driveStamp || !currentDrive) return
@@ -192,26 +191,46 @@ export function FileItem({
       },
     }
 
-    const estimatedFiSize = estimateFileInfoMetadataSize()
-    const { remainingBytes } = calculateStampCapacityMetrics(driveStamp, currentDrive.redundancyLevel)
+    const { ok } = verifyDriveSpace({
+      fm,
+      redundancyLevel: currentDrive.redundancyLevel,
+      stamp: driveStamp,
+      useInfoSize: true,
+      driveId: currentDrive.id.toString(),
+      cb: err => {
+        setErrorMessage?.(err)
+        setShowError(true)
+      },
+    })
 
-    if (remainingBytes < estimatedFiSize) {
-      setErrorMessage?.(
-        `Insufficient drive capacity. Required: ~${estimatedFiSize} bytes, Available: ${remainingBytes} bytes. Please top up the admin drive.`,
-      )
-      setShowError(true)
-
-      return
-    }
+    if (!ok) return
 
     await fm.recoverFile(withMeta)
-  }, [fm, driveStamp, currentDrive, fileInfo, setErrorMessage, setShowError])
+
+    refreshStamp(driveStamp.batchID.toString())
+  }, [fm, driveStamp, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
 
   const doForget = useCallback(async () => {
-    if (!fm || !fm.adminStamp) return
+    if (!fm || !fm.adminStamp || !currentDrive) return
+
+    const { ok } = verifyDriveSpace({
+      fm,
+      redundancyLevel: currentDrive.redundancyLevel,
+      stamp: fm.adminStamp,
+      useDlSize: true,
+      driveId: currentDrive.id.toString(),
+      cb: err => {
+        setErrorMessage?.(err)
+        setShowError(true)
+      },
+    })
+
+    if (!ok) return
 
     await fm.forgetFile(fileInfo)
-  }, [fm, drives, fileInfo, setErrorMessage, setShowError])
+
+    refreshStamp(fm.adminStamp.batchID.toString())
+  }, [fm, drives, currentDrive, fileInfo, refreshStamp, setErrorMessage, setShowError])
 
   const showDestroyDrive = useCallback(() => {
     setDestroyDrive(currentDrive || null)
@@ -229,21 +248,19 @@ export function FileItem({
 
       if (takenNames.has(newName)) throw new Error('name-taken')
 
-      const filesPerDriveLen = fm.fileInfoList.filter(fi => fi.driveId === currentDrive.id).length
-      const estimatedFiSize = estimateFileInfoMetadataSize()
-      const estimatedDlSize = estimateDriveListMetadataSize(fm.getDrives().length, filesPerDriveLen)
-      const { remainingBytes } = calculateStampCapacityMetrics(driveStamp, currentDrive.redundancyLevel)
-
-      if (remainingBytes < estimatedDlSize + estimatedFiSize) {
-        setErrorMessage?.(
-          `Insufficient admin drive capacity. Required: ~${estimatedDlSize} bytes, Available: ${remainingBytes} bytes`,
-        )
-        setShowError(true)
-
-        return
-      }
-
       try {
+        verifyDriveSpace({
+          fm,
+          redundancyLevel: currentDrive.redundancyLevel,
+          stamp: driveStamp,
+          useInfoSize: true,
+          useDlSize: true,
+          driveId: currentDrive.id.toString(),
+          cb: err => {
+            throw new Error(err)
+          },
+        })
+
         await fm.upload(
           currentDrive,
           {
@@ -260,13 +277,15 @@ export function FileItem({
             actHistoryAddress: fileInfo.file.historyRef,
           },
         )
+
+        refreshStamp(driveStamp.batchID.toString())
       } catch (e: unknown) {
         setErrorMessage?.(`Error renaming file ${fileInfo.name}`)
         setShowError(true)
       }
     },
 
-    [fm, driveStamp, currentDrive, fileInfo, takenNames, setErrorMessage, setShowError],
+    [fm, driveStamp, currentDrive, fileInfo, takenNames, refreshStamp, setErrorMessage, setShowError],
   )
 
   const MenuItem = ({
@@ -627,10 +646,11 @@ export function FileItem({
           doDestroy={async () => {
             setShowDestroyDriveModal(false)
 
-            await handleDestroyDrive({
+            await handleDestroyAndForgetDrive({
               beeApi,
               fm,
               drive: destroyDrive,
+              isDestroy: true,
               onSuccess: () => {
                 setShowDestroyDriveModal(false)
                 setDestroyDrive(null)
