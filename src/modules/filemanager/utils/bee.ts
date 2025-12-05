@@ -26,7 +26,10 @@ export const validateStampStillExists = async (bee: Bee | null, batchId: BatchId
     const stamp = await bee.getPostageBatch(batchId.toString())
 
     return stamp.usable
-  } catch {
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to validate stamp ${batchId.toString().slice(0, 8)}...:`, error)
+
     return false
   }
 }

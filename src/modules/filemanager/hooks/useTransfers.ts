@@ -552,24 +552,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         let remainingBytes = calculateStampCapacityMetrics(currentStamp || null, currentDrive).remainingBytes
 
         const processFile = async (file: File): Promise<UploadTask | null> => {
-          if (!currentStamp || !currentStamp.usable) {
-            setErrorMessage?.('Stamp is not usable.')
-            setShowError(true)
-
-            return null
-          }
-
-          const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
-
-          if (!stampValid) {
-            setErrorMessage?.(
-              'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
-            )
-            setShowError(true)
-
-            return null
-          }
-
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
@@ -692,6 +674,24 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       void (async () => {
+        if (!currentStamp || !currentStamp.usable) {
+          setErrorMessage?.('Stamp is not usable.')
+          setShowError(true)
+
+          return
+        }
+
+        const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
+
+        if (!stampValid) {
+          setErrorMessage?.(
+            'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
+          )
+          setShowError(true)
+
+          return
+        }
+
         const tasks = await preflight()
         queueRef.current = queueRef.current.concat(tasks)
         runQueue()
