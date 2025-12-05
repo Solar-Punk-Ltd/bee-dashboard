@@ -1,5 +1,6 @@
 import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
+import { Context as SettingsContext } from '../../../providers/Settings'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState } from '../utils/common'
@@ -10,7 +11,7 @@ import {
   TrackDownloadProps,
   TransferStatus,
 } from '../constants/transfers'
-import { verifyDriveSpace } from '../utils/bee'
+import { validateStampStillExists, verifyDriveSpace } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
@@ -160,6 +161,7 @@ interface TransferProps {
 
 export function useTransfers({ setErrorMessage }: TransferProps) {
   const { fm, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -557,13 +559,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         let fileSizeSum = 0
 
         const processFile = async (file: File): Promise<UploadTask | null> => {
-          if (!currentStamp || !currentStamp.usable) {
-            setErrorMessage?.('Stamp is not usable.')
-            setShowError(true)
-
-            return null
-          }
-
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
 
@@ -684,6 +679,24 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       void (async () => {
+        if (!currentStamp || !currentStamp.usable) {
+          setErrorMessage?.('Stamp is not usable.')
+          setShowError(true)
+
+          return
+        }
+
+        const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
+
+        if (!stampValid) {
+          setErrorMessage?.(
+            'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
+          )
+          setShowError(true)
+
+          return
+        }
+
         const tasks = await preflight()
         queueRef.current = queueRef.current.concat(tasks)
         runQueue()
@@ -700,6 +713,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       uploadItems,
       setShowError,
       setErrorMessage,
+      beeApi,
     ],
   )
 

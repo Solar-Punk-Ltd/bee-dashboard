@@ -18,11 +18,19 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
-import { capitalizeFirstLetter, Dir, formatBytes, isTrashed, safeSetState } from '../../../utils/common'
+import {
+  capitalizeFirstLetter,
+  Dir,
+  formatBytes,
+  isTrashed,
+  safeSetState,
+  truncateNameMiddle,
+} from '../../../utils/common'
 import { FileAction } from '../../../constants/transfers'
 import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
+import { guessMime } from '../../../utils/view'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -502,6 +510,8 @@ export function FileItem({
     return <div className="fm-file-item-content">Error</div>
   }
 
+  const mimeType = guessMime(fileInfo.name, fileInfo.customMetadata).split('/')[0]?.toLowerCase() || 'file'
+
   return (
     <div className="fm-file-item-content" onContextMenu={handleItemContextMenu} onClick={handleCloseContext}>
       <div className="fm-file-item-content-item fm-checkbox">
@@ -514,8 +524,8 @@ export function FileItem({
       </div>
 
       <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
-        <GetIconElement icon={fileInfo.name} />
-        {fileInfo.name}
+        <GetIconElement icon={mimeType} />
+        {truncateNameMiddle(fileInfo.name)}
       </div>
 
       {showDriveColumn && (

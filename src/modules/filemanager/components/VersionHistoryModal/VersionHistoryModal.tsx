@@ -12,8 +12,8 @@ import { FeedIndex } from '@ethersphere/bee-js'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 
-import { indexStrToBigint } from '../../utils/common'
-import { VersionsList, truncateNameMiddle } from './VersionList/VersionList'
+import { indexStrToBigint, truncateNameMiddle } from '../../utils/common'
+import { VersionsList } from './VersionList/VersionList'
 import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../constants/transfers'
 import { useTransfers } from '../../hooks/useTransfers'
 
@@ -207,6 +207,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           },
         }
 
+        // TOOD: use verifyspace instead
         const estimatedDlSize = estimateFileInfoMetadataSize()
         const remainingBytes = currentStamp.remainingSize.toBytes()
 
@@ -272,7 +273,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
             <>
               Version history –{' '}
               <span className="vh-title" title={fileInfo.name}>
-                {truncateNameMiddle(fileInfo.name, 56)}
+                {truncateNameMiddle(fileInfo.name)}
               </span>
               {fileInfo && (
                 <span
@@ -310,11 +311,11 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
                 <>
                   Restoring will rename:&nbsp;
                   <b className="vh-name" title={renameConfirm.headName}>
-                    {truncateNameMiddle(renameConfirm.headName, 44)}
+                    {truncateNameMiddle(renameConfirm.headName)}
                   </b>{' '}
                   →{' '}
                   <b className="vh-name" title={renameConfirm.targetName}>
-                    {truncateNameMiddle(renameConfirm.targetName, 44)}
+                    {truncateNameMiddle(renameConfirm.targetName)}
                   </b>
                   .
                 </>

@@ -21,6 +21,23 @@ export const getUsableStamps = async (bee: Bee | null): Promise<PostageBatch[]> 
   }
 }
 
+export const validateStampStillExists = async (bee: Bee | null, batchId: BatchId): Promise<boolean> => {
+  if (!bee) {
+    return false
+  }
+
+  try {
+    const stamp = await bee.getPostageBatch(batchId.toString())
+
+    return stamp.usable
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to validate stamp ${batchId.toString().slice(0, 8)}...:`, error)
+
+    return false
+  }
+}
+
 export const fmGetStorageCost = async (
   capacity: number,
   validityEndDate: Date,
@@ -133,6 +150,14 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     if (!existingBatch) {
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, redundancyLevel)
     } else {
+      const isValid = await validateStampStillExists(beeApi, existingBatch.batchID)
+
+      if (!isValid) {
+        throw new Error(
+          'The stamp is no longer valid or has been deleted. Please select a different stamp from the list.',
+        )
+      }
+
       batchId = existingBatch.batchID
 
       verifyDriveSpace({

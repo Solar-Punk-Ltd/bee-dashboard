@@ -21,7 +21,7 @@ import { TOOLTIPS } from '../../constants/tooltips'
 interface InitialModalProps {
   resetState: boolean
   handleVisibility: (isVisible: boolean) => void
-  handleShowError: (flag: boolean) => void
+  handleShowError: (flag: boolean, errorMessage?: string) => void
   setIsCreationInProgress: (isCreating: boolean) => void
 }
 

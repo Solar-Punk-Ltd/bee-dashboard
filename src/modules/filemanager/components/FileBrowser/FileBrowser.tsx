@@ -23,7 +23,39 @@ import { Context as SettingsContext } from '../../../../providers/Settings'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
 import { FileBrowserModals } from './FileBrowserModals'
 import { FileBrowserContextMenu } from './FileBrowserMenu/FileBrowserContextMenu'
-import { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { ProgressDestroyModal } from '../DestroyDriveModal/DestroyDriveModal'
+
+const renderDestroySpinner = (
+  isDestroying: boolean,
+  isProgressModalOpen: boolean,
+  currentDrive: DriveInfo | undefined,
+  setter: () => void,
+) => {
+  if (isProgressModalOpen && isDestroying && currentDrive) {
+    return <ProgressDestroyModal drive={currentDrive} onMinimize={setter} />
+  }
+
+  return null
+}
+
+const showDestroyModal = (isDestroying: boolean, setter: () => void) => {
+  if (!isDestroying) return null
+
+  return (
+    <div className="fm-refresh-overlay" aria-busy="true" aria-live="polite">
+      <div
+        className="fm-refresh-content"
+        onClick={setter}
+        style={{ cursor: 'pointer' }}
+        title="Click to show progress modal"
+      >
+        <div className="fm-mini-spinner" role="status" aria-label="Destroying drive…" />
+        <span className="fm-refresh-text">Destroying drive…</span>
+      </div>
+    </div>
+  )
+}
 
 const extractFilesFromClipboardEvent = (e: React.ClipboardEvent): File[] => {
   const out: File[] = []
@@ -78,6 +110,8 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [showDestroyDriveModal, setShowDestroyDriveModal] = useState(false)
+  const [isDestroying, setIsDestroying] = useState(false)
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [pendingCancelUpload, setPendingCancelUpload] = useState<string | null>(null)
@@ -205,6 +239,8 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     if (!currentDrive) return
 
     setShowDestroyDriveModal(false)
+    setIsProgressModalOpen(true)
+    setIsDestroying(true)
 
     await handleDestroyAndForgetDrive({
       beeApi,
@@ -469,6 +505,10 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               </div>
             </div>
           )}
+
+          {showDestroyModal(isDestroying, () => setIsProgressModalOpen(true))}
+
+          {renderDestroySpinner(isDestroying, isProgressModalOpen, currentDrive, () => setIsProgressModalOpen(false))}
         </div>
 
         <div className="fm-file-browser-footer">
