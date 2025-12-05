@@ -244,7 +244,6 @@ export function CreateDriveModal({
                   isAdmin: false,
                   resetState: false,
                   existingBatch: null,
-                  drives,
                   onSuccess: () => onDriveCreated(),
                   onError: () => onCreationError(trimmedName),
                 })

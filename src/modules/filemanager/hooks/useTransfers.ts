@@ -1,5 +1,6 @@
 import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
+import { estimateDriveListMetadataSize, estimateFileInfoMetadataSize } from '@solarpunkltd/file-manager-lib'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState } from '../utils/common'
@@ -14,9 +15,11 @@ import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
+import { getHumanReadableFileSize } from 'src/utils/file'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
+const MAX_UPLOAD_FILES = 10
 
 type ResolveResult = {
   cancelled: boolean
@@ -522,9 +525,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     (picked: FileList | File[]): void => {
       const filesArr = Array.from(picked)
 
-      if (filesArr.length === 0 || !fm || !currentDrive) return
+      if (filesArr.length === 0 || !fm || !currentDrive || !currentStamp) return
 
-      const MAX_UPLOAD_FILES = 10
       const currentlyQueued = queueRef.current.length
       const newFilesCount = filesArr.length
       const totalAfterAdd = currentlyQueued + newFilesCount
@@ -537,7 +539,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
         return
       }
-
+      // TODO: move out this function from the cb and use as a util for better readaility
       const preflight = async (): Promise<UploadTask[]> => {
         const progressNames = new Set<string>(
           uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
@@ -547,7 +549,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         const reserved = new Set<string>()
         const tasks: UploadTask[] = []
 
-        let remainingBytes = calculateStampCapacityMetrics(currentStamp || null, currentDrive).remainingBytes
+        const filesPerDriveLen = fm.fileInfoList.filter(fi => fi.driveId === currentDrive.id).length
+        const estimatedFiSize = estimateFileInfoMetadataSize()
+        const estimatedDlSize = estimateDriveListMetadataSize(fm.getDrives().length, filesPerDriveLen)
+
+        let { remainingBytes } = calculateStampCapacityMetrics(currentStamp, currentDrive.redundancyLevel)
 
         const processFile = async (file: File): Promise<UploadTask | null> => {
           if (!currentStamp || !currentStamp.usable) {
@@ -566,17 +572,12 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             ...Array.from(progressNames),
           ])
 
-          if (file.size > remainingBytes) {
-            // eslint-disable-next-line no-console
-            console.log(
-              'Skipping upload - insufficient space:',
-              file.name,
-              'size:',
-              file.size,
-              'remaining:',
-              remainingBytes,
-            )
-            setErrorMessage?.('There is not enough space to upload: ' + file.name)
+          if (file.size + estimatedDlSize + estimatedFiSize > remainingBytes) {
+            const fileSizeStr = getHumanReadableFileSize(file.size)
+            const remainingSizeStr = getHumanReadableFileSize(remainingBytes)
+            const errMsg =
+              'There is not enough space to upload: ' + file.name + ' (' + fileSizeStr + '/' + remainingSizeStr + ')'
+            setErrorMessage?.(errMsg)
             setShowError(true)
 
             return null
