@@ -90,7 +90,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
         setCurrentStamp(correspondingStamp)
       }
     }
-  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView])
+  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView, beeApi])
 
   const handleCreateNewDrive = () => {
     if (isDriveCreationInProgress) {

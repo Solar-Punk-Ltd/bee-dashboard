@@ -21,7 +21,7 @@ import { TOOLTIPS } from '../../constants/tooltips'
 interface InitialModalProps {
   resetState: boolean
   handleVisibility: (isVisible: boolean) => void
-  handleShowError: (flag: boolean) => void
+  handleShowError: (flag: boolean, errorMessage?: string) => void
   setIsCreationInProgress: (isCreating: boolean) => void
 }
 
@@ -126,8 +126,9 @@ export function InitialModal({
         handleVisibility(false)
         setIsCreationInProgress(false)
       }, // onSuccess
-      () => {
-        handleShowError(true)
+      (error: unknown) => {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        handleShowError(true, errorMessage)
         setIsCreationInProgress(false)
       }, // onError
     )
