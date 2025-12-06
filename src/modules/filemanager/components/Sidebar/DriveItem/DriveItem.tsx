@@ -15,7 +15,7 @@ import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { calculateStampCapacityMetrics, handleDestroyDrive } from '../../../utils/bee'
+import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
 
@@ -27,7 +27,7 @@ interface DriveItemProps {
 }
 
 export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveItemProps): ReactElement {
-  const { fm, setShowError, refreshStamp, files } = useContext(FMContext)
+  const { fm, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [isHovered, setIsHovered] = useState(false)
@@ -108,8 +108,8 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   }, [drive.id, setShowError, setErrorMessage, stamp.batchID, refreshStamp])
 
   const { capacityPct, usedSize, totalSize } = useMemo(
-    () => calculateStampCapacityMetrics(actualStamp, drive, files),
-    [actualStamp, drive, files],
+    () => calculateStampCapacityMetrics(actualStamp, drive.redundancyLevel),
+    [actualStamp, drive],
   )
 
   return (
@@ -217,21 +217,20 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
             setIsProgressModalOpen(true)
             setIsDestroying(true)
 
-            await handleDestroyDrive(
+            await handleDestroyAndForgetDrive({
               beeApi,
               fm,
               drive,
-              () => {
-                setIsDestroying(false)
-                setIsProgressModalOpen(false)
+              isDestroy: true,
+              onSuccess: () => {
+                setIsDestroyDriveModalOpen(false)
               },
-              e => {
-                setIsDestroying(false)
-                setIsProgressModalOpen(false)
+              onError: e => {
+                setIsDestroyDriveModalOpen(false)
                 setErrorMessage?.(`Error destroying drive: ${drive.name}: ${e}`)
                 setShowError(true)
               },
-            )
+            })
           }}
         />
       )}

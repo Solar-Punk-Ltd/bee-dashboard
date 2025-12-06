@@ -392,7 +392,7 @@ VersionRow.displayName = 'VersionRow'
 export function VersionsList({ versions, headFi, restoreVersion, onDownload }: VersionListProps) {
   const { handleCloseContext } = useContextMenu<HTMLDivElement>()
 
-  const { fm } = useContext(FMContext)
+  const { fm, drives, currentDrive } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
@@ -424,13 +424,14 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
       if (!fm || !beeApi) return
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
+      const driveName = drives.find(d => d.id.toString() === fileInfo.driveId.toString())?.name ?? currentDrive?.name
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
+        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize, driveName })],
       )
     },
-    [handleCloseContext, fm, beeApi, onDownload],
+    [handleCloseContext, fm, beeApi, onDownload, drives, currentDrive],
   )
 
   if (!versions.length || !fm) return null
