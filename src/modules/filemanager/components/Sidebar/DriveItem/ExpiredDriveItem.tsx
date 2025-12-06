@@ -7,7 +7,7 @@ import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { Context as FMContext } from '../../../../../providers/FileManager'
-import { handleForgetDrive } from '../../../utils/bee'
+import { handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 import './DriveItem.scss'
 import { truncateNameMiddle } from '../../../utils/common'
@@ -92,19 +92,20 @@ export function ExpiredDriveItem({ drive, onForgot, setErrorMessage }: Props): R
           onConfirm={async () => {
             if (!fm) return
 
-            await handleForgetDrive(
+            await handleDestroyAndForgetDrive({
               fm,
               drive,
-              async () => {
+              isDestroy: false,
+              onSuccess: async () => {
                 setShowForgetConfirm(false)
                 await onForgot?.()
               },
-              () => {
+              onError: () => {
                 setShowForgetConfirm(false)
                 setErrorMessage?.(`Failed to forget drive ${drive.name}`)
                 setShowError(true)
               },
-            )
+            })
           }}
         />
       )}

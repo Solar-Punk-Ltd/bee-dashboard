@@ -231,24 +231,24 @@ export function CreateDriveModal({
                 return
               }
 
-              if (isCreateEnabled && fm && beeApi && walletBalance) {
+              if (isCreateEnabled && walletBalance) {
                 onCreationStarted(driveName)
                 onCancelClick()
 
-                await handleCreateDrive(
+                await handleCreateDrive({
                   beeApi,
                   fm,
-                  Size.fromBytes(capacity),
-                  Duration.fromEndDate(validityEndDate),
-                  trimmedName,
-                  encryptionEnabled,
-                  erasureCodeLevel,
-                  false,
-                  false,
-                  null,
-                  () => onDriveCreated(), // onSuccess
-                  () => onCreationError(trimmedName), // onError
-                )
+                  size: Size.fromBytes(capacity),
+                  duration: Duration.fromEndDate(validityEndDate),
+                  label: trimmedName,
+                  encryption: encryptionEnabled,
+                  redundancyLevel: erasureCodeLevel,
+                  isAdmin: false,
+                  resetState: false,
+                  existingBatch: null,
+                  onSuccess: () => onDriveCreated(),
+                  onError: () => onCreationError(trimmedName),
+                })
               }
             }}
           />

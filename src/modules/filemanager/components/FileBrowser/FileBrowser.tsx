@@ -18,7 +18,7 @@ import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 import { Point, Dir, safeSetState } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
-import { handleDestroyDrive } from '../../utils/bee'
+import { handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
 import { FileBrowserModals } from './FileBrowserModals'
@@ -234,6 +234,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     }
   }
 
+  // TODO: useCallback
   const handleDestroyDriveConfirm = async () => {
     if (!currentDrive) return
 
@@ -241,21 +242,24 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     setIsProgressModalOpen(true)
     setIsDestroying(true)
 
-    await handleDestroyDrive(
+    await handleDestroyAndForgetDrive({
       beeApi,
       fm,
-      currentDrive,
-      () => {
+      drive: currentDrive,
+      isDestroy: true,
+      onSuccess: () => {
         setIsDestroying(false)
         setIsProgressModalOpen(false)
+        setShowDestroyDriveModal(false)
       },
-      e => {
+      onError: e => {
         setIsDestroying(false)
         setIsProgressModalOpen(false)
+        setShowDestroyDriveModal(false)
         setErrorMessage?.(`Error destroying drive: ${currentDrive.name}: ${e}`)
         setShowError(true)
       },
-    )
+    })
   }
 
   const handleUploadClose = (name: string) => {
