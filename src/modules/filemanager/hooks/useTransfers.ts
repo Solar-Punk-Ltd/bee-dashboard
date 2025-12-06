@@ -295,7 +295,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       })
 
       const onProgress = (progress: UploadProgress) => {
-        if (cancelledUploadingRef.current.has(name) || !isMountedRef.current) return
+        const signal = uploadAbortsRef.current.getSignal(name)
+
+        if (cancelledUploadingRef.current.has(name) || !isMountedRef.current || signal?.aborted) return
 
         if (progress.total > 0) {
           const now = Date.now()
@@ -386,19 +388,28 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       )
 
       uploadAbortsRef.current.create(task.finalName)
+      const signal = uploadAbortsRef.current.getSignal(task.finalName)
 
       try {
+        if (signal?.aborted) {
+          throw new Error('Upload cancelled')
+        }
+
         await fm.upload(
           taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
 
+        if (signal?.aborted) {
+          throw new Error('Upload cancelled')
+        }
+
         if (currentStamp) {
           await refreshStamp(currentStamp.batchID.toString())
         }
       } catch {
-        const wasCancelled = cancelledUploadingRef.current.has(task.finalName)
+        const wasCancelled = cancelledUploadingRef.current.has(task.finalName) || signal?.aborted
 
         safeSetState(
           isMountedRef,
@@ -778,9 +789,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   }, [])
 
   const dismissAllUploads = useCallback(() => {
-    setUploadItems([])
+    uploadAbortsRef.current.clear()
+    queueRef.current = []
     cancelledNamesRef.current.clear()
     cancelledUploadingRef.current.clear()
+    setUploadItems([])
   }, [])
 
   const dismissAllDownloads = useCallback(() => {

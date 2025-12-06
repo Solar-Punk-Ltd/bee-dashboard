@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext } from 'react'
+import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext, useMemo } from 'react'
 import './FileBrowser.scss'
 import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
 import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
@@ -15,7 +15,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useBulkActions } from '../../hooks/useBulkActions'
 import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 
-import { Point, Dir, safeSetState } from '../../utils/common'
+import { Point, Dir, safeSetState, getFileId } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyAndForgetDrive } from '../../utils/bee'
@@ -158,6 +158,10 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     defaultState: { key: SortKey.Timestamp, dir: SortDir.Desc },
     getDriveName,
   })
+
+  const sortedKey = sorted.map(f => getFileId(f)).join('|')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableSorted = useMemo(() => sorted, [sortedKey])
 
   const bulk = useBulkActions({
     listToRender,
@@ -360,6 +364,18 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const showDragOverlay = isDragging && Boolean(currentDrive)
   const fileCountText = bulk.selectedFiles.length === 1 ? 'file' : 'files'
 
+  // Memoize onBulk object to prevent FileBrowserContent rerenders
+  const onBulk = useMemo(
+    () => ({
+      download: () => bulk.bulkDownload(bulk.selectedFiles),
+      restore: () => bulk.bulkRestore(bulk.selectedFiles),
+      forget: () => bulk.bulkForget(bulk.selectedFiles),
+      destroy: () => setShowDestroyDriveModal(true),
+      delete: () => setShowBulkDeleteModal(true),
+    }),
+    [bulk],
+  )
+
   return (
     <>
       {conflictPortal}
@@ -402,7 +418,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
           >
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
-              listToRender={sorted}
+              listToRender={stableSorted}
               drives={drives}
               currentDrive={currentDrive || null}
               view={view}
@@ -411,13 +427,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               selectedIds={bulk.selectedIds}
               onToggleSelected={bulk.toggleOne}
               bulkSelectedCount={bulk.selectedCount}
-              onBulk={{
-                download: () => bulk.bulkDownload(bulk.selectedFiles),
-                restore: () => bulk.bulkRestore(bulk.selectedFiles),
-                forget: () => bulk.bulkForget(bulk.selectedFiles),
-                destroy: () => setShowDestroyDriveModal(true),
-                delete: () => setShowBulkDeleteModal(true),
-              }}
+              onBulk={onBulk}
               setErrorMessage={setErrorMessage}
             />
             {showError && (
