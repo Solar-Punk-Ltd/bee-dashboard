@@ -174,7 +174,13 @@ export function FileManagerPage(): ReactElement {
         <InitialModal
           resetState={shallReset}
           handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
-          handleShowError={(flag: boolean) => setShowErrorModal(flag)}
+          handleShowError={(flag: boolean, error?: string) => {
+            setShowErrorModal(flag)
+
+            if (error) {
+              setErrorMessage(error)
+            }
+          }}
           setIsCreationInProgress={(isCreating: boolean) => setIsCreationInProgress(isCreating)}
         />
       </div>
@@ -202,6 +208,7 @@ export function FileManagerPage(): ReactElement {
         onClick={() => {
           setShowErrorModal(false)
           setShowInitialModal(true)
+          setErrorMessage('')
         }}
       />
     )
