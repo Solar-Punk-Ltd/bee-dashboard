@@ -252,9 +252,14 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
       drive: currentDrive,
       isDestroy: true,
       onSuccess: () => {
+        setIsDestroying(false)
+        setIsProgressModalOpen(false)
         setShowDestroyDriveModal(false)
       },
       onError: e => {
+        setIsDestroying(false)
+        setIsProgressModalOpen(false)
+        setShowDestroyDriveModal(false)
         setErrorMessage?.(`Error destroying drive: ${currentDrive.name}: ${e}`)
         setShowError(true)
       },

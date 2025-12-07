@@ -268,7 +268,7 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
     const ttlDays = stamp.duration.toDays()
 
     if (ttlDays <= 2 || !isDestroy) {
-      if (!isDestroy) {
+      if (isDestroy) {
         // eslint-disable-next-line no-console
         console.warn(`Stamp TTL ${ttlDays} <= 2 days, skipping drive destruction: forgetting the drive.`)
       }

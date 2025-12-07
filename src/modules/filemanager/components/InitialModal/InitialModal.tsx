@@ -145,8 +145,9 @@ export function InitialModal({
         handleVisibility(false)
         setIsCreationInProgress(false)
       },
-      onError: () => {
-        handleShowError(true)
+      onError: err => {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        handleShowError(true, errorMessage)
         setIsCreationInProgress(false)
       },
     })

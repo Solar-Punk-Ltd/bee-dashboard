@@ -192,6 +192,7 @@ export function Provider({ children }: Props) {
     }
   }, [fm, syncDrives])
 
+  // no useCallback is needed because it caches the stamp
   const refreshStamp = async (batchId: string): Promise<PostageBatch | undefined> => {
     const usableStamps = await getUsableStamps(beeApi)
     const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)

@@ -224,9 +224,13 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
               isDestroy: true,
               onSuccess: () => {
                 setIsDestroyDriveModalOpen(false)
+                setIsDestroying(false)
+                setIsProgressModalOpen(false)
               },
               onError: e => {
                 setIsDestroyDriveModalOpen(false)
+                setIsDestroying(false)
+                setIsProgressModalOpen(false)
                 setErrorMessage?.(`Error destroying drive: ${drive.name}: ${e}`)
                 setShowError(true)
               },
