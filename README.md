@@ -30,6 +30,7 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
   - [Docker](#docker)
 - [Contribute](#contribute)
 - [Development](#development)
+- [File Manager](#file-manager)
 - [Maintainers](#maintainers)
 - [License](#license)
 
@@ -123,6 +124,19 @@ REACT_APP_BEE_DESKTOP_ENABLED=true" > .env.development.local
 npm start
 npm run desktop # This will inject the API key to the Dashboard
 ```
+
+## File Manager
+
+The File Manager module provides intuitive decentralized file storage and management.
+
+For comprehensive documentation, see the [File Manager Documentation](./docs/FILE_MANAGER.md).
+
+### Features
+
+- Create and manage multiple drives with configurable capacity and lifetime
+- Upload, download, and organize files with version control
+- Manage postage stamps required for file uploads
+- Configure erasure coding levels for data redundancy
 
 ## Contribute
 
