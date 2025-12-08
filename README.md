@@ -107,6 +107,9 @@ files. We support following variables:
 - `REACT_APP_DEFAULT_RPC_URL` (`string`) defines the default RPC provider URL. Be aware, that his only configures the
   default value. The user can override this in Settings, which is then persisted in local store and has priority over
   the value set in this env. variable. By default `https://xdai.fairdatasociety.org` is used.
+- `REACT_APP_FORMBRICKS_ENV_ID` and `REACT_APP_FORMBRICKS_APP_URL` (`string`) configures the
+  [Formbricks](https://formbricks.com/) integration for user feedback collection. If these variables are not set, the
+  feedback form is not available in the app.
 
 #### Swarm Desktop development
 
