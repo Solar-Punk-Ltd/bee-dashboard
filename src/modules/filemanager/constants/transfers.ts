@@ -49,6 +49,7 @@ export type TrackDownloadProps = {
   name: string
   size?: string
   expectedSize?: number
+  driveName?: string
 }
 
 export interface DownloadProgress {
