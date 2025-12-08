@@ -3,7 +3,7 @@ import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
-import { formatBytes, safeSetState } from '../utils/common'
+import { formatBytes, safeSetState, truncateNameMiddle } from '../utils/common'
 import {
   DownloadProgress,
   DownloadState,
@@ -586,7 +586,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
             driveId: currentDrive.id.toString(),
             fileSize: fileSizeSum,
             cb: err => {
-              setErrorMessage?.(err + ' (' + file.name + ')')
+              setErrorMessage?.(err + ' (' + truncateNameMiddle(file.name) + ')')
               setShowError(true)
             },
           })
