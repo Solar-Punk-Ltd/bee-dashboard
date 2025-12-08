@@ -393,7 +393,7 @@ Full drag-and-drop support for file uploads:
 ### Uploading Files
 
 **File Selection**
-- User drags files onto browser OR clicks "Upload Files" button
+- User drags files onto browser OR clicks "Upload file(s)" button
 - System receives file list
 
 **Conflict Resolution (per file)**
@@ -445,6 +445,44 @@ Full drag-and-drop support for file uploads:
 - Progress overlay disappears
 - Drive no longer appears in Sidebar
 - If drive was selected: View switches to another drive or empty state
+
+### Downloading Files
+
+**User Initiates Download**
+- User clicks file context menu OR right-clicks file
+- Selects "Download" from menu
+
+**Download Tracking**
+- System creates download transfer item in UI
+- Transfer item shows: file name, size, progress percentage
+- Download panel appears at bottom of screen
+
+**Download Execution**
+- System retrieves file from Swarm using file's topic
+- Uses browser's native download API to save file
+- Progress callbacks update UI in real-time:
+  - Bytes downloaded / total bytes
+  - Download speed
+  - Estimated time remaining (ETA with smoothing)
+  - Elapsed time
+
+**Background Processing**
+- Downloads execute in background
+- User can continue browsing File Manager
+- Multiple downloads can run simultaneously
+- Each download tracks independently
+
+**Completion**
+- On success: Browser saves file to user's downloads folder
+- Transfer item marked as "Done"
+- User can dismiss completed downloads
+- On error: Shows error message, allows retry
+
+**Cancellation**
+- User clicks cancel button on transfer item
+- System aborts HTTP request using AbortController
+- Transfer item marked as "Cancelled"
+- Partial download discarded
 
 ### Search Operation
 
