@@ -4,6 +4,7 @@ import { Context as FMContext } from '../../../providers/FileManager'
 import { startDownloadingQueue } from '../utils/download'
 import { formatBytes, getFileId } from '../utils/common'
 import { DownloadProgress, TrackDownloadProps } from '../constants/transfers'
+import { uuidV4 } from '../../../utils'
 
 export function useBulkActions(opts: {
   listToRender: FileInfo[]
@@ -56,7 +57,7 @@ export function useBulkActions(opts: {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
-        const tracker = trackDownload({ name: fi.name, size: prettySize, expectedSize: expected })
+        const tracker = trackDownload({ uuid: uuidV4(), name: fi.name, size: prettySize, expectedSize: expected })
         trackers.push(tracker)
       }
 

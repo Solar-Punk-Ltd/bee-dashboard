@@ -14,6 +14,7 @@ import { calculateStampCapacityMetrics } from '../utils/bee'
 import { isTrashed } from '../utils/common'
 import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
+import { uuidV4 } from '../../../utils'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -27,6 +28,7 @@ type ResolveResult = {
 }
 
 type TransferItem = {
+  uuid: string
   name: string
   size?: string
   percent: number
@@ -47,6 +49,7 @@ type ETAState = {
 type UploadMeta = Record<string, string | number>
 
 type UploadTask = {
+  uuid: string
   file: File
   finalName: string
   prettySize?: string
@@ -122,26 +125,23 @@ const calculateETA = (
   }
 }
 
-const updateTransferItems = <T extends TransferItem>(
-  items: T[],
-  name: string,
-  update: Partial<T>,
-  driveName?: string,
-): T[] => {
+const updateTransferItems = <T extends TransferItem>(items: T[], uuid: string, update: Partial<T>): T[] => {
   return items.map(item => {
-    const matches = driveName ? item.name === name && item.driveName === driveName : item.name === name
+    const matches = item.uuid === uuid
 
     return matches ? { ...item, ...update } : item
   })
 }
 
 const createTransferItem = (
+  uuid: string,
   name: string,
   size: string | undefined,
   kind: FileTransferType,
   driveName?: string,
   status: TransferStatus = TransferStatus.Uploading,
 ): TransferItem => ({
+  uuid,
   name,
   size,
   percent: 0,
@@ -178,32 +178,26 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     i => i.status !== TransferStatus.Done && i.status !== TransferStatus.Error && i.status !== TransferStatus.Cancelled,
   )
 
-  const clearAllFlagsFor = useCallback((name: string, driveName?: string) => {
-    cancelledNamesRef.current.delete(name)
-    cancelledUploadingRef.current.delete(name)
-    uploadAbortsRef.current.abort(name)
+  const clearAllFlagsFor = useCallback((uuid: string) => {
+    cancelledNamesRef.current.delete(uuid)
+    cancelledUploadingRef.current.delete(uuid)
+    uploadAbortsRef.current.abort(uuid)
     queueRef.current = queueRef.current.filter(t => {
-      if (driveName) {
-        return !(t.finalName === name && t.driveName === driveName)
-      }
-
-      return t.finalName !== name
+      return t.uuid !== uuid
     })
   }, [])
 
   const ensureQueuedRow = useCallback(
-    (name: string, kind: FileTransferType, size?: string, driveName?: string) => {
+    (uuid: string, name: string, kind: FileTransferType, size?: string, driveName?: string) => {
       safeSetState(
         isMountedRef,
         setUploadItems,
       )(prev => {
-        const idx = prev.findIndex(
-          p => p.name === name && p.driveName === driveName && p.status !== TransferStatus.Done,
-        )
-        const base = createTransferItem(name, size, kind, driveName, TransferStatus.Queued)
+        const idx = prev.findIndex(p => p.uuid === uuid && p.status !== TransferStatus.Done)
+        const base = createTransferItem(uuid, name, size, kind, driveName, TransferStatus.Queued)
 
         if (idx !== -1) {
-          clearAllFlagsFor(name, driveName)
+          clearAllFlagsFor(uuid)
         }
 
         if (idx === -1) return [...prev, base]
@@ -262,7 +256,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   )
 
   const trackUpload = useCallback(
-    (name: string, size?: string, kind: FileTransferType = FileTransferType.Upload, driveName?: string) => {
+    (
+      uuid: string,
+      name: string,
+      size?: string,
+      kind: FileTransferType = FileTransferType.Upload,
+      driveName?: string,
+    ) => {
       if (!isMountedRef.current) {
         return () => {
           // no-op
@@ -278,11 +278,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       setUploadItems(prev => {
-        const existing = prev.find(p => p.name === name && p.driveName === driveName)
+        const existing = prev.find(p => p.uuid === uuid)
         const actualDriveName = existing?.driveName || driveName
 
-        const idx = prev.findIndex(p => p.name === name && p.driveName === actualDriveName)
-        const base = createTransferItem(name, size, kind, actualDriveName, TransferStatus.Uploading)
+        const idx = prev.findIndex(p => p.uuid === uuid)
+        const base = createTransferItem(uuid, name, size, kind, actualDriveName, TransferStatus.Uploading)
 
         if (idx === -1) return [...prev, base]
         const copy = [...prev]
@@ -302,36 +302,24 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           etaState = updatedState
 
           setUploadItems(prev => {
-            const existing = prev.find(
-              it => it.name === name && it.driveName === driveName && it.status === TransferStatus.Uploading,
-            )
+            const existing = prev.find(it => it.uuid === uuid && it.status === TransferStatus.Uploading)
 
-            return updateTransferItems(
-              prev,
-              name,
-              {
-                percent: Math.max(existing?.percent || 0, chunkPercentage),
-                kind,
-                etaSec,
-              },
-              driveName,
-            )
+            return updateTransferItems(prev, uuid, {
+              percent: Math.max(existing?.percent || 0, chunkPercentage),
+              kind,
+              etaSec,
+            })
           })
 
           if (progress.processed >= progress.total) {
             const finishedAt = Date.now()
             setUploadItems(prev => {
-              return updateTransferItems(
-                prev,
-                name,
-                {
-                  percent: 100,
-                  status: TransferStatus.Done,
-                  etaSec: 0,
-                  elapsedSec: Math.round((finishedAt - startedAt) / 1000),
-                },
-                driveName,
-              )
+              return updateTransferItems(prev, uuid, {
+                percent: 100,
+                status: TransferStatus.Done,
+                etaSec: 0,
+                elapsedSec: Math.round((finishedAt - startedAt) / 1000),
+              })
             })
           }
         }
@@ -360,6 +348,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       const progressCb = trackUpload(
+        task.uuid,
         task.finalName,
         task.prettySize,
         task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
@@ -370,16 +359,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         isMountedRef,
         setUploadItems,
       )(prev =>
-        updateTransferItems(
-          prev,
-          task.finalName,
-          {
-            status: TransferStatus.Uploading,
-            kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
-            startedAt: Date.now(),
-          },
-          task.driveName,
-        ),
+        updateTransferItems(prev, task.uuid, {
+          status: TransferStatus.Uploading,
+          kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+          startedAt: Date.now(),
+        }),
       )
 
       uploadAbortsRef.current.create(task.finalName)
@@ -401,14 +385,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           isMountedRef,
           setUploadItems,
         )(prev =>
-          updateTransferItems(
-            prev,
-            task.finalName,
-            {
-              status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
-            },
-            task.driveName,
-          ),
+          updateTransferItems(prev, task.uuid, {
+            status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
+          }),
         )
       } finally {
         uploadAbortsRef.current.abort(task.finalName)
@@ -438,6 +417,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       setDownloadItems(prev => {
         const row = createTransferItem(
+          props.uuid,
           props.name,
           props.size,
           FileTransferType.Download,
@@ -445,7 +425,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           TransferStatus.Downloading,
         )
         row.startedAt = undefined // Downloads start timing when first progress is received
-        const idx = prev.findIndex(p => p.name === props.name)
+        const idx = prev.findIndex(p => p.uuid === props.uuid)
 
         if (idx === -1) return [...prev, row]
         const out = [...prev]
@@ -475,10 +455,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
 
         setDownloadItems(prev =>
-          updateTransferItems(prev, props.name, {
-            percent: Math.max(prev.find(it => it.name === props.name)?.percent || 0, percent),
+          updateTransferItems(prev, props.uuid, {
+            percent: Math.max(prev.find(it => it.uuid === props.uuid)?.percent || 0, percent),
             etaSec,
-            startedAt: prev.find(it => it.name === props.name)?.startedAt ?? startedAt,
+            startedAt: prev.find(it => it.uuid === props.uuid)?.startedAt ?? startedAt,
           }),
         )
 
@@ -486,16 +466,16 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           const finishedAt = Date.now()
 
           setDownloadItems(prev => {
-            const currentItem = prev.find(it => it.name === props.name)
+            const currentItem = prev.find(it => it.uuid === props.uuid)
             const elapsedSec = currentItem?.startedAt ? Math.round((finishedAt - currentItem.startedAt) / 1000) : 0
 
             if (dp.state === DownloadState.Cancelled || dp.state === DownloadState.Error) {
               const wasCancelled =
-                dp.state === DownloadState.Cancelled || cancelledDownloadingRef.current.has(props.name)
+                dp.state === DownloadState.Cancelled || cancelledDownloadingRef.current.has(props.uuid)
 
-              cancelledDownloadingRef.current.delete(props.name)
+              cancelledDownloadingRef.current.delete(props.uuid)
 
-              return updateTransferItems(prev, props.name, {
+              return updateTransferItems(prev, props.uuid, {
                 status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
                 etaSec: undefined,
                 elapsedSec: 0,
@@ -503,7 +483,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               })
             }
 
-            return updateTransferItems(prev, props.name, {
+            return updateTransferItems(prev, props.uuid, {
               percent: 100,
               status: TransferStatus.Done,
               etaSec: 0,
@@ -556,6 +536,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
             return null
           }
+
+          const uuid = uuidV4()
 
           const meta = buildUploadMeta([file])
           const prettySize = formatBytes(meta.size)
@@ -610,6 +592,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               remainingBytes -= file.size
 
               ensureQueuedRow(
+                uuid,
                 finalName,
                 isReplace ? FileTransferType.Update : FileTransferType.Upload,
                 prettySize,
@@ -617,6 +600,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
               )
 
               return {
+                uuid,
                 file,
                 finalName,
                 prettySize,
@@ -655,14 +639,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
             if (!task) break
 
-            const isCancelled = cancelledNamesRef.current.has(task.finalName)
+            const isCancelled = cancelledNamesRef.current.has(task.uuid)
 
             if (isCancelled) {
               safeSetState(
                 isMountedRef,
                 setUploadItems,
-              )(prev => updateTransferItems(prev, task.finalName, { status: TransferStatus.Cancelled }, task.driveName))
-              cancelledNamesRef.current.delete(task.finalName)
+              )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
+              cancelledNamesRef.current.delete(task.uuid)
               queueRef.current.shift()
             } else {
               await processUploadTask(task)

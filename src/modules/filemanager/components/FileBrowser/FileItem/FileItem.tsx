@@ -23,6 +23,7 @@ import { startDownloadingQueue, createDownloadAbort } from '../../../utils/downl
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyDrive } from '../../../utils/bee'
 import { PostageBatch } from '@ethersphere/bee-js'
+import { uuidV4 } from '../../../../../utils'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -141,7 +142,7 @@ export function FileItem({
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        [onDownload({ name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
+        [onDownload({ uuid: uuidV4(), name: fileInfo.name, size: formatBytes(rawSize), expectedSize })],
         isNewWindow,
       )
     },
