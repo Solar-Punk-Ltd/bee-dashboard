@@ -107,7 +107,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
     }
   }, [drive.id, setShowError, setErrorMessage, stamp.batchID, refreshStamp])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(() => {
+  const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
 
     return calculateStampCapacityMetrics(actualStamp, filesPerDrive, drive.redundancyLevel)
@@ -132,7 +132,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
         </div>
         <div className="fm-drive-item-content">
           <div className="fm-drive-item-capacity">
-            Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
+            Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
           </div>
           <div className="fm-drive-item-capacity">
             Expiry date: {actualStamp.duration.toEndDate().toLocaleDateString()}

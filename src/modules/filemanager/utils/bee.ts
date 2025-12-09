@@ -244,9 +244,9 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
 export interface StampCapacityMetrics {
   capacityPct: number
   usedSize: string
-  totalSize: string
+  stampSize: string
   usedBytes: number
-  totalBytes: number
+  stampSizeBytes: number
   remainingBytes: number
 }
 
@@ -255,15 +255,15 @@ export const calculateStampCapacityMetrics = (
   files: FileInfo[],
   redundancyLevel?: RedundancyLevel,
 ): StampCapacityMetrics => {
-  let totalBytes = 0
-  let remainingBytes = 0
+  let stampSizeBytes = 0
+  let remainingReportedBytes = 0
 
   if (redundancyLevel !== undefined) {
-    totalBytes = stamp.calculateSize(false, redundancyLevel).toBytes()
-    remainingBytes = stamp.calculateRemainingSize(false, redundancyLevel).toBytes()
+    stampSizeBytes = stamp.calculateSize(false, redundancyLevel).toBytes()
+    remainingReportedBytes = stamp.calculateRemainingSize(false, redundancyLevel).toBytes()
   } else {
-    totalBytes = stamp.size.toBytes()
-    remainingBytes = stamp.remainingSize.toBytes()
+    stampSizeBytes = stamp.size.toBytes()
+    remainingReportedBytes = stamp.remainingSize.toBytes()
   }
 
   const usedBytesFromFiles = files
@@ -275,21 +275,24 @@ export const calculateStampCapacityMetrics = (
     })
     .reduce((acc, current) => acc + current, 0)
 
-  const usedBytesReported = totalBytes - remainingBytes
+  const remainingBytesFromFiles = stampSizeBytes - usedBytesFromFiles > 0 ? stampSizeBytes - usedBytesFromFiles : 0
+  const remainingBytes = Math.min(remainingReportedBytes, remainingBytesFromFiles)
+
+  const usedBytesReported = stampSizeBytes - remainingReportedBytes
   const pctFromStampUsage = stamp.usage * 100
 
   const usedSizeMaxBytes = Math.max(usedBytesFromFiles, usedBytesReported)
   const usedSizeMax = getHumanReadableFileSize(usedSizeMaxBytes)
-  const pctFromDriveUsage = totalBytes > 0 ? (usedSizeMaxBytes / totalBytes) * 100 : 0
+  const pctFromDriveUsage = stampSizeBytes > 0 ? (usedSizeMaxBytes / stampSizeBytes) * 100 : 0
   const capacityPct = Math.max(pctFromDriveUsage, pctFromStampUsage)
-  const totalSize = getHumanReadableFileSize(totalBytes)
+  const stampSize = getHumanReadableFileSize(stampSizeBytes)
 
   return {
     capacityPct,
     usedSize: usedSizeMax,
-    totalSize,
+    stampSize,
     usedBytes: usedSizeMaxBytes,
-    totalBytes,
+    stampSizeBytes,
     remainingBytes,
   }
 }
@@ -338,36 +341,40 @@ export const verifyDriveSpace = (
     const estimatedDlSizeBytes = estimateDriveListMetadataSize(drives) * drives.length
     const { remainingBytes: remainingAdminBytes } = calculateStampCapacityMetrics(fm.adminStamp, [], adminRedundancy)
 
-    const totalAdminBytes = estimatedDlSizeBytes
-
-    const ok = remainingAdminBytes >= totalAdminBytes
+    const ok = remainingAdminBytes >= estimatedDlSizeBytes
 
     if (!ok) {
       cb?.(
         `Insufficient admin drive capacity. Required: ~${getHumanReadableFileSize(
-          totalAdminBytes,
+          estimatedDlSizeBytes,
         )} bytes, Available: ${getHumanReadableFileSize(
           remainingAdminBytes,
         )} bytes. Please top up the admin drive/stamp.`,
       )
-    }
 
-    return { remainingBytes: remainingAdminBytes, totalSizeBytes: totalAdminBytes, ok }
+      return { remainingBytes: remainingAdminBytes, totalSizeBytes: estimatedDlSizeBytes, ok }
+    }
   }
 
   // other fileinfo metadata size calc.
   const estimatedFiSize = estimateFileInfoMetadataSize()
-  const totalSizeBytes = Number(Boolean(useInfoSize)) * estimatedFiSize + (fileSize ? fileSize : 0)
+  const estimateReqSizeBytes = Number(Boolean(useInfoSize)) * estimatedFiSize + (fileSize ? fileSize : 0)
   const { remainingBytes } = calculateStampCapacityMetrics(stamp, filesPerDrives, redundancyLevel)
-  const ok = remainingBytes >= totalSizeBytes
+
+  // eslint-disable-next-line no-console
+  console.log('bagoy estimateReqSizeBytes: ', getHumanReadableFileSize(estimateReqSizeBytes))
+  // eslint-disable-next-line no-console
+  console.log('bagoy remainingBytes: ', getHumanReadableFileSize(remainingBytes))
+
+  const ok = remainingBytes >= estimateReqSizeBytes
 
   if (!ok) {
     cb?.(
       `Insufficient capacity. Required: ~${getHumanReadableFileSize(
-        totalSizeBytes,
+        estimateReqSizeBytes,
       )} bytes, Available: ${getHumanReadableFileSize(remainingBytes)} bytes. Please top up the drive/stamp.`,
     )
   }
 
-  return { remainingBytes, totalSizeBytes, ok }
+  return { remainingBytes, totalSizeBytes: estimateReqSizeBytes, ok }
 }

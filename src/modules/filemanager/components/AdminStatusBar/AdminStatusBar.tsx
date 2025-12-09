@@ -112,15 +112,15 @@ export function AdminStatusBar({
     const {
       capacityPct: reportedPct,
       usedBytes: reportedUsedBytes,
-      totalBytes,
+      stampSizeBytes,
     } = calculateStampCapacityMetrics(actualStamp, [], adminDrive?.redundancyLevel)
     const actualUsedSizeBytes = Math.max(reportedUsedBytes, estimatedDlSizeBytes)
-    const actualPct = Math.max(reportedPct, (actualUsedSizeBytes / totalBytes) * 100)
+    const actualPct = Math.max(reportedPct, (actualUsedSizeBytes / stampSizeBytes) * 100)
 
     return {
       capacityPct: actualPct,
       usedSize: getHumanReadableFileSize(actualUsedSizeBytes),
-      totalSize: getHumanReadableFileSize(totalBytes),
+      totalSize: getHumanReadableFileSize(stampSizeBytes),
     }
   }, [actualStamp, adminDrive, drives])
 

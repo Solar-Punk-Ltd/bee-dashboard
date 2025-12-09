@@ -236,14 +236,14 @@ export function InitialModal({
     }
   }, [nonFullStamps, selectedBatchIndex])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(() => {
+  const { capacityPct, usedSize, stampSize } = useMemo(() => {
     if (!selectedBatch) {
       return {
         capacityPct: 0,
         usedSize: '—',
-        totalSize: '—',
+        stampSize: '—',
         usedBytes: 0,
-        totalBytes: 0,
+        stampSizeBytes: 0,
         remainingBytes: 0,
       }
     }
@@ -316,7 +316,7 @@ export function InitialModal({
               {selectedBatch && (
                 <div className="fm-drive-item-content">
                   <div className="fm-drive-item-capacity">
-                    Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {totalSize}
+                    Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
                   </div>
                   <div className="fm-drive-item-capacity">
                     Expiry date: {selectedBatch.duration.toEndDate().toLocaleDateString()}
