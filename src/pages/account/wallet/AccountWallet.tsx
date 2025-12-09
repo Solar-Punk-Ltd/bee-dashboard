@@ -15,7 +15,7 @@ import { Context as SettingsContext } from '../../../providers/Settings'
 import { ROUTES } from '../../../routes'
 import { AccountNavigation } from '../AccountNavigation'
 import { Header } from '../Header'
-import { WalletInfoCard } from 'src/pages/info/WalletInfoCard'
+import { WalletInfoCard } from '../../../pages/info/WalletInfoCard'
 
 export function AccountWallet(): ReactElement {
   const { nodeAddresses, nodeInfo, status, walletBalance } = useContext(BeeContext)
