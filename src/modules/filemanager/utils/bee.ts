@@ -179,15 +179,6 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
   }
 }
 
-interface StampCapacityMetrics {
-  capacityPct: number
-  usedSize: string
-  totalSize: string
-  usedBytes: number
-  totalBytes: number
-  remainingBytes: number
-}
-
 export interface DestroyDriveOptions {
   beeApi?: Bee | null
   fm: FileManagerBase | null
@@ -245,6 +236,15 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
   }
 }
 
+export interface StampCapacityMetrics {
+  capacityPct: number
+  usedSize: string
+  totalSize: string
+  usedBytes: number
+  totalBytes: number
+  remainingBytes: number
+}
+
 export const calculateStampCapacityMetrics = (
   stamp: PostageBatch | null,
   files: FileInfo[],
@@ -272,7 +272,7 @@ export const calculateStampCapacityMetrics = (
     remainingBytes = stamp.remainingSize.toBytes()
   }
 
-  const solarPunkUsedBytes = files
+  const usedBytesFromFiles = files
     .map(f => {
       const fileSize = Number(f.customMetadata?.size || 0)
       const versionCount = Number((indexStrToBigint(f.version) ?? BigInt(0)) + BigInt(1))
@@ -284,7 +284,7 @@ export const calculateStampCapacityMetrics = (
   const usedBytesReported = totalBytes - remainingBytes
   const pctFromStampUsage = stamp.usage * 100
 
-  const usedSizeMaxBytes = Math.max(solarPunkUsedBytes, usedBytesReported)
+  const usedSizeMaxBytes = Math.max(usedBytesFromFiles, usedBytesReported)
   const usedSizeMax = getHumanReadableFileSize(usedSizeMaxBytes)
   const pctFromDriveUsage = totalBytes > 0 ? (usedSizeMaxBytes / totalBytes) * 100 : 0
   const capacityPct = Math.max(pctFromDriveUsage, pctFromStampUsage)
@@ -311,7 +311,7 @@ export interface DriveSpaceOptions {
   fileSize?: number
   cb?: (msg: string) => void
 }
-
+// TODO: refine verifyDriveSpace together with calculateStampCapacityMetrics
 export const verifyDriveSpace = (
   options: DriveSpaceOptions,
 ): { remainingBytes: number; totalSize: number; ok: boolean } => {
@@ -320,8 +320,6 @@ export const verifyDriveSpace = (
   let drivesLen = fm.getDrives().length
   let filesPerDrives: FileInfo[] = []
 
-  // TODO: do not remove for files * n calc.
-  // TODO: isn't this fm.fileInfoList.length?
   if (isRemove) {
     drivesLen -= 1
     filesPerDrives = fm.fileInfoList.filter(fi => fi.driveId !== driveId)
