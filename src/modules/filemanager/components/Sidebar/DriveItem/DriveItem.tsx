@@ -27,7 +27,7 @@ interface DriveItemProps {
 }
 
 export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveItemProps): ReactElement {
-  const { fm, files, setShowError, refreshStamp } = useContext(FMContext)
+  const { fm, adminDrive, files, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [isHovered, setIsHovered] = useState(false)
@@ -108,9 +108,9 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   }, [drive.id, setShowError, setErrorMessage, stamp.batchID, refreshStamp])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => {
-    const filesPerDrives = files.filter(fi => fi.driveId === drive.id.toString())
+    const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
 
-    return calculateStampCapacityMetrics(actualStamp, filesPerDrives, drive.redundancyLevel)
+    return calculateStampCapacityMetrics(actualStamp, filesPerDrive, drive.redundancyLevel)
   }, [actualStamp, drive, files])
 
   return (
@@ -223,6 +223,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
               fm,
               drive,
               isDestroy: true,
+              adminDrive,
               onSuccess: () => {
                 setIsDestroyDriveModalOpen(false)
                 setIsDestroying(false)

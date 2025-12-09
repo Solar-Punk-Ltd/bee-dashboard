@@ -138,6 +138,7 @@ export function InitialModal({
       label: ADMIN_STAMP_LABEL,
       encryption: false,
       redundancyLevel: erasureCodeLevel,
+      adminRedundancy: erasureCodeLevel,
       isAdmin: true,
       resetState,
       existingBatch: selectedBatch,
@@ -235,10 +236,20 @@ export function InitialModal({
     }
   }, [nonFullStamps, selectedBatchIndex])
 
-  const { capacityPct, usedSize, totalSize } = useMemo(
-    () => calculateStampCapacityMetrics(selectedBatch, [], erasureCodeLevel),
-    [selectedBatch, erasureCodeLevel],
-  )
+  const { capacityPct, usedSize, totalSize } = useMemo(() => {
+    if (!selectedBatch) {
+      return {
+        capacityPct: 0,
+        usedSize: '—',
+        totalSize: '—',
+        usedBytes: 0,
+        totalBytes: 0,
+        remainingBytes: 0,
+      }
+    }
+
+    return calculateStampCapacityMetrics(selectedBatch, [], erasureCodeLevel)
+  }, [selectedBatch, erasureCodeLevel])
 
   const initText = resetState ? 'Resetting' : 'Initializing'
   const createText = resetState ? 'Reset' : 'Create'
