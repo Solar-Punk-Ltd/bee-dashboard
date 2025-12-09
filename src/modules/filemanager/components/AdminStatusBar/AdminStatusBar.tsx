@@ -100,9 +100,9 @@ export function AdminStatusBar({
       return {
         capacityPct: 0,
         usedSize: '—',
-        totalSize: '—',
+        stampSize: '—',
         usedBytes: 0,
-        totalBytes: 0,
+        stampSizeBytes: 0,
         remainingBytes: 0,
       }
     }

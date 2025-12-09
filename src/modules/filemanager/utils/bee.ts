@@ -361,11 +361,6 @@ export const verifyDriveSpace = (
   const estimateReqSizeBytes = Number(Boolean(useInfoSize)) * estimatedFiSize + (fileSize ? fileSize : 0)
   const { remainingBytes } = calculateStampCapacityMetrics(stamp, filesPerDrives, redundancyLevel)
 
-  // eslint-disable-next-line no-console
-  console.log('bagoy estimateReqSizeBytes: ', getHumanReadableFileSize(estimateReqSizeBytes))
-  // eslint-disable-next-line no-console
-  console.log('bagoy remainingBytes: ', getHumanReadableFileSize(remainingBytes))
-
   const ok = remainingBytes >= estimateReqSizeBytes
 
   if (!ok) {
