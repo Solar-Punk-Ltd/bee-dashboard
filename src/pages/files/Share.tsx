@@ -68,7 +68,7 @@ export function Share(): ReactElement {
         const remoteMetadata = await beeApi.downloadFile(reference, META_FILE_NAME)
         const formattedMetadata = remoteMetadata.data.toJSON() as Metadata
 
-        if (formattedMetadata.isVideo || formattedMetadata.isImage) {
+        if (formattedMetadata.isVideo || formattedMetadata.isAudio || formattedMetadata.isImage) {
           setPreview(`${apiUrl}/bzz/${reference}`)
         }
         setMetadata({ ...formattedMetadata, hash })
@@ -81,7 +81,8 @@ export function Share(): ReactElement {
           name: reference,
           count,
           isWebsite: Boolean(indexDocument && /.*\.html?$/i.test(indexDocument)),
-          isVideo: Boolean(indexDocument && /.*\.(mp4|webm|ogg|mp3|ogg|wav)$/i.test(indexDocument)),
+          isVideo: Boolean(indexDocument && /.*\.(mp4|webm|ogv)$/i.test(indexDocument)),
+          isAudio: Boolean(indexDocument && /.*\.(mp3|ogg|oga|wav|webm|m4a|aac|flac)$/i.test(indexDocument)),
           isImage: Boolean(indexDocument && /.*\.(jpg|jpeg|png|gif|webp|svg)$/i.test(indexDocument)),
           // naive assumption based on indexDocument, we don't want to download the whole manifest
         })
