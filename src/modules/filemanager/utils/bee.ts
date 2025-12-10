@@ -1,4 +1,7 @@
 import { BatchId, Bee, BZZ, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import Stopwatch from 'statman-stopwatch'
 import {
   FileManagerBase,
   DriveInfo,
@@ -138,6 +141,8 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     onError,
   } = { ...options }
 
+  const stopwatch = new Stopwatch()
+
   if (!beeApi || !fm) {
     onError?.('Error creating drive: Bee API or FM is invalid!')
 
@@ -148,9 +153,17 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     let batchId: BatchId
 
     if (!existingBatch) {
-      batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, redundancyLevel)
+      stopwatch.start()
+      batchId = await beeApi.createPostageBatch('2500000000', 18)
+      stopwatch.stop()
+      console.log(`Bought stamp in ${Math.round(stopwatch.read()) / 1000} seconds`)
+      stopwatch.reset()
     } else {
+      stopwatch.start()
       const isValid = await validateStampStillExists(beeApi, existingBatch.batchID)
+      stopwatch.stop()
+      console.log(`Validated existing stamp in ${Math.round(stopwatch.read()) / 1000} seconds`)
+      stopwatch.reset()
 
       if (!isValid) {
         throw new Error(
@@ -159,6 +172,7 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
       }
 
       // verify if there is enough space on the admin stamp first
+      stopwatch.start()
       verifyDriveSpace({
         fm,
         redundancyLevel,
@@ -168,13 +182,24 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
           throw new Error(err)
         },
       })
+      stopwatch.stop()
+      console.log(`Verified drive space in ${Math.round(stopwatch.read()) / 1000} seconds`)
+      stopwatch.reset()
 
       batchId = existingBatch.batchID
     }
 
+    stopwatch.start()
     await fm.createDrive(batchId, label, isAdmin, redundancyLevel, resetState)
+    stopwatch.stop()
+    console.log(`Created drive in ${Math.round(stopwatch.read()) / 1000} seconds`)
+    stopwatch.reset()
 
+    stopwatch.start()
     onSuccess?.()
+    stopwatch.stop()
+    console.log(`Called onSuccess in ${Math.round(stopwatch.read()) / 1000} seconds`)
+    stopwatch.reset()
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Error creating drive:', e instanceof Error ? e.message : String(e))

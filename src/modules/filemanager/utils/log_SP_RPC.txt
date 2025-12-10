@@ -1,0 +1,88 @@
+Benchmark started
+Benchmark.tsx:43 Running Drive creation benchmark [0]
+installHook.js:1 Error creating drive: Network Error
+overrideMethod @ installHook.js:1
+handleCreateDrive @ bee.ts:205Understand this error
+Benchmark.tsx:51 Drive creation benchmark [0] finished in 3619.231 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [1]
+bee.ts:159 Bought stamp in 105.945 seconds
+bee.ts:195 Created drive in 0.193 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [1] finished in 106.138 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [2]
+bee.ts:159 Bought stamp in 105.805 seconds
+bee.ts:195 Created drive in 0.197 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [2] finished in 106.002 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [3]
+bee.ts:159 Bought stamp in 330.805 seconds
+bee.ts:195 Created drive in 0.195 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [3] finished in 331 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [4]
+installHook.js:1 Error creating drive: Request failed with status code 500
+overrideMethod @ installHook.js:1
+handleCreateDrive @ bee.ts:205
+await in handleCreateDrive
+benchmarkTask @ Benchmark.tsx:44Understand this error
+Benchmark.tsx:51 Drive creation benchmark [4] finished in 158.916 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [5]
+bee.ts:159 Bought stamp in 886.347 seconds
+bee.ts:195 Created drive in 0.17 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [5] finished in 886.518 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [6]
+bee.ts:159 Bought stamp in 207.744 seconds
+bee.ts:195 Created drive in 0.243 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [6] finished in 207.988 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [7]
+bee.ts:159 Bought stamp in 570.738 seconds
+bee.ts:195 Created drive in 0.397 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [7] finished in 571.136 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [8]
+bee.ts:159 Bought stamp in 101.103 seconds
+bee.ts:195 Created drive in 0.157 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [8] finished in 101.261 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:43 Running Drive creation benchmark [9]
+bee.ts:159 Bought stamp in 103.679 seconds
+bee.ts:195 Created drive in 0.167 seconds
+bee.ts:201 Called onSuccess in 0 seconds
+Benchmark.tsx:51 Drive creation benchmark [9] finished in 103.846 s
+Benchmark.tsx:52 
+Benchmark.tsx:53 =================================
+Benchmark.tsx:56 Benchmark finished
+
+(index) run durationInSeconds
+0	    0	    3619.231
+1	    1	    106.138
+2	    2	    106.002
+3	    3	    331
+4	    4	    158.916
+5	    5	    886.518
+6	    6	    207.988
+7	    7	    571.136
+8	    8	    101.261
+9	    9	    103.846
+
+Average duration (s): 619.2036

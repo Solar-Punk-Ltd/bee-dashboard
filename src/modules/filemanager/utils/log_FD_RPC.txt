@@ -1,0 +1,76 @@
+Benchmark started
+Running Drive creation benchmark [0]
+Bought stamp in 100.548 seconds
+Created drive in 0.156 seconds
+Drive creation benchmark [0] finished in 100.705 s
+=================================
+
+Running Drive creation benchmark [1]
+Bought stamp in 101.422 seconds
+Created drive in 0.195 seconds
+Drive creation benchmark [1] finished in 101.617 s
+=================================
+
+Running Drive creation benchmark [2]
+Bought stamp in 104.425 seconds
+Created drive in 0.197 seconds
+Drive creation benchmark [2] finished in 104.622 s
+=================================
+
+Running Drive creation benchmark [3]
+Bought stamp in 98.594 seconds
+Created drive in 0.161 seconds
+Drive creation benchmark [3] finished in 98.756 s
+=================================
+
+Running Drive creation benchmark [4]
+Bought stamp in 106.464 seconds
+Created drive in 0.118 seconds
+Drive creation benchmark [4] finished in 106.582 s
+=================================
+
+Running Drive creation benchmark [5]
+Bought stamp in 102.339 seconds
+Created drive in 0.213 seconds
+Drive creation benchmark [5] finished in 102.552 s
+=================================
+
+Running Drive creation benchmark [6]
+Bought stamp in 102.782 seconds
+Created drive in 0.158 seconds
+Drive creation benchmark [6] finished in 102.941 s
+=================================
+
+Running Drive creation benchmark [7]
+Bought stamp in 110.844 seconds
+Created drive in 0.187 seconds
+Drive creation benchmark [7] finished in 111.032 s
+=================================
+
+Running Drive creation benchmark [8]
+Bought stamp in 98.809 seconds
+Created drive in 0.189 seconds
+Drive creation benchmark [8] finished in 98.998 s
+=================================
+
+Running Drive creation benchmark [9]
+Bought stamp in 107.81 seconds
+Created drive in 0.187 seconds
+Drive creation benchmark [9] finished in 107.998 s
+=================================
+
+Benchmark finished
+
+index run durationInSeconds
+0	    0	        100.705
+1	    1	        101.617
+2	    2	        104.622
+3	    3	        98.756
+4	    4	        106.582
+5	    5	        102.552
+6	    6	        102.941
+7	    7	        111.032
+8	    8	        98.998
+9	    9	        107.998
+
+Average duration (s): 103.58030000000001

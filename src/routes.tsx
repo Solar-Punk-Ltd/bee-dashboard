@@ -29,6 +29,7 @@ import { Swap } from './pages/top-up/Swap'
 import { Context as SettingsContext } from './providers/Settings'
 import { FileManagerPage } from './pages/filemanager'
 import PageNotFound from './pages/not-found/PageNotFound'
+import { Benchmark } from 'src/pages/benchmark/Benchmark'
 
 export enum ROUTES {
   INFO = '/',
@@ -60,6 +61,7 @@ export enum ROUTES {
   ACCOUNT_INVITATIONS = '/account/invitations',
   ACCOUNT_STAKING = '/account/staking',
   FDP = '/fdp',
+  BENCHMARK = '/benchmark',
 }
 
 export const ACCOUNT_TABS = [
@@ -101,7 +103,7 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.ACCOUNT_FEEDS_UPDATE} element={<UpdateFeed />} />
       <Route path={ROUTES.ACCOUNT_FEEDS_VIEW} element={<FeedSubpage />} />
       <Route path={ROUTES.ACCOUNT_STAKING} element={<AccountStaking />} />
-      <Route path={ROUTES.FDP} element={<FDP />} />
+      <Route path={ROUTES.BENCHMARK} element={<Benchmark />} />
       {isDesktop && <Route path={ROUTES.ACCOUNT_INVITATIONS} element={<GiftCards />} />}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
