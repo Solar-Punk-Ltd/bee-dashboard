@@ -129,7 +129,15 @@ export function Share(): ReactElement {
     setDownloading(true)
 
     if (Object.keys(swarmEntries).length === 1) {
-      window.open(`${apiUrl}/bzz/${reference}/`, '_blank')
+      const singleFileName = Object.keys(swarmEntries)[0]
+      const singleFileHash = Object.values(swarmEntries)[0]
+      const fileData = await beeApi.downloadData(singleFileHash)
+      const dataArray = fileData.toUint8Array()
+      const arrayBuffer = new ArrayBuffer(dataArray.length)
+      const view = new Uint8Array(arrayBuffer)
+      view.set(dataArray)
+      const blob = new Blob([arrayBuffer], { type: metadata?.type || 'application/octet-stream' })
+      saveAs(blob, metadata?.name || singleFileName || reference)
     } else {
       const zip = new JSZip()
       for (const [path, hash] of Object.entries(swarmEntries)) {
