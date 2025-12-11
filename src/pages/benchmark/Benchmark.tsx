@@ -4,6 +4,7 @@ import { handleCreateDrive } from 'src/modules/filemanager/utils/bee'
 
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as FMContext } from '../../providers/FileManager'
+import { Typography } from '@material-ui/core'
 
 export function Benchmark(): ReactElement {
   const [runBenchmark, setRunBenchmark] = useState(false)
@@ -41,7 +42,7 @@ export function Benchmark(): ReactElement {
           for (let index = 0; index < 10; index++) {
             const start = performance.now()
             console.log(`Running Drive creation benchmark [${index}]`)
-            await handleCreateDrive(createOptions(`Drive with SD RPC[${index}]`))
+            await handleCreateDrive(createOptions(`Drive with SP NODE [${index}]`))
 
             // await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 100))
 
@@ -69,6 +70,9 @@ export function Benchmark(): ReactElement {
   return (
     <div>
       <div>Benchmark Page</div>
+      <Typography variant="h2" gutterBottom>
+        Before starting benchmark make sure that your admin drive is initialized
+      </Typography>
       <button disabled={runBenchmark} onClick={() => setRunBenchmark(true)}>
         Start Benchmark
       </button>

@@ -195,11 +195,7 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     console.log(`Created drive in ${Math.round(stopwatch.read()) / 1000} seconds`)
     stopwatch.reset()
 
-    stopwatch.start()
     onSuccess?.()
-    stopwatch.stop()
-    console.log(`Called onSuccess in ${Math.round(stopwatch.read()) / 1000} seconds`)
-    stopwatch.reset()
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error('Error creating drive:', e instanceof Error ? e.message : String(e))

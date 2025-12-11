@@ -1,0 +1,322 @@
+
+Welcome to Swarm.... Bzzz Bzzzz Bzzzz
+
+
+"Share the knowledge" - in memory of ldeffenb
+
+
+                \     /
+            \    o ^ o    /
+              \ (     ) /
+   ____________(%%%%%%%)____________
+  (     /   /  )%%%%%%%(  \   \     )
+  (___/___/__/           \__\___\___)
+     (     /  /(%%%%%%%)\  \     )
+      (__/___/ (%%%%%%%) \___\__)
+              /(       )\
+            /   (%%%%%)   \
+                 (%%%)
+                   !
+
+DISCLAIMER:
+This software is provided to you "as is", use at your own risk and without warranties of any kind.
+It is your responsibility to read and understand how Swarm works and the implications of running this software.
+The usage of Bee involves various risks, including, but not limited to:
+damage to hardware or loss of funds associated with the Ethereum account connected to your node.
+No developers or entity involved will be liable for any claims and damages associated with your use,
+inability to use, or your interaction with other nodes or the software.
+
+version: 2.6.0-d0aa8b93 - planned to be supported until 14 October 2025, please follow https://ethswarm.org/
+
+"time"="2025-12-10 18:02:18.605889" "level"="info" "logger"="node" "msg"="bee version" "version"="2.6.0-d0aa8b93"
+"time"="2025-12-10 18:02:18.605965" "level"="warning" "logger"="node" "msg"="your node is outdated, please check for the latest version"
+"time"="2025-12-10 18:02:18.652183" "level"="info" "logger"="node" "msg"="swarm public key" "public_key"="03698236cc9808f03a7b5af6eaf1c8b0c73ddd83801308f0feaba7f4b1815eeadc"
+"time"="2025-12-10 18:02:18.726180" "level"="info" "logger"="node" "msg"="pss public key" "public_key"="02ee1bab002f17e4bcda14e6b24916332232a7eff9464eb3aab7b383883154e71b"
+"time"="2025-12-10 18:02:18.726219" "level"="info" "logger"="node" "msg"="using ethereum address" "address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867"
+"time"="2025-12-10 18:02:18.747753" "level"="info" "logger"="node" "msg"="using overlay address" "address"="976fe8be059d6159a061103f7adeb6f451d3c74d098ca85cac1fd7a8f5db8e45"
+"time"="2025-12-10 18:02:18.747771" "level"="info" "logger"="node" "msg"="starting with an enabled chain backend"
+"time"="2025-12-10 18:02:18.922481" "level"="info" "logger"="node" "msg"="connected to blockchain backend" "version"="erigon/3.2.2/linux-amd64/go1.24.9"
+"time"="2025-12-10 18:02:19.037171" "level"="info" "logger"="node" "msg"="using chain with network network" "chain_id"=100 "network_id"=1
+"time"="2025-12-10 18:02:19.062865" "level"="info" "logger"="node" "msg"="starting debug & api server" "address"="127.0.0.1:1633"
+"time"="2025-12-10 18:02:19.291533" "level"="info" "logger"="node" "msg"="using default factory address" "chain_id"=100 "factory_address"="0xC2d5A532cf69AA9A1378737D8ccDEF884B6E7420"
+"time"="2025-12-10 18:02:19.405715" "level"="info" "logger"="node/chequebook" "msg"="using existing chequebook" "chequebook_address"="0xBA297af4B76A9A1CD106774a54B94649095b686f"
+"time"="2025-12-10 18:02:19.736354" "level"="info" "logger"="node" "msg"="using datadir" "path"="/Users/nandorkomlodi/Work/git/beenodes/fullnode/dist/data-dir"
+"time"="2025-12-10 18:02:19.769918" "level"="info" "logger"="node/storer" "msg"="localstore sharky .DIRTY file exists: starting recovery due to previous dirty exit"
+"time"="2025-12-10 18:02:21.658594" "level"="info" "logger"="node/storer" "msg"="localstore sharky recovery finished" "time"="1.888652375s"
+"time"="2025-12-10 18:02:22.213801" "level"="info" "logger"="node" "msg"="waiting to sync postage contract data, this may take a while... more info available in Debug loglevel"
+"time"="2025-12-10 18:02:22.450613" "level"="info" "logger"="node" "msg"="starting in full mode"
+"time"="2025-12-10 18:02:22.622086" "level"="error" "logger"="node/multiresolver" "msg"="resolver on endpoint failed" "error"="owner: Internal error: failed to connect" "tld"="" "endpoint"="https://cloudflare-eth.com"
+"time"="2025-12-10 18:02:22.681311" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286710 "block"=43579985
+"time"="2025-12-10 18:02:22.903222" "level"="info" "logger"="node" "msg"="node warmup check initiated. monitoring activity rate to determine readiness." "startTime"="2025-12-10 18:02:22.903221 +0100 CET m=+4.310449667"
+"time"="2025-12-10 18:02:24.260129" "level"="warning" "logger"="node/kademlia" "msg"="connect to bootnode failed" "bootnode_address"="/ip4/139.84.229.70/tcp/1634/p2p/QmRa6rSrUWJ7s68MNmV94bo2KAa9pYcp6YbFLMHZ3r7n2M"
+"time"="2025-12-10 18:02:24.260252" "level"="warning" "logger"="node/kademlia" "msg"="discover to bootnode failed" "bootnode_address"="/dnsaddr/mainnet.ethswarm.org"
+"time"="2025-12-10 18:02:24.696257" "level"="info" "logger"="node" "msg"="node warmup check initiated. monitoring activity rate to determine readiness." "startTime"="2025-12-10 18:02:24.696254 +0100 CET m=+6.103474251"
+"time"="2025-12-10 18:02:57.902954" "level"="info" "logger"="node" "msg"="node warmup complete. system is considered stable and ready." "stabilizationTime"="2025-12-10 18:02:57.902947 +0100 CET m=+39.310021209" "totalMonitoredEvents"=86
+"time"="2025-12-10 18:02:57.903599" "level"="info" "logger"="node" "msg"="node warmup stabilization complete, updating API status"
+"time"="2025-12-10 18:02:57.904187" "level"="info" "logger"="node/pusher" "msg"="got a chunk being smuggled"
+"time"="2025-12-10 18:02:58.319123" "level"="info" "logger"="node/puller" "msg"="warmup period complete, starting worker"
+"time"="2025-12-10 18:03:38.162623" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286710 "block"=43580000
+"time"="2025-12-10 18:03:38.393875" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286710
+"time"="2025-12-10 18:09:54.970691" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286711 "block"=43580073
+"time"="2025-12-10 18:13:16.037718" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286711 "block"=43580111
+"time"="2025-12-10 18:16:37.091911" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286711 "block"=43580148
+"time"="2025-12-10 18:16:37.330495" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286711
+"time"="2025-12-10 18:23:19.095361" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286712 "block"=43580227
+"time"="2025-12-10 18:26:15.042394" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286712 "block"=43580262
+"time"="2025-12-10 18:29:36.098554" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286712 "block"=43580303
+"time"="2025-12-10 18:29:36.330644" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286712
+"time"="2025-12-10 18:32:18.595787" "level"="warning" "logger"="node" "msg"="your node is outdated, please check for the latest version"
+"time"="2025-12-10 18:35:52.962430" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286713 "block"=43580378
+"time"="2025-12-10 18:39:14.033870" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286713 "block"=43580417
+"time"="2025-12-10 18:42:35.092749" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286713 "block"=43580454
+"time"="2025-12-10 18:42:35.329392" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286713
+"time"="2025-12-10 18:48:51.940535" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286714 "block"=43580529
+"time"="2025-12-10 18:52:12.986614" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286714 "block"=43580568
+"time"="2025-12-10 18:55:34.044019" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286714 "block"=43580606
+"time"="2025-12-10 18:55:34.277152" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286714
+"time"="2025-12-10 19:01:50.917757" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286715 "block"=43580681
+"time"="2025-12-10 19:02:18.648084" "level"="warning" "logger"="node" "msg"="your node is outdated, please check for the latest version"
+"time"="2025-12-10 19:04:04.819677" "level"="error" "logger"="node/api/post_stamp" "msg"="create batch: create failed"
+"time"="2025-12-10 19:04:05.636237" "level"="error" "logger"="node/transaction" "msg"="pending transactions not found" "error"="not found" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xd1f06e24fc5fe4093fe7309315031777908df68ecbba0ca3c4a6f01a1e050b2c"
+"time"="2025-12-10 19:08:15.716857" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x6320d13434a9f1193e9e5edbc854bcbe31292a058a98ff6aa782ee63e8f297e8"
+"time"="2025-12-10 19:08:15.716909" "level"="warning" "logger"="node/transaction" "msg"="pending transaction cancelled" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xd1f06e24fc5fe4093fe7309315031777908df68ecbba0ca3c4a6f01a1e050b2c"
+"time"="2025-12-10 19:08:22.323710" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xd3c3339094d1f343f60654f4a891ccc1f9d32b125b0f734392b8e1aa2a3cea12"
+"time"="2025-12-10 19:08:22.337323" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:23.175888" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286715 "block"=43580758
+"time"="2025-12-10 19:08:23.427540" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286715
+"time"="2025-12-10 19:08:25.343774" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:28.350662" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:31.354075" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:34.358199" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:37.365317" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:40.376311" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:43.383656" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:46.387319" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:49.393991" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:52.402296" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:08:56.188636" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:00.192389" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:04.192792" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:08.192618" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:12.193484" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:16.192639" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:20.187459" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:24.186367" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:28.188612" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:32.186134" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:36.191713" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:40.190262" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:44.197481" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:09:48.190522" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:04.836190" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x1a9a8d319662fac77a318255812b512c115568ff9d90b04969f39da409278fb4"
+"time"="2025-12-10 19:10:11.427847" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xa79238f3434839d5bbc1f88ba6f09a70fe25e2f9722626bf85dd1f7da929493a"
+"time"="2025-12-10 19:10:11.462887" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:15.192958" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:19.189925" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:23.188706" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:27.195186" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:31.194649" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:35.186112" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:39.191826" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:43.191619" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:47.188081" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:50.742981" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:54.187031" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:10:58.191604" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:02.193198" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:06.193473" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:10.191325" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:14.191764" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:18.189135" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:22.191057" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:26.191218" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:30.192343" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:11:34.192098" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:15:05.230119" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286716 "block"=43580834
+"time"="2025-12-10 19:15:42.655268" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x7ced4e428e1b4e94dfd741496fcd481ca16aeec17876d4bbebf859decdc89fc4"
+"time"="2025-12-10 19:15:49.311352" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x5e4134de9055d7c348d2d1b0f111119bc7a2284c69c8b5d378f6d49fa9d2d01e"
+"time"="2025-12-10 19:15:49.348083" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:15:53.193934" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:15:57.192613" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:01.195047" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:05.193406" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:09.194292" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:13.194381" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:17.189027" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:21.193935" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:25.194154" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:29.194266" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:33.192291" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:37.194563" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:41.195338" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:45.195302" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:49.192576" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:53.192360" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:16:57.194362" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:17:01.199144" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:17:05.196965" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:17:16.590851" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x2564314ce3d62098c166f804f3e84e137931cf0c7304e27601021f367134162e"
+"time"="2025-12-10 19:18:26.315126" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286716 "block"=43580874
+"time"="2025-12-10 19:19:48.162631" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x6e5e02ab6c06d901029ebc54ed038bfaf469b6b0c2fab6422bc5d5f7da5537db"
+"time"="2025-12-10 19:19:48.280837" "level"="error" "logger"="node/api/post_stamp" "msg"="create batch: create failed"
+"time"="2025-12-10 19:21:47.418756" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286716 "block"=43580911
+"time"="2025-12-10 19:21:47.701334" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286716
+"time"="2025-12-10 19:28:29.489766" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286717 "block"=43580984
+"time"="2025-12-10 19:28:53.072485" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xddfc337e10bfbe728fb239e7f682b76aa92e12234210dfc80fee67aaf988b98a"
+"time"="2025-12-10 19:28:59.726529" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x17bf016728c9ffc21a20aa0ddbdc4d56a025bbf923e43635ed18879fe43266ff"
+"time"="2025-12-10 19:32:15.694008" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286717 "block"=43581026
+"time"="2025-12-10 19:33:19.416680" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x653fbd764bfdf5048f5fb09edfac6969f55377712082f63e85abc653f0072d11"
+"time"="2025-12-10 19:33:19.425182" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:22.432344" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:25.439264" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:28.444894" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:31.454128" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:34.469979" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:37.477247" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:40.483825" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:43.491417" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:46.502585" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:49.512137" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:52.516411" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:55.527663" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:33:58.536815" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:01.546454" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:04.554561" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:07.563251" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:10.572911" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:13.580209" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:16.589714" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:19.597942" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:22.610096" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:25.618032" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:28.626307" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:34:31.637637" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:35:11.653792" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286717 "block"=43581062
+"time"="2025-12-10 19:35:11.900578" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286717
+"time"="2025-12-10 19:36:20.066656" "level"="warning" "logger"="node" "msg"="your node is outdated, please check for the latest version"
+"time"="2025-12-10 19:36:40.417534" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x0d517fcb57b353cb0589a6fddd5083a6f943c8bee355edfb3f9d3084884de605"
+"time"="2025-12-10 19:36:47.280192" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x5af09bf8aff0d84b7bbe4fbf2706915c66ef7f1aede2f52ffb707c5a10d1665a"
+"time"="2025-12-10 19:36:47.299790" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:36:50.311091" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:36:53.322013" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:36:56.328813" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:36:59.338667" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:02.348959" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:05.359438" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:08.367052" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:11.376783" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:14.386968" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:17.395356" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:20.407729" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:23.416714" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:26.426999" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:29.436619" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:32.444770" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:35.455393" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:38.465026" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:41.476833" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:44.487401" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:47.494530" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:50.504048" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:53.517188" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:56.531807" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:37:59.541950" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:41:53.696251" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286718 "block"=43581140
+"time"="2025-12-10 19:43:00.731609" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x92becd3925edf6672051b581dbb63e48753f8f87f787175844d86191148da2b0"
+"time"="2025-12-10 19:44:23.266497" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x09f08c9c52a7e56ca3c402839509d6ea1859be27a43d0e3cc50f0cc95be22b7b"
+"time"="2025-12-10 19:45:14.779325" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286718 "block"=43581177
+"time"="2025-12-10 19:46:06.216487" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x0cdc61667c77c9afccf6eb00e02a754e10a842645024626b2d89a0a0bf783a47"
+"time"="2025-12-10 19:46:06.225892" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:09.236517" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:12.246693" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:15.257229" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:18.265942" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:21.278608" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:24.289084" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:27.298878" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:30.308385" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:33.319223" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:36.330676" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:39.339751" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:42.349455" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:45.362312" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:48.375787" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:51.383047" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:54.391110" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:46:57.401045" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:00.416482" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:03.426567" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:06.438097" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:09.450739" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:12.459501" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:15.470480" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:18.482157" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:21.495535" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:24.506748" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:27.516503" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:30.525508" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:41.106141" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x72d45c4b4ba9225d377f6e1fe85c0e48d716d562320ff57f4fc06ee440917122"
+"time"="2025-12-10 19:47:47.704710" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x25d7653fde8d61f5f646ed10ab34bb8a3068d0958b94f0a6c7f4bae1f3959782"
+"time"="2025-12-10 19:47:47.719412" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:50.732228" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:53.741955" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:56.752789" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:47:59.762287" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:02.775141" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:05.787624" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:08.796361" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:10.984813" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="claim" "round"=286718 "block"=43581212
+"time"="2025-12-10 19:48:11.313123" "level"="error" "logger"="node/storageincentives" "msg"="phase failed" "error"="IsPlaying: owner 0xB467aCE65D9D7D9B6489D514BbD3e5F629301867 depth 9: execution reverted" "phase"="sample" "round"=286718
+"time"="2025-12-10 19:48:11.807309" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:14.819375" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:17.830605" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:20.840390" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:23.851022" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:26.860803" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:29.870313" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:32.882325" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:35.896396" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:38.905774" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:41.915767" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:44.926303" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:47.935832" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:50.945975" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:53.957573" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:56.969196" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:48:59.977970" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:02.990107" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:06.002778" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:09.015117" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:12.026306" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:22.512379" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0x54a777212c236b4ad9cc0027100ff7fe2f8b45c040296f0b04c59c0864daa754"
+"time"="2025-12-10 19:49:34.563080" "level"="info" "logger"="node/transaction" "msg"="pending transaction confirmed" "sender_address"="0xB467aCE65D9D7D9B6489D514BbD3e5F629301867" "tx"="0xaa76ee4299eee948202de9c8bc912c36c4572489fe8f84928b150064a6cf73aa"
+"time"="2025-12-10 19:49:34.586610" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:37.595159" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:40.605586" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:43.619741" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:46.627956" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:49.638175" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:52.645375" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:55.653351" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:49:58.665122" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:01.674198" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:04.683138" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:07.695796" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:10.706866" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:13.719386" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:16.728733" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:19.735598" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:22.745445" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:25.755834" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:28.765011" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:31.775901" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:34.786946" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:37.801098" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:40.816515" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:43.828959" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:46.841163" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:49.855531" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:52.865622" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:50:55.877886" "level"="error" "logger"="node/api/get_stamp" "msg"="get stamp issuer: get issuer failed"
+"time"="2025-12-10 19:54:53.079787" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="commit" "round"=286719 "block"=43581289
+"time"="2025-12-10 19:58:14.219288" "level"="info" "logger"="node/storageincentives" "msg"="entered new phase" "phase"="reveal" "round"=286719 "block"=43581329
