@@ -138,7 +138,7 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     onError,
   } = { ...options }
 
-  if (!beeApi || !fm) {
+  if (!beeApi || !fm || !fm.adminStamp) {
     onError?.('Error creating drive: Bee API or FM is invalid!')
 
     return
@@ -146,6 +146,16 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
 
   try {
     let batchId: BatchId
+
+    verifyDriveSpace({
+      fm,
+      redundancyLevel,
+      stamp: existingBatch ? existingBatch : fm.adminStamp,
+      adminRedundancy,
+      cb: err => {
+        throw new Error(err)
+      },
+    })
 
     if (!existingBatch) {
       batchId = await beeApi.buyStorage(size, duration, { label }, undefined, encryption, redundancyLevel)
@@ -157,17 +167,6 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
           'The stamp is no longer valid or has been deleted. Please select a different stamp from the list.',
         )
       }
-
-      // verify if there is enough space on the admin stamp first
-      verifyDriveSpace({
-        fm,
-        redundancyLevel,
-        stamp: existingBatch,
-        adminRedundancy,
-        cb: err => {
-          throw new Error(err)
-        },
-      })
 
       batchId = existingBatch.batchID
     }
@@ -212,7 +211,7 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
       fm,
       driveId: drive.id.toString(),
       redundancyLevel: drive.redundancyLevel,
-      stamp,
+      stamp: fm.adminStamp,
       isRemove: true,
       adminRedundancy: adminDrive.redundancyLevel,
       cb: err => {
