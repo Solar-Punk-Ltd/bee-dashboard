@@ -77,7 +77,7 @@ const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?:
   const previousAccumulated = existingFile
     ? Number(existingFile.customMetadata?.accumulatedSize || existingFile.customMetadata?.size || 0)
     : 0
-  const accumulatedSize = existingFile ? previousAccumulated + totalSize : totalSize
+  const accumulatedSize = previousAccumulated + totalSize
 
   const meta: UploadMeta = {
     size: String(totalSize),
