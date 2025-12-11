@@ -69,8 +69,8 @@ export function Benchmark(): ReactElement {
 
   return (
     <div>
-      <div>Benchmark Page</div>
-      <Typography variant="h2" gutterBottom>
+      <Typography variant="h1">Benchmark Page</Typography>
+      <Typography variant="body2" gutterBottom>
         Before starting benchmark make sure that your admin drive is initialized
       </Typography>
       <button disabled={runBenchmark} onClick={() => setRunBenchmark(true)}>

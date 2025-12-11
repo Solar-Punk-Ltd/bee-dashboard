@@ -1,0 +1,76 @@
+Benchmark.tsx:38 Benchmark started
+Benchmark.tsx:44 Running Drive creation benchmark [0]
+bee.ts:159 Bought stamp in 86.354 seconds
+bee.ts:195 Created drive in 0.213 seconds
+Benchmark.tsx:52 Drive creation benchmark [0] finished in 86.568 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [1]
+bee.ts:159 Bought stamp in 101.43 seconds
+bee.ts:195 Created drive in 0.147 seconds
+Benchmark.tsx:52 Drive creation benchmark [1] finished in 101.577 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [2]
+bee.ts:159 Bought stamp in 98.355 seconds
+bee.ts:195 Created drive in 0.148 seconds
+Benchmark.tsx:52 Drive creation benchmark [2] finished in 98.503 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [3]
+bee.ts:159 Bought stamp in 101.437 seconds
+bee.ts:195 Created drive in 0.143 seconds
+Benchmark.tsx:52 Drive creation benchmark [3] finished in 101.58 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [4]
+bee.ts:159 Bought stamp in 111.027 seconds
+bee.ts:195 Created drive in 0.189 seconds
+Benchmark.tsx:52 Drive creation benchmark [4] finished in 111.216 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [5]
+bee.ts:159 Bought stamp in 98.813 seconds
+bee.ts:195 Created drive in 0.138 seconds
+Benchmark.tsx:52 Drive creation benchmark [5] finished in 98.951 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [6]
+bee.ts:159 Bought stamp in 112.859 seconds
+bee.ts:195 Created drive in 0.138 seconds
+Benchmark.tsx:52 Drive creation benchmark [6] finished in 112.997 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [7]
+bee.ts:159 Bought stamp in 98.865 seconds
+bee.ts:195 Created drive in 0.134 seconds
+Benchmark.tsx:52 Drive creation benchmark [7] finished in 99 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [8]
+bee.ts:159 Bought stamp in 98.858 seconds
+bee.ts:195 Created drive in 0.126 seconds
+Benchmark.tsx:52 Drive creation benchmark [8] finished in 98.984 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:44 Running Drive creation benchmark [9]
+bee.ts:159 Bought stamp in 101.88 seconds
+bee.ts:195 Created drive in 0.145 seconds
+Benchmark.tsx:52 Drive creation benchmark [9] finished in 102.025 s
+Benchmark.tsx:53 
+Benchmark.tsx:54 =================================
+Benchmark.tsx:57 Benchmark finished
+
+(index) run durationInSeconds
+0	    0	    86.568
+1	    1	    101.577
+2	    2	    98.503
+3	    3	    101.58
+4	    4	    111.216
+5	    5	    98.951
+6	    6	    112.997
+7	    7	    99
+8	    8	    98.984
+9	    9	    102.025
+
+Benchmark.tsx:61 Average duration (s): 101.14009999999999
