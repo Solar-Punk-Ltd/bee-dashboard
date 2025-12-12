@@ -1,0 +1,28 @@
+Bought stamp in 132.05 seconds // Admin drive by hand
+Created drive in 1.184 seconds
+Benchmark started
+Running Drive creation benchmark [0]
+Bought stamp in 286.202 seconds
+Created drive in 0.444 seconds
+Drive creation benchmark [0] finished in 286.646 s
+
+=================================
+Running Drive creation benchmark [1]
+Bought stamp in 210.179 seconds
+Created drive in 0.444 seconds
+Drive creation benchmark [1] finished in 210.622 s
+
+=================================
+Running Drive creation benchmark [2]
+Bought stamp in 963.796 seconds
+Created drive in 0.416 seconds
+Drive creation benchmark [2] finished in 964.213 s
+
+=================================
+Running Drive creation benchmark [3]
+Bought stamp in 114.107 seconds
+Created drive in 0.424 seconds
+Drive creation benchmark [3] finished in 114.531 s
+
+=================================
+Running Drive creation benchmark [4]
