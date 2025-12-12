@@ -1,9 +1,9 @@
 import { Box, Typography } from '@material-ui/core'
-import { MantarayNode, NULL_ADDRESS } from '@ethersphere/bee-js'
+import { Bytes, MantarayNode, NULL_ADDRESS } from '@ethersphere/bee-js'
 import { saveAs } from 'file-saver'
 import JSZip from 'jszip'
 import { useSnackbar } from 'notistack'
-import { ReactElement, useContext, useEffect, useState } from 'react'
+import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { Loading } from '../../components/Loading'
@@ -36,6 +36,8 @@ export function Share(): ReactElement {
   const [preview, setPreview] = useState<string | undefined>(undefined)
   const [metadata, setMetadata] = useState<Metadata | undefined>()
 
+  const isMountedRef = useRef(true)
+
   async function prepare() {
     if (!beeApi || !status.all) {
       return
@@ -56,12 +58,18 @@ export function Share(): ReactElement {
 
       const entries = manifest.collectAndMap()
       delete entries[META_FILE_NAME]
+
+      if (!isMountedRef.current) return
+
       setSwarmEntries(entries)
 
       const docsMetadata = manifest.getDocsMetadata()
 
       // needed in catch block, shadows the outer variable
       const indexDocument = docsMetadata.indexDocument
+
+      if (!isMountedRef.current) return
+
       setIndexDocument(indexDocument)
 
       try {
@@ -69,12 +77,19 @@ export function Share(): ReactElement {
         const formattedMetadata = remoteMetadata.data.toJSON() as Metadata
 
         if (formattedMetadata.isVideo || formattedMetadata.isAudio || formattedMetadata.isImage) {
+          if (!isMountedRef.current) return
           setPreview(`${apiUrl}/bzz/${reference}`)
         }
+
+        if (!isMountedRef.current) return
+
         setMetadata({ ...formattedMetadata, hash })
       } catch (e) {
         // if metadata is not available or invalid go with the default one
         const count = Object.keys(entries).length
+
+        if (!isMountedRef.current) return
+
         setMetadata({
           hash,
           type: count > 1 ? 'folder' : 'unknown',
@@ -88,6 +103,8 @@ export function Share(): ReactElement {
         })
       }
     } catch {
+      if (!isMountedRef.current) return
+
       setNotFound(true)
       enqueueSnackbar('The specified hash does not contain valid content.', { variant: 'error' })
 
@@ -114,8 +131,15 @@ export function Share(): ReactElement {
   }
 
   useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
     setLoading(true)
     prepare().finally(() => {
+      if (!isMountedRef.current) return
       setLoading(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,19 +149,58 @@ export function Share(): ReactElement {
     if (!beeApi) {
       return
     }
+
     putHistory(HISTORY_KEYS.DOWNLOAD_HISTORY, reference, determineHistoryName(reference, indexDocument))
     setDownloading(true)
 
     if (Object.keys(swarmEntries).length === 1) {
-      window.open(`${apiUrl}/bzz/${reference}/`, '_blank')
+      const singleFileName = Object.keys(swarmEntries)[0]
+      const singleFileHash = Object.values(swarmEntries)[0]
+
+      let fileData: Bytes
+      try {
+        fileData = await beeApi.downloadData(singleFileHash)
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to download file: ', err)
+
+        return
+      }
+
+      const dataArray = fileData.toUint8Array()
+      const arrayBuffer = new ArrayBuffer(dataArray.length)
+      const view = new Uint8Array(arrayBuffer)
+      view.set(dataArray)
+      const blob = new Blob([arrayBuffer], { type: metadata?.type || 'application/octet-stream' })
+      saveAs(blob, metadata?.name || singleFileName || reference)
     } else {
       const zip = new JSZip()
       for (const [path, hash] of Object.entries(swarmEntries)) {
-        zip.file(path, (await beeApi.downloadData(hash)).toUint8Array())
+        try {
+          zip.file(path, (await beeApi.downloadData(hash)).toUint8Array())
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to download files: ', err)
+
+          return
+        }
       }
-      const content = await zip.generateAsync({ type: 'blob' })
+
+      let content: Blob
+      try {
+        content = await zip.generateAsync({ type: 'blob' })
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to compress file: ', err)
+
+        return
+      }
+
       saveAs(content, reference + '.zip')
     }
+
+    if (!isMountedRef.current) return
+
     setDownloading(false)
   }
 
