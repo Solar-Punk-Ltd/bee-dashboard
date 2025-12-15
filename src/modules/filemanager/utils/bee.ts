@@ -138,7 +138,7 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     onError,
   } = { ...options }
 
-  if (!beeApi || !fm || (!fm.adminStamp && !isAdmin)) {
+  if (!beeApi || !fm) {
     onError?.('Error creating drive: Bee API or FM is invalid!')
 
     return
