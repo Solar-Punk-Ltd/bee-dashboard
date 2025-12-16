@@ -1,4 +1,4 @@
-import { ReactElement, useState, useMemo, useEffect, useRef, useContext } from 'react'
+import { ReactElement, useState, useMemo, useEffect, useRef, useContext, useCallback } from 'react'
 import './AdminStatusBar.scss'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { Tooltip } from '../Tooltip/Tooltip'
@@ -9,6 +9,7 @@ import { calculateStampCapacityMetrics } from '../../utils/bee'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { getHumanReadableFileSize } from '../../../../utils/file'
+import { useStampPolling } from '../../hooks/useStampPolling'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -34,18 +35,25 @@ export function AdminStatusBar({
   const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
 
   const isMountedRef = useRef(true)
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const { startPolling, stopPolling } = useStampPolling({
+    onStampUpdated: useCallback(
+      (freshStamp: PostageBatch) => {
+        if (!isMountedRef.current) return
+        setActualStamp(freshStamp)
+      },
+      [isMountedRef],
+    ),
+    onPollingStateChange: setIsCapacityUpdating,
+    refreshStamp,
+  })
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false
-
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current)
-        pollingIntervalRef.current = null
-      }
+      stopPolling()
     }
-  }, [])
+  }, [stopPolling])
 
   useEffect(() => {
     setShowProgressModal(isCreationInProgress || loading)
@@ -88,44 +96,7 @@ export function AdminStatusBar({
           setActualStamp(updatedStamp)
 
           if (isStillUpdating && adminStamp) {
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current)
-              pollingIntervalRef.current = null
-            }
-
-            setIsCapacityUpdating(true)
-            const oldSize = adminStamp.size.toBytes()
-            const oldExpiry = adminStamp.duration.toEndDate().getTime()
-            const timeoutId = setTimeout(() => {
-              if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current)
-                pollingIntervalRef.current = null
-                setIsCapacityUpdating(false)
-              }
-            }, 30000)
-
-            pollingIntervalRef.current = setInterval(async () => {
-              const freshStamp = await refreshStamp(batchId)
-
-              if (freshStamp) {
-                const capacityUpdated = freshStamp.size.toBytes() > oldSize
-                const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
-
-                if (capacityUpdated || durationUpdated) {
-                  if (!isMountedRef.current) return
-
-                  setActualStamp(freshStamp)
-                  setIsCapacityUpdating(false)
-
-                  if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current)
-                    pollingIntervalRef.current = null
-                  }
-
-                  clearTimeout(timeoutId)
-                }
-              }
-            }, 2000)
+            startPolling(batchId, adminStamp)
           }
         } else {
           const upgradedStamp = await refreshStamp(batchId)

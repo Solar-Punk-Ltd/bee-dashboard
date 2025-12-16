@@ -1,4 +1,4 @@
-import { ReactElement, useState, useContext, useEffect, useRef, useMemo } from 'react'
+import { ReactElement, useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Drive from 'remixicon-react/HardDrive2LineIcon'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
@@ -18,6 +18,7 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
+import { useStampPolling } from '../../../hooks/useStampPolling'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -39,22 +40,29 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const [isDestroying, setIsDestroying] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
   const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
   const { setView, setActualItemView } = useView()
 
+  const { startPolling, stopPolling } = useStampPolling({
+    onStampUpdated: useCallback(
+      (freshStamp: PostageBatch) => {
+        if (!isMountedRef.current) return
+        setActualStamp(freshStamp)
+      },
+      [isMountedRef],
+    ),
+    onPollingStateChange: setIsCapacityUpdating,
+    refreshStamp,
+  })
+
   useEffect(() => {
     return () => {
       isMountedRef.current = false
-
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current)
-        pollingIntervalRef.current = null
-      }
+      stopPolling()
     }
-  }, [])
+  }, [stopPolling])
 
   useEffect(() => {
     setActualStamp(stamp)
@@ -100,44 +108,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           setActualStamp(updatedStamp)
 
           if (isStillUpdating) {
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current)
-              pollingIntervalRef.current = null
-            }
-
-            setIsCapacityUpdating(true)
-            const oldSize = stamp.size.toBytes()
-            const oldExpiry = stamp.duration.toEndDate().getTime()
-            const timeoutId = setTimeout(() => {
-              if (pollingIntervalRef.current) {
-                clearInterval(pollingIntervalRef.current)
-                pollingIntervalRef.current = null
-                setIsCapacityUpdating(false)
-              }
-            }, 30000)
-
-            pollingIntervalRef.current = setInterval(async () => {
-              const freshStamp = await refreshStamp(batchId)
-
-              if (freshStamp) {
-                const capacityUpdated = freshStamp.size.toBytes() > oldSize
-                const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
-
-                if (capacityUpdated || durationUpdated) {
-                  if (!isMountedRef.current) return
-
-                  setActualStamp(freshStamp)
-                  setIsCapacityUpdating(false)
-
-                  if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current)
-                    pollingIntervalRef.current = null
-                  }
-
-                  clearTimeout(timeoutId)
-                }
-              }
-            }, 2000)
+            startPolling(batchId, stamp)
           }
         } else {
           const upgradedStamp = await refreshStamp(batchId)

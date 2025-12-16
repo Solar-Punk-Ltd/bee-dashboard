@@ -1,0 +1,62 @@
+import { useRef, useCallback } from 'react'
+import { PostageBatch } from '@ethersphere/bee-js'
+
+interface UseStampPollingOptions {
+  onStampUpdated: (stamp: PostageBatch) => void
+  onPollingStateChange: (isPolling: boolean) => void
+  refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
+}
+
+export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshStamp }: UseStampPollingOptions) {
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+
+    onPollingStateChange(false)
+  }, [onPollingStateChange])
+
+  const startPolling = useCallback(
+    (batchId: string, originalStamp: PostageBatch) => {
+      stopPolling()
+
+      onPollingStateChange(true)
+
+      const oldSize = originalStamp.size.toBytes()
+      const oldExpiry = originalStamp.duration.toEndDate().getTime()
+
+      timeoutRef.current = setTimeout(() => {
+        stopPolling()
+      }, 30000)
+
+      pollingIntervalRef.current = setInterval(async () => {
+        const freshStamp = await refreshStamp(batchId)
+
+        if (freshStamp) {
+          const capacityUpdated = freshStamp.size.toBytes() > oldSize
+          const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
+
+          if (capacityUpdated || durationUpdated) {
+            onStampUpdated(freshStamp)
+            stopPolling()
+          }
+        }
+      }, 2000)
+    },
+    [refreshStamp, onStampUpdated, onPollingStateChange, stopPolling],
+  )
+
+  return {
+    startPolling,
+    stopPolling,
+  }
+}
