@@ -38,6 +38,8 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [isDestroying, setIsDestroying] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
+  const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
@@ -46,6 +48,11 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   useEffect(() => {
     return () => {
       isMountedRef.current = false
+
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
     }
   }, [])
 
@@ -75,7 +82,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
     }
 
     const onEnd = async (e: Event) => {
-      const { driveId, success, error } = (e as CustomEvent).detail || {}
+      const { driveId, success, error, updatedStamp, isStillUpdating } = (e as CustomEvent).detail || {}
 
       if (!success) {
         if (error) {
@@ -88,12 +95,58 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       if (driveId === id) {
         setIsUpgrading(false)
 
-        const upgradedStamp = await refreshStamp(batchId)
+        if (updatedStamp) {
+          if (!isMountedRef.current) return
+          setActualStamp(updatedStamp)
 
-        if (!isMountedRef.current) return
+          if (isStillUpdating) {
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
 
-        if (upgradedStamp) {
-          setActualStamp(upgradedStamp)
+            setIsCapacityUpdating(true)
+            const oldSize = stamp.size.toBytes()
+            const oldExpiry = stamp.duration.toEndDate().getTime()
+            const timeoutId = setTimeout(() => {
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current)
+                pollingIntervalRef.current = null
+                setIsCapacityUpdating(false)
+              }
+            }, 30000)
+
+            pollingIntervalRef.current = setInterval(async () => {
+              const freshStamp = await refreshStamp(batchId)
+
+              if (freshStamp) {
+                const capacityUpdated = freshStamp.size.toBytes() > oldSize
+                const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
+
+                if (capacityUpdated || durationUpdated) {
+                  if (!isMountedRef.current) return
+
+                  setActualStamp(freshStamp)
+                  setIsCapacityUpdating(false)
+
+                  if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current)
+                    pollingIntervalRef.current = null
+                  }
+
+                  clearTimeout(timeoutId)
+                }
+              }
+            }, 2000)
+          }
+        } else {
+          const upgradedStamp = await refreshStamp(batchId)
+
+          if (!isMountedRef.current) return
+
+          if (upgradedStamp) {
+            setActualStamp(upgradedStamp)
+          }
         }
       }
     }
@@ -105,7 +158,17 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [drive.id, setShowError, setErrorMessage, stamp.batchID, refreshStamp])
+  }, [
+    drive.id,
+    actualStamp.size,
+    drive.name,
+    stamp.duration,
+    stamp.size,
+    setShowError,
+    setErrorMessage,
+    stamp.batchID,
+    refreshStamp,
+  ])
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
@@ -131,7 +194,15 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           <div>{truncateNameMiddle(drive.name, 35, 8, 8)}</div>
         </div>
         <div className="fm-drive-item-content">
-          <div className="fm-drive-item-capacity">
+          <div
+            className="fm-drive-item-capacity"
+            style={{
+              filter: isCapacityUpdating ? 'blur(2px)' : 'none',
+              opacity: isCapacityUpdating ? 0.6 : 1,
+              transition: 'all 0.3s ease',
+            }}
+            title={isCapacityUpdating ? 'Capacity is updating... This may take a few moments.' : ''}
+          >
             Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
           </div>
           <div className="fm-drive-item-capacity">

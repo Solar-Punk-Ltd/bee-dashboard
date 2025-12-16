@@ -31,12 +31,19 @@ export function AdminStatusBar({
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
   const [showProgressModal, setShowProgressModal] = useState(true)
+  const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
 
   const isMountedRef = useRef(true)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false
+
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
     }
   }, [])
 
@@ -63,7 +70,7 @@ export function AdminStatusBar({
     }
 
     const onEnd = async (e: Event) => {
-      const { driveId, success, error } = (e as CustomEvent).detail || {}
+      const { driveId, success, error, updatedStamp, isStillUpdating } = (e as CustomEvent).detail || {}
 
       if (!success) {
         if (error) {
@@ -76,12 +83,58 @@ export function AdminStatusBar({
       if (driveId === id && batchId) {
         setIsUpgrading(false)
 
-        const upgradedStamp = await refreshStamp(batchId)
+        if (updatedStamp) {
+          if (!isMountedRef.current) return
+          setActualStamp(updatedStamp)
 
-        if (!isMountedRef.current) return
+          if (isStillUpdating && adminStamp) {
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
 
-        if (upgradedStamp) {
-          setActualStamp(upgradedStamp)
+            setIsCapacityUpdating(true)
+            const oldSize = adminStamp.size.toBytes()
+            const oldExpiry = adminStamp.duration.toEndDate().getTime()
+            const timeoutId = setTimeout(() => {
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current)
+                pollingIntervalRef.current = null
+                setIsCapacityUpdating(false)
+              }
+            }, 30000)
+
+            pollingIntervalRef.current = setInterval(async () => {
+              const freshStamp = await refreshStamp(batchId)
+
+              if (freshStamp) {
+                const capacityUpdated = freshStamp.size.toBytes() > oldSize
+                const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
+
+                if (capacityUpdated || durationUpdated) {
+                  if (!isMountedRef.current) return
+
+                  setActualStamp(freshStamp)
+                  setIsCapacityUpdating(false)
+
+                  if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current)
+                    pollingIntervalRef.current = null
+                  }
+
+                  clearTimeout(timeoutId)
+                }
+              }
+            }, 2000)
+          }
+        } else {
+          const upgradedStamp = await refreshStamp(batchId)
+
+          if (!isMountedRef.current) return
+
+          if (upgradedStamp) {
+            setActualStamp(upgradedStamp)
+          }
         }
       }
     }
@@ -93,7 +146,7 @@ export function AdminStatusBar({
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [adminDrive, adminStamp?.batchID, setErrorMessage, setShowError, refreshStamp, setIsUpgrading])
+  }, [adminDrive, adminStamp, adminStamp?.batchID, setErrorMessage, setShowError, refreshStamp, setIsUpgrading])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => {
     if (!actualStamp) {
@@ -138,7 +191,15 @@ export function AdminStatusBar({
     <div>
       <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={isBusy ? 'true' : 'false'}>
         <div className="fm-admin-status-bar-left">
-          <div className="fm-drive-item-capacity">
+          <div
+            className="fm-drive-item-capacity"
+            style={{
+              filter: isCapacityUpdating ? 'blur(2px)' : 'none',
+              opacity: isCapacityUpdating ? 0.6 : 1,
+              transition: 'all 0.3s ease',
+            }}
+            title={isCapacityUpdating ? 'Capacity is updating... This may take a few moments.' : ''}
+          >
             Capacity <ProgressBar value={capacityPct} width="150px" /> {usedSize} / {totalSize}
           </div>
 
