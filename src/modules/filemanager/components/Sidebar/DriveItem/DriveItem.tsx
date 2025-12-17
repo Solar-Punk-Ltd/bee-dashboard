@@ -131,6 +131,8 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
     }
   }, [
     drive.id,
+    stamp,
+    startPolling,
     actualStamp.size,
     drive.name,
     stamp.duration,

@@ -117,7 +117,16 @@ export function AdminStatusBar({
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
     }
-  }, [adminDrive, adminStamp, adminStamp?.batchID, setErrorMessage, setShowError, refreshStamp, setIsUpgrading])
+  }, [
+    adminDrive,
+    startPolling,
+    adminStamp,
+    adminStamp?.batchID,
+    setErrorMessage,
+    setShowError,
+    refreshStamp,
+    setIsUpgrading,
+  ])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => {
     if (!actualStamp) {
