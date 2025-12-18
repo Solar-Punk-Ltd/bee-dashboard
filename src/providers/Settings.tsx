@@ -108,7 +108,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     } catch (e) {
       setBeeApi(null)
     }
-  };
+  }
 
   return (
     <Context.Provider
