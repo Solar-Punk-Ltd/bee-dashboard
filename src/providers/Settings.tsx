@@ -86,17 +86,13 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   }, [])
 
   useEffect(() => {
-    if (Boolean(localStorage.getItem('api_host')) || !config?.['api-addr']) {
-      return
-    }
-
-    const url = makeHttpUrl(config?.['api-addr'])
+    const url = makeHttpUrl(localStorage.getItem('api_host') ?? config?.['api-addr'] ?? apiUrl)
     try {
       setBeeApi(new Bee(url))
     } catch (e) {
       setBeeApi(null)
     }
-  }, [config])
+  }, [config, apiUrl])
 
   const updateApiUrl = (url: string) => {
     const userProvidedUrl = makeHttpUrl(url)
