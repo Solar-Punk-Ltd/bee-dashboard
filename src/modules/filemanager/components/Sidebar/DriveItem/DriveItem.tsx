@@ -1,4 +1,4 @@
-import { ReactElement, useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react'
+import { ReactElement, useState, useContext, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Drive from 'remixicon-react/HardDrive2LineIcon'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
@@ -18,7 +18,7 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
-import { useStampPolling } from '../../../hooks/useStampPolling'
+import { useStampPollingWithState } from '../../../hooks/useStampPollingWithState'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -35,7 +35,6 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
-  const isMountedRef = useRef(true)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [isDestroying, setIsDestroying] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
@@ -45,24 +44,11 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
 
   const { setView, setActualItemView } = useView()
 
-  const { startPolling, stopPolling } = useStampPolling({
-    onStampUpdated: useCallback(
-      (freshStamp: PostageBatch) => {
-        if (!isMountedRef.current) return
-        setActualStamp(freshStamp)
-      },
-      [isMountedRef],
-    ),
-    onPollingStateChange: setIsCapacityUpdating,
+  const { startPolling, isMountedRef } = useStampPollingWithState({
     refreshStamp,
+    setActualStamp,
+    setIsCapacityUpdating,
   })
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-      stopPolling()
-    }
-  }, [stopPolling])
 
   useEffect(() => {
     setActualStamp(stamp)
@@ -141,6 +127,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
     setErrorMessage,
     stamp.batchID,
     refreshStamp,
+    isMountedRef,
   ])
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {

@@ -1,4 +1,4 @@
-import { ReactElement, useState, useMemo, useEffect, useRef, useContext, useCallback } from 'react'
+import { ReactElement, useState, useMemo, useEffect, useContext } from 'react'
 import './AdminStatusBar.scss'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { Tooltip } from '../Tooltip/Tooltip'
@@ -9,7 +9,7 @@ import { calculateStampCapacityMetrics } from '../../utils/bee'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
 import { getHumanReadableFileSize } from '../../../../utils/file'
-import { useStampPolling } from '../../hooks/useStampPolling'
+import { useStampPollingWithState } from '../../hooks/useStampPollingWithState'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -34,26 +34,11 @@ export function AdminStatusBar({
   const [showProgressModal, setShowProgressModal] = useState(true)
   const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
 
-  const isMountedRef = useRef(true)
-
-  const { startPolling, stopPolling } = useStampPolling({
-    onStampUpdated: useCallback(
-      (freshStamp: PostageBatch) => {
-        if (!isMountedRef.current) return
-        setActualStamp(freshStamp)
-      },
-      [isMountedRef],
-    ),
-    onPollingStateChange: setIsCapacityUpdating,
+  const { startPolling, isMountedRef } = useStampPollingWithState({
     refreshStamp,
+    setActualStamp,
+    setIsCapacityUpdating,
   })
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-      stopPolling()
-    }
-  }, [stopPolling])
 
   useEffect(() => {
     setShowProgressModal(isCreationInProgress || loading)
@@ -126,6 +111,7 @@ export function AdminStatusBar({
     setShowError,
     refreshStamp,
     setIsUpgrading,
+    isMountedRef,
   ])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => {
