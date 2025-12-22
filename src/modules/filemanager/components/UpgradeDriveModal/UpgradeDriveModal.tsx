@@ -158,11 +158,9 @@ export function UpgradeDriveModal({
   useEffect(() => {
     const fetchExtensionCost = () => {
       const isCapacitySet = capacityIndex > 0
-      const isDurationSet = true
+      const isDurationSet = lifetimeIndex > 0
       const extendDuration =
-        durationExtensionCost === '0'
-          ? Duration.ZERO
-          : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate())
+        lifetimeIndex > 0 ? Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()) : Duration.ZERO
 
       handleCostCalculation(
         stamp.batchID,
@@ -318,9 +316,7 @@ export function UpgradeDriveModal({
                 await beeApi.extendStorage(
                   stamp.batchID,
                   capacity,
-                  durationExtensionCost === '0'
-                    ? Duration.ZERO
-                    : Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()),
+                  lifetimeIndex > 0 ? Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()) : Duration.ZERO,
                   undefined,
                   false,
                   defaultErasureCodeLevel,
