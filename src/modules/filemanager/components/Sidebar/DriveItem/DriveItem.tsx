@@ -167,14 +167,24 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       handleUpgradeEnd(driveId, id, batchId, success, error, updatedStamp, isStillUpdating)
     }
 
+    const onFileUploaded = (e: Event) => {
+      const { fileInfo } = (e as CustomEvent).detail || {}
+
+      if (fileInfo && fileInfo.driveId === id) {
+        startPolling(batchId, actualStamp)
+      }
+    }
+
     window.addEventListener('fm:drive-upgrade-start', onStart as EventListener)
     window.addEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+    window.addEventListener('fm:file-uploaded', onFileUploaded as EventListener)
 
     return () => {
       window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
       window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
+      window.removeEventListener('fm:file-uploaded', onFileUploaded as EventListener)
     }
-  }, [drive.id, stamp.batchID, handleUpgradeStart, handleUpgradeEnd])
+  }, [drive.id, stamp.batchID, handleUpgradeStart, handleUpgradeEnd, startPolling, actualStamp])
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())

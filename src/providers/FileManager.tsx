@@ -265,9 +265,10 @@ export function Provider({ children }: Props) {
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
-    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileInfo }) =>
-      syncFiles(manager, fileInfo),
-    )
+    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileInfo }) => {
+      syncFiles(manager, fileInfo)
+      window.dispatchEvent(new CustomEvent('fm:file-uploaded', { detail: { fileInfo } }))
+    })
     manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, ({ restored }: { restored: FileInfo }) =>
       syncFiles(manager, restored),
     )

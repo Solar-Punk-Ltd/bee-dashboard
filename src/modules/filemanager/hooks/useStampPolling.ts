@@ -42,16 +42,25 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
       }, POLLING_TIMEOUT_MS)
 
       pollingIntervalRef.current = setInterval(async () => {
-        const freshStamp = await refreshStamp(batchId)
+        try {
+          const updatedStamp = await refreshStamp(batchId)
 
-        if (freshStamp) {
-          const capacityUpdated = freshStamp.size.toBytes() > oldSize
-          const durationUpdated = freshStamp.duration.toEndDate().getTime() > oldExpiry
+          if (!updatedStamp) {
+            return
+          }
+
+          const newSize = updatedStamp.size.toBytes()
+          const newExpiry = updatedStamp.duration.toEndDate().getTime()
+          const capacityUpdated = newSize > oldSize
+          const durationUpdated = newExpiry > oldExpiry
 
           if (capacityUpdated || durationUpdated) {
-            onStampUpdated(freshStamp)
+            onStampUpdated(updatedStamp)
             stopPolling()
           }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('[useStampPolling] Polling tick failed', { batchId, error: e })
         }
       }, POLLING_INTERVAL_MS)
     },
