@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
 
-const POLLING_TIMEOUT_MS = 30000
+const POLLING_TIMEOUT_MS = 60000
 const POLLING_INTERVAL_MS = 2000
 
 interface UseStampPollingOptions {

@@ -19,6 +19,8 @@ import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../.
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
 import { useStampPollingWithState } from '../../../hooks/useStampPollingWithState'
+import { Tooltip } from '../../Tooltip/Tooltip'
+import { TOOLTIPS } from '../../../constants/tooltips'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -204,8 +206,6 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
 
   const containerClassName = `fm-drive-item-container${isSelected ? ' fm-drive-item-container-selected' : ''}`
   const capacityClassName = `fm-drive-item-capacity ${isCapacityUpdating ? 'fm-drive-item-capacity-updating' : ''}`
-  const updatingTitle = isCapacityUpdating ? 'Capacity is updating... This may take a few moments.' : ''
-  const expiryUpdatingTitle = isCapacityUpdating ? 'Expiry is updating... This may take a few moments.' : ''
   const driveIcon = isHovered ? <DriveFill size="16px" /> : <Drive size="16px" />
 
   return (
@@ -220,11 +220,18 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
           <div>{truncateNameMiddle(drive.name, 35, 8, 8)}</div>
         </div>
         <div className="fm-drive-item-content">
-          <div className={capacityClassName} title={updatingTitle}>
-            Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
+          <div className={capacityClassName}>
+            <span>
+              Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
+            </span>
+            <Tooltip
+              label={isCapacityUpdating ? TOOLTIPS.DRIVE_CAPACITY_UPDATING : TOOLTIPS.DRIVE_CAPACITY_INFO}
+              iconSize="12px"
+              disableMargin={true}
+            />
           </div>
-          <div className={capacityClassName} title={expiryUpdatingTitle}>
-            Expiry date: {actualStamp.duration.toEndDate().toLocaleDateString()}
+          <div className={capacityClassName}>
+            <span>Expiry date: {actualStamp.duration.toEndDate().toLocaleDateString()}</span>
           </div>
         </div>
       </div>

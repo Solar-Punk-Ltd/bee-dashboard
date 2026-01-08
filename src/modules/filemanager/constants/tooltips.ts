@@ -118,4 +118,22 @@ For convenience, an encrypted copy of this key is saved in this browser's local 
   FILE_OPERATION_RESTORE_VERSION: `Note: Restoring versions can alter file metadata and history which may affect the node-reported used capacity. The operation does not upload new data but displayed usage may change post operation.`,
 
   FILE_OPERATION_RESTORE_FROM_TRASH: `Note: Restoring from Trash can modify file metadata and history which may cause the node to report a different (sometimes higher) used capacity. This does not upload new data but the displayed usage may change post operation.`,
+
+  DRIVE_CAPACITY_UPDATING: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Capacity Update in Progress</div>
+The drive's capacity is being refreshed after an upgrade or file operation.
+<br/>
+<br/>
+The system is checking the network for the updated stamp information. This can take up to 30 seconds depending on network conditions.
+<br/>
+<br/>
+If no update is detected after the polling period, the display will revert to showing the last known values. You can manually check again or wait for the next automatic refresh.`,
+
+  DRIVE_CAPACITY_INFO: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">About Drive Capacity</div>
+<b>Current Usage:</b> The storage currently used by all files in this drive, as reported by the network
+<br/>
+<br/>
+<b>Total Capacity:</b> The total storage capacity available for this drive
+<br/>
+<br/>
+After upgrades or file operations, the capacity values may take a moment to update as the system synchronizes with the network. During this time, you'll see a visual indicator that the update is in progress.`,
 }
