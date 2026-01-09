@@ -1,6 +1,4 @@
-// Tooltip content for File Manager
 export const TOOLTIPS = {
-  // Admin Stamp Creation
   ADMIN_PREVIOUSLY_CREATED: `<div style="font-weight: bold; margin-bottom: 12px; font-size: 14px;">Use Existing Admin Drive</div>
 An existing Admin Drive from a previous session can be selected here. This will link the File Manager to that Admin Drive.
 <br/>
@@ -118,4 +116,6 @@ For convenience, an encrypted copy of this key is saved in this browser's local 
   FILE_OPERATION_RESTORE_VERSION: `Note: Restoring versions can alter file metadata and history which may affect the node-reported used capacity. The operation does not upload new data but displayed usage may change post operation.`,
 
   FILE_OPERATION_RESTORE_FROM_TRASH: `Note: Restoring from Trash can modify file metadata and history which may cause the node to report a different (sometimes higher) used capacity. This does not upload new data but the displayed usage may change post operation.`,
+
+  UPGRADE_CAPACITY_AND_DURATION: `TODO: dilute used capacity logarithmic decrease and not exact duration`,
 }
