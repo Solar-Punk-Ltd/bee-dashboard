@@ -28,6 +28,7 @@ import {
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { getHumanReadableFileSize } from '../../../../utils/file'
+import { FILE_MANAGER_EVENTS } from '../../constants/common'
 import { Warning } from '@material-ui/icons'
 
 interface UpgradeDriveModalProps {
@@ -297,7 +298,7 @@ export function UpgradeDriveModal({
               try {
                 setIsSubmitting(true)
                 window.dispatchEvent(
-                  new CustomEvent('fm:drive-upgrade-start', {
+                  new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_START, {
                     detail: { driveId: drive.id.toString() },
                   }),
                 )
@@ -357,7 +358,7 @@ export function UpgradeDriveModal({
 
                 // TODO: replace eventlisteners with a better maintainable solution
                 window.dispatchEvent(
-                  new CustomEvent('fm:drive-upgrade-end', {
+                  new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, {
                     detail: {
                       driveId: drive.id.toString(),
                       success: true,
@@ -369,7 +370,7 @@ export function UpgradeDriveModal({
               } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Upgrade failed'
                 window.dispatchEvent(
-                  new CustomEvent('fm:drive-upgrade-end', {
+                  new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, {
                     detail: {
                       driveId: drive.id.toString(),
                       success: false,

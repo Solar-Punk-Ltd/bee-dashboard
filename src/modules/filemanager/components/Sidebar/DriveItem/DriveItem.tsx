@@ -21,6 +21,7 @@ import { truncateNameMiddle } from '../../../utils/common'
 import { useStampPollingWithState } from '../../../hooks/useStampPollingWithState'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { TOOLTIPS } from '../../../constants/tooltips'
+import { FILE_MANAGER_EVENTS } from '../../../constants/common'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -177,14 +178,14 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       }
     }
 
-    window.addEventListener('fm:drive-upgrade-start', onStart as EventListener)
-    window.addEventListener('fm:drive-upgrade-end', onEnd as EventListener)
-    window.addEventListener('fm:file-uploaded', onFileUploaded as EventListener)
+    window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_START, onStart as EventListener)
+    window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
+    window.addEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, onFileUploaded as EventListener)
 
     return () => {
-      window.removeEventListener('fm:drive-upgrade-start', onStart as EventListener)
-      window.removeEventListener('fm:drive-upgrade-end', onEnd as EventListener)
-      window.removeEventListener('fm:file-uploaded', onFileUploaded as EventListener)
+      window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_START, onStart as EventListener)
+      window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
+      window.removeEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, onFileUploaded as EventListener)
     }
   }, [drive.id, stamp.batchID, handleUpgradeStart, handleUpgradeEnd, startPolling, actualStamp])
 
