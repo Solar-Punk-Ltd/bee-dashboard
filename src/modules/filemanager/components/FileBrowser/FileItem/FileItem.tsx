@@ -28,6 +28,7 @@ import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '
 import { guessMime } from '../../../utils/view'
 import { performFileOperation, FileOperation } from '../../../utils/fileOperations'
 import { uuidV4 } from '../../../../../utils'
+import { folder } from 'jszip'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -45,6 +46,7 @@ interface FileItemProps {
     delete?: () => void
   }
   setErrorMessage?: (error: string) => void
+  folderItemDoubleClick: (folderFileItems: { path: string; ref: string }[] | null, fileName: string) => void
 }
 
 export function FileItem({
@@ -57,6 +59,7 @@ export function FileItem({
   bulkSelectedCount,
   onBulk,
   setErrorMessage,
+  folderItemDoubleClick,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, adminDrive, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
@@ -119,6 +122,20 @@ export function FileItem({
     setShowGetInfoModal(true)
   }, [fm, fileInfo, driveName, driveStamp])
 
+  const handleOpenFolder = useCallback(async () => {
+    if (!fm) return
+    const list = await fm.listFiles(fileInfo)
+    const paths = Object.keys(list)
+    const refs = Object.values(list)
+
+    const result = paths.map((path, index) => ({
+      path,
+      ref: refs[index],
+    }))
+
+    return result
+  }, [fm, fileInfo, driveName])
+
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
     const wanted = currentDrive.batchId.toString()
@@ -137,6 +154,22 @@ export function FileItem({
   }
 
   // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
+  const handleOpen = async (isNewWindow?: boolean) => {
+    handleCloseContext()
+
+    if (!fm || !beeApi) return
+
+    if (fileInfo?.customMetadata?.mime === 'folder') {
+      const fileDatas = await handleOpenFolder()
+      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
+
+      return
+    }
+
+    // await openOrDownload(beeApi.url, fm, fileInfo)
+    handleDownload(isNewWindow)
+  }
+
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       if (!fm || !beeApi) return
@@ -476,7 +509,7 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleOpen(true)}>
         <GetIconElement icon={mimeType} />
         {truncateNameMiddle(fileInfo.name)}
       </div>
