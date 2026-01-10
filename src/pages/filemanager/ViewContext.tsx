@@ -6,13 +6,22 @@ interface ViewContextProps {
   setView: (view: ViewType) => void
   actualItemView?: string
   setActualItemView?: (view: string) => void
+  viewFolders: { folderName: string; tree: any }[]
+  setViewFolders: (folders: { folderName: string; tree: any }[]) => void
+  folderView: boolean
+  setFolderView: (folderView: boolean) => void
+  currentTree: any
+  setCurrentTree: (tree: any) => void
 }
 
 const ViewContext = createContext<ViewContextProps | undefined>(undefined)
 
 export function ViewProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ViewType>(ViewType.File)
+  const [viewFolders, setViewFolders] = useState<{ folderName: string; tree: any }[]>([])
   const [actualItemView, setActualItemView] = useState<string | undefined>(undefined)
+  const [folderView, setFolderView] = useState<boolean>(false)
+  const [currentTree, setCurrentTree] = useState<any>(null)
 
   return (
     <ViewContext.Provider
@@ -21,6 +30,12 @@ export function ViewProvider({ children }: { children: ReactNode }) {
         setView,
         actualItemView,
         setActualItemView,
+        viewFolders,
+        setViewFolders,
+        folderView,
+        setFolderView,
+        currentTree,
+        setCurrentTree,
       }}
     >
       {children}
