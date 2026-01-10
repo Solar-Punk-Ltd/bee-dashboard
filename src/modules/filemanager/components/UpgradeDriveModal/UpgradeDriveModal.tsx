@@ -1,20 +1,13 @@
 import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
-import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
-import { Button } from '../Button/Button'
+import { Warning } from '@material-ui/icons'
 import { createPortal } from 'react-dom'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import DatabaseIcon from 'remixicon-react/Database2LineIcon'
 import WalletIcon from 'remixicon-react/Wallet3LineIcon'
 import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
-import { desiredLifetimeOptions } from '../../constants/stamps'
-import { Context as BeeContext } from '../../../../providers/Bee'
-import { fromBytesConversion, getExpiryDateByLifetime, truncateNameMiddle } from '../../utils/common'
-import { Context as SettingsContext } from '../../../../providers/Settings'
-import { Context as FMContext } from '../../../../providers/FileManager'
-
 import {
   BatchId,
   BeeRequestOptions,
@@ -27,9 +20,19 @@ import {
   Utils,
 } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+
+import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
+import { Button } from '../Button/Button'
+import { desiredLifetimeOptions } from '../../constants/stamps'
+import { Context as BeeContext } from '../../../../providers/Bee'
+import { fromBytesConversion, getExpiryDateByLifetime, truncateNameMiddle } from '../../utils/common'
+import { Context as SettingsContext } from '../../../../providers/Settings'
+import { Context as FMContext } from '../../../../providers/FileManager'
 import { getHumanReadableFileSize } from '../../../../utils/file'
+import { Tooltip } from '../Tooltip/Tooltip'
+import { TOOLTIPS } from '../../constants/tooltips'
+import { useStampPolling } from '../../hooks/useStampPolling'
 import { FILE_MANAGER_EVENTS } from '../../constants/common'
-import { Warning } from '@material-ui/icons'
 
 interface UpgradeDriveModalProps {
   stamp: PostageBatch
@@ -51,7 +54,7 @@ export function UpgradeDriveModal({
 }: UpgradeDriveModalProps): ReactElement {
   const { nodeAddresses, walletBalance } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
-  const { setShowError } = useContext(FMContext)
+  const { refreshStamp, setShowError } = useContext(FMContext)
 
   const [isBalanceSufficient, setIsBalanceSufficient] = useState(true)
   const [capacity, setCapacity] = useState(stamp.size)
@@ -67,11 +70,23 @@ export function UpgradeDriveModal({
   const modalRoot = document.querySelector('.fm-main') || document.body
   const isMountedRef = useRef(true)
 
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
+  const { startPolling } = useStampPolling({
+    refreshStamp,
+    onStampUpdated: (updatedStamp: PostageBatch) => {
+      window.dispatchEvent(
+        new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, {
+          detail: {
+            driveId: drive.id.toString(),
+            success: true,
+            updatedStamp,
+          },
+        }),
+      )
+    },
+    onPollingStateChange: () => {
+      // no-op
+    },
+  })
 
   const handleCapacityChange = (value: number, index: number) => {
     setCapacity(value === -1 ? stamp.size : Size.fromBytes(value))
@@ -131,7 +146,7 @@ export function UpgradeDriveModal({
 
       setExtensionCost(noExtensions ? '0' : costText)
     },
-    [beeApi, walletBalance, setErrorMessage, setShowError],
+    [beeApi, walletBalance, isMountedRef, setErrorMessage, setShowError],
   )
 
   useEffect(() => {
@@ -182,6 +197,12 @@ export function UpgradeDriveModal({
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
   }, [lifetimeIndex, stamp.duration])
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   const batchIdStr = stamp.batchID.toString()
   const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
 
@@ -190,6 +211,7 @@ export function UpgradeDriveModal({
       <div className="fm-modal-window fm-upgrade-drive-modal">
         <div className="fm-modal-window-header">
           <DriveIcon size="18px" /> Upgrade {truncateNameMiddle(drive.name || stamp.label || shortBatchId, 35)}
+          <Tooltip label={TOOLTIPS.UPGRADE_CAPACITY_AND_DURATION} />
         </div>
         <div>Choose extension period and additional storage for your drive.</div>
         <div className="fm-modal-window-body">
@@ -316,57 +338,7 @@ export function UpgradeDriveModal({
                   defaultErasureCodeLevel,
                 )
 
-                let updatedStamp: PostageBatch | undefined
-                const maxRetries = 10
-                const retryDelay = 3000
-
-                for (let i = 0; i < maxRetries; i++) {
-                  try {
-                    if (i > 0) {
-                      await new Promise(resolve => setTimeout(resolve, retryDelay))
-                    }
-
-                    const fetchedStamp = await beeApi.getPostageBatch(stamp.batchID.toString())
-
-                    const oldSize = stamp.size.toBytes()
-                    const newSize = fetchedStamp.size.toBytes()
-                    const oldExpiry = stamp.duration.toEndDate().getTime()
-                    const newExpiry = fetchedStamp.duration.toEndDate().getTime()
-
-                    const capacityIncreased = newSize > oldSize
-                    const durationIncreased = newExpiry > oldExpiry
-
-                    if (capacityIncreased || durationIncreased) {
-                      updatedStamp = fetchedStamp
-                      break
-                    }
-
-                    if (i === maxRetries - 1) {
-                      updatedStamp = fetchedStamp
-                    }
-                  } catch (error) {
-                    if (i === maxRetries - 1) {
-                      break
-                    }
-                  }
-                }
-
-                const capacityUpdated = updatedStamp && updatedStamp.size.toBytes() > stamp.size.toBytes()
-                const durationUpdated =
-                  updatedStamp && updatedStamp.duration.toEndDate().getTime() > stamp.duration.toEndDate().getTime()
-                const isStillUpdating = !updatedStamp || (!capacityUpdated && !durationUpdated)
-
-                // TODO: replace eventlisteners with a better maintainable solution
-                window.dispatchEvent(
-                  new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, {
-                    detail: {
-                      driveId: drive.id.toString(),
-                      success: true,
-                      updatedStamp,
-                      isStillUpdating,
-                    },
-                  }),
-                )
+                startPolling(stamp)
               } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Upgrade failed'
                 window.dispatchEvent(

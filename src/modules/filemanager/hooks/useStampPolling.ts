@@ -29,11 +29,12 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
   }, [onPollingStateChange])
 
   const startPolling = useCallback(
-    (batchId: string, originalStamp: PostageBatch) => {
+    (originalStamp: PostageBatch) => {
       stopPolling()
 
       onPollingStateChange(true)
 
+      const batchId = originalStamp.batchID.toString()
       const oldSize = originalStamp.size.toBytes()
       const oldExpiry = originalStamp.duration.toEndDate().getTime()
 

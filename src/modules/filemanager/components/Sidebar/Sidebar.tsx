@@ -21,6 +21,7 @@ import { Context as FMContext } from '../../../../providers/FileManager'
 import { getUsableStamps } from '../../utils/bee'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { truncateNameMiddle } from '../../utils/common'
+import { FILE_MANAGER_EVENTS } from '../../constants/common'
 
 interface SidebarProps {
   loading: boolean
@@ -67,8 +68,17 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
       getStamps()
     }
 
+    const handleUpgradeEnd = async () => {
+      if (isMounted && beeApi) {
+        await getStamps()
+      }
+    }
+
+    window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, handleUpgradeEnd as EventListener)
+
     return () => {
       isMounted = false
+      window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, handleUpgradeEnd as EventListener)
     }
   }, [beeApi, drives])
 
@@ -83,14 +93,14 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
       setView(ViewType.File)
     }
 
-    if (currentDrive && !currentStamp && usableStamps.length > 0) {
+    if (currentDrive && usableStamps.length > 0) {
       const correspondingStamp = usableStamps.find(s => s.batchID.toString() === currentDrive.batchId.toString())
 
       if (correspondingStamp) {
         setCurrentStamp(correspondingStamp)
       }
     }
-  }, [fm, drives, currentDrive, currentStamp, usableStamps, setCurrentDrive, setCurrentStamp, setView, beeApi])
+  }, [fm, drives, currentDrive, usableStamps, setCurrentDrive, setCurrentStamp, setView, beeApi])
 
   const handleCreateNewDrive = () => {
     if (isDriveCreationInProgress) {

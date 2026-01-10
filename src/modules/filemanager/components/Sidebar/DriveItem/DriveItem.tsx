@@ -18,10 +18,10 @@ import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { calculateStampCapacityMetrics, handleDestroyAndForgetDrive } from '../../../utils/bee'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
-import { useStampPollingWithState } from '../../../hooks/useStampPollingWithState'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { TOOLTIPS } from '../../../constants/tooltips'
 import { FILE_MANAGER_EVENTS } from '../../../constants/common'
+import { useStampPolling } from '../../../hooks/useStampPolling'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -41,16 +41,19 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [isDestroying, setIsDestroying] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
-  const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
 
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
   const { setView, setActualItemView } = useView()
 
-  const { startPolling, isMountedRef } = useStampPollingWithState({
+  const { startPolling } = useStampPolling({
     refreshStamp,
-    setActualStamp,
-    setIsCapacityUpdating,
+    onStampUpdated: () => {
+      // no-op
+    },
+    onPollingStateChange: () => {
+      // no-op
+    },
   })
 
   useEffect(() => {
@@ -79,55 +82,32 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const handleUpgradeStart = useCallback(
     (driveId: string, id: string) => {
       if (driveId === id) {
-        setIsUpgrading(true)
+        setIsUpgrading(() => true)
       }
     },
     [setIsUpgrading],
   )
 
   const handleUpgradeEnd = useCallback(
-    async (
-      driveId: string,
-      id: string,
-      batchId: string,
-      success: boolean,
-      error: string | undefined,
-      updatedStamp: PostageBatch | undefined,
-      isStillUpdating: boolean,
-    ) => {
+    (driveId: string, id: string, success: boolean, error: string | undefined, updatedStamp?: PostageBatch) => {
+      if (driveId !== id) {
+        return
+      }
+
+      setIsUpgrading(() => false)
+
       if (!success && error) {
         setErrorMessage?.(error)
         setShowError(true)
+
+        return
       }
 
-      if (driveId === id) {
-        setIsUpgrading(false)
-
-        if (updatedStamp) {
-          if (!isMountedRef.current) return
-          setActualStamp(updatedStamp)
-
-          if (isStillUpdating) {
-            startPolling(batchId, updatedStamp)
-          }
-        } else {
-          const upgradedStamp = await refreshStamp(batchId)
-
-          if (!isMountedRef.current) return
-
-          if (upgradedStamp) {
-            setActualStamp(upgradedStamp)
-
-            if (isStillUpdating) {
-              startPolling(batchId, upgradedStamp)
-            }
-          } else if (isStillUpdating) {
-            startPolling(batchId, actualStamp)
-          }
-        }
+      if (updatedStamp) {
+        setActualStamp(updatedStamp)
       }
     },
-    [setErrorMessage, setShowError, isMountedRef, setActualStamp, startPolling, refreshStamp, actualStamp],
+    [setErrorMessage, setShowError],
   )
 
   const doDestroy = useCallback(async () => {
@@ -158,7 +138,6 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
 
   useEffect(() => {
     const id = drive.id.toString()
-    const batchId = stamp.batchID.toString()
 
     const onStart = (e: Event) => {
       const { driveId } = (e as CustomEvent).detail || {}
@@ -166,15 +145,15 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
     }
 
     const onEnd = (e: Event) => {
-      const { driveId, success, error, updatedStamp, isStillUpdating } = (e as CustomEvent).detail || {}
-      handleUpgradeEnd(driveId, id, batchId, success, error, updatedStamp, isStillUpdating)
+      const { driveId, success, error, updatedStamp } = (e as CustomEvent).detail || {}
+      handleUpgradeEnd(driveId, id, success, error, updatedStamp)
     }
 
     const onFileUploaded = (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
 
       if (fileInfo && fileInfo.driveId === id) {
-        startPolling(batchId, actualStamp)
+        startPolling(actualStamp)
       }
     }
 
@@ -187,7 +166,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
       window.removeEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, onFileUploaded as EventListener)
     }
-  }, [drive.id, stamp.batchID, handleUpgradeStart, handleUpgradeEnd, startPolling, actualStamp])
+  }, [drive.id, handleUpgradeStart, handleUpgradeEnd, startPolling, actualStamp])
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
@@ -206,7 +185,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   }, [setShowContext, setIsDestroyDriveModalOpen])
 
   const containerClassName = `fm-drive-item-container${isSelected ? ' fm-drive-item-container-selected' : ''}`
-  const capacityClassName = `fm-drive-item-capacity ${isCapacityUpdating ? 'fm-drive-item-capacity-updating' : ''}`
+  const capacityClassName = `fm-drive-item-capacity ${isUpgrading ? 'fm-drive-item-capacity-updating' : ''}`
   const driveIcon = isHovered ? <DriveFill size="16px" /> : <Drive size="16px" />
 
   return (
@@ -226,7 +205,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
               Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
             </span>
             <Tooltip
-              label={isCapacityUpdating ? TOOLTIPS.DRIVE_CAPACITY_UPDATING : TOOLTIPS.DRIVE_CAPACITY_INFO}
+              label={isUpgrading ? TOOLTIPS.DRIVE_CAPACITY_UPDATING : TOOLTIPS.DRIVE_CAPACITY_INFO}
               iconSize="12px"
               disableMargin={true}
             />
