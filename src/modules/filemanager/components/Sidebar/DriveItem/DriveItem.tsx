@@ -21,7 +21,6 @@ import { truncateNameMiddle } from '../../../utils/common'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { TOOLTIPS } from '../../../constants/tooltips'
 import { FILE_MANAGER_EVENTS } from '../../../constants/common'
-import { useStampPolling } from '../../../hooks/useStampPolling'
 
 interface DriveItemProps {
   drive: DriveInfo
@@ -45,16 +44,6 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
   const { showContext, pos, contextRef, setPos, setShowContext } = useContextMenu<HTMLDivElement>()
 
   const { setView, setActualItemView } = useView()
-
-  const { startPolling } = useStampPolling({
-    refreshStamp,
-    onStampUpdated: () => {
-      // no-op
-    },
-    onPollingStateChange: () => {
-      // no-op
-    },
-  })
 
   useEffect(() => {
     if (actualStamp.batchID.toString() !== stamp.batchID.toString()) {
@@ -149,11 +138,15 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       handleUpgradeEnd(driveId, id, success, error, updatedStamp)
     }
 
-    const onFileUploaded = (e: Event) => {
+    const onFileUploaded = async (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
 
       if (fileInfo && fileInfo.driveId === id) {
-        startPolling(actualStamp)
+        const updatedStamp = await refreshStamp(actualStamp.batchID.toString())
+
+        if (updatedStamp) {
+          setActualStamp(updatedStamp)
+        }
       }
     }
 
@@ -166,7 +159,7 @@ export function DriveItem({ drive, stamp, isSelected, setErrorMessage }: DriveIt
       window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
       window.removeEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, onFileUploaded as EventListener)
     }
-  }, [drive.id, handleUpgradeStart, handleUpgradeEnd, startPolling, actualStamp])
+  }, [drive.id, actualStamp, handleUpgradeStart, handleUpgradeEnd, refreshStamp])
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
