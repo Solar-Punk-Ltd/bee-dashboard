@@ -548,21 +548,21 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       if (filesArr.length === 0 || !fm || !currentDrive || !currentStamp) return
 
+      const sameDrive = collectSameDrive(drive.id.toString())
+      const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
+      const reserved = new Set<string>()
+      const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === drive.name).map(u => u.name))
+      const tasks: UploadTask[] = []
+      const allTaken = new Set<string>([
+        ...Array.from(onDiskNames),
+        ...Array.from(reserved),
+        ...Array.from(progressNames),
+      ])
+
       async function processFolder() {
         const meta = buildUploadMeta(filesArr, undefined, undefined, true)
         const prettySize = typeof meta.size === 'string' || typeof meta.size === 'number' ? formatBytes(meta.size) : '0'
-        const sameDrive = collectSameDrive(drive.id.toString())
 
-        const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === drive.name).map(u => u.name))
-        const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
-        const reserved = new Set<string>()
-        const tasks: UploadTask[] = []
-
-        const allTaken = new Set<string>([
-          ...Array.from(onDiskNames),
-          ...Array.from(reserved),
-          ...Array.from(progressNames),
-        ])
         // eslint-disable-next-line prefer-const
         let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(
           folderName,
@@ -618,20 +618,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
         // TODO: move out this function from the cb and use as a util for better readaility
         const preflight = async (): Promise<UploadTask[]> => {
-          const progressNames = new Set<string>(
-            uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
-          )
-          const sameDrive = collectSameDrive(currentDrive.id.toString())
-          const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
-          const reserved = new Set<string>()
-          const tasks: UploadTask[] = []
-
-          const allTaken = new Set<string>([
-            ...Array.from(onDiskNames),
-            ...Array.from(reserved),
-            ...Array.from(progressNames),
-          ])
-
           // Track cumulative file sizes for capacity verification
           let fileSizeSum = 0
           let fileCount = 0

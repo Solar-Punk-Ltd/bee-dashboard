@@ -62,9 +62,10 @@ function FileBrowserContentInner({
   onBulk,
   setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
-  const { folderView, setFolderView, currentTree, setCurrentTree, viewFolders, setViewFolders } = useView()
+  const { folderView, setFolderView, setCurrentTree, viewFolders, setViewFolders } = useView()
 
   const [folderFileItems, setFolderFileItems] = useState<{ path: string; ref: string }[] | null>(null)
+
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
       return <div className="fm-drop-hint">Create a drive to start using the file manager</div>

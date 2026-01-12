@@ -166,7 +166,6 @@ export function FileItem({
       return
     }
 
-    // await openOrDownload(beeApi.url, fm, fileInfo)
     handleDownload(isNewWindow)
   }
 
