@@ -49,12 +49,18 @@ export const indexStrToBigint = (indexStr?: string): bigint | undefined => {
   return BigInt(parseInt(indexStr, 10))
 }
 
-export const formatBytes = (v?: string | number): string | undefined => {
+export const formatBytes = (v?: string | number | File[]): string | undefined => {
   let n: number
 
-  if (typeof v === 'string') n = Number(v)
-  else if (typeof v === 'number') n = v
-  else n = NaN
+  if (typeof v === 'string') {
+    n = Number(v)
+  } else if (typeof v === 'number') {
+    n = v
+  } else if (Array.isArray(v)) {
+    n = v.reduce((total, file) => total + file.size, 0) // Sum up the sizes of all files
+  } else {
+    n = NaN
+  }
 
   if (!Number.isFinite(n) || n < 0) return undefined
 
