@@ -4,7 +4,7 @@ import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
 
-import { useView, FolderTree } from 'src/pages/filemanager/ViewContext'
+import { useView, FolderTree } from '../../../../../pages/filemanager/ViewContext'
 import FolderSubItems from './FolderSubItems'
 
 interface FileBrowserContentProps {

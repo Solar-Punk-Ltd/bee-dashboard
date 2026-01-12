@@ -1,6 +1,6 @@
 import { ReactElement, useContext } from 'react'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { GetIconElement } from 'src/modules/filemanager/utils/GetIconElement'
+import { GetIconElement } from '../../../utils/GetIconElement'
 
 interface SubItemProps {
   name: string
