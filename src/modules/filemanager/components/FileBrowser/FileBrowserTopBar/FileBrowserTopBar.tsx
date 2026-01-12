@@ -13,6 +13,7 @@ export function FileBrowserTopBar({ onOpenMenu, canOpen = true }: Props): ReactE
     useView()
 
   const viewText = view === ViewType.Trash ? ' Trash' : ''
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleItemClick = (type: string, name?: { folderName: string; tree: any }, index?: number) => {
     if (type === 'drive') {
       setFolderView(false)

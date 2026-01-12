@@ -4,7 +4,7 @@ import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
 
-import { useView } from 'src/pages/filemanager/ViewContext'
+import { useView, FolderTree } from 'src/pages/filemanager/ViewContext'
 import FolderSubItems from './FolderSubItems'
 
 interface FileBrowserContentProps {
@@ -27,12 +27,12 @@ interface FileBrowserContentProps {
   setErrorMessage?: (error: string) => void
 }
 
-function buildTree(items: { path: string; ref: string }[]) {
-  const root: any = {}
+function buildTree(items: { path: string; ref: string }[]): FolderTree {
+  const root: FolderTree = {}
 
   items.forEach(item => {
     const parts = item.path.split('/').filter(Boolean).slice(1)
-    let current = root
+    let current: FolderTree = root
 
     parts.forEach((part, index) => {
       if (!current[part]) {

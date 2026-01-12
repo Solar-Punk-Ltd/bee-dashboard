@@ -53,7 +53,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     syncDrives,
   } = useContext(FMContext)
 
-  const { setViewFolders, folderView, setFolderView, currentTree, setCurrentTree } = useView()
+  const { setViewFolders, setFolderView } = useView()
 
   useEffect(() => {
     let isMounted = true

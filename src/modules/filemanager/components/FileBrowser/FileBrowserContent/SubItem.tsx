@@ -1,6 +1,5 @@
 import { ReactElement, useContext } from 'react'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { Bee } from '@ethersphere/bee-js'
 import { GetIconElement } from 'src/modules/filemanager/utils/GetIconElement'
 
 interface SubItemProps {

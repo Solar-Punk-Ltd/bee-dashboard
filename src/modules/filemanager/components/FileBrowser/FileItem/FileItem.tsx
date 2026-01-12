@@ -28,7 +28,6 @@ import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '
 import { guessMime } from '../../../utils/view'
 import { performFileOperation, FileOperation } from '../../../utils/fileOperations'
 import { uuidV4 } from '../../../../../utils'
-import { folder } from 'jszip'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -134,6 +133,7 @@ export function FileItem({
     }))
 
     return result
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fm, fileInfo, driveName])
 
   const takenNames = useMemo(() => {

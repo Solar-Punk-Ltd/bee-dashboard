@@ -418,12 +418,14 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             })
             dataTransfer.items.add(folderFileItem)
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for await (const [name, childHandle] of dirHandle.entries()) {
               await processHandle(childHandle, `${path}${dirHandle.name}/`)
             }
           }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for await (const [name, handle] of dirHandle.entries()) {
           await processHandle(handle, `${dirHandle.name}/`)
         }

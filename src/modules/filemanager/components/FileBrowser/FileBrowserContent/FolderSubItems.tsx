@@ -1,6 +1,6 @@
 import { ReactElement } from 'react'
 
-import { useView } from 'src/pages/filemanager/ViewContext'
+import { useView, TreeNode } from 'src/pages/filemanager/ViewContext'
 import { SubItem } from './SubItem'
 
 export function FolderSubItems(): ReactElement {
@@ -9,20 +9,20 @@ export function FolderSubItems(): ReactElement {
   const handleFolderDoubleClick = (path: string) => {
     let currentNode = currentTree
 
-    if (currentNode[path]) {
+    if (currentNode && currentNode[path]) {
       currentNode = currentNode[path].children
       setCurrentTree(currentNode)
     } else {
       setCurrentTree({})
     }
 
-    setViewFolders([...viewFolders, { folderName: path, tree: currentNode }])
+    setViewFolders([...viewFolders, { folderName: path, tree: currentNode || {} }])
   }
 
   return (
     <>
       {currentTree &&
-        Object.entries(currentTree).map(([name, value]: [string, any]) => {
+        Object.entries(currentTree).map(([name, value]: [string, TreeNode]) => {
           const currentPath = `${name}`
 
           if (value.type === 'folder') {
@@ -30,13 +30,13 @@ export function FolderSubItems(): ReactElement {
               <SubItem
                 key={currentPath}
                 name={currentPath}
-                reference={value.ref}
+                reference={value.ref || ''}
                 type="folder"
                 onDoubleClick={() => handleFolderDoubleClick(currentPath)}
               />
             )
           } else {
-            return <SubItem key={currentPath} name={currentPath} reference={value.ref} type="file" />
+            return <SubItem key={currentPath} name={currentPath} reference={value.ref || ''} type="file" />
           }
         })}
     </>

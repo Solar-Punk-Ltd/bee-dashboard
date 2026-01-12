@@ -796,6 +796,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       setShowError,
       setErrorMessage,
       beeApi,
+      files,
+      trackUpload,
     ],
   )
 
