@@ -202,11 +202,6 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     requestAnimationFrame(() => handleCloseContext())
   }
 
-  const onContextUploadFolder = () => {
-    const el = bulk.folderInputRef.current || legacyUploadRef.current
-    el?.click()
-  }
-
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     const files = extractFilesFromClipboardEvent(e)
 
@@ -398,6 +393,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
   async function selectFolder() {
     if (typeof window.showDirectoryPicker === 'function') {
+      handleCloseContext()
       try {
         const dirHandle = await window.showDirectoryPicker()
         const dataTransfer = new DataTransfer() // Create a DataTransfer object
@@ -456,15 +452,6 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
       <input type="file" ref={legacyUploadRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
-
-      <input
-        type="file"
-        webkitdirectory
-        ref={bulk.folderInputRef}
-        style={{ display: 'none' }}
-        onClick={selectFolder}
-        onChange={onFileSelected}
-      />
 
       <div className="fm-file-browser-container" data-search-mode={isSearchMode ? 'true' : 'false'}>
         <FileBrowserTopBar onOpenMenu={openTopbarMenu} canOpen={!isSearchMode && Boolean(currentDrive)} />
@@ -541,7 +528,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
                   onRefresh={doRefresh}
                   enableRefresh={Boolean(fm?.adminStamp)}
                   onUploadFile={onContextUploadFile}
-                  onUploadFolder={onContextUploadFolder}
+                  onUploadFolder={selectFolder}
                   onBulkDownload={() => bulk.bulkDownload(bulk.selectedFiles)}
                   onBulkRestore={() => setConfirmBulkRestore(true)}
                   onBulkDelete={() => setShowBulkDeleteModal(true)}

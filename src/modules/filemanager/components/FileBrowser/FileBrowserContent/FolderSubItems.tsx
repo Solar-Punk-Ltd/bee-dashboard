@@ -1,13 +1,9 @@
-import { ReactElement, useState } from 'react'
+import { ReactElement } from 'react'
 
 import { useView } from 'src/pages/filemanager/ViewContext'
 import { SubItem } from './SubItem'
 
-interface FolderSubItemsProps {
-  tree: any
-}
-
-export function FolderSubItems({ tree }: FolderSubItemsProps): ReactElement {
+export function FolderSubItems(): ReactElement {
   const { viewFolders, setViewFolders, currentTree, setCurrentTree } = useView()
 
   const handleFolderDoubleClick = (path: string) => {

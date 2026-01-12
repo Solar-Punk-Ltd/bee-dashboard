@@ -63,7 +63,7 @@ function FileBrowserContentInner({
   setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
   const { folderView, setFolderView, currentTree, setCurrentTree, viewFolders, setViewFolders } = useView()
-  const [showFolderFileItems, setShowFolderFileItems] = useState(false)
+
   const [folderFileItems, setFolderFileItems] = useState<{ path: string; ref: string }[] | null>(null)
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
@@ -86,11 +86,12 @@ function FileBrowserContentInner({
   }, [drives, currentDrive, view])
 
   const handleFolderItemDoubleClick = (folderFileItems: { path: string; ref: string }[] | null, name: string) => {
+    const actualTree = buildTree(folderFileItems || [])
+
     setFolderView(true)
     setFolderFileItems(folderFileItems)
-    setCurrentTree(buildTree(folderFileItems || []))
-    setShowFolderFileItems(true)
-    setViewFolders([...viewFolders, { folderName: name, tree: buildTree(folderFileItems || []) }])
+    setCurrentTree(actualTree)
+    setViewFolders([...viewFolders, { folderName: name, tree: actualTree }])
   }
 
   const renderFileList = (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
@@ -123,11 +124,8 @@ function FileBrowserContentInner({
             />
           )
         })
-      //   },
-      //   [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk, setErrorMessage],
-      // )
     } else {
-      return folderFileItems ? <FolderSubItems tree={buildTree(folderFileItems)} /> : null
+      return folderFileItems ? <FolderSubItems /> : null
     }
   }
 
