@@ -287,6 +287,12 @@ export const calculateStampCapacityMetrics = (
     remainingReportedBytes = stamp.remainingSize.toBytes()
   }
 
+  let redundancyMultiplier = 1
+
+  if (redundancyLevel !== undefined) {
+    redundancyMultiplier = redundancyLevel + 1
+  }
+
   const usedBytesFromFiles = files
     .map(f => {
       let rawSize = 0
@@ -302,8 +308,9 @@ export const calculateStampCapacityMetrics = (
         rawSize = Number(f.customMetadata.size)
       }
       const accumulatedSize = Number(f.customMetadata?.accumulatedSize || rawSize || 0)
+      const adjustedSize = accumulatedSize * redundancyMultiplier
 
-      return accumulatedSize
+      return adjustedSize
     })
     .reduce((acc, current) => acc + current, 0)
 
