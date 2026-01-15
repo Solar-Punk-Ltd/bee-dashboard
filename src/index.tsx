@@ -4,6 +4,12 @@ import App from './App'
 import './index.css'
 import reportWebVitals from './reportWebVitals'
 
+window.addEventListener('unhandledrejection', event => {
+  if (event.reason?.message === 'Network Error' || event.reason?.constructor?.name === 'BeeResponseError') {
+    event.preventDefault()
+  }
+})
+
 const desktopEnabled = process.env.REACT_APP_BEE_DESKTOP_ENABLED === 'true'
 const desktopUrl = process.env.REACT_APP_BEE_DESKTOP_URL
 const beeApiUrl = process.env.REACT_APP_BEE_HOST

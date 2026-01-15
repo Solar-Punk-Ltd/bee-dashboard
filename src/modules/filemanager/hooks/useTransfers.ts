@@ -17,6 +17,8 @@ import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
 import { uuidV4 } from '../../../utils'
 import { FILE_MANAGER_EVENTS } from '../constants/common'
+import { UploadQueue } from '../utils/uploadQueue'
+import { categorizeUploadError, calculateRetryDelay, getUploadTimeout } from '../utils/uploadErrors'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -172,11 +174,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
+  const uploadQueueRef = useRef<UploadQueue>(UploadQueue.getInstance())
   const queueRef = useRef<UploadTask[]>([])
   const runningRef = useRef(false)
   const cancelledNamesRef = useRef<Set<string>>(new Set())
   const cancelledUploadingRef = useRef<Set<string>>(new Set())
   const cancelledDownloadingRef = useRef<Set<string>>(new Set())
+  const retryTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const [uploadItems, setUploadItems] = useState<TransferItem[]>([])
   const [downloadItems, setDownloadItems] = useState<TransferItem[]>([])
@@ -382,17 +386,24 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       uploadAbortsRef.current.create(task.finalName)
       const signal = uploadAbortsRef.current.getSignal(task.finalName)
+      const uploadTimeout = getUploadTimeout(task.file.size)
 
       try {
         if (signal?.aborted) {
           throw new Error('Upload cancelled')
         }
 
-        await fm.upload(
+        const uploadPromise = fm.upload(
           taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Upload timeout')), uploadTimeout)
+        })
+
+        await Promise.race([uploadPromise, timeoutPromise])
 
         if (signal?.aborted) {
           throw new Error('Upload cancelled')
@@ -401,14 +412,102 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         if (currentStamp) {
           await refreshStamp(currentStamp.batchID.toString())
         }
+
+        uploadQueueRef.current.removeFromQueue(task.uuid)
       } catch (error) {
         const wasCancelled = cancelledUploadingRef.current.has(task.finalName) || signal?.aborted
+        const categorized = categorizeUploadError(error)
 
-        if (!wasCancelled) {
-          const errorMsg = error instanceof Error ? error.message : String(error)
-          setErrorMessage?.(`Upload failed: ${errorMsg}`)
-          setShowError(true)
+        if (wasCancelled) {
+          return
         }
+
+        const errorMsg = `${categorized.userMessage} ${categorized.suggestedAction}`
+
+        setErrorMessage?.(errorMsg)
+        setShowError(true)
+
+        if (!categorized.isRetriable) {
+          safeSetState(
+            isMountedRef,
+            setUploadItems,
+          )(prev =>
+            prev.map(item => (item.uuid === task.uuid ? { ...item, status: TransferStatus.Error, done: true } : item)),
+          )
+
+          return
+        }
+
+        const queuedItem = uploadQueueRef.current.getQueue().find(q => q.uuid === task.uuid)
+        const currentRetryCount = queuedItem?.retryCount || 0
+
+        if (currentRetryCount >= 3) {
+          uploadQueueRef.current.removeFromQueue(task.uuid)
+          setErrorMessage?.(`Upload failed after 3 attempts: ${errorMsg}`)
+          setShowError(true)
+          safeSetState(
+            isMountedRef,
+            setUploadItems,
+          )(prev =>
+            prev.map(item => (item.uuid === task.uuid ? { ...item, status: TransferStatus.Error, done: true } : item)),
+          )
+
+          return
+        }
+
+        const retryNumber = currentRetryCount + 1
+        setErrorMessage?.(`Upload failed. Retrying (${retryNumber}/3)... ${errorMsg}`)
+        setShowError(true)
+
+        if (queuedItem) {
+          uploadQueueRef.current.incrementRetry(task.uuid, categorized.message)
+        } else {
+          uploadQueueRef.current.addToQueue({
+            uuid: task.uuid,
+            fileName: task.finalName,
+            fileSize: task.file.size,
+            driveId: task.driveId,
+            driveName: task.driveName,
+          })
+        }
+
+        const delay = calculateRetryDelay(currentRetryCount)
+        const delaySec = Math.round(delay / 1000)
+
+        safeSetState(
+          isMountedRef,
+          setUploadItems,
+        )(prev =>
+          prev.map(item =>
+            item.uuid === task.uuid
+              ? { ...item, status: TransferStatus.Queued, percent: 0, etaSec: delaySec, done: false }
+              : item,
+          ),
+        )
+
+        const timeoutId = setTimeout(() => {
+          retryTimeoutsRef.current.delete(task.uuid)
+          queueRef.current.unshift(task)
+
+          if (!runningRef.current) {
+            runningRef.current = true
+            const processQueue = async () => {
+              try {
+                while (queueRef.current.length > 0) {
+                  const nextTask = queueRef.current.shift()
+
+                  if (nextTask && !cancelledNamesRef.current.has(nextTask.uuid)) {
+                    await processUploadTask(nextTask)
+                  }
+                }
+              } finally {
+                runningRef.current = false
+              }
+            }
+            void processQueue()
+          }
+        }, delay)
+        retryTimeoutsRef.current.set(task.uuid, timeoutId)
 
         safeSetState(
           isMountedRef,
@@ -812,6 +911,31 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   }, [])
 
   useEffect(() => {
+    const retryTimeouts = retryTimeoutsRef.current
+    const failedUploads = uploadQueueRef.current.getFailedUploads()
+
+    if (failedUploads.length > 0) {
+      const failedItems = failedUploads.map(upload =>
+        createTransferItem(
+          upload.uuid,
+          upload.fileName,
+          `${(upload.fileSize / (1024 * 1024)).toFixed(2)} MB`,
+          FileTransferType.Upload,
+          upload.driveName,
+          TransferStatus.Error,
+        ),
+      )
+      setUploadItems(prev => [...prev, ...failedItems])
+    }
+
+    return () => {
+      isMountedRef.current = false
+      retryTimeouts.forEach(timeout => clearTimeout(timeout))
+      retryTimeouts.clear()
+    }
+  }, [])
+
+  useEffect(() => {
     const handleFileUploaded = (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
 
@@ -841,6 +965,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     }
   }, [])
 
+  const clearFailedUploads = useCallback(() => {
+    uploadQueueRef.current.clearFailedUploads()
+    setUploadItems(prev => prev.filter(item => item.status !== TransferStatus.Error))
+  }, [])
+
   return {
     uploadFiles,
     isUploading,
@@ -853,5 +982,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     cancelOrDismissDownload,
     dismissAllUploads,
     dismissAllDownloads,
+    clearFailedUploads,
   }
 }
