@@ -30,7 +30,15 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
 
   const startPolling = useCallback(
     (originalStamp: PostageBatch) => {
-      stopPolling()
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
 
       onPollingStateChange(true)
 
@@ -57,7 +65,6 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
 
           if (capacityUpdated || durationUpdated) {
             onStampUpdated(updatedStamp)
-            stopPolling()
           }
         } catch (e) {
           // eslint-disable-next-line no-console
