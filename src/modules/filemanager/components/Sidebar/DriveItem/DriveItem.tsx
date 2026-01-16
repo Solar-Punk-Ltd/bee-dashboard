@@ -58,38 +58,6 @@ function useDriveEventListeners(
   }, [driveId, handleUpgradeStart, handleUpgradeEnd, handleFileUploaded])
 }
 
-function useStampSync(
-  stamp: PostageBatch,
-  actualStamp: PostageBatch,
-  isUpgradingRef: React.MutableRefObject<boolean>,
-  setActualStamp: (stamp: PostageBatch) => void,
-  batchIDRef: React.MutableRefObject<PostageBatch['batchID']>,
-) {
-  useEffect(() => {
-    if (isUpgradingRef.current) {
-      return
-    }
-
-    if (actualStamp.batchID.toString() !== stamp.batchID.toString()) {
-      setActualStamp(stamp)
-      batchIDRef.current = stamp.batchID
-
-      return
-    }
-
-    const incomingSize = stamp.size.toBytes()
-    const currentSize = actualStamp.size.toBytes()
-    const incomingExpiry = stamp.duration.toEndDate().getTime()
-    const currentExpiry = actualStamp.duration.toEndDate().getTime()
-
-    if (incomingSize > currentSize || incomingExpiry > currentExpiry) {
-      setActualStamp(stamp)
-      batchIDRef.current = stamp.batchID
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stamp])
-}
-
 interface DriveModalsProps {
   isUpgradeDriveModalOpen: boolean
   setIsUpgradeDriveModalOpen: (open: boolean) => void
@@ -228,7 +196,29 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
 
   const { setView, setActualItemView } = useView()
 
-  useStampSync(stamp, actualStamp, isUpgradingRef, setActualStamp, batchIDRef)
+  useEffect(() => {
+    if (isUpgradingRef.current) {
+      return
+    }
+
+    if (actualStamp.batchID.toString() !== stamp.batchID.toString()) {
+      setActualStamp(stamp)
+      batchIDRef.current = stamp.batchID
+
+      return
+    }
+
+    const incomingSize = stamp.size.toBytes()
+    const currentSize = actualStamp.size.toBytes()
+    const incomingExpiry = stamp.duration.toEndDate().getTime()
+    const currentExpiry = actualStamp.duration.toEndDate().getTime()
+
+    if (incomingSize > currentSize || incomingExpiry > currentExpiry) {
+      setActualStamp(stamp)
+      batchIDRef.current = stamp.batchID
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stamp])
 
   useEffect(() => {
     return () => {

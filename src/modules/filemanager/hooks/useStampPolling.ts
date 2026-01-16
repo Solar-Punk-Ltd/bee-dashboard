@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
 
-const POLLING_TIMEOUT_MS = 60000
+const POLLING_TIMEOUT_MS = 15000
 const POLLING_INTERVAL_MS = 2000
 
 interface UseStampPollingOptions {
@@ -65,6 +65,7 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
 
           if (capacityUpdated || durationUpdated) {
             onStampUpdated(updatedStamp)
+            stopPolling()
           }
         } catch (e) {
           // eslint-disable-next-line no-console
