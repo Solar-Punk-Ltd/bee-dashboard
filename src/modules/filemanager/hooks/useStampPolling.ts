@@ -1,16 +1,20 @@
 import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
-
-const POLLING_TIMEOUT_MS = 15000
-const POLLING_INTERVAL_MS = 2000
+import { POLLING_TIMEOUT_MS, POLLING_INTERVAL_MS } from '../constants/common'
 
 interface UseStampPollingOptions {
   onStampUpdated: (stamp: PostageBatch) => void
   onPollingStateChange: (isPolling: boolean) => void
+  onTimeout?: (finalStamp: PostageBatch | null) => void
   refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
 }
 
-export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshStamp }: UseStampPollingOptions) {
+export function useStampPolling({
+  onStampUpdated,
+  onPollingStateChange,
+  onTimeout,
+  refreshStamp,
+}: UseStampPollingOptions) {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -46,8 +50,33 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
       const oldSize = originalStamp.size.toBytes()
       const oldExpiry = originalStamp.duration.toEndDate().getTime()
 
-      timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = setTimeout(async () => {
         stopPolling()
+
+        try {
+          const finalStamp = await refreshStamp(batchId)
+
+          if (finalStamp) {
+            const newSize = finalStamp.size.toBytes()
+            const newExpiry = finalStamp.duration.toEndDate().getTime()
+            const capacityUpdated = newSize > oldSize
+            const durationUpdated = newExpiry > oldExpiry
+
+            if (capacityUpdated || durationUpdated) {
+              onStampUpdated(finalStamp)
+
+              return
+            }
+          }
+
+          if (onTimeout) {
+            onTimeout(finalStamp || null)
+          }
+        } catch (error) {
+          if (onTimeout) {
+            onTimeout(null)
+          }
+        }
       }, POLLING_TIMEOUT_MS)
 
       pollingIntervalRef.current = setInterval(async () => {
@@ -73,7 +102,7 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
         }
       }, POLLING_INTERVAL_MS)
     },
-    [refreshStamp, onStampUpdated, onPollingStateChange, stopPolling],
+    [refreshStamp, onStampUpdated, onPollingStateChange, onTimeout, stopPolling],
   )
 
   return {

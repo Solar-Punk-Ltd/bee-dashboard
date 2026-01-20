@@ -81,6 +81,16 @@ export function UpgradeDriveModal({
         }),
       )
     },
+    onTimeout: (finalStamp: PostageBatch | null) => {
+      window.dispatchEvent(
+        new CustomEvent(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_TIMEOUT, {
+          detail: {
+            driveId: drive.id.toString(),
+            finalStamp: finalStamp || null,
+          },
+        }),
+      )
+    },
     onPollingStateChange: () => {
       // no-op
     },

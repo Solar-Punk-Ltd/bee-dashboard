@@ -10,6 +10,7 @@ import { useContextMenu } from '../../../hooks/useContextMenu'
 import { Button } from '../../Button/Button'
 import { DestroyDriveModal, ProgressDestroyModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { UpgradeDriveModal } from '../../UpgradeDriveModal/UpgradeDriveModal'
+import { UpgradeTimeoutModal } from '../../UpgradeTimeoutModal/UpgradeTimeoutModal'
 import { ViewType } from '../../../constants/transfers'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
@@ -33,6 +34,7 @@ function useDriveEventListeners(
     error: string | undefined,
     updatedStamp?: PostageBatch,
   ) => void,
+  handleUpgradeTimeout: (eventDriveId: string, id: string) => void,
   handleFileUploaded: (e: Event) => void,
 ) {
   useEffect(() => {
@@ -46,21 +48,29 @@ function useDriveEventListeners(
       handleUpgradeEnd(eventDriveId, driveId, success, error, updatedStamp)
     }
 
+    const onTimeout = (e: Event) => {
+      const { driveId: eventDriveId } = (e as CustomEvent).detail || {}
+      handleUpgradeTimeout(eventDriveId, driveId)
+    }
+
     window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_START, onStart as EventListener)
     window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
+    window.addEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_TIMEOUT, onTimeout as EventListener)
     window.addEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, handleFileUploaded as EventListener)
 
     return () => {
       window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_START, onStart as EventListener)
       window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_END, onEnd as EventListener)
+      window.removeEventListener(FILE_MANAGER_EVENTS.DRIVE_UPGRADE_TIMEOUT, onTimeout as EventListener)
       window.removeEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, handleFileUploaded as EventListener)
     }
-  }, [driveId, handleUpgradeStart, handleUpgradeEnd, handleFileUploaded])
+  }, [driveId, handleUpgradeStart, handleUpgradeEnd, handleUpgradeTimeout, handleFileUploaded])
 }
 
 interface DriveModalsProps {
   isUpgradeDriveModalOpen: boolean
   setIsUpgradeDriveModalOpen: (open: boolean) => void
+  isUpgradeTimeoutModalOpen: boolean
   actualStamp: PostageBatch
   drive: DriveInfo
   setErrorMessage?: (error: string) => void
@@ -72,11 +82,18 @@ interface DriveModalsProps {
   isDestroyDriveModalOpen: boolean
   setIsDestroyDriveModalOpen: (open: boolean) => void
   doDestroy: () => Promise<void>
+  batchIDRef: React.MutableRefObject<import('@ethersphere/bee-js').BatchId>
+  refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
+  setActualStamp: (stamp: PostageBatch) => void
+  setIsUpgrading: (upgrading: boolean) => void
+  isUpgradingRef: React.MutableRefObject<boolean>
+  setIsUpgradeTimeoutModalOpen: (open: boolean) => void
 }
 
 function DriveModals({
   isUpgradeDriveModalOpen,
   setIsUpgradeDriveModalOpen,
+  isUpgradeTimeoutModalOpen,
   actualStamp,
   drive,
   setErrorMessage,
@@ -88,6 +105,12 @@ function DriveModals({
   isDestroyDriveModalOpen,
   setIsDestroyDriveModalOpen,
   doDestroy,
+  batchIDRef,
+  refreshStamp,
+  setActualStamp,
+  setIsUpgrading,
+  isUpgradingRef,
+  setIsUpgradeTimeoutModalOpen,
 }: DriveModalsProps): ReactElement | null {
   return (
     <>
@@ -97,6 +120,17 @@ function DriveModals({
           drive={drive}
           onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
           setErrorMessage={setErrorMessage}
+        />
+      )}
+
+      {isUpgradeTimeoutModalOpen && (
+        <UpgradeTimeoutModal
+          driveName={drive.name}
+          onCancel={() => {
+            setIsUpgrading(false)
+            isUpgradingRef.current = false
+            setIsUpgradeTimeoutModalOpen(false)
+          }}
         />
       )}
 
@@ -155,6 +189,7 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
   const [isDestroyDriveModalOpen, setIsDestroyDriveModalOpen] = useState(false)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
+  const [isUpgradeTimeoutModalOpen, setIsUpgradeTimeoutModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
   const [isDestroying, setIsDestroying] = useState(false)
@@ -297,6 +332,14 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
     })
   }, [beeApi, fm, drive, adminDrive, setErrorMessage, setShowError])
 
+  const handleUpgradeTimeout = useCallback(
+    (eventDriveId: string, id: string) => {
+      if (eventDriveId !== id) return
+      setIsUpgradeTimeoutModalOpen(true)
+    },
+    [setIsUpgradeTimeoutModalOpen],
+  )
+
   const handleFileUploaded = useCallback(
     (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
@@ -308,7 +351,7 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
     [driveId],
   )
 
-  useDriveEventListeners(driveId, handleUpgradeStart, handleUpgradeEnd, handleFileUploaded)
+  useDriveEventListeners(driveId, handleUpgradeStart, handleUpgradeEnd, handleUpgradeTimeout, handleFileUploaded)
 
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
@@ -400,6 +443,7 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
       <DriveModals
         isUpgradeDriveModalOpen={isUpgradeDriveModalOpen}
         setIsUpgradeDriveModalOpen={setIsUpgradeDriveModalOpen}
+        isUpgradeTimeoutModalOpen={isUpgradeTimeoutModalOpen}
         actualStamp={actualStamp}
         drive={drive}
         setErrorMessage={setErrorMessage}
@@ -411,6 +455,12 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
         isDestroyDriveModalOpen={isDestroyDriveModalOpen}
         setIsDestroyDriveModalOpen={setIsDestroyDriveModalOpen}
         doDestroy={doDestroy}
+        batchIDRef={batchIDRef}
+        refreshStamp={refreshStamp}
+        setActualStamp={setActualStamp}
+        setIsUpgrading={setIsUpgrading}
+        isUpgradingRef={isUpgradingRef}
+        setIsUpgradeTimeoutModalOpen={setIsUpgradeTimeoutModalOpen}
       />
     </div>
   )
