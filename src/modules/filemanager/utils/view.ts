@@ -30,14 +30,15 @@ export function getExtensionFromName(name: string): string {
   return hasExtension ? ext : ''
 }
 
-export function guessMime(name: string, mtdt?: Record<string, string> | undefined): string {
+export function guessMime(name: string, mtdt?: Record<string, string> | undefined): { mime: string; ext: string } {
   const md = mtdt?.mimeType || mtdt?.mime || mtdt?.['content-type']
-
-  if (md) return md
-
   const ext = getExtensionFromName(name)
 
-  return EXT_TO_MIME[ext] || 'application/octet-stream'
+  if (md) return { mime: md, ext }
+
+  const mime = EXT_TO_MIME[ext] || 'application/octet-stream'
+
+  return { mime, ext }
 }
 
 export type Viewer = {

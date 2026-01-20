@@ -1,5 +1,5 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
-import { getExtensionFromName, guessMime, VIEWERS } from './view'
+import { guessMime, VIEWERS } from './view'
 import { AbortManager } from './abortManager'
 import { DownloadProgress, DownloadState } from '../constants/transfers'
 
@@ -146,8 +146,7 @@ const getSingleFileHandle = async (
   info: FileInfo,
   defaultDownloadFolder: string,
 ): Promise<FileInfoWithHandle[] | undefined> => {
-  const mimeType = guessMime(info.name, info.customMetadata)
-  const extension = getExtensionFromName(info.name)
+  const { mime, ext } = guessMime(info.name, info.customMetadata)
 
   const pickerOptions: {
     suggestedName: string
@@ -158,8 +157,8 @@ const getSingleFileHandle = async (
     startIn: defaultDownloadFolder,
   }
 
-  if (extension) {
-    pickerOptions.types = [{ accept: { [mimeType]: [`.${extension}`] } }]
+  if (ext) {
+    pickerOptions.types = [{ accept: { [mime]: [`.${ext}`] } }]
   }
 
   try {
@@ -262,7 +261,7 @@ const downloadToBlob = async (
 ): Promise<boolean> => {
   try {
     for (const stream of streams) {
-      const mime = guessMime(info.name, info.customMetadata)
+      const { mime } = guessMime(info.name, info.customMetadata)
       const blob = await streamToBlob(stream, mime, onDownloadProgress, signal)
 
       if (!blob) {
