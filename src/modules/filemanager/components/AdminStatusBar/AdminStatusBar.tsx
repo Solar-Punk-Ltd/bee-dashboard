@@ -10,7 +10,8 @@ import { calculateStampCapacityMetrics } from '../../utils/bee'
 import { getHumanReadableFileSize } from '../../../../utils/file'
 import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { UpgradeTimeoutModal } from '../UpgradeTimeoutModal/UpgradeTimeoutModal'
-import { FILE_MANAGER_EVENTS } from '../../constants/common'
+import { FILE_MANAGER_EVENTS, POLLING_TIMEOUT_MS } from '../../constants/common'
+import { useStampPolling } from '../../hooks/useStampPolling'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null
@@ -28,13 +29,28 @@ export function AdminStatusBar({
   isCreationInProgress,
   setErrorMessage,
 }: AdminStatusBarProps): ReactElement {
-  const { drives, setShowError } = useContext(FMContext)
+  const { drives, setShowError, refreshStamp } = useContext(FMContext)
 
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
   const [isUpgradeTimeoutModalOpen, setIsUpgradeTimeoutModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch | null>(adminStamp)
   const [showProgressModal, setShowProgressModal] = useState(true)
+
+  const handleStampUpdated = useCallback((updatedStamp: PostageBatch) => {
+    setActualStamp(updatedStamp)
+  }, [])
+
+  const handlePollingStateChange = useCallback((_isPolling: boolean) => {
+    // no-op
+  }, [])
+
+  const { startPolling } = useStampPolling({
+    onStampUpdated: handleStampUpdated,
+    onPollingStateChange: handlePollingStateChange,
+    refreshStamp,
+    timeout: POLLING_TIMEOUT_MS,
+  })
 
   useEffect(() => {
     setShowProgressModal(isCreationInProgress || loading)
@@ -119,7 +135,12 @@ export function AdminStatusBar({
   const handleTimeoutCancel = useCallback(() => {
     setIsUpgrading(false)
     setIsUpgradeTimeoutModalOpen(false)
-  }, [])
+
+    // Restart polling to continue checking for capacity updates
+    if (actualStamp) {
+      startPolling(actualStamp)
+    }
+  }, [actualStamp, startPolling])
 
   const { capacityPct, usedSize, totalSize } = useMemo(() => {
     if (!actualStamp) {
