@@ -250,15 +250,12 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
     setPos({ x: e.clientX, y: e.clientY })
   }
 
-  const handleUpgradeStart = useCallback(
-    (driveId: string, id: string) => {
-      if (driveId !== id) return
+  const handleUpgradeStart = useCallback((driveId: string, id: string) => {
+    if (driveId !== id) return
 
-      isUpgradingRef.current = true
-      setIsUpgrading(() => true)
-    },
-    [setIsUpgrading],
-  )
+    isUpgradingRef.current = true
+    setIsUpgrading(true)
+  }, [])
 
   const handleUpgradeEnd = useCallback(
     (driveId: string, id: string, success: boolean, error: string | undefined, updatedStamp?: PostageBatch) => {
