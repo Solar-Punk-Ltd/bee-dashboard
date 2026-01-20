@@ -19,5 +19,6 @@ export const FILE_MANAGER_EVENTS = {
 
 export type FileManagerEventName = typeof FILE_MANAGER_EVENTS[keyof typeof FILE_MANAGER_EVENTS]
 
-export const POLLING_TIMEOUT_MS = 60000
+export const POLLING_TIMEOUT_MS = 90000
+export const UPLOAD_POLLING_TIMEOUT_MS = 10000
 export const POLLING_INTERVAL_MS = 2000

@@ -1,12 +1,13 @@
 import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
-import { POLLING_TIMEOUT_MS, POLLING_INTERVAL_MS } from '../constants/common'
+import { POLLING_INTERVAL_MS } from '../constants/common'
 
 interface UseStampPollingOptions {
   onStampUpdated: (stamp: PostageBatch) => void
   onPollingStateChange: (isPolling: boolean) => void
   onTimeout?: (finalStamp: PostageBatch | null) => void
   refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
+  timeout: number
 }
 
 export function useStampPolling({
@@ -14,6 +15,7 @@ export function useStampPolling({
   onPollingStateChange,
   onTimeout,
   refreshStamp,
+  timeout,
 }: UseStampPollingOptions) {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -53,6 +55,8 @@ export function useStampPolling({
       timeoutRef.current = setTimeout(async () => {
         stopPolling()
 
+        if (!onTimeout) return
+
         try {
           const finalStamp = await refreshStamp(batchId)
 
@@ -69,15 +73,11 @@ export function useStampPolling({
             }
           }
 
-          if (onTimeout) {
-            onTimeout(finalStamp || null)
-          }
+          onTimeout(finalStamp || null)
         } catch (error) {
-          if (onTimeout) {
-            onTimeout(null)
-          }
+          onTimeout(null)
         }
-      }, POLLING_TIMEOUT_MS)
+      }, timeout)
 
       pollingIntervalRef.current = setInterval(async () => {
         try {
@@ -102,7 +102,7 @@ export function useStampPolling({
         }
       }, POLLING_INTERVAL_MS)
     },
-    [refreshStamp, onStampUpdated, onPollingStateChange, onTimeout, stopPolling],
+    [refreshStamp, onStampUpdated, onPollingStateChange, onTimeout, stopPolling, timeout],
   )
 
   return {

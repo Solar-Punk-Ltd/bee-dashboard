@@ -21,7 +21,7 @@ import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { truncateNameMiddle } from '../../../utils/common'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { TOOLTIPS } from '../../../constants/tooltips'
-import { FILE_MANAGER_EVENTS } from '../../../constants/common'
+import { FILE_MANAGER_EVENTS, UPLOAD_POLLING_TIMEOUT_MS } from '../../../constants/common'
 import { useStampPolling } from '../../../hooks/useStampPolling'
 
 function useDriveEventListeners(
@@ -82,12 +82,7 @@ interface DriveModalsProps {
   isDestroyDriveModalOpen: boolean
   setIsDestroyDriveModalOpen: (open: boolean) => void
   doDestroy: () => Promise<void>
-  batchIDRef: React.MutableRefObject<import('@ethersphere/bee-js').BatchId>
-  refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
-  setActualStamp: (stamp: PostageBatch) => void
-  setIsUpgrading: (upgrading: boolean) => void
-  isUpgradingRef: React.MutableRefObject<boolean>
-  setIsUpgradeTimeoutModalOpen: (open: boolean) => void
+  onCancelTimeout: () => void
 }
 
 function DriveModals({
@@ -105,12 +100,7 @@ function DriveModals({
   isDestroyDriveModalOpen,
   setIsDestroyDriveModalOpen,
   doDestroy,
-  batchIDRef,
-  refreshStamp,
-  setActualStamp,
-  setIsUpgrading,
-  isUpgradingRef,
-  setIsUpgradeTimeoutModalOpen,
+  onCancelTimeout,
 }: DriveModalsProps): ReactElement | null {
   return (
     <>
@@ -123,16 +113,7 @@ function DriveModals({
         />
       )}
 
-      {isUpgradeTimeoutModalOpen && (
-        <UpgradeTimeoutModal
-          driveName={drive.name}
-          onCancel={() => {
-            setIsUpgrading(false)
-            isUpgradingRef.current = false
-            setIsUpgradeTimeoutModalOpen(false)
-          }}
-        />
-      )}
+      {isUpgradeTimeoutModalOpen && <UpgradeTimeoutModal driveName={drive.name} onOk={onCancelTimeout} />}
 
       {isUpgrading && (
         <div className="fm-drive-item-creating-overlay" aria-live="polite">
@@ -217,6 +198,7 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
     onStampUpdated: handleStampUpdated,
     onPollingStateChange: handlePollingStateChange,
     refreshStamp,
+    timeout: UPLOAD_POLLING_TIMEOUT_MS,
   })
 
   useEffect(() => {
@@ -340,6 +322,16 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
     [setIsUpgradeTimeoutModalOpen],
   )
 
+  const handleCancelTimeout = useCallback(() => {
+    setIsUpgrading(false)
+    isUpgradingRef.current = false
+    setIsUpgradeTimeoutModalOpen(false)
+
+    if (startPollingRef.current && actualStampRef.current) {
+      startPollingRef.current(actualStampRef.current)
+    }
+  }, [])
+
   const handleFileUploaded = useCallback(
     (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
@@ -455,12 +447,7 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
         isDestroyDriveModalOpen={isDestroyDriveModalOpen}
         setIsDestroyDriveModalOpen={setIsDestroyDriveModalOpen}
         doDestroy={doDestroy}
-        batchIDRef={batchIDRef}
-        refreshStamp={refreshStamp}
-        setActualStamp={setActualStamp}
-        setIsUpgrading={setIsUpgrading}
-        isUpgradingRef={isUpgradingRef}
-        setIsUpgradeTimeoutModalOpen={setIsUpgradeTimeoutModalOpen}
+        onCancelTimeout={handleCancelTimeout}
       />
     </div>
   )

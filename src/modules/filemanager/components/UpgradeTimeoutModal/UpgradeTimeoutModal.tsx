@@ -6,10 +6,10 @@ import './UpgradeTimeoutModal.scss'
 
 interface UpgradeTimeoutModalProps {
   driveName: string
-  onCancel: () => void
+  onOk: () => void
 }
 
-export function UpgradeTimeoutModal({ driveName, onCancel }: UpgradeTimeoutModalProps): ReactElement {
+export function UpgradeTimeoutModal({ driveName, onOk }: UpgradeTimeoutModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
 
   return createPortal(
@@ -20,26 +20,13 @@ export function UpgradeTimeoutModal({ driveName, onCancel }: UpgradeTimeoutModal
         <div className="fm-modal-window-body">
           <div className="fm-modal-white-section">
             <p>
-              The upgrade for <strong>{driveName}</strong> is taking longer than expected (more than 60 seconds).
-            </p>
-            <p>The upgrade may still be processing on the Bee node. You can:</p>
-            <ul>
-              <li>
-                <strong>Refresh</strong> to reload the page and check if the capacity has been updated
-              </li>
-              <li>
-                <strong>Cancel</strong> to dismiss this message and check back later
-              </li>
-            </ul>
-            <p style={{ marginTop: '12px', fontSize: '0.9em', color: '#666' }}>
-              <em>Note: The upgrade may still take some time to complete even after refreshing.</em>
+              The upgrade for <strong>{driveName}</strong> is taking longer than expected.
             </p>
           </div>
         </div>
 
         <div className="fm-modal-window-footer">
-          <Button label="Cancel" variant="secondary" onClick={onCancel} />
-          <Button label="Refresh" variant="primary" onClick={() => window.location.reload()} />
+          <Button label="OK" variant="primary" onClick={onOk} />
         </div>
       </div>
     </div>,
