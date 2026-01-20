@@ -24,7 +24,10 @@ const EXT_TO_MIME: Record<string, string> = {
 }
 
 export function getExtensionFromName(name: string): string {
-  return name.split('.').pop()?.toLowerCase() || ''
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  const hasExtension = name.includes('.') && ext && ext !== name
+
+  return hasExtension ? ext : ''
 }
 
 export function guessMime(name: string, mtdt?: Record<string, string> | undefined): string {

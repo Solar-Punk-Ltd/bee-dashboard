@@ -148,7 +148,6 @@ const getSingleFileHandle = async (
 ): Promise<FileInfoWithHandle[] | undefined> => {
   const mimeType = guessMime(info.name, info.customMetadata)
   const extension = getExtensionFromName(info.name)
-  const hasExtension = info.name.includes('.') && extension && extension !== info.name
 
   const pickerOptions: {
     suggestedName: string
@@ -159,7 +158,7 @@ const getSingleFileHandle = async (
     startIn: defaultDownloadFolder,
   }
 
-  if (hasExtension) {
+  if (extension) {
     pickerOptions.types = [{ accept: { [mimeType]: [`.${extension}`] } }]
   }
 
