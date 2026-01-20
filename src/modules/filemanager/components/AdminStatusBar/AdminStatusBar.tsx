@@ -21,7 +21,6 @@ interface AdminStatusBarProps {
   setErrorMessage?: (error: string) => void
 }
 
-// eslint-disable-next-line complexity
 export function AdminStatusBar({
   adminStamp,
   adminDrive,
@@ -177,6 +176,43 @@ export function AdminStatusBar({
   const statusVerb = isCreationInProgress ? 'Creating' : 'Loading'
   const statusText = statusVerb + '  admin drive, please do not reload'
 
+  const renderModalsAndOverlays = () => {
+    return (
+      <>
+        {isUpgradeDriveModalOpen && actualStamp && adminDrive && (
+          <UpgradeDriveModal
+            stamp={actualStamp}
+            drive={adminDrive}
+            onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
+            setErrorMessage={setErrorMessage}
+          />
+        )}
+
+        {isUpgradeTimeoutModalOpen && adminDrive && actualStamp && (
+          <UpgradeTimeoutModal driveName={adminDrive.name} onOk={handleTimeoutCancel} />
+        )}
+
+        {isUpgrading && (
+          <div className="fm-drive-item-creating-overlay" aria-live="polite">
+            <div className="fm-mini-spinner" />
+            <span>Upgrading admin drive…</span>
+          </div>
+        )}
+
+        {showProgressModal && (
+          <ConfirmModal
+            title="Admin Drive Creation"
+            isProgress
+            spinnerMessage={statusText}
+            showFooter={false}
+            showMinimize={true}
+            onMinimize={() => setShowProgressModal(false)}
+          />
+        )}
+      </>
+    )
+  }
+
   return (
     <div>
       <div className={`fm-admin-status-bar-container${blurCls}`} aria-busy={isBusy ? 'true' : 'false'}>
@@ -196,18 +232,7 @@ export function AdminStatusBar({
           />
         </div>
 
-        {isUpgradeDriveModalOpen && actualStamp && adminDrive && (
-          <UpgradeDriveModal
-            stamp={actualStamp}
-            drive={adminDrive}
-            onCancelClick={() => setIsUpgradeDriveModalOpen(false)}
-            setErrorMessage={setErrorMessage}
-          />
-        )}
-
-        {isUpgradeTimeoutModalOpen && adminDrive && actualStamp && (
-          <UpgradeTimeoutModal driveName={adminDrive.name} onOk={handleTimeoutCancel} />
-        )}
+        {renderModalsAndOverlays()}
 
         <div
           className="fm-admin-status-bar-upgrade-button"
@@ -216,24 +241,6 @@ export function AdminStatusBar({
         >
           {isBusy ? 'Working…' : 'Manage'}
         </div>
-
-        {isUpgrading && (
-          <div className="fm-drive-item-creating-overlay" aria-live="polite">
-            <div className="fm-mini-spinner" />
-            <span>Upgrading admin drive…</span>
-          </div>
-        )}
-
-        {showProgressModal && (
-          <ConfirmModal
-            title="Admin Drive Creation"
-            isProgress
-            spinnerMessage={statusText}
-            showFooter={false}
-            showMinimize={true}
-            onMinimize={() => setShowProgressModal(false)}
-          />
-        )}
       </div>
       {!showProgressModal && (loading || isCreationInProgress) && (
         <div className="fm-admin-status-bar-progress-pill-container">
