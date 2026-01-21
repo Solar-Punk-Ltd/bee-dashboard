@@ -753,12 +753,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         if (!row) return prev
 
         if (row.status === TransferStatus.Queued) {
-          cancelledNamesRef.current.add(name)
-          queueRef.current = queueRef.current.filter(t => !(t.finalName === name && t.driveName === row.driveName))
+          cancelledNamesRef.current.add(row.uuid)
+          queueRef.current = queueRef.current.filter(t => t.uuid !== row.uuid)
 
-          return prev.map(r =>
-            r.name === name && r.driveName === row.driveName ? { ...r, status: TransferStatus.Cancelled } : r,
-          )
+          return prev.map(r => (r.uuid === row.uuid ? { ...r, status: TransferStatus.Cancelled } : r))
         }
 
         if (row.status === TransferStatus.Uploading) {

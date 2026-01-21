@@ -9,7 +9,6 @@ import { capitalizeFirstLetter, truncateNameMiddle } from '../../utils/common'
 import { guessMime } from '../../utils/view'
 
 interface FileProgressWindowProps {
-  numberOfFiles?: number
   items?: ProgressItem[]
   type: FileTransferType
   onCancelClick: () => void
@@ -38,7 +37,6 @@ const formatDuration = (sec?: number) => {
 }
 
 export function FileProgressWindow({
-  numberOfFiles,
   items,
   type,
   onCancelClick,
@@ -47,7 +45,7 @@ export function FileProgressWindow({
 }: FileProgressWindowProps): ReactElement | null {
   const listRef = useRef<HTMLDivElement | null>(null)
   const firstRowRef = useRef<HTMLDivElement | null>(null)
-  const count = items?.length ?? numberOfFiles ?? 0
+  const count = items?.length ?? 0
   const rows: ProgressItem[] =
     items && items.length > 0
       ? items

@@ -547,7 +547,6 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             label="Uploading files"
             type={FileTransferType.Upload}
             open={isUploading}
-            count={uploadItems.length}
             items={uploadItems}
             onRowClose={handleUploadClose}
             onCloseAll={() => dismissAllUploads()}
@@ -556,7 +555,6 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             label="Downloading files"
             type={FileTransferType.Download}
             open={isDownloading}
-            count={downloadItems.length}
             items={downloadItems}
             onRowClose={name => cancelOrDismissDownload(name)}
             onCloseAll={() => dismissAllDownloads()}
