@@ -21,6 +21,7 @@ import { FILE_MANAGER_EVENTS } from '../constants/common'
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
 const MAX_UPLOAD_FILES = 10
+const ABORT_EVENT = 'abort'
 
 type ResolveResult = {
   cancelled: boolean
@@ -383,7 +384,15 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       uploadAbortsRef.current.create(task.uuid)
       const signal = uploadAbortsRef.current.getSignal(task.uuid)
 
-      let intervalId: NodeJS.Timeout | null = null
+      let reject: (reason?: Error) => void
+      const abortHandler = () => {
+        reject(new Error('Upload cancelled'))
+      }
+
+      const checkCancellation = new Promise<never>((_, rej) => {
+        reject = rej
+        signal?.addEventListener(ABORT_EVENT, abortHandler)
+      })
 
       try {
         if (signal?.aborted) {
@@ -395,17 +404,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
-
-        const checkCancellation = new Promise<never>((_, reject) => {
-          intervalId = setInterval(() => {
-            if (cancelledUploadingRef.current.has(task.uuid) || signal?.aborted) {
-              if (intervalId) {
-                clearInterval(intervalId)
-              }
-              reject(new Error('Upload cancelled'))
-            }
-          }, 1000)
-        })
 
         await Promise.race([uploadPromise, checkCancellation])
 
@@ -430,9 +428,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           }),
         )
       } finally {
-        if (intervalId) {
-          clearInterval(intervalId)
-        }
+        signal?.removeEventListener(ABORT_EVENT, abortHandler)
 
         const wasCancelled = cancelledUploadingRef.current.has(task.uuid) || signal?.aborted
 
