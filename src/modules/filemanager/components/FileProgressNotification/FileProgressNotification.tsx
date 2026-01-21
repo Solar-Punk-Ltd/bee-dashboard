@@ -10,7 +10,7 @@ interface FileProgressNotificationProps {
   type: FileTransferType
   open?: boolean
   items?: ProgressItem[]
-  onRowClose?: (name: string) => void
+  onRowClose?: (uuid: string) => void
   onCloseAll?: () => void
 }
 

@@ -758,12 +758,12 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   )
 
   const cancelOrDismissUpload = useCallback(
-    (name: string) => {
+    (uuid: string) => {
       safeSetState(
         isMountedRef,
         setUploadItems,
       )(prev => {
-        const row = prev.find(r => r.name === name)
+        const row = prev.find(r => r.uuid === uuid)
 
         if (!row) return prev
 
@@ -778,36 +778,36 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           cancelledUploadingRef.current.add(row.uuid)
           uploadAbortsRef.current.abort(row.uuid)
 
-          return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
+          return prev.map(r => (r.uuid === uuid ? { ...r, status: TransferStatus.Cancelled } : r))
         }
 
         clearAllFlagsFor(row.uuid)
 
-        return prev.filter(r => r.name !== name)
+        return prev.filter(r => r.uuid !== uuid)
       })
     },
     [clearAllFlagsFor],
   )
 
-  const cancelOrDismissDownload = useCallback((name: string) => {
+  const cancelOrDismissDownload = useCallback((uuid: string) => {
     safeSetState(
       isMountedRef,
       setDownloadItems,
     )(prev => {
-      const row = prev.find(r => r.name === name)
+      const row = prev.find(r => r.uuid === uuid)
 
       if (!row) return prev
 
       if (row.status === TransferStatus.Downloading) {
-        cancelledDownloadingRef.current.add(name)
-        abortDownload(name)
+        cancelledDownloadingRef.current.add(uuid)
+        abortDownload(uuid)
 
-        return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
+        return prev.map(r => (r.uuid === uuid ? { ...r, status: TransferStatus.Cancelled } : r))
       }
 
-      cancelledDownloadingRef.current.delete(name)
+      cancelledDownloadingRef.current.delete(uuid)
 
-      return prev.filter(r => r.name !== name)
+      return prev.filter(r => r.uuid !== uuid)
     })
   }, [])
 
@@ -831,7 +831,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       if (!fileInfo) return
 
       setUploadItems(prev => {
-        const item = prev.find(it => it.name === fileInfo.name && it.status === TransferStatus.Uploading)
+        const item = prev.find(it => it.uuid === fileInfo.uuid && it.status === TransferStatus.Uploading)
 
         if (!item) return prev
 

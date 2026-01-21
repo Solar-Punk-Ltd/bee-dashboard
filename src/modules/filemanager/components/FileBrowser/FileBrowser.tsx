@@ -276,13 +276,13 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     setShowError,
   ])
 
-  const handleUploadClose = (name: string) => {
-    const row = uploadItems.find(i => i.name === name)
+  const handleUploadClose = (uuid: string) => {
+    const row = uploadItems.find(i => i.uuid === uuid)
 
     if (row?.status === TransferStatus.Uploading) {
-      setPendingCancelUpload(name)
+      setPendingCancelUpload(uuid)
     } else {
-      cancelOrDismissUpload(name)
+      cancelOrDismissUpload(uuid)
     }
   }
 

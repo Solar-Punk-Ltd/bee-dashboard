@@ -12,7 +12,7 @@ interface FileProgressWindowProps {
   items?: ProgressItem[]
   type: FileTransferType
   onCancelClick: () => void
-  onRowClose?: (name: string) => void
+  onRowClose?: (uuid: string) => void
   onCloseAll?: () => void
 }
 
@@ -46,10 +46,7 @@ export function FileProgressWindow({
   const listRef = useRef<HTMLDivElement | null>(null)
   const firstRowRef = useRef<HTMLDivElement | null>(null)
   const count = items?.length ?? 0
-  const rows: ProgressItem[] =
-    items && items.length > 0
-      ? items
-      : Array.from({ length: count }, (_, i) => ({ name: `Pending file ${i + 1}`, percent: 0, size: '' }))
+  const rows: ProgressItem[] = items ?? []
 
   const getTransferInfo = (item: ProgressItem, pct?: number) => {
     const transferType = capitalizeFirstLetter(item?.kind ?? type)
@@ -174,7 +171,7 @@ export function FileProgressWindow({
                   <button
                     className="fm-file-progress-window-row-close"
                     aria-label={rowActionLabel}
-                    onClick={() => onRowClose?.(item.name)}
+                    onClick={() => onRowClose?.(item.uuid)}
                     type="button"
                   >
                     <CloseIcon size="14" />
