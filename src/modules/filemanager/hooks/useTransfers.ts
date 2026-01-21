@@ -174,7 +174,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
   const queueRef = useRef<UploadTask[]>([])
   const runningRef = useRef(false)
-  const cancelledNamesRef = useRef<Set<string>>(new Set())
+  const cancelledQueuedRef = useRef<Set<string>>(new Set())
   const cancelledUploadingRef = useRef<Set<string>>(new Set())
   const cancelledDownloadingRef = useRef<Set<string>>(new Set())
 
@@ -189,7 +189,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   )
 
   const clearAllFlagsFor = useCallback((uuid: string) => {
-    cancelledNamesRef.current.delete(uuid)
+    cancelledQueuedRef.current.delete(uuid)
     cancelledUploadingRef.current.delete(uuid)
     uploadAbortsRef.current.abort(uuid)
     queueRef.current = queueRef.current.filter(t => {
@@ -439,7 +439,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         if (!wasCancelled) {
           uploadAbortsRef.current.abort(task.uuid)
           cancelledUploadingRef.current.delete(task.uuid)
-          cancelledNamesRef.current.delete(task.uuid)
+          cancelledQueuedRef.current.delete(task.uuid)
         }
       }
     },
@@ -696,14 +696,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
             if (!task) break
 
-            const isCancelled = cancelledNamesRef.current.has(task.uuid)
+            const isCancelled = cancelledQueuedRef.current.has(task.uuid)
 
             if (isCancelled) {
               safeSetState(
                 isMountedRef,
                 setUploadItems,
               )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
-              cancelledNamesRef.current.delete(task.uuid)
+              cancelledQueuedRef.current.delete(task.uuid)
               queueRef.current.shift()
             } else {
               await processUploadTask(task)
@@ -772,7 +772,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         if (!row) return prev
 
         if (row.status === TransferStatus.Queued) {
-          cancelledNamesRef.current.add(row.uuid)
+          cancelledQueuedRef.current.add(row.uuid)
           queueRef.current = queueRef.current.filter(t => t.uuid !== row.uuid)
 
           return prev.map(r => (r.uuid === row.uuid ? { ...r, status: TransferStatus.Cancelled } : r))
@@ -818,7 +818,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const dismissAllUploads = useCallback(() => {
     uploadAbortsRef.current.clear()
     queueRef.current = []
-    cancelledNamesRef.current.clear()
+    cancelledQueuedRef.current.clear()
     cancelledUploadingRef.current.clear()
     setUploadItems([])
   }, [])
