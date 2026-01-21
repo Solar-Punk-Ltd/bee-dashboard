@@ -302,9 +302,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       })
 
       const onProgress = (progress: UploadProgress) => {
-        const signal = uploadAbortsRef.current.getSignal(name)
+        const signal = uploadAbortsRef.current.getSignal(uuid)
 
-        if (cancelledUploadingRef.current.has(name) || !isMountedRef.current || signal?.aborted) return
+        if (cancelledUploadingRef.current.has(uuid) || !isMountedRef.current || signal?.aborted) return
 
         if (progress.total > 0) {
           const now = Date.now()
@@ -380,29 +380,40 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }),
       )
 
-      uploadAbortsRef.current.create(task.finalName)
-      const signal = uploadAbortsRef.current.getSignal(task.finalName)
+      uploadAbortsRef.current.create(task.uuid)
+      const signal = uploadAbortsRef.current.getSignal(task.uuid)
+
+      let intervalId: NodeJS.Timeout | null = null
 
       try {
         if (signal?.aborted) {
           throw new Error('Upload cancelled')
         }
 
-        await fm.upload(
+        const uploadPromise = fm.upload(
           taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
         )
 
-        if (signal?.aborted) {
-          throw new Error('Upload cancelled')
-        }
+        const checkCancellation = new Promise<never>((_, reject) => {
+          intervalId = setInterval(() => {
+            if (cancelledUploadingRef.current.has(task.uuid) || signal?.aborted) {
+              if (intervalId) {
+                clearInterval(intervalId)
+              }
+              reject(new Error('Upload cancelled'))
+            }
+          }, 1000)
+        })
+
+        await Promise.race([uploadPromise, checkCancellation])
 
         if (currentStamp) {
           await refreshStamp(currentStamp.batchID.toString())
         }
       } catch (error) {
-        const wasCancelled = cancelledUploadingRef.current.has(task.finalName) || signal?.aborted
+        const wasCancelled = cancelledUploadingRef.current.has(task.uuid) || signal?.aborted
 
         if (!wasCancelled) {
           const errorMsg = error instanceof Error ? error.message : String(error)
@@ -419,9 +430,17 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           }),
         )
       } finally {
-        uploadAbortsRef.current.abort(task.finalName)
-        cancelledUploadingRef.current.delete(task.finalName)
-        cancelledNamesRef.current.delete(task.finalName)
+        if (intervalId) {
+          clearInterval(intervalId)
+        }
+
+        const wasCancelled = cancelledUploadingRef.current.has(task.uuid) || signal?.aborted
+
+        if (!wasCancelled) {
+          uploadAbortsRef.current.abort(task.uuid)
+          cancelledUploadingRef.current.delete(task.uuid)
+          cancelledNamesRef.current.delete(task.uuid)
+        }
       }
     },
     [fm, files, currentStamp, trackUpload, refreshStamp, setShowError, setErrorMessage],
@@ -760,13 +779,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
 
         if (row.status === TransferStatus.Uploading) {
-          cancelledUploadingRef.current.add(name)
-          uploadAbortsRef.current.abort(name)
+          cancelledUploadingRef.current.add(row.uuid)
+          uploadAbortsRef.current.abort(row.uuid)
 
           return prev.map(r => (r.name === name ? { ...r, status: TransferStatus.Cancelled } : r))
         }
 
-        clearAllFlagsFor(name)
+        clearAllFlagsFor(row.uuid)
 
         return prev.filter(r => r.name !== name)
       })
