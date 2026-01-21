@@ -10,4 +10,4 @@ export const BEE_DESKTOP_LATEST_RELEASE_PAGE = 'https://github.com/ethersphere/b
 export const BEE_DESKTOP_LATEST_RELEASE_PAGE_API =
   'https://api.github.com/repos/ethersphere/bee-desktop/releases/latest'
 export const DEFAULT_BEE_API_HOST = 'http://localhost:1633'
-export const DEFAULT_RPC_URL = 'https://gnosis-mainnet.g.alchemy.com/v2/atcICv4EFi9hXKew1D4LvnH36cm5-96S'
+export const DEFAULT_RPC_URL = 'xdai.fairdatasociety.org'

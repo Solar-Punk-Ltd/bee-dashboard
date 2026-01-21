@@ -173,7 +173,6 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
   const [isUpgradeTimeoutModalOpen, setIsUpgradeTimeoutModalOpen] = useState(false)
   const [isUpgrading, setIsUpgrading] = useState(false)
   const [isCapacityUpdating, setIsCapacityUpdating] = useState(false)
-  const [isPollingActive, setIsPollingActive] = useState(false)
   const [isDestroying, setIsDestroying] = useState(false)
   const [actualStamp, setActualStamp] = useState<PostageBatch>(stamp)
   const batchIDRef = useRef(stamp.batchID)
@@ -193,7 +192,6 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
 
   const handlePollingStateChange = useCallback((isPolling: boolean) => {
     setIsCapacityUpdating(isPolling)
-    setIsPollingActive(isPolling)
   }, [])
 
   const { startPolling, stopPolling } = useStampPolling({
@@ -347,8 +345,8 @@ function DriveItemComponent({ drive, stamp, isSelected, setErrorMessage }: Drive
   const { capacityPct, usedSize, stampSize } = useMemo(() => {
     const filesPerDrive = files.filter(fi => fi.driveId === drive.id.toString())
 
-    return calculateStampCapacityMetrics(actualStamp, filesPerDrive, drive.redundancyLevel, isPollingActive)
-  }, [actualStamp, drive, files, isPollingActive])
+    return calculateStampCapacityMetrics(actualStamp, filesPerDrive, drive.redundancyLevel, isCapacityUpdating)
+  }, [actualStamp, drive, files, isCapacityUpdating])
 
   const handleDriveClick = useCallback(() => {
     setView(ViewType.File)
