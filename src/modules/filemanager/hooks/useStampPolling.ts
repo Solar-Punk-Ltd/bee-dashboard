@@ -57,10 +57,10 @@ export function useStampPolling({
         const durationUpdated = newExpiry > oldExpiry
 
         const isCapacityIncreased = capacityIncreased && durationUpdated
-        const isUsageOrFileIncreased = capacityIncreased || durationUpdated || usageIncreased
+        const isStampDataChanged = capacityIncreased || durationUpdated || usageIncreased
 
         return {
-          updated: isCapacityUpgrade ? isCapacityIncreased : isUsageOrFileIncreased,
+          updated: isCapacityUpgrade ? isCapacityIncreased : isStampDataChanged,
           stamp: updatedStamp,
         }
       } catch (error) {
@@ -100,7 +100,7 @@ export function useStampPolling({
         const result = await checkStampUpdate(batchId, oldStampSize, oldRemainingSize, oldExpiry, isCapacityUpgrade)
 
         if (result.updated && result.stamp) {
-          onStampUpdated(result.updated && result.stamp)
+          onStampUpdated(result.stamp)
 
           return
         }
