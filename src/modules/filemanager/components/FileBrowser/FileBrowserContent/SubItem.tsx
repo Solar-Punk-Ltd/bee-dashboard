@@ -1,20 +1,14 @@
-import { ReactElement, useContext } from 'react'
-import { Context as SettingsContext } from '../../../../../providers/Settings'
+import { ReactElement } from 'react'
 import { GetIconElement } from '../../../utils/GetIconElement'
+import { ItemType } from '../../../../../pages/filemanager/ViewContext'
 
 interface SubItemProps {
   name: string
-  reference: string
-  type: 'file' | 'folder'
+  type: ItemType
   onDoubleClick?: () => void
 }
-export function SubItem({ name, reference, type, onDoubleClick }: SubItemProps): ReactElement {
+export function SubItem({ name, type, onDoubleClick }: SubItemProps): ReactElement {
   const displayName = name.endsWith('/') ? name.split('/').filter(Boolean).pop() : name.split('/').pop()
-  const { beeApi } = useContext(SettingsContext)
-
-  if (beeApi === null) {
-    return <div>Loading...</div>
-  }
 
   return (
     <div className="fm-file-item-content" onDoubleClick={onDoubleClick}>

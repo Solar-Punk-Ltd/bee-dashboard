@@ -1,8 +1,13 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import { ViewType } from '../../modules/filemanager/constants/transfers'
 
+export enum ItemType {
+  File = 'file',
+  Folder = 'folder',
+}
+
 export interface TreeNode {
-  type: 'file' | 'folder'
+  type: ItemType
   children: { [key: string]: TreeNode }
   ref?: string
 }

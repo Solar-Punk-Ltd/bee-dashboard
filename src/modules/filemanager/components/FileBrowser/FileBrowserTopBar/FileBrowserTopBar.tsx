@@ -1,6 +1,6 @@
 import { ReactElement } from 'react'
 import './FileBrowserTopBar.scss'
-import { useView } from '../../../../../pages/filemanager/ViewContext'
+import { useView, ItemType, FolderTree } from '../../../../../pages/filemanager/ViewContext'
 import { ViewType } from '../../../constants/transfers'
 
 type Props = {
@@ -13,18 +13,17 @@ export function FileBrowserTopBar({ onOpenMenu, canOpen = true }: Props): ReactE
     useView()
 
   const viewText = view === ViewType.Trash ? ' Trash' : ''
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleItemClick = (type: string, name?: { folderName: string; tree: any }, index?: number) => {
+  const handleItemClick = (type: string, name?: { folderName: string; tree: FolderTree }, index?: number) => {
     if (type === 'drive') {
       setFolderView(false)
       setViewFolders([])
     }
 
-    if (type === 'folder' && folderView) {
+    if (type === ItemType.Folder && folderView) {
       if (index !== undefined && index !== -1) {
         const newFolders = viewFolders.slice(0, index + 1)
 
-        if (JSON.stringify(viewFolders) !== JSON.stringify(newFolders)) {
+        if (viewFolders.length !== newFolders.length) {
           setViewFolders(newFolders)
         }
 
@@ -48,7 +47,10 @@ export function FileBrowserTopBar({ onOpenMenu, canOpen = true }: Props): ReactE
           viewFolders.map((folder, index) => (
             <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
               /{' '}
-              <div onClick={() => handleItemClick('folder', folder, index)} className="fm-file-browser-top-bar-item">
+              <div
+                onClick={() => handleItemClick(ItemType.Folder, folder, index)}
+                className="fm-file-browser-top-bar-item"
+              >
                 {folder.folderName}
               </div>
             </div>

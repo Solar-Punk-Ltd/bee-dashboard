@@ -4,8 +4,13 @@ import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
 
-import { useView, FolderTree } from '../../../../../pages/filemanager/ViewContext'
+import { useView, FolderTree, ItemType } from '../../../../../pages/filemanager/ViewContext'
 import FolderSubItems from './FolderSubItems'
+
+export type FileSystemItem = {
+  path: string
+  ref: string
+}
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -27,7 +32,7 @@ interface FileBrowserContentProps {
   setErrorMessage?: (error: string) => void
 }
 
-function buildTree(items: { path: string; ref: string }[]): FolderTree {
+function buildTree(items: FileSystemItem[]): FolderTree {
   const root: FolderTree = {}
 
   items.forEach(item => {
@@ -37,7 +42,7 @@ function buildTree(items: { path: string; ref: string }[]): FolderTree {
     parts.forEach((part, index) => {
       if (!current[part]) {
         current[part] = {
-          type: index === parts.length - 1 && item.path.includes('.') ? 'file' : 'folder',
+          type: index === parts.length - 1 && item.path.includes('.') ? ItemType.File : ItemType.Folder,
           children: {},
           ref: index === parts.length - 1 ? item.ref : undefined,
         }
@@ -64,7 +69,7 @@ function FileBrowserContentInner({
 }: FileBrowserContentProps): ReactElement {
   const { folderView, setFolderView, setCurrentTree, viewFolders, setViewFolders } = useView()
 
-  const [folderFileItems, setFolderFileItems] = useState<{ path: string; ref: string }[] | null>(null)
+  const [folderFileItems, setFolderFileItems] = useState<FileSystemItem[] | null>(null)
 
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
@@ -86,7 +91,7 @@ function FileBrowserContentInner({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
-  const handleFolderItemDoubleClick = (folderFileItems: { path: string; ref: string }[] | null, name: string) => {
+  const handleFolderItemDoubleClick = (folderFileItems: FileSystemItem[] | null, name: string) => {
     const actualTree = buildTree(folderFileItems || [])
 
     setFolderView(true)
@@ -119,15 +124,15 @@ function FileBrowserContentInner({
               bulkSelectedCount={bulkSelectedCount}
               onBulk={onBulk}
               setErrorMessage={setErrorMessage}
-              folderItemDoubleClick={(folderFileItems: { path: string; ref: string }[] | null, name: string) =>
+              folderItemDoubleClick={(folderFileItems: FileSystemItem[] | null, name: string) =>
                 handleFolderItemDoubleClick(folderFileItems, name)
               }
             />
           )
         })
-    } else {
-      return folderFileItems ? <FolderSubItems /> : null
     }
+
+    return folderFileItems ? <FolderSubItems /> : null
   }
 
   if (drives.length === 0) {

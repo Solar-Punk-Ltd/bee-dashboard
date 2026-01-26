@@ -1,6 +1,7 @@
 import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileSystemItem } from '../FileBrowserContent/FileBrowserContent'
 
 import './FileItem.scss'
 import { GetIconElement } from '../../../utils/GetIconElement'
@@ -14,7 +15,7 @@ import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
 import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
-import { useView } from '../../../../../pages/filemanager/ViewContext'
+import { useView, ItemType } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
@@ -45,7 +46,7 @@ interface FileItemProps {
     delete?: () => void
   }
   setErrorMessage?: (error: string) => void
-  folderItemDoubleClick: (folderFileItems: { path: string; ref: string }[] | null, fileName: string) => void
+  folderItemDoubleClick: (folderFileItems: FileSystemItem[] | null, fileName: string) => void
 }
 
 export function FileItem({
@@ -121,13 +122,13 @@ export function FileItem({
     setShowGetInfoModal(true)
   }, [fm, fileInfo, driveName, driveStamp])
 
-  const handleOpenFolder = useCallback(async () => {
+  const handleOpenFolder = useCallback(async (): Promise<FileSystemItem[] | undefined> => {
     if (!fm) return
     const list = await fm.listFiles(fileInfo)
     const paths = Object.keys(list)
     const refs = Object.values(list)
 
-    const result = paths.map((path, index) => ({
+    const result: FileSystemItem[] = paths.map((path, index) => ({
       path,
       ref: refs[index],
     }))
@@ -159,7 +160,7 @@ export function FileItem({
 
     if (!fm || !beeApi) return
 
-    if (fileInfo?.customMetadata?.mime === 'folder') {
+    if (fileInfo?.customMetadata?.mime === ItemType.Folder) {
       const fileDatas = await handleOpenFolder()
       folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
 

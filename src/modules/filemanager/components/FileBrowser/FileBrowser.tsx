@@ -6,7 +6,7 @@ import { useContextMenu } from '../../hooks/useContextMenu'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
 import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
-import { useView } from '../../../../pages/filemanager/ViewContext'
+import { useView, ItemType } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { useTransfers } from '../../hooks/useTransfers'
 import { useSearch } from '../../../../pages/filemanager/SearchContext'
@@ -17,6 +17,7 @@ import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
 
 import { Point, Dir, safeSetState, getFileId } from '../../utils/common'
 import { computeContextMenuPosition } from '../../utils/ui'
+import { isDirectoryPickerSupported } from '../../utils/download'
 import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
 import { handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
@@ -392,59 +393,73 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   )
 
   async function selectFolder() {
-    if (typeof window.showDirectoryPicker === 'function') {
-      handleCloseContext()
-      try {
-        const dirHandle = await window.showDirectoryPicker()
-        const dataTransfer = new DataTransfer() // Create a DataTransfer object
-        const metadataMap = new Map()
+    if (!currentDrive) {
+      return
+    }
 
-        const processHandle = async (handle: FileSystemHandle, path = '') => {
-          if (handle.kind === 'file') {
-            const file = await (handle as FileSystemFileHandle).getFile()
+    if (!isDirectoryPickerSupported()) {
+      return
+    }
 
-            if (file.name.startsWith('.')) return
-            const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
-            dataTransfer.items.add(createdFile)
-            metadataMap.set(createdFile, { name: file.name, itemType: 'file', path: `${path}${file.name}` })
-          } else if (handle.kind === 'directory') {
-            const dirHandle = handle as FileSystemDirectoryHandle
+    handleCloseContext()
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dirHandle = await (window as any).showDirectoryPicker()
+      const dataTransfer = new DataTransfer()
+      const metadataMap = new Map()
 
-            const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: 'folder' })
-            metadataMap.set(folderFileItem, {
-              name: dirHandle.name,
-              itemType: 'folder',
-              path: `${path}${folderFileItem.name}`,
-            })
-            dataTransfer.items.add(folderFileItem)
+      const queue: Array<{ handle: FileSystemHandle; path: string }> = []
 
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for await (const [name, childHandle] of dirHandle.entries()) {
-              await processHandle(childHandle, `${path}${dirHandle.name}/`)
-            }
-          }
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        for await (const [name, handle] of dirHandle.entries()) {
-          await processHandle(handle, `${dirHandle.name}/`)
-        }
-
-        const fileList = dataTransfer.files
-
-        if (!currentDrive || fileList.length === 0) {
-          // Handle error for no files or no current drive
-          return
-        }
-
-        if (fileList && fileList.length) uploadFiles(fileList, true, dirHandle.name)
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Folder selection cancelled or not supported:', err)
+      for await (const [, handle] of dirHandle.entries()) {
+        queue.push({ handle, path: `${dirHandle.name}/` })
       }
-    } else {
-      // eslint-disable-next-line no-console
-      console.error('showDirectoryPicker is not supported in this browser.')
+
+      while (queue.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { handle, path } = queue.shift()!
+
+        if (handle.kind === 'file') {
+          const file = await (handle as FileSystemFileHandle).getFile()
+
+          const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
+          dataTransfer.items.add(createdFile)
+          metadataMap.set(createdFile, { name: file.name, itemType: ItemType.File, path: `${path}${file.name}` })
+
+          // eslint-disable-next-line no-continue
+          continue
+        }
+
+        if (handle.kind === 'directory') {
+          const dirHandle = handle as FileSystemDirectoryHandle
+
+          const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: ItemType.Folder })
+          metadataMap.set(folderFileItem, {
+            name: dirHandle.name,
+            itemType: ItemType.Folder,
+            path: `${path}${folderFileItem.name}`,
+          })
+          dataTransfer.items.add(folderFileItem)
+
+          for await (const [, childHandle] of dirHandle.entries()) {
+            queue.push({ handle: childHandle, path: `${path}${dirHandle.name}/` })
+          }
+
+          // eslint-disable-next-line no-continue
+          continue
+        }
+
+        throw new Error(`Unsupported file system handle kind: ${handle.kind}`)
+      }
+
+      const fileList = dataTransfer.files
+
+      if (fileList.length === 0) {
+        return
+      }
+
+      if (fileList && fileList.length) uploadFiles(fileList, true, dirHandle.name)
+    } catch (err) {
+      setShowError(true)
     }
   }
 
