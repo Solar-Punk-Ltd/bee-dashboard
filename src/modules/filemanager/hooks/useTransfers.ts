@@ -1,6 +1,7 @@
 import { useCallback, useState, useContext, useRef, useEffect } from 'react'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
+import { ItemType } from '../../../pages/filemanager/ViewContext'
 import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 import { formatBytes, safeSetState, truncateNameMiddle } from '../utils/common'
@@ -50,7 +51,7 @@ type ETAState = {
   lastEta?: number
 }
 
-type UploadMeta = Record<string, string | number>
+type UploadMeta = Record<string, string | number | File[]>
 
 type UploadTask = {
   uuid: string
@@ -64,6 +65,24 @@ type UploadTask = {
   driveName: string
 }
 
+type PrepareUploadEntryParams = {
+  originalName: string
+  filesToUpload: File[]
+  sameDrive: FileInfo[]
+  allTaken: Set<string>
+  reservedNames?: Set<string>
+  isFolder?: boolean
+}
+
+type PreparedUploadEntry = {
+  finalName: string
+  prettySize: string
+  isReplace: boolean
+  replaceTopic?: string
+  replaceHistory?: string
+  existingFile?: FileInfo
+}
+
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   const out: Record<string, string> = {}
   for (const [k, v] of Object.entries(meta)) out[k] = typeof v === 'string' ? v : String(v)
@@ -71,7 +90,12 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?: FileInfo): UploadMeta => {
+const buildUploadMeta = (
+  files: File[] | FileList,
+  path?: string,
+  existingFile?: FileInfo,
+  isFolder = false,
+): UploadMeta => {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -84,7 +108,8 @@ const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?:
   const meta: UploadMeta = {
     size: String(totalSize),
     fileCount: String(arr.length),
-    mime: primary?.type || 'application/octet-stream',
+    mime: isFolder ? ItemType.Folder : primary?.type || 'application/octet-stream',
+    files: arr,
     accumulatedSize: String(accumulatedSize),
   }
 
@@ -546,209 +571,295 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     [],
   )
 
+  const prepareUploadEntry = useCallback(
+    async ({
+      originalName,
+      filesToUpload,
+      sameDrive,
+      allTaken,
+      reservedNames,
+      isFolder = false,
+    }: PrepareUploadEntryParams): Promise<PreparedUploadEntry | null> => {
+      const meta = buildUploadMeta(filesToUpload, undefined, undefined, isFolder)
+      const sizeSource = typeof meta.size === 'string' || typeof meta.size === 'number' ? meta.size : filesToUpload
+      const prettySize = formatBytes(sizeSource) ?? '0'
+
+      // eslint-disable-next-line prefer-const
+      let { finalName, isReplace, replaceTopic, replaceHistory, cancelled } = await resolveConflict(
+        originalName,
+        sameDrive,
+        allTaken,
+      )
+
+      finalName = finalName?.trim() ?? ''
+      const initialReplace = Boolean(isReplace)
+      const initialInvalidCombo = initialReplace && (!replaceTopic || !replaceHistory)
+      const initialInvalidName = !finalName
+
+      if (cancelled || initialInvalidCombo || initialInvalidName) {
+        return null
+      }
+
+      if (reservedNames?.has(finalName)) {
+        const retryTaken = new Set<string>([...Array.from(allTaken), finalName])
+        const retry = await resolveConflict(finalName, sameDrive, retryTaken)
+
+        finalName = retry.finalName?.trim() ?? ''
+        isReplace = retry.isReplace
+        replaceTopic = retry.replaceTopic
+        replaceHistory = retry.replaceHistory
+
+        const retryReplace = Boolean(isReplace)
+        const retryInvalidCombo = retryReplace && (!replaceTopic || !replaceHistory)
+        const retryInvalidName = !finalName
+
+        if (retry.cancelled || retryInvalidCombo || retryInvalidName) {
+          return null
+        }
+      }
+
+      const finalReplace = Boolean(isReplace)
+      const existingFile =
+        finalReplace && replaceTopic ? files.find(f => f.topic.toString() === replaceTopic) : undefined
+
+      return {
+        finalName,
+        prettySize,
+        isReplace: finalReplace,
+        replaceTopic,
+        replaceHistory,
+        existingFile,
+      }
+    },
+    [resolveConflict, files],
+  )
+
   const uploadFiles = useCallback(
-    (picked: FileList | File[]): void => {
+    (picked: FileList | File[], isFolder = false, folderName?: string): void => {
       const filesArr = Array.from(picked)
+
+      if (!currentDrive || !fm) return
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const manager = fm!
+      const drive = currentDrive
 
       if (filesArr.length === 0 || !fm || !currentDrive || !currentStamp) return
 
-      const currentlyQueued = queueRef.current.length
-      const newFilesCount = filesArr.length
-      const totalAfterAdd = currentlyQueued + newFilesCount
+      const sameDrive = collectSameDrive(drive.id.toString())
+      const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
+      const reserved = new Set<string>()
+      const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === drive.name).map(u => u.name))
+      const tasks: UploadTask[] = []
+      const allTaken = new Set<string>([
+        ...Array.from(onDiskNames),
+        ...Array.from(reserved),
+        ...Array.from(progressNames),
+      ])
 
-      if (totalAfterAdd > MAX_UPLOAD_FILES) {
-        setErrorMessage?.(
-          `You’re trying to upload ${totalAfterAdd} files, but the limit is ${MAX_UPLOAD_FILES}. Please upload fewer files.`,
+      async function processFolder() {
+        if (!folderName) {
+          return
+        }
+        const prepared = await prepareUploadEntry({
+          originalName: folderName ? folderName : 'New Folder',
+          filesToUpload: filesArr,
+          sameDrive,
+          allTaken,
+          isFolder: true,
+        })
+
+        if (!prepared) {
+          return
+        }
+
+        const info: FileInfoOptions = {
+          name: prepared.finalName,
+          files: filesArr,
+          customMetadata: normalizeCustomMetadata(buildUploadMeta(filesArr, undefined, prepared.existingFile, true)),
+          topic: prepared.isReplace ? prepared.replaceTopic : undefined,
+        }
+
+        const uuid = uuidV4()
+        const progressCallback = trackUpload(
+          uuid,
+          prepared.finalName,
+          prepared.prettySize,
+          prepared.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+          drive.name,
         )
-        setShowError(true)
 
-        return
+        void manager.upload(
+          drive,
+          { ...info, onUploadProgress: progressCallback },
+          { actHistoryAddress: prepared.isReplace ? prepared.replaceHistory : undefined },
+        )
       }
-      // TODO: move out this function from the cb and use as a util for better readaility
-      const preflight = async (): Promise<UploadTask[]> => {
-        const progressNames = new Set<string>(
-          uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name),
-        )
-        const sameDrive = collectSameDrive(currentDrive.id.toString())
-        const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
-        const reserved = new Set<string>()
-        const tasks: UploadTask[] = []
 
-        const allTaken = new Set<string>([
-          ...Array.from(onDiskNames),
-          ...Array.from(reserved),
-          ...Array.from(progressNames),
-        ])
+      if (isFolder) {
+        processFolder()
+      } else {
+        const currentlyQueued = queueRef.current.length
+        const newFilesCount = filesArr.length
+        const totalAfterAdd = currentlyQueued + newFilesCount
 
-        // Track cumulative file sizes for capacity verification
-        let fileSizeSum = 0
-        let fileCount = 0
-
-        const processFile = async (file: File): Promise<UploadTask | null> => {
-          if (!currentStamp || !currentStamp.usable) {
-            setErrorMessage?.('Stamp is not usable.')
-            setShowError(true)
-
-            return null
-          }
-
-          const uuid = uuidV4()
-
-          const meta = buildUploadMeta([file])
-          const prettySize = formatBytes(meta.size)
-
-          fileSizeSum += file.size
-          fileCount += 1
-
-          const { ok } = verifyDriveSpace({
-            fm,
-            redundancyLevel: currentDrive.redundancyLevel,
-            stamp: currentStamp,
-            useInfoSize: true,
-            driveId: currentDrive.id.toString(),
-            adminRedundancy: adminDrive?.redundancyLevel,
-            fileSize: fileSizeSum,
-            fileCount,
-            cb: err => {
-              setErrorMessage?.(err + ' (' + truncateNameMiddle(file.name) + ')')
-              setShowError(true)
-            },
-          })
-
-          if (!ok) {
-            return null
-          }
-
-          let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(
-            file.name,
-            sameDrive,
-            allTaken,
+        if (totalAfterAdd > MAX_UPLOAD_FILES) {
+          setErrorMessage?.(
+            `You’re trying to upload ${totalAfterAdd} files, but the limit is ${MAX_UPLOAD_FILES}. Please upload fewer files.`,
           )
-          finalName = finalName ?? ''
-
-          const invalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
-          const invalidName = !finalName || finalName.trim().length === 0
-
-          if (!invalidCombo && !invalidName) {
-            if (reserved.has(finalName)) {
-              const retryTaken = new Set<string>([...Array.from(allTaken), finalName])
-              const retry = await resolveConflict(finalName, sameDrive, retryTaken)
-              finalName = retry.finalName ?? ''
-              isReplace = retry.isReplace
-              replaceTopic = retry.replaceTopic
-              replaceHistory = retry.replaceHistory
-            }
-
-            const retryInvalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
-            const retryInvalidName = !finalName || finalName.trim().length === 0
-
-            if (!retryInvalidCombo && !retryInvalidName) {
-              reserved.add(finalName)
-
-              ensureQueuedRow(
-                uuid,
-                finalName,
-                isReplace ? FileTransferType.Update : FileTransferType.Upload,
-                prettySize,
-                currentDrive.name,
-              )
-
-              return {
-                uuid,
-                file,
-                finalName,
-                prettySize,
-                isReplace: Boolean(isReplace),
-                replaceTopic,
-                replaceHistory,
-                driveId: currentDrive.id.toString(),
-                driveName: currentDrive.name,
-              }
-            }
-          }
-
-          return null
-        }
-
-        for (const file of filesArr) {
-          const task = await processFile(file)
-
-          if (task) {
-            tasks.push(task)
-          } else {
-            // Stop processing remaining files if capacity check failed
-            break
-          }
-        }
-
-        return tasks
-      }
-
-      const runQueue = async () => {
-        if (runningRef.current) return
-        runningRef.current = true
-
-        try {
-          while (queueRef.current.length > 0) {
-            const task = queueRef.current[0]
-
-            if (!task) break
-
-            const isCancelled = cancelledQueuedRef.current.has(task.uuid)
-
-            if (isCancelled) {
-              safeSetState(
-                isMountedRef,
-                setUploadItems,
-              )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
-              cancelledQueuedRef.current.delete(task.uuid)
-              queueRef.current.shift()
-            } else {
-              await processUploadTask(task)
-              queueRef.current.shift()
-            }
-          }
-        } finally {
-          runningRef.current = false
-
-          if (queueRef.current.length > 0) {
-            runQueue()
-          }
-        }
-      }
-
-      void (async () => {
-        if (!currentStamp || !currentStamp.usable) {
-          setErrorMessage?.('Stamp is not usable.')
           setShowError(true)
 
           return
         }
+        // TODO: move out this function from the cb and use as a util for better readaility
+        const preflight = async (): Promise<UploadTask[]> => {
+          // Track cumulative file sizes for capacity verification
+          let fileSizeSum = 0
+          let fileCount = 0
 
-        if (beeApi) {
-          const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
+          const processFile = async (file: File): Promise<UploadTask | null> => {
+            if (!currentStamp || !currentStamp.usable) {
+              setErrorMessage?.('Stamp is not usable.')
+              setShowError(true)
 
-          if (!stampValid) {
-            setErrorMessage?.(
-              'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
+              return null
+            }
+
+            const uuid = uuidV4()
+
+            fileSizeSum += file.size
+            fileCount += 1
+
+            const { ok } = verifyDriveSpace({
+              fm,
+              redundancyLevel: currentDrive.redundancyLevel,
+              stamp: currentStamp,
+              useInfoSize: true,
+              driveId: currentDrive.id.toString(),
+              adminRedundancy: adminDrive?.redundancyLevel,
+              fileSize: fileSizeSum,
+              fileCount,
+              cb: err => {
+                setErrorMessage?.(err + ' (' + truncateNameMiddle(file.name) + ')')
+                setShowError(true)
+              },
+            })
+
+            if (!ok) return null
+
+            const prepared = await prepareUploadEntry({
+              originalName: file.name,
+              filesToUpload: [file],
+              sameDrive,
+              allTaken,
+              reservedNames: reserved,
+            })
+
+            if (!prepared) {
+              return null
+            }
+
+            reserved.add(prepared.finalName)
+
+            ensureQueuedRow(
+              uuid,
+              prepared.finalName,
+              prepared.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+              prepared.prettySize,
+              currentDrive.name,
             )
+
+            return {
+              uuid,
+              file,
+              finalName: prepared.finalName,
+              prettySize: prepared.prettySize,
+              isReplace: prepared.isReplace,
+              replaceTopic: prepared.replaceTopic,
+              replaceHistory: prepared.replaceHistory,
+              driveId: currentDrive.id.toString(),
+              driveName: currentDrive.name,
+            }
+          }
+
+          for (const file of filesArr) {
+            const task = await processFile(file)
+
+            if (task) {
+              tasks.push(task)
+            } else {
+              // Stop processing remaining files if capacity check failed
+              break
+            }
+          }
+
+          return tasks
+        }
+
+        const runQueue = async () => {
+          if (runningRef.current) return
+          runningRef.current = true
+
+          try {
+            while (queueRef.current.length > 0) {
+              const task = queueRef.current[0]
+
+              if (!task) break
+
+              const isCancelled = cancelledQueuedRef.current.has(task.uuid)
+
+              if (isCancelled) {
+                safeSetState(
+                  isMountedRef,
+                  setUploadItems,
+                )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
+                cancelledQueuedRef.current.delete(task.uuid)
+                queueRef.current.shift()
+              } else {
+                await processUploadTask(task)
+                queueRef.current.shift()
+              }
+            }
+          } finally {
+            runningRef.current = false
+
+            if (queueRef.current.length > 0) {
+              runQueue()
+            }
+          }
+        }
+
+        void (async () => {
+          if (!currentStamp || !currentStamp.usable) {
+            setErrorMessage?.('Stamp is not usable.')
             setShowError(true)
 
             return
           }
-        }
 
-        const tasks = await preflight()
-        queueRef.current = queueRef.current.concat(tasks)
-        runQueue()
-      })()
+          if (beeApi) {
+            const stampValid = await validateStampStillExists(beeApi, currentStamp.batchID)
+
+            if (!stampValid) {
+              setErrorMessage?.(
+                'The selected stamp is no longer valid or has been deleted. Please select a different stamp.',
+              )
+              setShowError(true)
+
+              return
+            }
+          }
+
+          const tasks = await preflight()
+          queueRef.current = queueRef.current.concat(tasks)
+          runQueue()
+        })()
+      }
     },
     [
       fm,
       currentDrive,
       currentStamp,
       collectSameDrive,
-      resolveConflict,
       ensureQueuedRow,
       processUploadTask,
       uploadItems,
@@ -756,6 +867,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       setShowError,
       setErrorMessage,
       beeApi,
+      trackUpload,
+      prepareUploadEntry,
     ],
   )
 
