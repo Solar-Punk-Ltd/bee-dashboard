@@ -1,16 +1,22 @@
 import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
-
-const POLLING_TIMEOUT_MS = 60000
-const POLLING_INTERVAL_MS = 2000
+import { POLLING_INTERVAL_MS } from '../constants/common'
 
 interface UseStampPollingOptions {
   onStampUpdated: (stamp: PostageBatch) => void
   onPollingStateChange: (isPolling: boolean) => void
+  onTimeout?: (finalStamp: PostageBatch | null) => void
   refreshStamp: (batchId: string) => Promise<PostageBatch | null | undefined>
+  timeout: number
 }
 
-export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshStamp }: UseStampPollingOptions) {
+export function useStampPolling({
+  onStampUpdated,
+  onPollingStateChange,
+  onTimeout,
+  refreshStamp,
+  timeout,
+}: UseStampPollingOptions) {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -28,44 +34,90 @@ export function useStampPolling({ onStampUpdated, onPollingStateChange, refreshS
     onPollingStateChange(false)
   }, [onPollingStateChange])
 
+  const checkStampUpdate = useCallback(
+    async (
+      batchId: string,
+      oldStampSize: number,
+      oldRemainingSize: number,
+      oldExpiry: number,
+      isCapacityUpgrade?: boolean,
+    ): Promise<{ updated: boolean; stamp: PostageBatch | null }> => {
+      try {
+        const updatedStamp = await refreshStamp(batchId)
+
+        if (!updatedStamp) {
+          return { updated: false, stamp: null }
+        }
+
+        const newStampSize = updatedStamp.size.toBytes()
+        const newRemainingSize = updatedStamp.remainingSize.toBytes()
+        const newExpiry = updatedStamp.duration.toEndDate().getTime()
+        const capacityIncreased = newStampSize > oldStampSize
+        const usageIncreased = newRemainingSize < oldRemainingSize
+        const durationUpdated = newExpiry > oldExpiry
+
+        const isCapacityIncreased = capacityIncreased && durationUpdated
+        const isStampDataChanged = capacityIncreased || durationUpdated || usageIncreased
+
+        return {
+          updated: isCapacityUpgrade ? isCapacityIncreased : isStampDataChanged,
+          stamp: updatedStamp,
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[useStampPolling] Error refreshing stamp:', error)
+
+        return { updated: false, stamp: null }
+      }
+    },
+    [refreshStamp],
+  )
+
   const startPolling = useCallback(
-    (originalStamp: PostageBatch) => {
-      stopPolling()
+    (originalStamp: PostageBatch, isCapacityUpgrade?: boolean) => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
 
       onPollingStateChange(true)
 
       const batchId = originalStamp.batchID.toString()
-      const oldSize = originalStamp.size.toBytes()
+      const oldStampSize = originalStamp.size.toBytes()
+      const oldRemainingSize = originalStamp.remainingSize.toBytes()
       const oldExpiry = originalStamp.duration.toEndDate().getTime()
 
-      timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = setTimeout(async () => {
         stopPolling()
-      }, POLLING_TIMEOUT_MS)
+
+        if (!onTimeout) return
+
+        const result = await checkStampUpdate(batchId, oldStampSize, oldRemainingSize, oldExpiry, isCapacityUpgrade)
+
+        if (result.updated && result.stamp) {
+          onStampUpdated(result.stamp)
+
+          return
+        }
+
+        onTimeout(result.stamp)
+      }, timeout)
 
       pollingIntervalRef.current = setInterval(async () => {
-        try {
-          const updatedStamp = await refreshStamp(batchId)
+        const result = await checkStampUpdate(batchId, oldStampSize, oldRemainingSize, oldExpiry, isCapacityUpgrade)
 
-          if (!updatedStamp) {
-            return
-          }
-
-          const newSize = updatedStamp.size.toBytes()
-          const newExpiry = updatedStamp.duration.toEndDate().getTime()
-          const capacityUpdated = newSize > oldSize
-          const durationUpdated = newExpiry > oldExpiry
-
-          if (capacityUpdated || durationUpdated) {
-            onStampUpdated(updatedStamp)
-            stopPolling()
-          }
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error('[useStampPolling] Polling tick failed', { batchId, error: e })
+        if (result.updated && result.stamp) {
+          onStampUpdated(result.stamp)
+          stopPolling()
         }
       }, POLLING_INTERVAL_MS)
     },
-    [refreshStamp, onStampUpdated, onPollingStateChange, stopPolling],
+    [onStampUpdated, onPollingStateChange, onTimeout, stopPolling, timeout, checkStampUpdate],
   )
 
   return {
