@@ -3,7 +3,7 @@ import { ViewType } from '../../modules/filemanager/constants/transfers'
 
 export enum ItemType {
   File = 'file',
-  Folder = 'folder',
+  Folder = 'directory',
 }
 
 export interface TreeNode {

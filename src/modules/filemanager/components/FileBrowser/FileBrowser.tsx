@@ -415,21 +415,21 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
       }
 
       while (queue.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { handle, path } = queue.shift()!
+        const nextEntry = queue.shift()
 
-        if (handle.kind === 'file') {
+        if (!nextEntry) {
+          break
+        }
+
+        const { handle, path } = nextEntry
+
+        if (handle.kind === ItemType.File) {
           const file = await (handle as FileSystemFileHandle).getFile()
 
           const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
           dataTransfer.items.add(createdFile)
           metadataMap.set(createdFile, { name: file.name, itemType: ItemType.File, path: `${path}${file.name}` })
-
-          // eslint-disable-next-line no-continue
-          continue
-        }
-
-        if (handle.kind === 'directory') {
+        } else if (handle.kind === ItemType.Folder) {
           const dirHandle = handle as FileSystemDirectoryHandle
 
           const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: ItemType.Folder })
@@ -443,12 +443,9 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
           for await (const [, childHandle] of dirHandle.entries()) {
             queue.push({ handle: childHandle, path: `${path}${dirHandle.name}/` })
           }
-
-          // eslint-disable-next-line no-continue
-          continue
+        } else {
+          throw new Error(`Unsupported file system handle kind: ${handle.kind}`)
         }
-
-        throw new Error(`Unsupported file system handle kind: ${handle.kind}`)
       }
 
       const fileList = dataTransfer.files
@@ -457,7 +454,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
         return
       }
 
-      if (fileList && fileList.length) uploadFiles(fileList, true, dirHandle.name)
+      uploadFiles(fileList, true, dirHandle.name)
     } catch (err) {
       setShowError(true)
     }

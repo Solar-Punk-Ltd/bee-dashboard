@@ -6,18 +6,15 @@ declare module 'react' {
   }
 }
 
-export {}
-
 declare global {
   interface Window {
     showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>
   }
 }
-
-export {}
-
 declare global {
   interface FileSystemDirectoryHandle {
     entries: () => AsyncIterableIterator<[string, FileSystemHandle]>
   }
 }
+
+export {}

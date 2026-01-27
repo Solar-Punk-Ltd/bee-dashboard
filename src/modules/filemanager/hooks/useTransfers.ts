@@ -638,17 +638,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     (picked: FileList | File[], isFolder = false, folderName?: string): void => {
       const filesArr = Array.from(picked)
 
-      if (!currentDrive || !fm) return
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const manager = fm!
-      const drive = currentDrive
+      if (!fm || !currentDrive) return
 
-      if (filesArr.length === 0 || !fm || !currentDrive || !currentStamp) return
+      if (filesArr.length === 0 || !currentStamp) return
 
-      const sameDrive = collectSameDrive(drive.id.toString())
+      const sameDrive = collectSameDrive(currentDrive.id.toString())
       const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
       const reserved = new Set<string>()
-      const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === drive.name).map(u => u.name))
+      const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name))
       const tasks: UploadTask[] = []
       const allTaken = new Set<string>([
         ...Array.from(onDiskNames),
@@ -657,6 +654,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       ])
 
       async function processFolder() {
+        if (!fm || !currentDrive) {
+          return
+        }
+
         if (!folderName) {
           return
         }
@@ -685,11 +686,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           prepared.finalName,
           prepared.prettySize,
           prepared.isReplace ? FileTransferType.Update : FileTransferType.Upload,
-          drive.name,
+          currentDrive.name,
         )
 
-        void manager.upload(
-          drive,
+        void fm.upload(
+          currentDrive,
           { ...info, onUploadProgress: progressCallback },
           { actHistoryAddress: prepared.isReplace ? prepared.replaceHistory : undefined },
         )
@@ -712,11 +713,18 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
         // TODO: move out this function from the cb and use as a util for better readaility
         const preflight = async (): Promise<UploadTask[]> => {
+          if (!fm || !currentDrive) {
+            return []
+          }
           // Track cumulative file sizes for capacity verification
           let fileSizeSum = 0
           let fileCount = 0
 
           const processFile = async (file: File): Promise<UploadTask | null> => {
+            if (!fm || !currentDrive) {
+              return null
+            }
+
             if (!currentStamp || !currentStamp.usable) {
               setErrorMessage?.('Stamp is not usable.')
               setShowError(true)
@@ -829,6 +837,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
 
         void (async () => {
+          if (!fm || !currentDrive) {
+            return
+          }
+
           if (!currentStamp || !currentStamp.usable) {
             setErrorMessage?.('Stamp is not usable.')
             setShowError(true)

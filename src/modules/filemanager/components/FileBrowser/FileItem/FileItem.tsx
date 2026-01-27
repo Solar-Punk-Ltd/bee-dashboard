@@ -135,7 +135,7 @@ export function FileItem({
 
     return result
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, fileInfo, driveName])
+  }, [fm, fileInfo])
 
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
@@ -160,7 +160,7 @@ export function FileItem({
 
     if (!fm || !beeApi) return
 
-    if (fileInfo?.customMetadata?.mime === ItemType.Folder) {
+    if (guessMime(fileInfo.name, fileInfo.customMetadata).mime === ItemType.Folder) {
       const fileDatas = await handleOpenFolder()
       folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
 
