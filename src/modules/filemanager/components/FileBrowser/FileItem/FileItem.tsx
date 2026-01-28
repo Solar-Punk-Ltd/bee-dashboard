@@ -134,7 +134,6 @@ export function FileItem({
     }))
 
     return result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fm, fileInfo])
 
   const takenNames = useMemo(() => {
