@@ -1,4 +1,5 @@
-import { createStyles, makeStyles, Theme, Typography } from '@material-ui/core'
+import { Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 import Check from 'remixicon-react/CheckLineIcon'
 import AlertCircle from 'remixicon-react/ErrorWarningFillIcon'
@@ -15,52 +16,50 @@ interface Props {
 }
 
 const useStyles = (backgroundColor: string) =>
-  makeStyles((theme: Theme) =>
-    createStyles({
-      root: {
-        flexGrow: 1,
-        flexBasis: '100px',
-      },
-      wrapper: {
-        backgroundColor,
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        height: '130px',
-      },
-      iconWrapper: {
-        display: 'flex',
-        alignItems: 'flex-start',
-        marginBottom: '18px',
-      },
-      button: {
-        width: '100%',
-        marginTop: '2px',
-        backgroundColor,
-        '&:hover': {
+  makeStyles()(theme => ({
+    root: {
+      flexGrow: 1,
+      flexBasis: '100px',
+    },
+    wrapper: {
+      backgroundColor,
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      textAlign: 'center',
+      height: '130px',
+    },
+    iconWrapper: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      marginBottom: '18px',
+    },
+    button: {
+      width: '100%',
+      marginTop: '2px',
+      backgroundColor,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.main,
+        color: 'white',
+        boxShadow: 'none',
+        // https://github.com/mui-org/material-ui/issues/22543
+        '@media (hover: none)': {
           backgroundColor: theme.palette.primary.main,
           color: 'white',
           boxShadow: 'none',
-          // https://github.com/mui-org/material-ui/issues/22543
-          '@media (hover: none)': {
-            backgroundColor: theme.palette.primary.main,
-            color: 'white',
-            boxShadow: 'none',
-          },
         },
       },
-    }),
-  )
+    },
+  }))
 
 export default function Card({ buttonProps, icon, title, subtitle, status }: Props): ReactElement {
   const backgroundColor = status === 'error' ? 'white' : '#f3f3f3'
   const { className, ...rest } = buttonProps
-  const classes = useStyles(backgroundColor)()
+  const { classes } = useStyles(backgroundColor)()
 
   let statusIcon = null
-
+  // TOOD: use statuscheck
   if (status === 'ok') {
     statusIcon = <Check size="13" color="#09ca6c" />
   } else if (status === 'error') {

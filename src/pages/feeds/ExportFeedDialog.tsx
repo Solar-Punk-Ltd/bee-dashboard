@@ -1,4 +1,5 @@
-import { Box, createStyles, makeStyles, Typography } from '@material-ui/core'
+import { Box, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { saveAs } from 'file-saver'
 import { useSnackbar } from 'notistack'
 import { ReactElement } from 'react'
@@ -16,18 +17,16 @@ interface Props {
   onClose: () => void
 }
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    wrapper: {
-      maxWidth: '100%',
-    },
-  }),
-)
+const useStyles = makeStyles()(() => ({
+  wrapper: {
+    maxWidth: '100%',
+  },
+}))
 
 export function ExportFeedDialog({ identity, onClose }: Props): ReactElement {
   const { enqueueSnackbar } = useSnackbar()
 
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   function onDownload() {
     saveAs(

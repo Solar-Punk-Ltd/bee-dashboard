@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core'
+import { Box } from '@mui/material'
 import { Tag } from '@ethersphere/bee-js'
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import { DocumentationText } from '../../components/DocumentationText'

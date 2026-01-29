@@ -1,5 +1,5 @@
 import { DAI } from '@ethersphere/bee-js'
-import { Box, Grid, Typography } from '@material-ui/core'
+import { Box, Grid, Typography } from '@mui/material'
 import { ReactElement, useContext } from 'react'
 import { useNavigate } from 'react-router'
 import Check from 'remixicon-react/CheckLineIcon'

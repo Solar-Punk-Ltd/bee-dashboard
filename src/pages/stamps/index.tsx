@@ -1,5 +1,5 @@
-import { CircularProgress, Container } from '@material-ui/core'
-import { createStyles, makeStyles } from '@material-ui/core/styles'
+import { CircularProgress, Container } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement, useContext, useEffect } from 'react'
 import PlusSquare from 'remixicon-react/AddBoxLineIcon'
 import { useNavigate } from 'react-router'
@@ -10,8 +10,8 @@ import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import StampsTable from './StampsTable'
 
-const useStyles = makeStyles(() =>
-  createStyles({
+const useStyles = makeStyles()(() =>
+  ({
     root: {
       width: '100%',
       display: 'grid',
@@ -27,7 +27,7 @@ const useStyles = makeStyles(() =>
 )
 
 export default function Stamp(): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const navigate = useNavigate()
 

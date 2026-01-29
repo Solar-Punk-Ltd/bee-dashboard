@@ -1,5 +1,5 @@
 import { ReactElement, useState, useMemo, useEffect } from 'react'
-import { Warning } from '@material-ui/icons'
+import { Warning } from '@mui/icons-material'
 import './ExpiringNotificationModal.scss'
 import '../../styles/global.scss'
 

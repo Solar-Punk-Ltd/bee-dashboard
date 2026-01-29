@@ -1,12 +1,13 @@
-import { createStyles, makeStyles, Typography } from '@material-ui/core'
+import { Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 
 interface Props {
   children: (string | ReactElement)[] | (string | ReactElement)
 }
 
-const useStyles = makeStyles(() =>
-  createStyles({
+const useStyles = makeStyles()(() =>
+  ({
     text: {
       color: '#606060',
       fontSize: '0.9rem',
@@ -15,7 +16,7 @@ const useStyles = makeStyles(() =>
 )
 
 export function DocumentationText({ children }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   return <Typography className={classes.text}>{children}</Typography>
 }

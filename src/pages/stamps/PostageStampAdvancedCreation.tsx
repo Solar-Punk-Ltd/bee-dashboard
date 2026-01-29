@@ -1,4 +1,5 @@
-import { Box, Grid, IconButton, Typography, createStyles, makeStyles } from '@material-ui/core'
+import { Box, Grid, IconButton, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { PostageBatchOptions, Utils } from '@ethersphere/bee-js'
 import BigNumber from 'bignumber.js'
 import { useSnackbar } from 'notistack'
@@ -20,33 +21,31 @@ interface Props {
   onFinished: () => void
 }
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    link: {
-      color: '#dd7700',
-      textDecoration: 'underline',
-      '&:hover': {
-        textDecoration: 'none',
+const useStyles = makeStyles()(() => ({
+  link: {
+    color: '#dd7700',
+    textDecoration: 'underline',
+    '&:hover': {
+      textDecoration: 'none',
 
-        // https://github.com/mui-org/material-ui/issues/22543
-        '@media (hover: none)': {
-          textDecoration: 'none',
-        },
+      // https://github.com/mui-org/material-ui/issues/22543
+      '@media (hover: none)': {
+        textDecoration: 'none',
       },
     },
-    stampVolumeWrapper: {
-      width: 'fit-content',
-      '& button': {
-        marginLeft: 4,
-        width: 24,
-        padding: 2,
-      },
+  },
+  stampVolumeWrapper: {
+    width: 'fit-content',
+    '& button': {
+      marginLeft: 4,
+      width: 24,
+      padding: 2,
     },
-  }),
-)
+  },
+}))
 
 export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const { chainState } = useContext(BeeContext)
   const { refresh } = useContext(StampsContext)
   const { beeApi } = useContext(SettingsContext)

@@ -1,8 +1,8 @@
-import { createStyles, makeStyles } from '@material-ui/core'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 
-const useStyles = makeStyles(() =>
-  createStyles({
+const useStyles = makeStyles()(() =>
+  ({
     image: {
       width: '100%',
       height: '100%',
@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function FitImage(props: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const inlineStyles: Record<string, string> = {}
 

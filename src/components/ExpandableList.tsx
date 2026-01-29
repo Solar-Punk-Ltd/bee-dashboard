@@ -1,36 +1,34 @@
-import { Collapse, ListItem, ListItemText, Typography } from '@material-ui/core'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-import { ExpandLess, ExpandMore } from '@material-ui/icons'
+import { Collapse, ListItem, ListItemText, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
+import { ExpandLess, ExpandMore } from '@mui/icons-material'
 import { ReactElement, ReactNode, useState } from 'react'
 import { Flex } from './Flex'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      width: '100%',
-      padding: 0,
-      margin: 0,
-      marginTop: theme.spacing(4),
-      '&:first-child': {
-        marginTop: 0,
-      },
+const useStyles = makeStyles()(theme => ({
+  root: {
+    width: '100%',
+    padding: 0,
+    margin: 0,
+    marginTop: theme.spacing(4),
+    '&:first-child': {
+      marginTop: 0,
     },
-    rootLevel1: { marginTop: theme.spacing(1) },
-    rootLevel2: { marginTop: theme.spacing(0.5) },
-    header: {
-      backgroundColor: theme.palette.background.paper,
-    },
-    contentLevel0: {
-      marginTop: theme.spacing(1),
-    },
-    contentLevel12: {
-      marginTop: theme.spacing(0.25),
-    },
-    infoText: {
-      color: '#c9c9c9',
-    },
-  }),
-)
+  },
+  rootLevel1: { marginTop: theme.spacing(1) },
+  rootLevel2: { marginTop: theme.spacing(0.5) },
+  header: {
+    backgroundColor: theme.palette.background.paper,
+  },
+  contentLevel0: {
+    marginTop: theme.spacing(1),
+  },
+  contentLevel12: {
+    marginTop: theme.spacing(0.25),
+  },
+  infoText: {
+    color: '#c9c9c9',
+  },
+}))
 
 interface Props {
   children?: ReactNode
@@ -41,7 +39,7 @@ interface Props {
 }
 
 export default function ExpandableList({ children, label, level, defaultOpen, info }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const [open, setOpen] = useState<boolean>(Boolean(defaultOpen))
 
   const handleClick = () => {

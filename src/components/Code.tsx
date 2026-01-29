@@ -1,4 +1,4 @@
-import { createStyles, makeStyles, Theme } from '@material-ui/core'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 
 interface Props {
@@ -6,18 +6,16 @@ interface Props {
   prettify?: boolean
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    wrapper: {
-      overflow: 'scroll',
-      background: '#ffffff',
-    },
-    pre: {
-      maxHeight: '6em',
-      padding: theme.spacing(2),
-    },
-  }),
-)
+const useStyles = makeStyles()(theme => ({
+  wrapper: {
+    overflow: 'scroll',
+    background: '#ffffff',
+  },
+  pre: {
+    maxHeight: '6em',
+    padding: theme.spacing(2),
+  },
+}))
 
 function prettifyString(string: string): string {
   try {
@@ -28,7 +26,7 @@ function prettifyString(string: string): string {
 }
 
 export function Code({ children, prettify }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   return (
     <div className={classes.wrapper}>

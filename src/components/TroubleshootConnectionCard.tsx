@@ -1,31 +1,29 @@
-import { Button, Grid, Link as MuiLink, Typography } from '@material-ui/core/'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
+import { Button, Grid, Link as MuiLink, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import type { ReactElement } from 'react'
 import Activity from 'remixicon-react/PulseLineIcon'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../routes'
 import { BEE_DISCORD_HOST, BEE_DOCS_HOST } from '../constants'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      height: '100%',
+const useStyles = makeStyles()(theme => ({
+  root: {
+    height: '100%',
+  },
+  content: {
+    maxWidth: 500,
+    marginBottom: theme.spacing(4),
+    '&:last-child': {
+      marginBottom: 0,
     },
-    content: {
-      maxWidth: 500,
-      marginBottom: theme.spacing(4),
-      '&:last-child': {
-        marginBottom: 0,
-      },
-    },
-    icon: {
-      height: '1rem',
-    },
-  }),
-)
+  },
+  icon: {
+    height: '1rem',
+  },
+}))
 
 export default function TroubleshootConnectionCard(): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   return (
     <Grid container direction="column" justifyContent="center" alignItems="center" className={classes.root}>

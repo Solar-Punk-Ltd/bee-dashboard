@@ -1,5 +1,6 @@
 import { BeeModes, BZZ, DAI } from '@ethersphere/bee-js'
-import { Box, createStyles, Grid, makeStyles, Typography } from '@material-ui/core'
+import { Box, Grid, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -19,19 +20,17 @@ import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
 import { restartBeeNode, upgradeToLightNode } from '../../utils/desktop'
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    checkWrapper: {
-      background: 'rgba(0, 230, 118, 0.25)',
-      borderRadius: 99999,
-      width: '180px',
-      height: '180px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  }),
-)
+const useStyles = makeStyles()(() => ({
+  checkWrapper: {
+    background: 'rgba(0, 230, 118, 0.25)',
+    borderRadius: 99999,
+    width: '180px',
+    height: '180px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+}))
 
 const MINIMUM_XDAI = DAI.fromDecimalString('0.05')
 const MINIMUM_XBZZ = BZZ.fromDecimalString('0.1')

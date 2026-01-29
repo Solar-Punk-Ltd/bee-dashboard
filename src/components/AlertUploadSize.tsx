@@ -1,6 +1,6 @@
-import Collapse from '@material-ui/core/Collapse'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-import { Alert, AlertTitle } from '@material-ui/lab'
+import Collapse from '@mui/material/Collapse'
+import { makeStyles } from 'tss-react/mui'
+import { Alert, AlertTitle } from '@mui/material'
 import { ReactElement } from 'react'
 
 const LIMIT = 100000000 // 100 megabytes
@@ -9,18 +9,16 @@ interface Props {
   files: File[]
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      width: '100%',
-      marginTop: theme.spacing(2),
-      marginBottom: theme.spacing(2),
-    },
-  }),
-)
+const useStyles = makeStyles()(theme => ({
+  root: {
+    width: '100%',
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+}))
 
 export default function UploadSizeAlert(props: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const totalSize = props.files.reduce((previous, current) => previous + current.size, 0)
 

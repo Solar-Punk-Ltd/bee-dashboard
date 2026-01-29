@@ -1,26 +1,24 @@
 import { ReactElement, ReactNode } from 'react'
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles'
-import { Typography } from '@material-ui/core'
-import ListItem from '@material-ui/core/ListItem'
+import { makeStyles } from 'tss-react/mui'
+import { Typography } from '@mui/material'
+import ListItem from '@mui/material/ListItem'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    header: {
-      backgroundColor: '#F7F7F7',
-      marginBottom: theme.spacing(0.25),
-    },
-    typography: {
-      color: '#242424',
-    },
-  }),
-)
+const useStyles = makeStyles()(theme => ({
+  header: {
+    backgroundColor: '#F7F7F7',
+    marginBottom: theme.spacing(0.25),
+  },
+  typography: {
+    color: '#242424',
+  },
+}))
 
 interface Props {
   children?: ReactNode | ReactNode[]
 }
 
 export default function ExpandableListItemNote({ children }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   return (
     <ListItem className={classes.header}>

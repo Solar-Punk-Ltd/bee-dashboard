@@ -1,6 +1,6 @@
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
-import { CircularProgress, Typography } from '@material-ui/core'
+import { CircularProgress, Typography } from '@mui/material'
 import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useEffect, useState } from 'react'

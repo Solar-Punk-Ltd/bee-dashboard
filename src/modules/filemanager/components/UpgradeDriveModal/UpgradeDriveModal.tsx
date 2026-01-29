@@ -1,7 +1,7 @@
 import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import './UpgradeDriveModal.scss'
 import '../../styles/global.scss'
-import { Warning } from '@material-ui/icons'
+import { Warning } from '@mui/icons-material'
 import { createPortal } from 'react-dom'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
 import DatabaseIcon from 'remixicon-react/Database2LineIcon'

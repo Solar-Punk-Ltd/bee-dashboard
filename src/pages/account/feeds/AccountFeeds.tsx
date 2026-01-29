@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core'
+import { Box } from '@mui/material'
 import { NULL_TOPIC } from '@ethersphere/bee-js'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'

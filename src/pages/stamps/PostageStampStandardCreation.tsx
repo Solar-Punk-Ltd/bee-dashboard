@@ -1,5 +1,5 @@
-import { Box, Button, Grid, Slider, Typography } from '@material-ui/core'
-import { Theme, createStyles, makeStyles } from '@material-ui/core/styles'
+import { Box, Button, Grid, Slider, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { Duration, PostageBatchOptions, Size, Utils } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
@@ -15,26 +15,24 @@ import { secondsToTimeString } from '../../utils'
 interface Props {
   onFinished: () => void
 }
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    link: {
-      color: '#dd7700',
-      textDecoration: 'underline',
-      '&:hover': {
-        textDecoration: 'none',
+const useStyles = makeStyles()(theme => ({
+  link: {
+    color: '#dd7700',
+    textDecoration: 'underline',
+    '&:hover': {
+      textDecoration: 'none',
 
-        // https://github.com/mui-org/material-ui/issues/22543
-        '@media (hover: none)': {
-          textDecoration: 'none',
-        },
+      // https://github.com/mui-org/material-ui/issues/22543
+      '@media (hover: none)': {
+        textDecoration: 'none',
       },
     },
-    buttonSelected: {
-      color: 'white',
-      backgroundColor: theme.palette.primary.main,
-    },
-  }),
-)
+  },
+  buttonSelected: {
+    color: 'white',
+    backgroundColor: theme.palette.primary.main,
+  },
+}))
 
 const marks = [
   { value: 1, label: '1 day' },
@@ -42,7 +40,7 @@ const marks = [
 ]
 
 export function PostageStampStandardCreation({ onFinished }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const { refresh } = useContext(StampsContext)
   const { beeApi } = useContext(SettingsContext)
 
@@ -139,7 +137,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
       </Box>
       <Box mb={2}>
         <Grid container justifyContent="space-between" spacing={2}>
-          <Grid item xs={4}>
+          <Grid sx={{ width: { xs: '100%', sm: '33.333%' } }}>
             <Button
               variant="contained"
               fullWidth
@@ -149,7 +147,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
               4 GB
             </Button>
           </Grid>
-          <Grid item xs={4}>
+          <Grid sx={{ width: { xs: '100%', sm: '33.333%' } }}>
             <Button
               variant="contained"
               fullWidth
@@ -159,7 +157,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
               32 GB
             </Button>
           </Grid>
-          <Grid item xs={4}>
+          <Grid sx={{ width: { xs: '100%', sm: '33.333%' } }}>
             <Button
               variant="contained"
               fullWidth
@@ -206,7 +204,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
         </Grid>
       </Box>
       <Grid container justifyContent="space-between" alignItems="center">
-        <Grid item>
+        <Grid>
           <SwarmButton
             disabled={submitting || !depthInput || !amountInput}
             onClick={submit}
@@ -216,7 +214,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
             Buy New Stamp
           </SwarmButton>
         </Grid>
-        <Grid item>
+        <Grid>
           <Link to={ROUTES.ACCOUNT_STAMPS_NEW_ADVANCED} className={classes.link}>
             Advanced mode
           </Link>

@@ -1,4 +1,4 @@
-import { Button } from '@material-ui/core'
+import { Button } from '@mui/material'
 import { ReactElement, useContext } from 'react'
 import { ChainSync } from '../../components/ChainSync'
 import ExpandableListItem from '../../components/ExpandableListItem'

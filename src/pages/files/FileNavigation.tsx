@@ -1,4 +1,5 @@
-import { createStyles, makeStyles, Tab, Tabs, Theme } from '@material-ui/core'
+import { Tab, Tabs } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes'
@@ -7,23 +8,21 @@ interface Props {
   active: 'UPLOAD' | 'DOWNLOAD'
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      flexGrow: 1,
-      marginBottom: theme.spacing(4),
-    },
-    leftTab: {
-      marginRight: theme.spacing(0.5),
-    },
-    rightTab: {
-      marginLeft: theme.spacing(0.5),
-    },
-  }),
-)
+const useStyles = makeStyles()(theme => ({
+  root: {
+    flexGrow: 1,
+    marginBottom: theme.spacing(4),
+  },
+  leftTab: {
+    marginRight: theme.spacing(0.5),
+  },
+  rightTab: {
+    marginLeft: theme.spacing(0.5),
+  },
+}))
 
 export function FileNavigation({ active }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const navigate = useNavigate()
 
   function onChange(event: React.ChangeEvent<Record<string, never>>, newValue: number) {

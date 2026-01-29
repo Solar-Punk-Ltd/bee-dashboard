@@ -13,7 +13,7 @@ import {
   Topology,
   WalletBalance,
 } from '@ethersphere/bee-js'
-import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
 import { useLatestBeeRelease } from '../hooks/apiHooks'
 import { Context as SettingsContext } from './Settings'
 
@@ -101,7 +101,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 function getStatus(
@@ -163,7 +163,7 @@ function determineOverallStatus(status: Status, startedAt: number): CheckState {
 let isRefreshing = false
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function Provider({ children }: Props): ReactElement {

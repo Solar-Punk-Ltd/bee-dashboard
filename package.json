@@ -62,8 +62,6 @@
     "axios": "^0.30.2",
     "bignumber.js": "^9.3.1",
     "buffer": "^6.0.3",
-    "crypto": "npm:crypto-browserify",
-    "crypto-browserify": "^3.12.1",
     "dotted-map": "^2.2.3",
     "ethers": "^6.16.0",
     "file-saver": "^2.0.5",
@@ -81,8 +79,7 @@
     "react-syntax-highlighter": "16.1.0",
     "remixicon-react": "^1.0.0",
     "serve-handler": "6.1.6",
-    "stream": "npm:stream-browserify",
-    "stream-browserify": "^3.0.0"
+    "tss-react": "^4.9.20"
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",
@@ -98,7 +95,6 @@
     "@types/file-saver": "2.0.5",
     "@types/jest": "30.0.0",
     "@types/react": "^19.2.10",
-    "@types/react-copy-to-clipboard": "^5.0.7",
     "@types/react-dom": "^19.2.3",
     "@types/react-router": "5.1.20",
     "@types/react-router-dom": "5.3.3",
@@ -129,6 +125,7 @@
     "typescript": "5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.0.18",
     "web-vitals": "5.1.0"
   },

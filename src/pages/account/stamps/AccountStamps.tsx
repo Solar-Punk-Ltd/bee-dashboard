@@ -1,4 +1,5 @@
-import { CircularProgress, Container, createStyles, makeStyles } from '@material-ui/core'
+import { CircularProgress, Container } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import PlusSquare from 'remixicon-react/AddBoxLineIcon'
@@ -13,24 +14,22 @@ import StampsTable from '../../stamps/StampsTable'
 import { AccountNavigation } from '../AccountNavigation'
 import { Header } from '../Header'
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    root: {
-      width: '100%',
-      display: 'grid',
-    },
-    actions: {
-      display: 'flex',
-      width: '100%',
-      flex: '0 1 auto',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-    },
-  }),
-)
+const useStyles = makeStyles()(() => ({
+  root: {
+    width: '100%',
+    display: 'grid',
+  },
+  actions: {
+    display: 'flex',
+    width: '100%',
+    flex: '0 1 auto',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+}))
 
 export function AccountStamps(): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const navigate = useNavigate()
 

@@ -1,12 +1,10 @@
-import { createStyles, FormHelperText, makeStyles, MenuItem, Select as MuiSelect, Theme } from '@material-ui/core'
+import { FormHelperText, MenuItem, Select as MuiSelect, SelectChangeEvent } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { Field } from 'formik'
-import { Select } from 'formik-material-ui'
+import { Select } from 'formik-mui'
 import { ReactElement, ReactNode } from 'react'
 
-export type SelectEvent = React.ChangeEvent<{
-  name?: string | undefined
-  value: unknown
-}>
+export type SelectEvent = SelectChangeEvent<string>
 
 function renderValue(value: unknown): ReactNode {
   if (typeof value === 'string') {
@@ -33,25 +31,23 @@ interface Props {
   disabled?: boolean
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    select: {
-      borderRadius: 0,
-      background: theme.palette.background.paper,
-      '& fieldset': {
-        border: 0,
-      },
-      '& .MuiSelect-select': {
-        '&:focus': {
-          background: theme.palette.background.paper,
-        },
+const useStyles = makeStyles()(theme => ({
+  select: {
+    borderRadius: 0,
+    background: theme.palette.background.paper,
+    '& fieldset': {
+      border: 0,
+    },
+    '& .MuiSelect-select': {
+      '&:focus': {
+        background: theme.palette.background.paper,
       },
     },
-    option: {
-      height: '52px',
-    },
-  }),
-)
+  },
+  option: {
+    height: '52px',
+  },
+}))
 
 export function SwarmSelect({
   defaultValue,
@@ -63,7 +59,7 @@ export function SwarmSelect({
   placeholder,
   disabled = false,
 }: Props): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   if (formik) {
     return (

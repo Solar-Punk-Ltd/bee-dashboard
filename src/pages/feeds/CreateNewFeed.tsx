@@ -1,4 +1,4 @@
-import { Box, Grid, Typography } from '@material-ui/core'
+import { Box, Grid, Typography } from '@mui/material'
 import { NULL_TOPIC } from '@ethersphere/bee-js'
 import { Form, Formik } from 'formik'
 import { useSnackbar } from 'notistack'

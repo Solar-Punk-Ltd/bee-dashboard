@@ -1,4 +1,4 @@
-import { Box } from '@material-ui/core'
+import { Box } from '@mui/material'
 import { Reference } from '@ethersphere/bee-js'
 import { ReactElement } from 'react'
 import { DocumentationText } from '../../components/DocumentationText'

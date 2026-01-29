@@ -1,4 +1,4 @@
-import { Button, ListItemIcon, Menu, MenuItem, Typography } from '@material-ui/core'
+import { Button, ListItemIcon, Menu, MenuItem, Typography } from '@mui/material'
 import React, { ReactElement } from 'react'
 import { EnrichedPostageBatch } from '../../providers/Stamps'
 

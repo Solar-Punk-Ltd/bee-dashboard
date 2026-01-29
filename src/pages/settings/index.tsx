@@ -1,4 +1,4 @@
-import CircularProgress from '@material-ui/core/CircularProgress'
+import CircularProgress from '@mui/material/CircularProgress'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext } from 'react'
 import ExpandableList from '../../components/ExpandableList'

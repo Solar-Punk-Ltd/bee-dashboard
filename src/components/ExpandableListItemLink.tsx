@@ -1,48 +1,45 @@
-import { Grid, IconButton, ListItem, Tooltip, Typography } from '@material-ui/core'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-import { ArrowForward, OpenInNewSharp } from '@material-ui/icons'
+import { Grid, IconButton, ListItem, Tooltip, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
+import { ArrowForward, OpenInNewSharp } from '@mui/icons-material'
 import { ReactElement, useState } from 'react'
-import CopyToClipboard from 'react-copy-to-clipboard'
 import { useNavigate } from 'react-router'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    header: {
-      backgroundColor: theme.palette.background.paper,
-      marginBottom: theme.spacing(0.25),
-      borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
-      wordBreak: 'break-word',
+const useStyles = makeStyles()(theme => ({
+  header: {
+    backgroundColor: theme.palette.background.paper,
+    marginBottom: theme.spacing(0.25),
+    borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
+    wordBreak: 'break-word',
+  },
+  headerOpen: {
+    borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
+  },
+  openLinkIcon: {
+    cursor: 'pointer',
+    padding: theme.spacing(1),
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: '#fcf2e8',
+      color: theme.palette.primary.main,
     },
-    headerOpen: {
-      borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
+  },
+  content: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+  keyMargin: {
+    marginRight: theme.spacing(1),
+  },
+  copyValue: {
+    cursor: 'pointer',
+    padding: theme.spacing(1),
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: '#fcf2e8',
+      color: theme.palette.primary.main,
     },
-    openLinkIcon: {
-      cursor: 'pointer',
-      padding: theme.spacing(1),
-      borderRadius: 0,
-      '&:hover': {
-        backgroundColor: '#fcf2e8',
-        color: theme.palette.primary.main,
-      },
-    },
-    content: {
-      marginTop: theme.spacing(2),
-      marginBottom: theme.spacing(2),
-    },
-    keyMargin: {
-      marginRight: theme.spacing(1),
-    },
-    copyValue: {
-      cursor: 'pointer',
-      padding: theme.spacing(1),
-      borderRadius: 0,
-      '&:hover': {
-        backgroundColor: '#fcf2e8',
-        color: theme.palette.primary.main,
-      },
-    },
-  }),
-)
+  },
+}))
 
 interface Props {
   label: string
@@ -59,11 +56,20 @@ export default function ExpandableListItemLink({
   navigationType = 'NEW_WINDOW',
   allowClipboard = true,
 }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
 
-  const tooltipClickHandler = () => setCopied(true)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+    } catch {
+      // TODO: handle fail, maybe have a helper for this function
+      // Silently fail
+    }
+  }
+
   const tooltipCloseHandler = () => setCopied(false)
 
   const displayValue = value.length > 22 ? value.slice(0, 19) + '...' : value
@@ -85,9 +91,7 @@ export default function ExpandableListItemLink({
             {allowClipboard && (
               <span className={classes.copyValue}>
                 <Tooltip title={copied ? 'Copied' : 'Copy'} placement="top" arrow onClose={tooltipCloseHandler}>
-                  <CopyToClipboard text={value}>
-                    <span onClick={tooltipClickHandler}>{displayValue}</span>
-                  </CopyToClipboard>
+                  <span onClick={handleCopy}>{displayValue}</span>
                 </Tooltip>
               </span>
             )}

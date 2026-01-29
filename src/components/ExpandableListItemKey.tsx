@@ -1,40 +1,36 @@
-import { Grid, IconButton, ListItem, Tooltip, Typography } from '@material-ui/core'
-import Collapse from '@material-ui/core/Collapse'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
+import { Collapse, Grid, IconButton, ListItem, Tooltip, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement, useState } from 'react'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
 import Eye from 'remixicon-react/EyeLineIcon'
 import Minus from 'remixicon-react/SubtractLineIcon'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    header: {
-      backgroundColor: theme.palette.background.paper,
-      marginBottom: theme.spacing(0.25),
-      borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
-      wordBreak: 'break-word',
+const useStyles = makeStyles()(theme => ({
+  header: {
+    backgroundColor: theme.palette.background.paper,
+    marginBottom: theme.spacing(0.25),
+    borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
+    wordBreak: 'break-word',
+  },
+  headerOpen: {
+    borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
+  },
+  copyValue: {
+    cursor: 'pointer',
+    padding: theme.spacing(1),
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: '#fcf2e8',
+      color: theme.palette.primary.main,
     },
-    headerOpen: {
-      borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
-    },
-    copyValue: {
-      cursor: 'pointer',
-      padding: theme.spacing(1),
-      borderRadius: 0,
-      '&:hover': {
-        backgroundColor: '#fcf2e8',
-        color: theme.palette.primary.main,
-      },
-    },
-    content: {
-      marginTop: theme.spacing(2),
-      marginBottom: theme.spacing(2),
-    },
-    keyMargin: {
-      marginRight: theme.spacing(1),
-    },
-  }),
-)
+  },
+  content: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+  },
+  keyMargin: {
+    marginRight: theme.spacing(1),
+  },
+}))
 
 interface Props {
   label: string
@@ -57,12 +53,21 @@ const split = (s: string): string[] => {
 }
 
 export default function ExpandableListItemKey({ label, value, expanded }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const [open, setOpen] = useState(expanded || false)
   const [copied, setCopied] = useState(false)
   const toggleOpen = () => setOpen(!open)
 
-  const tooltipClickHandler = () => setCopied(true)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+    } catch {
+      // TODO: handle fail
+      // Silently fail
+    }
+  }
+
   const tooltipCloseHandler = () => setCopied(false)
 
   const splitValues = split(value)
@@ -80,9 +85,7 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
             {!open && (
               <span className={classes.copyValue}>
                 <Tooltip title={copied ? 'Copied' : 'Copy'} placement="top" arrow onClose={tooltipCloseHandler}>
-                  <CopyToClipboard text={value}>
-                    <span onClick={tooltipClickHandler}>{value ? spanText : ''}</span>
-                  </CopyToClipboard>
+                  <span onClick={handleCopy}>{value ? spanText : ''}</span>
                 </Tooltip>
               </span>
             )}
@@ -94,18 +97,16 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
         <Collapse in={open} timeout="auto" unmountOnExit>
           <div className={classes.content}>
             <Tooltip title={copied ? 'Copied' : 'Copy'} placement="top" arrow onClose={tooltipCloseHandler}>
-              <CopyToClipboard text={value}>
-                {/* This has to be wrapped in two spans otherwise either the tooltip or the highlighting does not work*/}
-                <span onClick={tooltipClickHandler}>
-                  <span className={classes.copyValue}>
-                    {splitValues.map((s, i) => (
-                      <Typography variant="body2" key={i} className={classes.keyMargin} component="span">
-                        {s}
-                      </Typography>
-                    ))}
-                  </span>
+              {/* This has to be wrapped in two spans otherwise either the tooltip or the highlighting does not work*/}
+              <span onClick={handleCopy}>
+                <span className={classes.copyValue}>
+                  {splitValues.map((s, i) => (
+                    <Typography variant="body2" key={i} className={classes.keyMargin} component="span">
+                      {s}
+                    </Typography>
+                  ))}
                 </span>
-              </CopyToClipboard>
+              </span>
             </Tooltip>
           </div>
         </Collapse>

@@ -1,27 +1,25 @@
-import { Grid, IconButton, Tooltip, Typography } from '@material-ui/core'
-import ListItem from '@material-ui/core/ListItem'
-import { Theme, createStyles, makeStyles } from '@material-ui/core/styles'
+import { Grid, IconButton, Tooltip, Typography } from '@mui/material'
+import ListItem from '@mui/material/ListItem'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement, ReactNode } from 'react'
 import Info from 'remixicon-react/InformationLineIcon'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    header: {
-      backgroundColor: theme.palette.background.paper,
-      marginBottom: theme.spacing(0.25),
-      wordBreak: 'break-word',
+const useStyles = makeStyles()(theme => ({
+  header: {
+    backgroundColor: theme.palette.background.paper,
+    marginBottom: theme.spacing(0.25),
+    wordBreak: 'break-word',
+  },
+  copyValue: {
+    cursor: 'pointer',
+    padding: theme.spacing(1),
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: '#fcf2e8',
+      color: theme.palette.primary.main,
     },
-    copyValue: {
-      cursor: 'pointer',
-      padding: theme.spacing(1),
-      borderRadius: 0,
-      '&:hover': {
-        backgroundColor: '#fcf2e8',
-        color: theme.palette.primary.main,
-      },
-    },
-  }),
-)
+  },
+}))
 
 interface Props {
   label?: ReactNode
@@ -30,7 +28,7 @@ interface Props {
 }
 
 export default function ExpandableListItem({ label, value, tooltip }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   return (
     <ListItem className={classes.header}>

@@ -1,4 +1,4 @@
-import { Typography } from '@material-ui/core/'
+import { Typography } from '@mui/material'
 import { EthAddress } from '@ethersphere/bee-js'
 import { ReactElement } from 'react'
 import Identicon from 'react-identicons'

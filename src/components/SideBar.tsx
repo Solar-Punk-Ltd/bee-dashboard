@@ -1,5 +1,5 @@
-import { Box, Divider, Drawer, Grid, List, Link as MUILink, Typography } from '@material-ui/core'
-import { Theme, createStyles, makeStyles } from '@material-ui/core/styles'
+import { Box, Divider, Drawer, Grid, List, Link as MUILink, Typography } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { BeeModes } from '@ethersphere/bee-js'
 import { ReactElement, useContext } from 'react'
 import { Link } from 'react-router-dom'
@@ -22,52 +22,50 @@ import SideBarStatus from './SideBarStatus'
 
 const drawerWidth = 300
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      flexWrap: 'nowrap',
-      minHeight: '100vh',
-      paddingTop: theme.spacing(8),
-      paddingBottom: theme.spacing(8),
-    },
-    drawer: {
-      width: drawerWidth,
-      flexShrink: 0,
-    },
-    drawerPaper: {
-      width: drawerWidth,
-      backgroundColor: '#212121',
-      zIndex: 988,
-    },
-    logo: {
-      marginLeft: theme.spacing(8),
-      marginRight: theme.spacing(8),
-    },
-    icon: {
-      height: theme.spacing(4),
-    },
-    divider: {
-      backgroundColor: '#2c2c2c',
-      marginLeft: theme.spacing(4),
-      marginRight: theme.spacing(4),
-    },
-    link: {
-      color: '#9f9f9f',
+const useStyles = makeStyles()(theme => ({
+  root: {
+    flexWrap: 'nowrap',
+    minHeight: '100vh',
+    paddingTop: theme.spacing(8),
+    paddingBottom: theme.spacing(8),
+  },
+  drawer: {
+    width: drawerWidth,
+    flexShrink: 0,
+  },
+  drawerPaper: {
+    width: drawerWidth,
+    backgroundColor: '#212121',
+    zIndex: 988,
+  },
+  logo: {
+    marginLeft: theme.spacing(8),
+    marginRight: theme.spacing(8),
+  },
+  icon: {
+    height: theme.spacing(4),
+  },
+  divider: {
+    backgroundColor: '#2c2c2c',
+    marginLeft: theme.spacing(4),
+    marginRight: theme.spacing(4),
+  },
+  link: {
+    color: '#9f9f9f',
+    textDecoration: 'none',
+    '&:hover': {
       textDecoration: 'none',
-      '&:hover': {
-        textDecoration: 'none',
 
-        // https://github.com/mui-org/material-ui/issues/22543
-        '@media (hover: none)': {
-          textDecoration: 'none',
-        },
+      // https://github.com/mui-org/material-ui/issues/22543
+      '@media (hover: none)': {
+        textDecoration: 'none',
       },
     },
-  }),
-)
+  },
+}))
 
 export default function SideBar(): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const { isDesktop } = useContext(SettingsContext)
   const { nodeInfo } = useContext(BeeContext)
 

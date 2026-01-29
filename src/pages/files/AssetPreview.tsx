@@ -1,5 +1,5 @@
-import { Box, Grid, Typography } from '@material-ui/core'
-import { Web } from '@material-ui/icons'
+import { Box, Grid, Typography } from '@mui/material'
+import { Web } from '@mui/icons-material'
 import { ReactElement, useMemo } from 'react'
 import File from 'remixicon-react/FileLineIcon'
 import Folder from 'remixicon-react/FolderLineIcon'

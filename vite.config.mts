@@ -2,6 +2,7 @@ import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import dts from 'vite-plugin-dts'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig(({ mode }) => {
   const isProd = mode === 'production'
@@ -48,18 +49,35 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      nodePolyfills({
+        include: ['stream', 'util', 'buffer', 'crypto'],
+        globals: {
+          Buffer: true,
+          global: true,
+          process: true,
+        },
+      }),
+    ],
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
+    },
+    optimizeDeps: {
+      exclude: ['@solarpunkltd/file-manager-lib'],
     },
     build: {
       outDir: 'build',
       sourcemap: isProd,
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
     },
     server: {
       port: 3000,
       open: true,
     },
     publicDir: 'public',
+    assetsInclude: ['**/*.svg'],
   }
 })

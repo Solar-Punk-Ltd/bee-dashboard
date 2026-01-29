@@ -1,5 +1,5 @@
-import { Button, CircularProgress, Container, IconButton } from '@material-ui/core'
-import { Theme, createStyles, makeStyles } from '@material-ui/core/styles'
+import { Button, CircularProgress, Container, IconButton } from '@mui/material'
+import { makeStyles } from 'tss-react/mui'
 import { useSnackbar } from 'notistack'
 import React, { ReactElement, useContext, useEffect } from 'react'
 import CloseIcon from 'remixicon-react/CloseCircleLineIcon'
@@ -12,18 +12,16 @@ import { Context as BeeContext } from '../providers/Bee'
 import { Context as SettingsContext } from '../providers/Settings'
 import { useLocation } from 'react-router-dom'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    content: {
-      backgroundColor: theme.palette.background.default,
-      minHeight: '100vh',
-    },
+const useStyles = makeStyles()(theme => ({
+  content: {
+    backgroundColor: theme.palette.background.default,
+    minHeight: '100vh',
+  },
 
-    fileManagerOn: {
-      padding: '0px',
-    },
-  }),
-)
+  fileManagerOn: {
+    padding: '0px',
+  },
+}))
 
 interface Props {
   children?: ReactElement
@@ -34,7 +32,7 @@ const Dashboard = (props: Props): ReactElement => {
   const location = useLocation()
 
   const isFileManagerOn = location.pathname.startsWith('/filemanager')
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const { isLoading } = useContext(BeeContext)
   const { isDesktop, desktopUrl } = useContext(SettingsContext)

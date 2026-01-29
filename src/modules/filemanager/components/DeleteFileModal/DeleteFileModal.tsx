@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom'
 import TrashIcon from 'remixicon-react/DeleteBin6LineIcon'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
 
-import Radio from '@material-ui/core/Radio'
-import FormControlLabel from '@material-ui/core/FormControlLabel'
-import FormControl from '@material-ui/core/FormControl'
+import Radio from '@mui/material/Radio'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import FormControl from '@mui/material/FormControl'
 import { Tooltip } from '../Tooltip/Tooltip'
 
 import { FileAction } from '../../constants/transfers'

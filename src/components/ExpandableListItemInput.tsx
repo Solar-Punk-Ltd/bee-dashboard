@@ -1,6 +1,6 @@
-import { Box, Grid, IconButton, InputBase, ListItem, Typography } from '@material-ui/core'
-import Collapse from '@material-ui/core/Collapse'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
+import { Box, Grid, IconButton, InputBase, ListItem, Typography } from '@mui/material'
+import Collapse from '@mui/material/Collapse'
+import { makeStyles } from 'tss-react/mui'
 import { ChangeEvent, ReactElement, useState } from 'react'
 import type { RemixiconReactIconProps } from 'remixicon-react'
 import Check from 'remixicon-react/CheckLineIcon'
@@ -11,43 +11,41 @@ import ExpandableListItemActions from './ExpandableListItemActions'
 import ExpandableListItemNote from './ExpandableListItemNote'
 import { SwarmButton } from './SwarmButton'
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    header: {
-      backgroundColor: theme.palette.background.paper,
-      marginBottom: theme.spacing(0.25),
-      borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
-      wordBreak: 'break-word',
+const useStyles = makeStyles()(theme => ({
+  header: {
+    backgroundColor: theme.palette.background.paper,
+    marginBottom: theme.spacing(0.25),
+    borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
+    wordBreak: 'break-word',
+  },
+  headerOpen: {
+    borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
+  },
+  copyValue: {
+    cursor: 'pointer',
+    padding: theme.spacing(1),
+    borderRadius: 0,
+    '&:hover': {
+      backgroundColor: '#fcf2e8',
+      color: theme.palette.primary.main,
     },
-    headerOpen: {
-      borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
-    },
-    copyValue: {
-      cursor: 'pointer',
-      padding: theme.spacing(1),
-      borderRadius: 0,
-      '&:hover': {
-        backgroundColor: '#fcf2e8',
-        color: theme.palette.primary.main,
-      },
-    },
-    content: {
-      marginTop: theme.spacing(1),
-      marginBottom: theme.spacing(1),
-    },
-    keyMargin: {
-      marginRight: theme.spacing(1),
-    },
-    unselectableLabel: {
-      cursor: 'default',
-      userSelect: 'none',
-      // Many browsers don't support yet the general user-select css property
-      WebkitUserSelect: 'none',
-      MozUserSelect: 'none',
-      msUserSelect: 'none',
-    },
-  }),
-)
+  },
+  content: {
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+  keyMargin: {
+    marginRight: theme.spacing(1),
+  },
+  unselectableLabel: {
+    cursor: 'default',
+    userSelect: 'none',
+    // Many browsers don't support yet the general user-select css property
+    WebkitUserSelect: 'none',
+    MozUserSelect: 'none',
+    msUserSelect: 'none',
+  },
+}))
 
 interface Props {
   label: string
@@ -80,7 +78,7 @@ export default function ExpandableListItemKey({
   mapperFn,
   locked,
 }: Props): ReactElement | null {
-  const classes = useStyles()
+  const { classes } = useStyles()
   const [open, setOpen] = useState(Boolean(expandedOnly))
   const [inputValue, setInputValue] = useState<string>(value || '')
   const toggleOpen = () => setOpen(!open)

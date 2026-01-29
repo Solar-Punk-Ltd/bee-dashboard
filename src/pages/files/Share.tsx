@@ -1,4 +1,4 @@
-import { Box, Typography } from '@material-ui/core'
+import { Box, Typography } from '@mui/material'
 import { Bytes, MantarayNode, NULL_ADDRESS } from '@ethersphere/bee-js'
 import { saveAs } from 'file-saver'
 import JSZip from 'jszip'

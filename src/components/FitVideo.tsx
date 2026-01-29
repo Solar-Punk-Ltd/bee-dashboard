@@ -1,8 +1,8 @@
-import { createStyles, makeStyles } from '@material-ui/core'
+import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 
-const useStyles = makeStyles(() =>
-  createStyles({
+const useStyles = makeStyles()(() =>
+  ({
     video: {
       width: '100%',
       height: '100%',
@@ -18,7 +18,7 @@ interface VideoProps {
 }
 
 export function FitVideo(props: VideoProps): ReactElement {
-  const classes = useStyles()
+  const { classes } = useStyles()
 
   const inlineStyles: Record<string, string> = {}
 

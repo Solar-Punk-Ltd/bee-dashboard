@@ -1,5 +1,5 @@
 import { Bee } from '@ethersphere/bee-js'
-import { providers } from 'ethers'
+import { JsonRpcProvider } from 'ethers'
 import { ReactElement, ReactNode, createContext, useEffect, useState } from 'react'
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
@@ -16,7 +16,7 @@ interface ContextInterface {
   isDesktop: boolean
   desktopUrl: string
   rpcProviderUrl: string
-  rpcProvider: providers.JsonRpcProvider | null
+  rpcProvider: JsonRpcProvider | null
   cors: string | null
   dataDir: string | null
   ensResolver: string | null
@@ -71,7 +71,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   const [beeApi, setBeeApi] = useState<Bee | null>(null)
   const [desktopApiKey, setDesktopApiKey] = useState<string>(initialValues.desktopApiKey)
   const [rpcProviderUrl, setRpcProviderUrl] = useState(propsProviderUrl)
-  const [rpcProvider, setRpcProvider] = useState(new providers.JsonRpcProvider(propsProviderUrl))
+  const [rpcProvider, setRpcProvider] = useState(new JsonRpcProvider(propsProviderUrl))
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
 
   useEffect(() => {
@@ -141,11 +141,11 @@ function makeHttpUrl(string: string): string {
 
 function setAndPersistJsonRpcProviderClosure(
   setProviderUrl: (url: string) => void,
-  setProvider: (prov: providers.JsonRpcProvider) => void,
+  setProvider: (prov: JsonRpcProvider) => void,
 ) {
   return (providerUrl: string) => {
     localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
     setProviderUrl(providerUrl)
-    setProvider(new providers.JsonRpcProvider(providerUrl))
+    setProvider(new JsonRpcProvider(providerUrl))
   }
 }
