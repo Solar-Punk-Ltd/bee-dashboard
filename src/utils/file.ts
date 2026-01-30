@@ -1,6 +1,6 @@
+import { isSupportedAudioType } from './audio'
 import { isSupportedImageType } from './image'
 import { isSupportedVideoType } from './video'
-import { isSupportedAudioType } from './audio'
 
 const indexHtmls = ['index.html', 'index.htm']
 

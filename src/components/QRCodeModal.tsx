@@ -1,7 +1,7 @@
+import { FilterCenterFocusSharp } from '@mui/icons-material'
+import { Dialog, DialogTitle, IconButton } from '@mui/material'
 import { ReactElement, useState } from 'react'
 import QRCode from 'react-qr-code'
-import { IconButton, Dialog, DialogTitle } from '@mui/material'
-import { FilterCenterFocusSharp } from '@mui/icons-material'
 
 interface Props {
   value: string

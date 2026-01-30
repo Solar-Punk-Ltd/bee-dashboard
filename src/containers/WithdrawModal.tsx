@@ -1,6 +1,7 @@
 import { BZZ } from '@ethersphere/bee-js'
 import { ReactElement, useContext } from 'react'
 import Upload from 'remixicon-react/UploadLineIcon'
+
 import WithdrawDepositModal from '../components/WithdrawDepositModal'
 import { Context as BeeContext } from '../providers/Bee'
 import { Context as SettingsContext } from '../providers/Settings'

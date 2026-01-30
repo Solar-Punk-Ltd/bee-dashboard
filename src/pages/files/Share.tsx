@@ -1,10 +1,11 @@
-import { Box, Typography } from '@mui/material'
 import { Bytes, MantarayNode, NULL_ADDRESS } from '@ethersphere/bee-js'
+import { Box, Typography } from '@mui/material'
 import { saveAs } from 'file-saver'
 import JSZip from 'jszip'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { Loading } from '../../components/Loading'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
@@ -13,6 +14,7 @@ import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { determineHistoryName, HISTORY_KEYS, putHistory } from '../../utils/local-storage'
+
 import { AssetPreview } from './AssetPreview'
 import { AssetSummary } from './AssetSummary'
 import { AssetSyncing } from './AssetSyncing'
@@ -23,7 +25,7 @@ export function Share(): ReactElement {
   const { status } = useContext(BeeContext)
 
   const { hash } = useParams()
-  const reference = hash! // eslint-disable-line
+  const reference = hash!
 
   const navigate = useNavigate()
   const { enqueueSnackbar } = useSnackbar()
@@ -161,7 +163,6 @@ export function Share(): ReactElement {
       try {
         fileData = await beeApi.downloadData(singleFileHash)
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error('Failed to download file: ', err)
 
         return
@@ -179,7 +180,6 @@ export function Share(): ReactElement {
         try {
           zip.file(path, (await beeApi.downloadData(hash)).toUint8Array())
         } catch (err) {
-          // eslint-disable-next-line no-console
           console.error('Failed to download files: ', err)
 
           return
@@ -190,7 +190,6 @@ export function Share(): ReactElement {
       try {
         content = await zip.generateAsync({ type: 'blob' })
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error('Failed to compress file: ', err)
 
         return

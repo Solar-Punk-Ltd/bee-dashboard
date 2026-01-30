@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import axios from 'axios'
+
 import { AuthError } from './AuthError'
 
 export function getJson<T extends Record<string, any>>(url: string): Promise<T> {

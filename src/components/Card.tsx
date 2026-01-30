@@ -1,12 +1,14 @@
 import { Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
 import Check from 'remixicon-react/CheckLineIcon'
 import AlertCircle from 'remixicon-react/ErrorWarningFillIcon'
 import Connecting from 'remixicon-react/LinksLineIcon'
 import RefreshLine from 'remixicon-react/RefreshLineIcon'
-import { SwarmButton, SwarmButtonProps } from './SwarmButton'
+import { makeStyles } from 'tss-react/mui'
+
 import { CheckState } from '../providers/Bee'
+
+import { SwarmButton, SwarmButtonProps } from './SwarmButton'
 
 interface Props {
   icon: ReactElement

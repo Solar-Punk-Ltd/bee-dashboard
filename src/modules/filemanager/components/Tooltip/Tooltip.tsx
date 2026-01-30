@@ -1,5 +1,6 @@
-import { ReactElement, useState, useRef, useCallback } from 'react'
+import { ReactElement, useCallback, useRef, useState } from 'react'
 import InfoIcon from 'remixicon-react/InformationLineIcon'
+
 import './Tooltip.scss'
 
 interface TooltipProps {

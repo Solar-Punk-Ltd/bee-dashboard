@@ -1,10 +1,11 @@
-import { makeStyles } from 'tss-react/mui'
+import { Check, Clear } from '@mui/icons-material'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
-import { Check, Clear } from '@mui/icons-material'
 import { ReactElement, useState } from 'react'
+import { makeStyles } from 'tss-react/mui'
+
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { SwarmSelect } from '../../components/SwarmSelect'
 import { EnrichedPostageBatch } from '../../providers/Stamps'

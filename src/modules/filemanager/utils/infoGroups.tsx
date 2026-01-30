@@ -1,13 +1,14 @@
-import type { ReactElement } from 'react'
-import { FileStatus, FileInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
-
-import GeneralIcon from 'remixicon-react/FileTextLineIcon'
+import { FileInfo, FileManagerBase, FileStatus } from '@solarpunkltd/file-manager-lib'
+import type { ReactElement } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
-import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
+import GeneralIcon from 'remixicon-react/FileTextLineIcon'
 import HardDriveIcon from 'remixicon-react/HardDrive2LineIcon'
+import AccessIcon from 'remixicon-react/ShieldKeyholeLineIcon'
+
+import { erasureCodeMarks, FEED_INDEX_ZERO } from '../constants/common'
+
 import { indexStrToBigint, truncateNameMiddle } from './common'
-import { FEED_INDEX_ZERO, erasureCodeMarks } from '../constants/common'
 
 export type FileProperty = { key: string; label: string; value: string; raw?: string }
 export type FilePropertyGroup = { title: string; icon?: ReactElement; properties: FileProperty[] }
@@ -167,7 +168,7 @@ function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch
 
   const redundancyLabel =
     fi.redundancyLevel !== undefined
-      ? erasureCodeMarks.find(mark => mark.value === fi.redundancyLevel)?.label ?? fi.redundancyLevel.toString()
+      ? (erasureCodeMarks.find(mark => mark.value === fi.redundancyLevel)?.label ?? fi.redundancyLevel.toString())
       : dash
 
   return {

@@ -4,7 +4,9 @@ import { useSnackbar } from 'notistack'
 import { useEffect, useState } from 'react'
 import RegisterIcon from 'remixicon-react/AddBoxLineIcon'
 import LoginIcon from 'remixicon-react/LoginBoxLineIcon'
+
 import { SwarmButton } from '../../components/SwarmButton'
+
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 

@@ -1,5 +1,6 @@
 import { BZZ, DAI, EthAddress } from '@ethersphere/bee-js'
 import { JsonRpcProvider, Wallet } from 'ethers'
+
 import { estimateNativeTransferTransactionCost, RPC } from './rpc'
 
 export class WalletAddress {

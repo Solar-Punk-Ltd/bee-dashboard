@@ -1,3 +1,4 @@
+# TODO: update dokcerfile
 FROM node:15.14-alpine AS build
 WORKDIR /src
 COPY . .

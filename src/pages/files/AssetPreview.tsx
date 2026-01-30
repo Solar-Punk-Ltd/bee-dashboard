@@ -1,15 +1,17 @@
-import { Box, Grid, Typography } from '@mui/material'
 import { Web } from '@mui/icons-material'
+import { Box, Grid, Typography } from '@mui/material'
 import { ReactElement, useMemo } from 'react'
 import File from 'remixicon-react/FileLineIcon'
 import Folder from 'remixicon-react/FolderLineIcon'
+
+import { FitAudio } from '../../components/FitAudio'
 import { FitImage } from '../../components/FitImage'
+import { FitVideo } from '../../components/FitVideo'
 import { shortenText } from '../../utils'
 import { getHumanReadableFileSize } from '../../utils/file'
 import { shortenHash } from '../../utils/hash'
+
 import { AssetIcon } from './AssetIcon'
-import { FitVideo } from '../../components/FitVideo'
-import { FitAudio } from '../../components/FitAudio'
 
 interface Props {
   previewUri?: string

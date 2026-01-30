@@ -28,7 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       this.errorReporting(error)
     }
 
-    console.error({ error, errorInfo }) // eslint-disable-line
+    console.error({ error, errorInfo })
   }
 
   render(): ReactElement {

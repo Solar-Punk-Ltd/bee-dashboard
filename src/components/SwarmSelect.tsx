@@ -1,8 +1,8 @@
 import { FormHelperText, MenuItem, Select as MuiSelect, SelectChangeEvent } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { Field } from 'formik'
 import { Select } from 'formik-mui'
 import { ReactElement, ReactNode } from 'react'
+import { makeStyles } from 'tss-react/mui'
 
 export type SelectEvent = SelectChangeEvent<string>
 

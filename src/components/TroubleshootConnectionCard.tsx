@@ -1,10 +1,11 @@
 import { Button, Grid, Link as MuiLink, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import type { ReactElement } from 'react'
-import Activity from 'remixicon-react/PulseLineIcon'
 import { Link } from 'react-router-dom'
-import { ROUTES } from '../routes'
+import Activity from 'remixicon-react/PulseLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import { BEE_DISCORD_HOST, BEE_DOCS_HOST } from '../constants'
+import { ROUTES } from '../routes'
 
 const useStyles = makeStyles()(theme => ({
   root: {

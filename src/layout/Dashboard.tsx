@@ -1,8 +1,10 @@
 import { Button, CircularProgress, Container, IconButton } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { useSnackbar } from 'notistack'
 import React, { ReactElement, useContext, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import CloseIcon from 'remixicon-react/CloseCircleLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import ErrorBoundary from '../components/ErrorBoundary'
 import { Flex } from '../components/Flex'
 import SideBar from '../components/SideBar'
@@ -10,7 +12,6 @@ import { BEE_DESKTOP_LATEST_RELEASE_PAGE } from '../constants'
 import { useBeeDesktop, useNewBeeDesktopVersion } from '../hooks/apiHooks'
 import { Context as BeeContext } from '../providers/Bee'
 import { Context as SettingsContext } from '../providers/Settings'
-import { useLocation } from 'react-router-dom'
 
 const useStyles = makeStyles()(theme => ({
   content: {

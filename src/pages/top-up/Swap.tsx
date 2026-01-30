@@ -5,6 +5,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import ArrowDown from 'remixicon-react/ArrowDownCircleLineIcon'
 import Check from 'remixicon-react/CheckLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
@@ -18,7 +19,6 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
 import { sleepMs } from '../../utils'
-import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
 import {
   getBzzPriceAsDai,
   getDesktopConfiguration,
@@ -27,6 +27,8 @@ import {
   upgradeToLightNode,
 } from '../../utils/desktop'
 import { RPC } from '../../utils/rpc'
+import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
+
 import { TopUpProgressIndicator } from './TopUpProgressIndicator'
 
 const MINIMUM_XDAI = DAI.fromDecimalString('0.1')
@@ -57,7 +59,6 @@ export function Swap({ header }: Props): ReactElement {
 
   // Fetch current price of BZZ
   useEffect(() => {
-    // eslint-disable-next-line no-console
     getBzzPriceAsDai(desktopUrl).then(setPrice).catch(console.error)
   }, [desktopUrl])
 
@@ -126,7 +127,7 @@ export function Swap({ header }: Props): ReactElement {
 
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
   }
@@ -135,7 +136,6 @@ export function Swap({ header }: Props): ReactElement {
     try {
       await performSwap(desktopUrl, daiToSwap)
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error(error)
       throw error
     }
@@ -191,12 +191,12 @@ export function Swap({ header }: Props): ReactElement {
         enqueueSnackbar(error.snackbarMessage, { variant: 'error' })
 
         if (error.originalError) {
-          console.error(error.originalError) // eslint-disable-line
+          console.error(error.originalError)
         }
       } else {
         // we have an unexpected error
         enqueueSnackbar(`${GENERIC_SWAP_FAILED_ERROR_MESSAGE} ${error}`, { variant: 'error' })
-        console.error(error) // eslint-disable-line
+        console.error(error)
       }
     } finally {
       setLoading(false)

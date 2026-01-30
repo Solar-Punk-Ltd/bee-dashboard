@@ -1,7 +1,8 @@
 import { Tab, Tabs } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
-import { ReactElement } from 'react'
+import React, { ReactElement } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { makeStyles } from 'tss-react/mui'
+
 import { ROUTES } from '../../routes'
 
 interface Props {

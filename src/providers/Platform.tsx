@@ -1,4 +1,4 @@
-import { createContext, ReactNode, ReactElement, useState, useEffect } from 'react'
+import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
 // These need to be numeric values as they are used as indexes in the TabsContainer
 export enum Platforms {
@@ -21,7 +21,7 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   platform: SupportedPlatforms.macOS,
-  setPlatform: () => {}, // eslint-disable-line
+  setPlatform: () => {},
 }
 
 export const Context = createContext<ContextInterface>(initialValues)

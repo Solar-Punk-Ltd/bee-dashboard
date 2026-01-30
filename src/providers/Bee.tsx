@@ -14,7 +14,9 @@ import {
   WalletBalance,
 } from '@ethersphere/bee-js'
 import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+
 import { useLatestBeeRelease } from '../hooks/apiHooks'
+
 import { Context as SettingsContext } from './Settings'
 
 const LAUNCH_GRACE_PERIOD = 15_000
@@ -92,8 +94,8 @@ const initialValues: ContextInterface = {
   latestBeeRelease: null,
   isLoading: true,
   lastUpdate: null,
-  start: () => {}, // eslint-disable-line
-  stop: () => {}, // eslint-disable-line
+  start: () => {},
+  stop: () => {},
   refresh: () => Promise.reject(),
 }
 

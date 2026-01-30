@@ -1,14 +1,12 @@
-import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
+import { makeStyles } from 'tss-react/mui'
 
-const useStyles = makeStyles()(() =>
-  ({
-    audio: {
-      width: '100%',
-      maxWidth: '250px',
-    },
-  }),
-)
+const useStyles = makeStyles()(() => ({
+  audio: {
+    width: '100%',
+    maxWidth: '250px',
+  },
+}))
 
 interface AudioProps {
   src: string | undefined

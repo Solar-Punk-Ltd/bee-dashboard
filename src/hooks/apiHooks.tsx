@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
+
 import { GITHUB_REPO_URL } from '../constants'
 import { BeeConfig, getDesktopConfiguration, getLatestBeeDesktopVersion } from '../utils/desktop'
 

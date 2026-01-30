@@ -3,6 +3,7 @@ import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Search from 'remixicon-react/SearchLineIcon'
+
 import ExpandableListItemInput from '../../components/ExpandableListItemInput'
 import { History } from '../../components/History'
 import { Context as BeeContext } from '../../providers/Bee'
@@ -10,7 +11,8 @@ import { Context as FileContext, defaultUploadOrigin } from '../../providers/Fil
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { recognizeEnsOrSwarmHash, regexpEns } from '../../utils'
-import { HISTORY_KEYS, determineHistoryName, putHistory } from '../../utils/local-storage'
+import { determineHistoryName, HISTORY_KEYS, putHistory } from '../../utils/local-storage'
+
 import { FileNavigation } from './FileNavigation'
 
 export function Download(): ReactElement {
@@ -74,7 +76,7 @@ export function Download(): ReactElement {
       if (message.includes('Not Found: Not Found')) {
         message = 'The specified hash was not found.'
       }
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
     } finally {
       setLoading(false)

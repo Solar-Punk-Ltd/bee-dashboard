@@ -1,6 +1,7 @@
-import { debounce } from '@mui/material'
 import { BZZ, DAI, EthAddress, PrivateKey } from '@ethersphere/bee-js'
+import { debounce } from '@mui/material'
 import { Contract, JsonRpcProvider, TransactionReceipt, TransactionResponse, Wallet } from 'ethers'
+
 import { BZZ_TOKEN_ADDRESS, bzzABI } from './bzz-abi'
 
 const NETWORK_ID = 100

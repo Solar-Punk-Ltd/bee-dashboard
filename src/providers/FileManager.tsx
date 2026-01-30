@@ -1,12 +1,13 @@
-import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from 'react'
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
-import { FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
-import { Context as SettingsContext } from './Settings'
-import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { getSignerPk } from '../modules/filemanager/utils/common'
+import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+
 import { getUsableStamps } from '../../src/modules/filemanager/utils/bee'
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
+import { getSignerPk } from '../modules/filemanager/utils/common'
+
+import { Context as SettingsContext } from './Settings'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -39,13 +40,13 @@ const initialValues: ContextInterface = {
   initializationError: false,
   showError: false,
   shallReset: false,
-  setCurrentDrive: () => {}, // eslint-disable-line
-  setCurrentStamp: () => {}, // eslint-disable-line
-  resync: async () => {}, // eslint-disable-line
-  init: async () => null, // eslint-disable-line
-  setShowError: () => {}, // eslint-disable-line
-  syncDrives: async () => {}, // eslint-disable-line
-  refreshStamp: async () => undefined, // eslint-disable-line
+  setCurrentDrive: () => {},
+  setCurrentStamp: () => {},
+  resync: async () => {},
+  init: async () => null,
+  setShowError: () => {},
+  syncDrives: async () => {},
+  refreshStamp: async () => undefined,
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -226,7 +227,6 @@ export function Provider({ children }: Props) {
 
       if (success) {
         if (manager.adminStamp && !manager.adminStamp.usable) {
-          // eslint-disable-next-line no-console
           console.warn('Admin stamp exists but is not usable')
           setShallReset(true)
           setInitializationError(true)
@@ -284,7 +284,8 @@ export function Provider({ children }: Props) {
       await manager.initialize()
 
       return manager
-    } catch (error) {
+    } catch (e: any) {
+      console.error('Failed to initialize FileManager', e)
       return null
     }
   }, [apiUrl, syncDrives, syncFiles])

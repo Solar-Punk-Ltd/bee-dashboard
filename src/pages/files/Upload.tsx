@@ -2,16 +2,17 @@ import { Box } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { ProgressIndicator } from '../../components/ProgressIndicator'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
 import { META_FILE_NAME } from '../../constants'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
-import { Identity, Context as IdentityContext } from '../../providers/Feeds'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
+import { Context as IdentityContext, Identity } from '../../providers/Feeds'
 import { Context as FileContext } from '../../providers/File'
 import { Context as SettingsContext } from '../../providers/Settings'
-import { EnrichedPostageBatch, Context as StampsContext } from '../../providers/Stamps'
+import { Context as StampsContext, EnrichedPostageBatch } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { waitUntilStampUsable } from '../../utils'
 import { detectIndexHtml, getAssetNameFromFiles, packageFile } from '../../utils/file'
@@ -20,6 +21,7 @@ import { HISTORY_KEYS, putHistory } from '../../utils/local-storage'
 import { FeedPasswordDialog } from '../feeds/FeedPasswordDialog'
 import { PostageStampAdvancedCreation } from '../stamps/PostageStampAdvancedCreation'
 import { PostageStampSelector } from '../stamps/PostageStampSelector'
+
 import { AssetPreview } from './AssetPreview'
 import { StampPreview } from './StampPreview'
 import { UploadActionBar } from './UploadActionBar'
@@ -127,7 +129,7 @@ export function Upload(): ReactElement {
         }
       })
       .catch(e => {
-        console.error(e) // eslint-disable-line
+        console.error(e)
         enqueueSnackbar(`Error uploading: ${e.message}`, { variant: 'error' })
         setUploading(false)
       })

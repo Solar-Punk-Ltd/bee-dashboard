@@ -1,5 +1,7 @@
-import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+
 import { WalletAddress } from '../utils/wallet'
+
 import { Context as BeeContext } from './Bee'
 import { Context as SettingsContext } from './Settings'
 
@@ -18,8 +20,8 @@ const initialValues: ContextInterface = {
   error: null,
   isLoading: false,
   lastUpdate: null,
-  start: () => {}, // eslint-disable-line
-  stop: () => {}, // eslint-disable-line
+  start: () => {},
+  stop: () => {},
   refresh: () => Promise.reject(),
 }
 
@@ -78,7 +80,7 @@ export function Provider({ children }: Props): ReactElement {
 
       return () => clearInterval(interval)
     }
-  }, [frequency]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frequency]) // eslint-disable-next-line react-hooks/exhaustive-deps
 
   return (
     <Context.Provider value={{ balance, error, isLoading, lastUpdate, start, stop, refresh }}>

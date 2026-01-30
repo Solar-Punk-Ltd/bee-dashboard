@@ -1,6 +1,6 @@
 import { Grid } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { ReactElement, ReactNode } from 'react'
+import { makeStyles } from 'tss-react/mui'
 
 const useStyles = makeStyles()(theme => ({
   wrapper: {

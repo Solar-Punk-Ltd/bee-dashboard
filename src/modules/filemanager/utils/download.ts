@@ -1,7 +1,9 @@
 import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
-import { guessMime, VIEWERS } from './view'
-import { AbortManager } from './abortManager'
+
 import { DownloadProgress, DownloadState } from '../constants/transfers'
+
+import { AbortManager } from './abortManager'
+import { guessMime, VIEWERS } from './view'
 
 const downloadAborts = new AbortManager()
 
@@ -30,7 +32,6 @@ const processStream = async (
   let progress = 0
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     writable = (await (fileHandle as any).createWritable()) as WritableStreamDefaultWriter<Uint8Array>
 
     let done = false
@@ -54,7 +55,7 @@ const processStream = async (
       onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Cancelled })
     } else {
       onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Error })
-      // eslint-disable-next-line no-console
+
       console.error('Failed to process stream: ', e)
     }
 
@@ -70,7 +71,7 @@ const processStream = async (
       }
     } catch (e: unknown) {
       /* no-op */
-      // eslint-disable-next-line no-console
+
       console.error('filehandle close/abort error: ', e)
     }
   }
@@ -106,7 +107,7 @@ const streamToBlob = async (
       onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Cancelled })
     } else {
       onDownloadProgress?.({ progress, isDownloading: false, state: DownloadState.Error })
-      // eslint-disable-next-line no-console
+
       console.error('Error during stream processing: ', error)
     }
 
@@ -131,9 +132,8 @@ interface FileInfoWithHandle {
   cancelled?: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isPickerSupported = (): boolean => typeof (window as any).showSaveFilePicker === 'function'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const isDirectoryPickerSupported = (): boolean => typeof (window as any).showDirectoryPicker === 'function'
 
 const isUserCancellation = (error: unknown): boolean => {
@@ -162,7 +162,6 @@ const getSingleFileHandle = async (
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handle = (await (window as any).showSaveFilePicker(pickerOptions)) as FileSystemFileHandle
 
     return [{ info, handle }]
@@ -189,7 +188,6 @@ const getMultipleFileHandles = async (
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dirHandle = (await (window as any).showDirectoryPicker({
       mode: 'readwrite',
       startIn: defaultDownloadFolder,
@@ -199,14 +197,12 @@ const getMultipleFileHandles = async (
 
     for (const info of infoList) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fileHandle = (await (dirHandle as any).getFileHandle(info.name, {
           create: true,
         })) as FileSystemFileHandle
 
         handles.push({ info, handle: fileHandle })
       } catch (error: unknown) {
-        // eslint-disable-next-line no-console
         console.error(`Failed to create file handle for ${info.name}:`, error)
         handles.push({ info, cancelled: true })
       }
@@ -244,7 +240,6 @@ const downloadToDisk = async (
     return true
   } catch (error: unknown) {
     if ((error as { name?: string }).name !== Errors.AbortError) {
-      // eslint-disable-next-line no-console
       console.error('Error during download to disk: ', error)
     }
 
@@ -283,7 +278,6 @@ const downloadToBlob = async (
     return true
   } catch (error: unknown) {
     if ((error as { name?: string }).name !== Errors.AbortError) {
-      // eslint-disable-next-line no-console
       console.error('Error during download and open: ', error)
     }
 
@@ -349,7 +343,6 @@ export const startDownloadingQueue = async (
           const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
 
           if (!dataStreams || dataStreams.length === 0) {
-            // eslint-disable-next-line no-console
             console.error(`No data streams returned for ${name}`)
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Error })
 
@@ -384,7 +377,7 @@ export const startDownloadingQueue = async (
 
           if (!isAbortError) {
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Error })
-            // eslint-disable-next-line no-console
+
             console.error('download queue error: ', error)
           } else {
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Cancelled })
@@ -395,7 +388,6 @@ export const startDownloadingQueue = async (
       }),
     )
   } catch (e: unknown) {
-    // eslint-disable-next-line no-console
     console.error('An error happened in the download queue: ', e)
   }
 }

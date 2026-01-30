@@ -1,6 +1,7 @@
 import { Grid, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { ReactElement } from 'react'
+import { makeStyles } from 'tss-react/mui'
+
 import { CloseButton } from './CloseButton'
 
 interface Props {

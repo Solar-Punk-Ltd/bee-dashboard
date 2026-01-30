@@ -1,6 +1,7 @@
-import { Box } from '@mui/material'
 import { Reference } from '@ethersphere/bee-js'
+import { Box } from '@mui/material'
 import { ReactElement } from 'react'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
 import ExpandableListItemLink from '../../components/ExpandableListItemLink'

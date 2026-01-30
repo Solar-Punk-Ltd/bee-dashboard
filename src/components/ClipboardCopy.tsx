@@ -1,7 +1,7 @@
-import type { ReactElement } from 'react'
 import IconButton from '@mui/material/IconButton'
-import Clipboard from 'remixicon-react/ClipboardLineIcon'
 import { useSnackbar } from 'notistack'
+import type { ReactElement } from 'react'
+import Clipboard from 'remixicon-react/ClipboardLineIcon'
 
 interface Props {
   value: string

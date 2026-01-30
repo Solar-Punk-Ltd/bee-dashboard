@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
-import { createContext, ReactNode, ReactElement, useState, useEffect } from 'react'
+import { PREVIEW_DIMENSIONS } from '../constants'
 import { getMetadata } from '../utils/file'
 import { resize } from '../utils/image'
-import { PREVIEW_DIMENSIONS } from '../constants'
 
 export type UploadOrigin = { origin: 'UPLOAD' | 'FEED'; uuid?: string }
 

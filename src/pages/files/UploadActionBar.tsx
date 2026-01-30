@@ -1,10 +1,11 @@
 import { Box, Grid } from '@mui/material'
 import { ReactElement } from 'react'
+import PlusSquare from 'remixicon-react/AddBoxLineIcon'
+import ArrowLeft from 'remixicon-react/ArrowLeftLineIcon'
 import Check from 'remixicon-react/CheckLineIcon'
 import X from 'remixicon-react/CloseLineIcon'
-import ArrowLeft from 'remixicon-react/ArrowLeftLineIcon'
-import PlusSquare from 'remixicon-react/AddBoxLineIcon'
 import Layers from 'remixicon-react/StackLineIcon'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { SwarmButton } from '../../components/SwarmButton'

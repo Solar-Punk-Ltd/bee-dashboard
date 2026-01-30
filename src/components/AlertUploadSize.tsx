@@ -1,7 +1,7 @@
-import Collapse from '@mui/material/Collapse'
-import { makeStyles } from 'tss-react/mui'
 import { Alert, AlertTitle } from '@mui/material'
+import Collapse from '@mui/material/Collapse'
 import { ReactElement } from 'react'
+import { makeStyles } from 'tss-react/mui'
 
 const LIMIT = 100000000 // 100 megabytes
 

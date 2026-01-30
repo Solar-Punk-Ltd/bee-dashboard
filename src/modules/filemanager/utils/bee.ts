@@ -1,11 +1,13 @@
 import { BatchId, Bee, BZZ, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import {
-  FileManagerBase,
   DriveInfo,
   estimateDriveListMetadataSize,
   estimateFileInfoMetadataSize,
   FileInfo,
+  FileManagerBase,
 } from '@solarpunkltd/file-manager-lib'
+import React from 'react'
+
 import { getHumanReadableFileSize } from '../../../utils/file'
 import { ActionTag } from '../constants/transfers'
 
@@ -29,7 +31,6 @@ export const validateStampStillExists = async (bee: Bee, batchId: BatchId): Prom
 
     return stamp.usable
   } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn(`Failed to validate stamp ${batchId.toString().slice(0, 8)}...:`, error)
 
     return false
@@ -139,7 +140,6 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
   } = { ...options }
 
   if (!beeApi || !fm) {
-    // eslint-disable-next-line no-console
     console.error('Error creating drive: Bee API or FM is invalid!')
 
     onError?.('Error creating drive: Bee API or FM is invalid!')
@@ -153,7 +153,6 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     if (!existingBatch) {
       if (!isAdmin) {
         if (!fm.adminStamp) {
-          // eslint-disable-next-line no-console
           console.error('Error creating drive: admin stamp is not available')
 
           throw new Error('Error creating drive: admin stamp is not available')
@@ -197,7 +196,6 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
 
     onSuccess?.()
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error('Error creating drive:', e instanceof Error ? e.message : String(e))
     onError?.(e)
   }
@@ -245,7 +243,6 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
 
     if (ttlDays <= 2 || !isDestroy) {
       if (isDestroy) {
-        // eslint-disable-next-line no-console
         console.warn(`Stamp TTL ${ttlDays} <= 2 days, skipping drive destruction: forgetting the drive.`)
       }
 

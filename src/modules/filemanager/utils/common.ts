@@ -1,7 +1,9 @@
 import { PrivateKey } from '@ethersphere/bee-js'
-import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 import { keccak256 } from '@ethersproject/keccak256'
 import { toUtf8Bytes } from '@ethersproject/strings'
+import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
+import React from 'react'
+
 import { lifetimeAdjustments } from '../constants/stamps'
 
 export function getDaysLeft(expiryDate: Date): number {
@@ -98,7 +100,6 @@ export function getSignerPk(): PrivateKey | undefined {
     const fromLocalPk = localStorage.getItem(KEY_STORAGE)
 
     if (!fromLocalPk) {
-      // eslint-disable-next-line no-console
       console.error('Private key not found, cannot initialize')
 
       return undefined
@@ -106,7 +107,6 @@ export function getSignerPk(): PrivateKey | undefined {
 
     return new PrivateKey(fromLocalPk)
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
 
     return undefined

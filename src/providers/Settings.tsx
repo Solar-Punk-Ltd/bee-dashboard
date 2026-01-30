@@ -1,6 +1,7 @@
 import { Bee } from '@ethersphere/bee-js'
 import { JsonRpcProvider } from 'ethers'
-import { ReactElement, ReactNode, createContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
+
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
 
@@ -29,12 +30,12 @@ interface ContextInterface {
 const initialValues: ContextInterface = {
   beeApi: null,
   apiUrl: DEFAULT_BEE_API_HOST,
-  setApiUrl: () => {}, // eslint-disable-line
+  setApiUrl: () => {},
   lockedApiSettings: false,
   isDesktop: false,
   desktopApiKey: '',
   desktopUrl: window.location.origin,
-  setAndPersistJsonRpcProvider: async () => {}, // eslint-disable-line
+  setAndPersistJsonRpcProvider: async () => {},
   rpcProviderUrl: '',
   rpcProvider: null,
   cors: null,

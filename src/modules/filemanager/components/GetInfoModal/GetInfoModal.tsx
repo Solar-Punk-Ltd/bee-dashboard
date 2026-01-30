@@ -1,11 +1,12 @@
-import { ReactElement, useState, useEffect } from 'react'
-import './GetInfoModal.scss'
-import { Button } from '../Button/Button'
+import { ReactElement, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import InfoIcon from 'remixicon-react/InformationLineIcon'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
+import InfoIcon from 'remixicon-react/InformationLineIcon'
 
 import type { FileProperty, FilePropertyGroup } from '../../utils/infoGroups'
+import { Button } from '../Button/Button'
+
+import './GetInfoModal.scss'
 
 interface GetInfoModalProps {
   name: string

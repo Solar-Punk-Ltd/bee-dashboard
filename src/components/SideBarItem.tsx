@@ -1,7 +1,7 @@
 import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import type { ReactElement, ReactNode } from 'react'
 import { matchPath, useLocation } from 'react-router-dom'
+import { makeStyles } from 'tss-react/mui'
 
 const useItemStyles = makeStyles()(theme => ({
   root: {

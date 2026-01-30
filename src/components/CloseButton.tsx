@@ -1,6 +1,6 @@
-import { makeStyles } from 'tss-react/mui'
 import { Close } from '@mui/icons-material'
 import { ReactElement } from 'react'
+import { makeStyles } from 'tss-react/mui'
 
 interface Props {
   onClose: () => void

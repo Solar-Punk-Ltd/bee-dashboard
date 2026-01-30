@@ -1,9 +1,10 @@
 import { Box, TextareaAutosize } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { useSnackbar } from 'notistack'
 import React, { ReactElement, useContext, useRef, useState } from 'react'
 import Check from 'remixicon-react/CheckLineIcon'
 import Upload from 'remixicon-react/UploadLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmDialog } from '../../components/SwarmDialog'

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { useEffect, useMemo, useState } from 'react'
 
 export enum SortKey {
   Name = 'name',

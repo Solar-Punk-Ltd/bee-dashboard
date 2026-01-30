@@ -1,10 +1,11 @@
+import { ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
 import { ReactElement, useContext } from 'react'
 import { matchPath, useLocation } from 'react-router-dom'
 import ArrowRight from 'remixicon-react/ArrowRightLineIcon'
-
-import { ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
+
 import { Context } from '../providers/Bee'
+
 import StatusIcon from './StatusIcon'
 
 const useStyles = makeStyles()(theme => ({

@@ -2,8 +2,9 @@ import { BZZ } from '@ethersphere/bee-js'
 import { useContext } from 'react'
 import { useNavigate } from 'react-router'
 import ExchangeFunds from 'remixicon-react/ExchangeFundsLineIcon'
+
 import Card from '../../components/Card'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { ROUTES } from '../../routes'
 
 export function ChequebookInfoCard() {

@@ -3,7 +3,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { SnackbarProvider } from 'notistack'
 import { ReactElement } from 'react'
 import { HashRouter as Router } from 'react-router-dom'
-import './App.css'
+
 import Dashboard from './layout/Dashboard'
 import { Provider as BeeProvider } from './providers/Bee'
 import { Provider as FeedsProvider } from './providers/Feeds'
@@ -16,6 +16,8 @@ import { Provider as TopUpProvider } from './providers/TopUp'
 import { Provider as BalanceProvider } from './providers/WalletBalance'
 import BaseRouter from './routes'
 import { theme } from './theme'
+
+import './App.css'
 
 interface Props {
   beeApiUrl?: string

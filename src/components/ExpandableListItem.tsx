@@ -1,8 +1,8 @@
 import { Grid, IconButton, Tooltip, Typography } from '@mui/material'
 import ListItemButton from '@mui/material/ListItemButton'
-import { makeStyles } from 'tss-react/mui'
 import { ReactElement, ReactNode } from 'react'
 import Info from 'remixicon-react/InformationLineIcon'
+import { makeStyles } from 'tss-react/mui'
 
 const useStyles = makeStyles()(theme => ({
   header: {

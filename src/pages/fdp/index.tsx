@@ -1,13 +1,15 @@
+import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
 import { CircularProgress, Typography } from '@mui/material'
-import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useEffect, useState } from 'react'
 import ImportIcon from 'remixicon-react/AddBoxLineIcon'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
+
 import { SwarmButton } from '../../components/SwarmButton'
 import { joinUrl } from '../../react-fs/Utility'
+
 import { FdpLogin } from './FdpLogin'
 import { FdpPods } from './FdpPods'
 import { Horizontal } from './Horizontal'
@@ -25,7 +27,7 @@ async function makeFdp(): Promise<FdpStorage | null> {
   }
 
   // TODO: FDS has bad types
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   return new FdpStorage('http://localhost:1633', highestCapacityBatch.batchID.toHex() as any, {
     ensOptions: {
       rpcUrl: sepolia,
@@ -87,7 +89,7 @@ export default function FDP(): ReactElement {
 
       return
     }
-    // eslint-disable-next-line no-alert
+
     const name = prompt('Enter a name for the new pod')
 
     if (name) {
@@ -111,9 +113,9 @@ export default function FDP(): ReactElement {
 
       return
     }
-    // eslint-disable-next-line no-alert
+
     const name = prompt('Enter a name for the new pod')
-    // eslint-disable-next-line no-alert
+
     const importHash = prompt('Enter the Swarm reference')
 
     if (!name || !importHash) {

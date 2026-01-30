@@ -1,11 +1,12 @@
-import { Box, Grid, Typography } from '@mui/material'
 import { NULL_TOPIC } from '@ethersphere/bee-js'
+import { Box, Grid, Typography } from '@mui/material'
 import { Form, Formik } from 'formik'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Check from 'remixicon-react/CheckLineIcon'
 import X from 'remixicon-react/CloseLineIcon'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'

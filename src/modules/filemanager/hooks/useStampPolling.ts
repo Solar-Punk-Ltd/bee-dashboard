@@ -1,5 +1,6 @@
-import { useRef, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
+import { useCallback, useRef } from 'react'
+
 import { POLLING_INTERVAL_MS } from '../constants/common'
 
 interface UseStampPollingOptions {
@@ -64,7 +65,6 @@ export function useStampPolling({
           stamp: updatedStamp,
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('[useStampPolling] Error refreshing stamp:', error)
 
         return { updated: false, stamp: null }

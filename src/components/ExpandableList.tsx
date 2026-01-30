@@ -1,7 +1,8 @@
-import { Collapse, ListItemButton, ListItemText, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { ExpandLess, ExpandMore } from '@mui/icons-material'
+import { Collapse, ListItemButton, ListItemText, Typography } from '@mui/material'
 import { ReactElement, ReactNode, useState } from 'react'
+import { makeStyles } from 'tss-react/mui'
+
 import { Flex } from './Flex'
 
 const useStyles = makeStyles()(theme => ({

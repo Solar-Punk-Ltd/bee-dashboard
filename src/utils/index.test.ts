@@ -1,4 +1,4 @@
-import { extractSwarmHash, extractSwarmCid, extractEns, recognizeEnsOrSwarmHash } from './index'
+import { extractEns, extractSwarmCid, extractSwarmHash, recognizeEnsOrSwarmHash } from './index'
 
 interface TestObject {
   input: string

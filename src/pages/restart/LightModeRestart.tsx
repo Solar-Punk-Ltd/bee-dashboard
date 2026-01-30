@@ -1,8 +1,9 @@
-import { Box, Grid, Typography } from '@mui/material'
 import { BeeModes } from '@ethersphere/bee-js'
+import { Box, Grid, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+
 import { ChainSync } from '../../components/ChainSync'
 import { Waiting } from '../../components/Waiting'
 import { Context } from '../../providers/Settings'
@@ -27,7 +28,7 @@ export default function LightModeRestart(): ReactElement {
             navigate(ROUTES.INFO)
           }
         })
-        .catch(console.error) // eslint-disable-line
+        .catch(console.error)
     }, 3_000)
 
     return () => clearInterval(interval)

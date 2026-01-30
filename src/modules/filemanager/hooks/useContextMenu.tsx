@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react'
-import { useClickOutside } from './useClickOutside'
+import React, { useRef, useState } from 'react'
+
 import { Point } from '../utils/common'
+
+import { useClickOutside } from './useClickOutside'
 
 export function useContextMenu<T extends Element = HTMLDivElement>() {
   const [showContext, setShowContext] = useState(false)

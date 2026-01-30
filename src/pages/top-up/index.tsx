@@ -1,6 +1,5 @@
 import { BeeModes, BZZ, DAI } from '@ethersphere/bee-js'
 import { Box, Grid, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -9,12 +8,14 @@ import Check from 'remixicon-react/CheckLineIcon'
 import Download from 'remixicon-react/DownloadLineIcon'
 import Gift from 'remixicon-react/GiftLineIcon'
 import MoneyDollarCircle from 'remixicon-react/MoneyDollarCircleLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { Loading } from '../../components/Loading'
 import { SwarmButton } from '../../components/SwarmButton'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
@@ -58,7 +59,7 @@ export default function TopUp(): ReactElement {
       await restartBeeNode(desktopUrl)
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
     setLoading(false)

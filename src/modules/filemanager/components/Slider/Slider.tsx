@@ -1,7 +1,8 @@
-import { ReactElement, useState } from 'react'
-import './Slider.scss'
 import Slider from '@mui/material/Slider'
+import { ReactElement, useState } from 'react'
 import { makeStyles } from 'tss-react/mui'
+
+import './Slider.scss'
 
 const useStyles = makeStyles()({
   root: {

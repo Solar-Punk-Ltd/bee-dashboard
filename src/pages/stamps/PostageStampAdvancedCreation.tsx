@@ -1,12 +1,13 @@
-import { Box, Grid, IconButton, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { PostageBatchOptions, Utils } from '@ethersphere/bee-js'
+import { Box, Grid, IconButton, Typography } from '@mui/material'
 import BigNumber from 'bignumber.js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Check from 'remixicon-react/CheckLineIcon'
 import Info from 'remixicon-react/InformationLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmSelect } from '../../components/SwarmSelect'
 import { SwarmTextInput } from '../../components/SwarmTextInput'
@@ -114,7 +115,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       await refresh()
       onFinished()
     } catch (e) {
-      console.error(e) // eslint-disable-line
+      console.error(e)
       enqueueSnackbar(`Error: ${(e as Error).message}`, { variant: 'error' })
     }
     setSubmitting(false)

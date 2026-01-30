@@ -1,5 +1,6 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+
 import { Context as SettingsContext } from './Settings'
 
 export interface EnrichedPostageBatch extends PostageBatch {
@@ -22,8 +23,8 @@ const initialValues: ContextInterface = {
   error: null,
   isLoading: false,
   lastUpdate: null,
-  start: () => {}, // eslint-disable-line
-  stop: () => {}, // eslint-disable-line
+  start: () => {},
+  stop: () => {},
   refresh: () => Promise.reject(),
 }
 
@@ -91,7 +92,7 @@ export function Provider({ children }: Props): ReactElement {
 
       return () => clearInterval(interval)
     }
-  }, [frequency]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frequency]) // eslint-disable-next-line react-hooks/exhaustive-deps
 
   return (
     <Context.Provider value={{ stamps, error, isLoading, lastUpdate, start, stop, refresh }}>

@@ -1,8 +1,10 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+
 import App from './App'
-import './index.css'
 import reportWebVitals from './reportWebVitals'
+
+import './index.css'
 
 const desktopEnabled = process.env.REACT_APP_BEE_DESKTOP_ENABLED === 'true'
 const desktopUrl = process.env.REACT_APP_BEE_DESKTOP_URL

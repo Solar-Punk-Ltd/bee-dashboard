@@ -1,9 +1,9 @@
 import { ReactElement, useContext } from 'react'
+import { useNavigate } from 'react-router'
 import Globe from 'remixicon-react/GlobalLineIcon'
 import Search from 'remixicon-react/SearchLineIcon'
 import Settings from 'remixicon-react/Settings2LineIcon'
 
-import { useNavigate } from 'react-router'
 import Card from '../../components/Card'
 import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { ROUTES } from '../../routes'

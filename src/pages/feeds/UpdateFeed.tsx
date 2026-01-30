@@ -4,17 +4,19 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import Bookmark from 'remixicon-react/BookmarkLineIcon'
 import X from 'remixicon-react/CloseLineIcon'
+
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { SwarmButton } from '../../components/SwarmButton'
 import { SelectEvent, SwarmSelect } from '../../components/SwarmSelect'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
 import { Context as BeeContext } from '../../providers/Bee'
-import { Identity, Context as IdentityContext } from '../../providers/Feeds'
+import { Context as IdentityContext, Identity } from '../../providers/Feeds'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { persistIdentity, updateFeed } from '../../utils/identity'
+
 import { FeedPasswordDialog } from './FeedPasswordDialog'
 
 export default function UpdateFeed(): ReactElement {
@@ -74,7 +76,7 @@ export default function UpdateFeed(): ReactElement {
     }
 
     try {
-      await updateFeed(beeApi, identity, hash!, selectedStamp, password as string) // eslint-disable-line
+      await updateFeed(beeApi, identity, hash!, selectedStamp, password as string)
       persistIdentity(identities, identity)
       setIdentities([...identities])
       navigate(ROUTES.ACCOUNT_FEEDS_VIEW.replace(':uuid', identity.uuid))

@@ -1,7 +1,7 @@
 import { Button, ButtonProps, CircularProgress } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import React, { ReactElement } from 'react'
 import type { RemixiconReactIconProps } from 'remixicon-react'
+import { makeStyles } from 'tss-react/mui'
 
 export interface SwarmButtonProps extends ButtonProps {
   iconType: React.ComponentType<RemixiconReactIconProps>

@@ -1,6 +1,6 @@
+import { Tab, Tabs } from '@mui/material'
 import React, { ReactElement, ReactNode } from 'react'
 import { makeStyles } from 'tss-react/mui'
-import { Tab, Tabs } from '@mui/material'
 
 interface TabPanelProps {
   children?: ReactNode

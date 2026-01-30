@@ -1,3 +1,4 @@
+import { BZZ, TransactionId } from '@ethersphere/bee-js'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -6,7 +7,6 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormHelperText from '@mui/material/FormHelperText'
 import Input from '@mui/material/Input'
-import { BZZ, TransactionId } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, ReactNode, useState } from 'react'
 
@@ -54,7 +54,7 @@ export default function WithdrawDepositModal({
       setOpen(false)
       enqueueSnackbar(`${successMessage} Transaction ${transactionHash}`, { variant: 'success' })
     } catch (e) {
-      console.error(e) // eslint-disable-line
+      console.error(e)
       enqueueSnackbar(`${errorMessage} Error: ${(e as Error).message}`, { variant: 'error' })
     }
   }

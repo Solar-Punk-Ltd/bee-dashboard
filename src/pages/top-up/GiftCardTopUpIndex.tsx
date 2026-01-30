@@ -1,10 +1,11 @@
-import { Box, Typography } from '@mui/material'
 import { BZZ, DAI } from '@ethersphere/bee-js'
+import { Box, Typography } from '@mui/material'
 import { Wallet } from 'ethers'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'
 import ArrowRight from 'remixicon-react/ArrowRightLineIcon'
+
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { ProgressIndicator } from '../../components/ProgressIndicator'
 import { SwarmButton } from '../../components/SwarmButton'
@@ -37,7 +38,7 @@ export function GiftCardTopUpIndex(): ReactElement {
       enqueueSnackbar('Successfully verified gift wallet', { variant: 'success' })
       navigate(ROUTES.TOP_UP_GIFT_CODE_FUND.replace(':privateKeyString', giftCode))
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Gift wallet could not be verified: ${error}`, { variant: 'error' })
     } finally {
       setLoading(false)

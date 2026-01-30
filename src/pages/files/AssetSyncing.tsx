@@ -1,6 +1,7 @@
-import { Box } from '@mui/material'
 import { Tag } from '@ethersphere/bee-js'
+import { Box } from '@mui/material'
 import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import { LinearProgressWithLabel } from '../../components/ProgressBar'
 import { Context as SettingsContext } from '../../providers/Settings'

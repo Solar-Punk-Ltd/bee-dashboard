@@ -1,10 +1,11 @@
 import { Box, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { saveAs } from 'file-saver'
 import { useSnackbar } from 'notistack'
 import { ReactElement } from 'react'
-import Download from 'remixicon-react/DownloadLineIcon'
 import Clipboard from 'remixicon-react/ClipboardLineIcon'
+import Download from 'remixicon-react/DownloadLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import { Code } from '../../components/Code'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { SwarmButton } from '../../components/SwarmButton'

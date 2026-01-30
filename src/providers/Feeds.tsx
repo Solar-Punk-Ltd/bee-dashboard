@@ -1,4 +1,4 @@
-import { createContext, ReactNode, ReactElement, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
 export type IdentityType = 'V3' | 'PRIVATE_KEY'
 
@@ -18,7 +18,7 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   identities: [],
-  setIdentities: () => {}, // eslint-disable-line
+  setIdentities: () => {},
 }
 
 export const Context = createContext<ContextInterface>(initialValues)

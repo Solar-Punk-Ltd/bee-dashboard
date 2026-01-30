@@ -1,19 +1,20 @@
-import { makeStyles } from 'tss-react/mui'
+import { BeeModes } from '@ethersphere/bee-js'
 import { Box } from '@mui/material'
-import { useDropzone } from 'react-dropzone'
 import { useSnackbar } from 'notistack'
-import { ReactElement, useContext, useState, useRef } from 'react'
+import { ReactElement, useContext, useRef, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { useNavigate } from 'react-router-dom'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
 import FilePlus from 'remixicon-react/FileAddLineIcon'
 import FolderPlus from 'remixicon-react/FolderAddLineIcon'
-import { useNavigate } from 'react-router-dom'
+import { makeStyles } from 'tss-react/mui'
+
 import { DocumentationText } from '../../components/DocumentationText'
 import { SwarmButton } from '../../components/SwarmButton'
-import { Context, UploadOrigin } from '../../providers/File'
 import { Context as BeeContext } from '../../providers/Bee'
+import { Context, UploadOrigin } from '../../providers/File'
 import { ROUTES } from '../../routes'
 import { detectIndexHtml } from '../../utils/file'
-import { BeeModes } from '@ethersphere/bee-js'
 
 interface Props {
   uploadOrigin: UploadOrigin

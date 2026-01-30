@@ -1,6 +1,7 @@
 import type { Peer } from '@ethersphere/bee-js'
 import DottedMap, { DottedMapWithoutCountriesLib } from 'dotted-map/without-countries'
 import { CSSProperties, ReactElement, useContext, useEffect, useState } from 'react'
+
 import mapData from '../assets/data/map-data.json'
 import nodesDb from '../assets/data/nodes-db.json'
 import { Context } from '../providers/Bee'

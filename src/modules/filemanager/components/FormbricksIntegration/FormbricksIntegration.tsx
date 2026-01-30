@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
 import formbricks from '@formbricks/js'
+import { useCallback, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 
 const FM_CLICK_STORAGE_KEY = 'fm_click_count_v1'
 const FM_SURVEY_TRIGGERED_KEY = 'fm_survey_triggered_v1'

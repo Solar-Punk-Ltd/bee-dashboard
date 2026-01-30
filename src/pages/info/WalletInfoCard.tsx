@@ -2,8 +2,9 @@ import { useContext } from 'react'
 import { useNavigate } from 'react-router'
 import Upload from 'remixicon-react/UploadLineIcon'
 import Wallet from 'remixicon-react/Wallet3LineIcon'
+
 import Card from '../../components/Card'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { ROUTES } from '../../routes'
 
 export function WalletInfoCard() {

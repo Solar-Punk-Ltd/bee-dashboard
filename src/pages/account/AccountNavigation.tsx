@@ -1,8 +1,9 @@
-import { Tab, Tabs } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { BeeModes } from '@ethersphere/bee-js'
-import { ReactElement, useContext } from 'react'
+import { Tab, Tabs } from '@mui/material'
+import React, { ReactElement, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { makeStyles } from 'tss-react/mui'
+
 import { Context } from '../../providers/Bee'
 import { ACCOUNT_TABS } from '../../routes'
 

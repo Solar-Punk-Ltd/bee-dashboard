@@ -1,8 +1,10 @@
-import { useState, useRef } from 'react'
-import './CustomDropdown.scss'
+import { useRef, useState } from 'react'
 import ArrowDropdown from 'remixicon-react/ArrowDropDownLineIcon'
+
 import { useClickOutside } from '../../hooks/useClickOutside'
 import { Tooltip } from '../Tooltip/Tooltip'
+
+import './CustomDropdown.scss'
 
 interface Option {
   value: number

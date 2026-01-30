@@ -6,6 +6,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Check from 'remixicon-react/CheckLineIcon'
 import X from 'remixicon-react/CloseLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
@@ -16,8 +17,8 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as TopUpContext } from '../../providers/TopUp'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { createGiftWallet } from '../../utils/desktop'
-import { ResolvedWallet } from '../../utils/wallet'
 import { generateWallet } from '../../utils/identity'
+import { ResolvedWallet } from '../../utils/wallet'
 
 const GIFT_WALLET_FUND_DAI_AMOUNT = DAI.fromDecimalString('0.1')
 const GIFT_WALLET_FUND_BZZ_AMOUNT = BZZ.fromDecimalString('0.5')
@@ -57,7 +58,7 @@ export default function Index(): ReactElement {
       await createGiftWallet(desktopUrl, wallet.address)
       enqueueSnackbar('Succesfully funded gift wallet', { variant: 'success' })
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Failed to fund gift wallet: ${error}`, { variant: 'error' })
     } finally {
       setLoading(false)

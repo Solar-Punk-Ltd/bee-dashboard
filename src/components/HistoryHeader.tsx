@@ -1,8 +1,8 @@
-import { Box, Grid, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 import { ArrowBack } from '@mui/icons-material'
+import { Box, Grid, Typography } from '@mui/material'
 import { ReactElement } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { makeStyles } from 'tss-react/mui'
 
 interface Props {
   children: string

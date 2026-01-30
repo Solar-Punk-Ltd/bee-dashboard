@@ -1,12 +1,14 @@
-import { useState, ReactElement, useEffect } from 'react'
-import './PrivateKeyModal.scss'
-import { Button } from '../Button/Button'
-import { setSignerPk, getSigner } from '../../utils/common'
 import { PrivateKey } from '@ethersphere/bee-js'
-import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
+import { ReactElement, useEffect, useState } from 'react'
 import CheckDoubleLineIcon from 'remixicon-react/CheckDoubleLineIcon'
-import { Tooltip } from '../Tooltip/Tooltip'
+import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
+
 import { TOOLTIPS } from '../../constants/tooltips'
+import { getSigner, setSignerPk } from '../../utils/common'
+import { Button } from '../Button/Button'
+import { Tooltip } from '../Tooltip/Tooltip'
+
+import './PrivateKeyModal.scss'
 
 type Props = { onSaved: () => void }
 
@@ -25,7 +27,6 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
       await navigator.clipboard.writeText(value)
       setCopied(true)
     } catch {
-      // eslint-disable-next-line no-console
       console.debug('Failed to copy private key to clipboard')
     }
   }

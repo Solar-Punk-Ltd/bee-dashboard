@@ -5,6 +5,7 @@ import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import ArrowDown from 'remixicon-react/ArrowDownLineIcon'
 import Check from 'remixicon-react/CheckLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
 import { HistoryHeader } from '../../components/HistoryHeader'
@@ -54,7 +55,7 @@ export function GiftCardFund(): ReactElement {
       await restartBeeNode(desktopUrl)
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
   }
@@ -72,7 +73,7 @@ export function GiftCardFund(): ReactElement {
 
       if (canUpgradeToLightNode) await restart()
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      console.error(error)
       enqueueSnackbar(`Failed to fund: ${error}`, { variant: 'error' })
     } finally {
       setLoading(false)

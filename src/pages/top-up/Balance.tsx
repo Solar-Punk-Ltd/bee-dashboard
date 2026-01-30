@@ -3,6 +3,7 @@ import { Box, Grid, Typography } from '@mui/material'
 import { ReactElement, useContext } from 'react'
 import { useNavigate } from 'react-router'
 import Check from 'remixicon-react/CheckLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
 import { HistoryHeader } from '../../components/HistoryHeader'
@@ -11,6 +12,7 @@ import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmDivider } from '../../components/SwarmDivider'
 import { Context } from '../../providers/Bee'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
+
 import { TopUpProgressIndicator } from './TopUpProgressIndicator'
 
 const MINIMUM_XDAI = DAI.fromDecimalString('0.5')
