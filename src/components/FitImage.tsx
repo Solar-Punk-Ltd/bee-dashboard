@@ -21,8 +21,13 @@ export function FitImage(props: Props): ReactElement {
 
   const inlineStyles: Record<string, string> = {}
 
-  props.maxHeight && (inlineStyles.maxHeight = props.maxHeight)
-  props.maxWidth && (inlineStyles.maxWidth = props.maxWidth)
+  if (props.maxHeight) {
+    inlineStyles.maxHeight = props.maxHeight
+  }
+
+  if (props.maxWidth) {
+    inlineStyles.maxWidth = props.maxWidth
+  }
 
   return <img className={classes.image} alt={props.alt} src={props.src} style={inlineStyles} />
 }

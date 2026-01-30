@@ -92,7 +92,7 @@ export function Provider({ children }: Props): ReactElement {
 
       return () => clearInterval(interval)
     }
-  }, [frequency]) // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frequency]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Context.Provider value={{ stamps, error, isLoading, lastUpdate, start, stop, refresh }}>

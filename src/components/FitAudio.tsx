@@ -19,8 +19,13 @@ export function FitAudio(props: AudioProps): ReactElement {
 
   const inlineStyles: Record<string, string> = {}
 
-  props.maxHeight && (inlineStyles.maxHeight = props.maxHeight)
-  props.maxWidth && (inlineStyles.maxWidth = props.maxWidth)
+  if (props.maxHeight) {
+    inlineStyles.maxHeight = props.maxHeight
+  }
+
+  if (props.maxWidth) {
+    inlineStyles.maxWidth = props.maxWidth
+  }
 
   return <audio className={classes.audio} src={props.src} style={inlineStyles} controls />
 }

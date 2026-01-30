@@ -1,5 +1,5 @@
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { ReactElement, useContext, useState } from 'react'
+import React, { ReactElement, useContext, useState } from 'react'
 import { createPortal } from 'react-dom'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
 import Drive from 'remixicon-react/HardDrive2LineIcon'

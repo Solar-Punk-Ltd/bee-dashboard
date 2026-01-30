@@ -12,15 +12,17 @@ import './PrivateKeyModal.scss'
 
 type Props = { onSaved: () => void }
 
+const generateNewPrivateKey = (): string => {
+  const id = crypto.randomUUID()
+  const signer = getSigner(id)
+  return signer.toHex()
+}
+
 export function PrivateKeyModal({ onSaved }: Props): ReactElement {
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(generateNewPrivateKey())
   const [confirmValue, setConfirmValue] = useState('')
   const [showError, setShowError] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    handleGenerateNew()
-  }, [])
 
   const handleCopyPrivateKey = async () => {
     try {
@@ -32,11 +34,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
   }
 
   const handleGenerateNew = () => {
-    const id = crypto.randomUUID()
-    const signer = getSigner(id)
-    const privKey = signer.toHex()
-
-    setValue(privKey)
+    setValue(generateNewPrivateKey())
     setConfirmValue('')
     setCopied(false)
     setShowError(false)

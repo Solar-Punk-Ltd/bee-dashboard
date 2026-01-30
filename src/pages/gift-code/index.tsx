@@ -1,6 +1,5 @@
 import { BZZ, DAI } from '@ethersphere/bee-js'
 import { Box, Tooltip, Typography } from '@mui/material'
-import { Wallet } from 'ethers'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'

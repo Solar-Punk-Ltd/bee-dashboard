@@ -58,7 +58,7 @@ export const fmGetStorageCost = async (
     }
 
     return undefined
-  } catch (e) {
+  } catch (_) {
     return undefined
   }
 }

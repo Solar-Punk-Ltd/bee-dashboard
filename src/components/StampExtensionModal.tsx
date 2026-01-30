@@ -7,7 +7,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import Input from '@mui/material/Input'
 import { useSnackbar } from 'notistack'
-import { ReactElement, ReactNode, useState } from 'react'
+import React, { ReactElement, ReactNode, useState } from 'react'
 
 interface Props {
   type: 'Topup' | 'Dilute'

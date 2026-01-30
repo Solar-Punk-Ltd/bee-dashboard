@@ -1,5 +1,14 @@
 import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
-import { ReactElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useView } from '../../../../pages/filemanager/ViewContext'

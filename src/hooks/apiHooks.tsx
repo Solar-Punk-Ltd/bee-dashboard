@@ -30,9 +30,30 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
+    const setStatesAsync = async () => {
+      setLoading(false)
+      setError(null)
+    }
+
     if (!isBeeDesktop) {
+      setStatesAsync()
+
       return
     }
+
+    axios
+      .get(`${desktopUrl}/info`)
+      .then(res => {
+        setBeeDesktopVersion(res.data?.version)
+        setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
+        setError(null)
+      })
+      .catch(e => {
+        setError(e)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
 
     function runReachabilityCheck() {
       axios
@@ -49,27 +70,6 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
     const interval = setInterval(runReachabilityCheck, 10_000)
 
     return () => clearInterval(interval)
-  }, [desktopUrl, isBeeDesktop])
-
-  useEffect(() => {
-    if (!isBeeDesktop) {
-      setLoading(false)
-      setError(null)
-    } else {
-      axios
-        .get(`${desktopUrl}/info`)
-        .then(res => {
-          setBeeDesktopVersion(res.data?.version)
-          setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
-          setError(null)
-        })
-        .catch(e => {
-          setError(e)
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    }
   }, [desktopUrl, isBeeDesktop])
 
   return { error, isLoading, beeDesktopVersion, desktopAutoUpdateEnabled, reachable }

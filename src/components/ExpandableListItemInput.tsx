@@ -1,6 +1,6 @@
 import { Box, Grid, IconButton, InputBase, ListItemButton, Typography } from '@mui/material'
 import Collapse from '@mui/material/Collapse'
-import { ChangeEvent, ReactElement, useState } from 'react'
+import React, { ChangeEvent, ReactElement, useState } from 'react'
 import type { RemixiconReactIconProps } from 'remixicon-react'
 import Check from 'remixicon-react/CheckLineIcon'
 import X from 'remixicon-react/CloseLineIcon'

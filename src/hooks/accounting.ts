@@ -88,19 +88,27 @@ export const useAccounting = (
   const [uncashedAmounts, setUncashedAmounts] = useState<LastCashoutActionResponse[] | undefined>(undefined)
 
   useEffect(() => {
-    // We don't have any settlements loaded yet or we are already loading/have loaded the uncashed amounts
     if (isLoadingUncashed || !beeApi || !settlements || uncashedAmounts) return
 
-    setIsloadingUncashed(true)
-    const promises = settlements.settlements
-      .filter(({ received }) => received.gt(BZZ.fromPLUR('0')))
-      .map(({ peer }) => makeRetriablePromise(() => beeApi.getLastCashoutAction(peer)))
+    let cancelled = false
+    ;(async () => {
+      setIsloadingUncashed(true)
 
-    Promise.allSettled(promises).then(settlements => {
-      const results = unwrapPromiseSettlements(settlements)
-      setUncashedAmounts(results.fulfilled)
-      setIsloadingUncashed(false)
-    })
+      const promises = settlements.settlements
+        .filter(({ received }) => received.gt(BZZ.fromPLUR('0')))
+        .map(({ peer }) => makeRetriablePromise(() => beeApi.getLastCashoutAction(peer)))
+
+      const results = unwrapPromiseSettlements(await Promise.allSettled(promises))
+
+      if (!cancelled) {
+        setUncashedAmounts(results.fulfilled)
+        setIsloadingUncashed(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [settlements, isLoadingUncashed, uncashedAmounts, beeApi])
 
   const accounting = mergeAccounting(balances, settlements?.settlements, uncashedAmounts)

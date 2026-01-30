@@ -1,12 +1,13 @@
 // CommonJS wrapper for ESLint configuration
-const js = require("@eslint/js");
-const ts = require("@typescript-eslint/eslint-plugin");
-const tsParser = require("@typescript-eslint/parser");
-const prettier = require("eslint-config-prettier");
-const importPlugin = require("eslint-plugin-import");
-const pluginJest = require("eslint-plugin-jest");
-const prettierPlugin = require("eslint-plugin-prettier");
-const simpleImportSort = require("eslint-plugin-simple-import-sort");
+const js = require('@eslint/js')
+const ts = require('@typescript-eslint/eslint-plugin')
+const tsParser = require('@typescript-eslint/parser')
+const prettier = require('eslint-config-prettier')
+const importPlugin = require('eslint-plugin-import')
+const pluginJest = require('eslint-plugin-jest')
+const prettierPlugin = require('eslint-plugin-prettier')
+const simpleImportSort = require('eslint-plugin-simple-import-sort')
+const react = require('eslint-plugin-react')
 
 // Export the required modules that the ESM config can import
 module.exports = {
@@ -18,4 +19,5 @@ module.exports = {
   pluginJest,
   prettierPlugin,
   simpleImportSort,
-};
+  react,
+}

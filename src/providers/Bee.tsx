@@ -164,10 +164,6 @@ function determineOverallStatus(status: Status, startedAt: number): CheckState {
 // This does not need to be exposed and works much better as variable than state variable which may trigger some unnecessary re-renders
 let isRefreshing = false
 
-interface Props {
-  children: ReactNode
-}
-
 export function Provider({ children }: Props): ReactElement {
   const { beeApi } = useContext(SettingsContext)
   const [beeVersion, setBeeVersion] = useState<string | null>(null)
@@ -184,7 +180,7 @@ export function Provider({ children }: Props): ReactElement {
   const [settlements, setSettlements] = useState<AllSettlements | null>(null)
   const [chainState, setChainState] = useState<ChainState | null>(null)
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null)
-  const [startedAt] = useState(Date.now())
+  const [startedAt] = useState(() => Date.now())
 
   const { latestBeeRelease } = useLatestBeeRelease()
 
@@ -192,32 +188,6 @@ export function Provider({ children }: Props): ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(initialValues.isLoading)
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(30000)
-
-  useEffect(() => {
-    setIsLoading(true)
-
-    setApiHealth(false)
-
-    if (beeApi !== null) refresh()
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setIsLoading(true)
-    setNodeAddresses(null)
-    setNodeTopology(null)
-    setNodeInfo(null)
-    setPeers(null)
-    setChequebookAddress(null)
-    setChequebookBalance(null)
-    setPeerBalances(null)
-    setPeerCheques(null)
-    setSettlements(null)
-    setChainState(null)
-
-    if (beeApi !== null) {
-      refresh()
-    }
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = async () => {
     // Don't want to refresh when already refreshing
@@ -338,11 +308,42 @@ export function Provider({ children }: Props): ReactElement {
   const status = getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt)
 
   useEffect(() => {
+    const setStatesAsync = async () => {
+      setIsLoading(true)
+      setApiHealth(false)
+      setNodeAddresses(null)
+      setNodeTopology(null)
+      setNodeInfo(null)
+      setPeers(null)
+      setChequebookAddress(null)
+      setChequebookBalance(null)
+      setPeerBalances(null)
+      setPeerCheques(null)
+      setSettlements(null)
+      setChainState(null)
+
+      if (beeApi !== null) {
+        refresh()
+      }
+    }
+
+    setStatesAsync()
+  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     let newFrequency = REFRESH_WHEN_OK
 
-    if (status.all !== 'OK') newFrequency = REFRESH_WHEN_ERROR
+    if (status.all !== CheckState.OK) {
+      newFrequency = REFRESH_WHEN_ERROR
+    }
 
-    if (newFrequency !== frequency) setFrequency(newFrequency)
+    const setFrequencyAsync = async () => {
+      if (newFrequency !== frequency) {
+        setFrequency(newFrequency)
+      }
+    }
+
+    setFrequencyAsync()
   }, [status.all, frequency])
 
   // Start the update loop

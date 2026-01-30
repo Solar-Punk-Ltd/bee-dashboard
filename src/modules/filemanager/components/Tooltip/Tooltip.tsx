@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useRef, useState } from 'react'
+import React, { ReactElement, useCallback, useRef, useState } from 'react'
 import InfoIcon from 'remixicon-react/InformationLineIcon'
 
 import './Tooltip.scss'
@@ -83,7 +83,6 @@ export function Tooltip({
               }
             : undefined
         }
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: label }}
       />
     </span>

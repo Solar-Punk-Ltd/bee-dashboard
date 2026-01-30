@@ -45,50 +45,54 @@ export function FileManagerPage(): ReactElement {
   }, [])
 
   useEffect(() => {
-    if (status.all !== CheckState.OK) {
-      setShowConnectionError(true)
-    } else {
-      setShowConnectionError(false)
+    const setConnectionErrorState = async () => {
+      setShowConnectionError(status.all !== CheckState.OK)
     }
+
+    setConnectionErrorState()
   }, [status.all])
 
   useEffect(() => {
-    if (!beeApi) {
-      return
+    const initStates = async () => {
+      if (!beeApi) {
+        return
+      }
+
+      if (!hasPk) {
+        setIsLoading(false)
+
+        return
+      }
+
+      setShowResetModal(shallReset)
+
+      if (shallReset) {
+        setShowInitialModal(true)
+
+        return
+      }
+
+      if (initializationError) {
+        setIsLoading(false)
+
+        return
+      }
+
+      if (fm) {
+        const hasAdminStamp = Boolean(fm.adminStamp)
+        const tmpHasAdminDrive = Boolean(adminDrive)
+        setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
+        setIsLoading(false)
+
+        setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
+
+        return
+      }
+
+      setIsLoading(true)
     }
 
-    if (!hasPk) {
-      setIsLoading(false)
-
-      return
-    }
-
-    setShowResetModal(shallReset)
-
-    if (shallReset) {
-      setShowInitialModal(true)
-
-      return
-    }
-
-    if (initializationError) {
-      setIsLoading(false)
-
-      return
-    }
-
-    if (fm) {
-      const hasAdminStamp = Boolean(fm.adminStamp)
-      const tmpHasAdminDrive = Boolean(adminDrive)
-      setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
-      setIsLoading(false)
-
-      setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
-
-      return
-    }
-
-    setIsLoading(true)
+    initStates()
   }, [fm, beeApi, hasPk, initializationError, adminDrive, shallReset])
 
   const handlePrivateKeySaved = useCallback(async () => {

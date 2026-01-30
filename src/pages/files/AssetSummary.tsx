@@ -11,7 +11,7 @@ interface Props {
   reference: string
 }
 
-export function AssetSummary({ isWebsite, reference }: Props): ReactElement {
+export function AssetSummary({ reference }: Props): ReactElement {
   const isHash = Reference.isValid(reference)
 
   return (

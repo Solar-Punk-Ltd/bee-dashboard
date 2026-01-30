@@ -91,21 +91,22 @@ export function unwrapPromiseSettlements<T>(
  * If all attempts fail, then this `Promise<T>` also rejects.
  */
 export function makeRetriablePromise<T>(fn: () => Promise<T>, maxRetries = 3, delayMs = 1000): Promise<T> {
-  return new Promise(async (resolve, reject) => {
-    for (let tries = 0; tries < maxRetries; tries++) {
+  return new Promise((resolve, reject) => {
+    const attempt = async (tries: number) => {
       try {
         const results = await fn()
         resolve(results)
-
-        return
       } catch (error) {
         if (tries < maxRetries - 1) {
           await sleepMs(delayMs)
+          attempt(tries + 1)
         } else {
           reject(error)
         }
       }
     }
+
+    attempt(0)
   })
 }
 
@@ -131,7 +132,7 @@ export function extractSwarmCid(s: string): string | undefined {
   const cid = matches[1]
   try {
     return new Reference(cid).toHex()
-  } catch (e) {
+  } catch (_) {
     return
   }
 }

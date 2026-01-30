@@ -1,6 +1,6 @@
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { memo, ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import DriveFill from 'remixicon-react/HardDrive2FillIcon'
 import Drive from 'remixicon-react/HardDrive2LineIcon'

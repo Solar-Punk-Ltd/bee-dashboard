@@ -90,7 +90,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     const url = makeHttpUrl(localStorage.getItem('api_host') ?? config?.['api-addr'] ?? apiUrl)
     try {
       setBeeApi(new Bee(url))
-    } catch (e) {
+    } catch (_) {
       setBeeApi(null)
     }
   }, [config, apiUrl])
@@ -102,7 +102,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
       setBeeApi(new Bee(userProvidedUrl))
       localStorage.setItem('api_host', userProvidedUrl)
       setApiUrl(userProvidedUrl)
-    } catch (e) {
+    } catch (_) {
       setBeeApi(null)
     }
   }

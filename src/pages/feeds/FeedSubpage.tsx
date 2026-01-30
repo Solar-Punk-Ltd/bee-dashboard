@@ -33,11 +33,10 @@ export function FeedSubpage(): ReactElement {
       return
     }
 
-    try {
-      beeApi?.downloadData(identity.feedHash).then(() => setAvailable(true))
-    } catch {
-      setAvailable(false)
-    }
+    beeApi
+      ?.downloadData(identity.feedHash)
+      .then(() => setAvailable(true))
+      .catch(() => setAvailable(false))
   }, [beeApi, uuid, identity, navigate])
 
   if (!identity || !status.all) {

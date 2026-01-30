@@ -18,7 +18,7 @@ import { Vertical } from './Vertical'
 async function makeFdp(): Promise<FdpStorage | null> {
   const bee = new Bee('http://localhost:1633')
   const sepolia = localStorage.getItem('sepolia') ?? 'https://sepolia.drpc.org'
-  const postageBatches = await bee.getAllPostageBatch()
+  const postageBatches = await bee.getPostageBatches()
   const usableBatches = postageBatches.filter(batch => batch.usable)
   const highestCapacityBatch = usableBatches.length ? usableBatches.reduce((a, b) => (a.depth > b.depth ? a : b)) : null
 
@@ -66,8 +66,12 @@ export default function FDP(): ReactElement {
   }, [enqueueSnackbar])
 
   useEffect(() => {
-    if (fdp && loggedIn) {
+    const setStatesAsync = async () => {
       setLoadingPods(true)
+    }
+
+    if (fdp && loggedIn) {
+      setStatesAsync()
       fdp.personalStorage.list().then(pods => {
         setPods(pods.pods)
         setLoadingPods(false)

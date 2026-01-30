@@ -1,6 +1,9 @@
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 
+import reactHooks from 'eslint-plugin-react-hooks'
+import { defineConfig } from 'eslint/config'
+
 // Calculate current directory for proper file path resolution
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,6 +17,7 @@ const importPlugin = compat.default.importPlugin
 const pluginJest = compat.default.pluginJest
 const prettierPlugin = compat.default.prettierPlugin
 const simpleImportSort = compat.default.simpleImportSort
+const react = compat.default.react
 
 // Recreate eslint:recommended
 const eslintRecommended = js.configs.recommended
@@ -51,7 +55,8 @@ const prettierRecommended = {
   },
 }
 
-export default [
+export default defineConfig([
+  reactHooks.configs.flat.recommended,
   {
     ignores: [
       '**/node_modules/**',
@@ -71,15 +76,6 @@ export default [
         typescript: {
           alwaysTryTypes: true,
         },
-        File: 'readonly',
-        React: 'readonly',
-        HTMLSpanElement: 'readonly',
-        URLSearchParams: 'readonly',
-        FileList: 'readonly',
-        Event: 'readonly',
-        CustomEvent: 'readonly',
-        EventListener: 'readonly',
-        AbortController: 'readonly',
       },
     },
     languageOptions: {
@@ -96,6 +92,15 @@ export default [
         __dirname: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
+        React: 'readonly',
+        Event: 'readonly',
+        Element: 'readonly',
+        DataTransfer: 'readonly',
+        CustomEvent: 'readonly',
+        EventListener: 'readonly',
+        AbortController: 'readonly',
+        URLSearchParams: 'readonly',
+        FileList: 'readonly',
         setTimeout: 'readonly',
         setInterval: 'readonly',
         clearTimeout: 'readonly',
@@ -109,6 +114,8 @@ export default [
         Blob: 'readonly',
         FilePath: 'readonly',
         File: 'readonly',
+        HTMLSpanElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
         HTMLElement: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLDivElement: 'readonly',
@@ -133,6 +140,9 @@ export default [
         FileReader: 'readonly',
         Image: 'readonly',
         NodeJS: 'readonly',
+        LatestBeeRelease: 'readonly',
+        KeyboardEvent: 'readonly',
+        cancelAnimationFrame: 'readonly',
       },
     },
   },
@@ -164,6 +174,7 @@ export default [
     plugins: {
       '@typescript-eslint': ts,
       'simple-import-sort': simpleImportSort,
+      react: react,
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -187,4 +198,4 @@ export default [
       ],
     },
   },
-]
+])
