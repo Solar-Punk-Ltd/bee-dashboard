@@ -2,7 +2,7 @@ import { ReactElement, useContext } from 'react'
 import { matchPath, useLocation } from 'react-router-dom'
 import ArrowRight from 'remixicon-react/ArrowRightLineIcon'
 
-import { ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material'
+import { ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { Context } from '../providers/Bee'
 import StatusIcon from './StatusIcon'
@@ -58,9 +58,8 @@ export default function SideBarItem({ path }: Props): ReactElement {
   const isSelected = Boolean(path && matchPath(location.pathname, path))
 
   return (
-    <ListItem
-      button
-      classes={{ root: `${classes.root} ${status.all ? '' : classes.rootError}`, button: classes.button }}
+    <ListItemButton
+      classes={{ root: `${classes.root} ${status.all ? '' : classes.rootError}` }}
       selected={isSelected}
       disableRipple
     >
@@ -71,6 +70,6 @@ export default function SideBarItem({ path }: Props): ReactElement {
       <ListItemIcon className={classes.icon}>
         {status.all ? null : <ArrowRight className={classes.iconSmall} />}
       </ListItemIcon>
-    </ListItem>
+    </ListItemButton>
   )
 }

@@ -67,7 +67,8 @@ export function FdpPod({ fdp, name }: Props) {
       }}
       download={async (path: string) => {
         const data = await fdp.file.downloadData(name, path)
-        const url = URL.createObjectURL(new Blob([data]))
+        const arr = new Uint8Array(data)
+        const url = URL.createObjectURL(new Blob([arr]))
         const a = document.createElement('a')
         a.href = url
         a.download = path.split('/').pop() || 'Untitled'

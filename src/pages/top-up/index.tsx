@@ -37,7 +37,7 @@ const MINIMUM_XBZZ = BZZ.fromDecimalString('0.1')
 
 export default function TopUp(): ReactElement {
   const navigate = useNavigate()
-  const styles = useStyles()
+  const { classes } = useStyles()
   const { isDesktop, desktopUrl } = useContext(SettingsContext)
   const { nodeInfo, status } = useContext(BeeContext)
   const { balance } = useContext(BalanceProvider)
@@ -75,7 +75,7 @@ export default function TopUp(): ReactElement {
       <HistoryHeader>Account</HistoryHeader>
       <Grid container direction="column" alignItems="center">
         <Box mb={6}>
-          <div className={styles.checkWrapper}>
+          <div className={classes.checkWrapper}>
             <Download size={100} color="#ededed" />
           </div>
         </Box>

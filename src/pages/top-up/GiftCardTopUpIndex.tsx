@@ -12,7 +12,7 @@ import { SwarmDivider } from '../../components/SwarmDivider'
 import { SwarmTextInput } from '../../components/SwarmTextInput'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
-import { Rpc } from '../../utils/rpc'
+import { RPC } from '../../utils/rpc'
 
 export function GiftCardTopUpIndex(): ReactElement {
   const { rpcProvider } = useContext(SettingsContext)
@@ -28,8 +28,8 @@ export function GiftCardTopUpIndex(): ReactElement {
     setLoading(true)
     try {
       const wallet = new Wallet(giftCode, rpcProvider)
-      const dai = await Rpc._eth_getBalance(wallet.address, rpcProvider)
-      const bzz = await Rpc._eth_getBalanceERC20(wallet.address, rpcProvider)
+      const dai = await RPC._eth_getBalance(wallet.address, rpcProvider)
+      const bzz = await RPC._eth_getBalanceERC20(wallet.address, rpcProvider)
 
       if (dai.lt(DAI.fromDecimalString('0.001')) || bzz.lt(BZZ.fromDecimalString('0.001'))) {
         throw Error('Gift wallet does not have enough funds')

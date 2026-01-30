@@ -1,10 +1,11 @@
-import { BatchId, Bee, NULL_TOPIC, Reference } from '@ethersphere/bee-js'
-import { Wallet } from 'ethers'
+import { BatchId, Bee, NULL_TOPIC, Reference, PrivateKey } from '@ethersphere/bee-js'
+import { HDNodeWallet, Wallet, randomBytes } from 'ethers'
 import { uuidV4, waitUntilStampUsable } from '.'
 import { Identity, IdentityType } from '../providers/Feeds'
 
 export function generateWallet(): Wallet {
-  return Wallet.createRandom()
+  const privateKey = randomBytes(PrivateKey.LENGTH).toString()
+  return new Wallet(privateKey)
 }
 
 export function persistIdentity(identities: Identity[], identity: Identity): void {
@@ -74,7 +75,17 @@ function getWalletFromIdentity(identity: Identity, password?: string): Promise<W
 }
 
 async function getWallet(type: IdentityType, data: string, password?: string): Promise<Wallet> {
-  return type === 'PRIVATE_KEY' ? new Wallet(data) : await Wallet.fromEncryptedJson(data, password as string)
+  if (type === 'PRIVATE_KEY') {
+    return new Wallet(data)
+  }
+
+  if (!password) {
+    throw new Error('password is required for wallet')
+  }
+
+  const w = await Wallet.fromEncryptedJson(data, password)
+
+  return new Wallet(w.privateKey)
 }
 
 export async function updateFeed(

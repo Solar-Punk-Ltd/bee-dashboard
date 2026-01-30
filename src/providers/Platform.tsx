@@ -1,4 +1,4 @@
-import { createContext, ReactChild, ReactElement, useState, useEffect } from 'react'
+import { createContext, ReactNode, ReactElement, useState, useEffect } from 'react'
 
 // These need to be numeric values as they are used as indexes in the TabsContainer
 export enum Platforms {
@@ -28,7 +28,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 function isSupportedPlatform(platform: unknown): platform is SupportedPlatforms {

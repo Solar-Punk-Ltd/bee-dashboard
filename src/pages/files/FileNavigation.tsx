@@ -25,7 +25,7 @@ export function FileNavigation({ active }: Props): ReactElement {
   const { classes } = useStyles()
   const navigate = useNavigate()
 
-  function onChange(event: React.ChangeEvent<Record<string, never>>, newValue: number) {
+  function onChange(_event: React.SyntheticEvent, newValue: number) {
     navigate(newValue === 1 ? ROUTES.DOWNLOAD : ROUTES.UPLOAD)
   }
 

@@ -31,7 +31,7 @@ export function CustomDropdown({
   infoText,
 }: CustomDropdownProps) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement | null>(null)
 
   useClickOutside(ref, () => setOpen(false), open)
 

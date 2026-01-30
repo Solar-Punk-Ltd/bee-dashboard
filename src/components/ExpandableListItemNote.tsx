@@ -1,7 +1,7 @@
 import { ReactElement, ReactNode } from 'react'
 import { makeStyles } from 'tss-react/mui'
 import { Typography } from '@mui/material'
-import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 
 const useStyles = makeStyles()(theme => ({
   header: {
@@ -21,10 +21,10 @@ export default function ExpandableListItemNote({ children }: Props): ReactElemen
   const { classes } = useStyles()
 
   return (
-    <ListItem className={classes.header}>
+    <ListItemButton className={classes.header}>
       <Typography variant="body1" className={classes.typography}>
         {children}
       </Typography>
-    </ListItem>
+    </ListItemButton>
   )
 }

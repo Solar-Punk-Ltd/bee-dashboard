@@ -1,4 +1,4 @@
-import { Box, Grid, IconButton, InputBase, ListItem, Typography } from '@mui/material'
+import { Box, Grid, IconButton, InputBase, ListItemButton, Typography } from '@mui/material'
 import Collapse from '@mui/material/Collapse'
 import { makeStyles } from 'tss-react/mui'
 import { ChangeEvent, ReactElement, useState } from 'react'
@@ -94,7 +94,7 @@ export default function ExpandableListItemKey({
 
   return (
     <>
-      <ListItem className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
+      <ListItemButton className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
         <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
           <Grid container direction="row" justifyContent="space-between" alignItems="center">
             {label && (
@@ -125,7 +125,7 @@ export default function ExpandableListItemKey({
             />
           </Collapse>
         </Grid>
-      </ListItem>
+      </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
         {helperText && <ExpandableListItemNote>{helperText}</ExpandableListItemNote>}
         <Box mt={2}>

@@ -19,7 +19,7 @@ export default function NodeInfoCard(): ReactElement {
         icon={<Globe />}
         title="Connecting..."
         subtitle="Attempting to establish connection to your Bee node."
-        status="connecting"
+        status={CheckState.CONNECTING}
       />
     )
   }
@@ -31,7 +31,7 @@ export default function NodeInfoCard(): ReactElement {
         icon={<Globe />}
         title="Starting up..."
         subtitle="Your Bee node is currently launching."
-        status="loading"
+        status={CheckState.STARTING}
       />
     )
   }
@@ -43,7 +43,7 @@ export default function NodeInfoCard(): ReactElement {
         icon={<Globe />}
         title="Your node is not connected…"
         subtitle="You are not connected to Swarm."
-        status="error"
+        status={CheckState.ERROR}
       />
     )
   }
@@ -55,7 +55,7 @@ export default function NodeInfoCard(): ReactElement {
         icon={<Globe />}
         title="Your node is running…"
         subtitle="Connection to Swarm might not be optimal."
-        status="error"
+        status={CheckState.WARNING}
       />
     )
   }
@@ -66,7 +66,7 @@ export default function NodeInfoCard(): ReactElement {
       icon={<Globe />}
       title="Your node is connected."
       subtitle="You are connected to Swarm."
-      status="ok"
+      status={CheckState.OK}
     />
   )
 }

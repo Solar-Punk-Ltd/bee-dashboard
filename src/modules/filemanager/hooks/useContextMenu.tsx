@@ -5,7 +5,7 @@ import { Point } from '../utils/common'
 export function useContextMenu<T extends Element = HTMLDivElement>() {
   const [showContext, setShowContext] = useState(false)
   const [pos, setPos] = useState<Point>({ x: 0, y: 0 })
-  const contextRef = useRef<T | null>(null)
+  const contextRef = useRef<HTMLDivElement | null>(null)
 
   function handleContextMenu(e: React.MouseEvent<T> | MouseEvent) {
     e.preventDefault()

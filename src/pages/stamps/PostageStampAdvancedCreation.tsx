@@ -179,7 +179,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
     const effectiveVolume = getHumanReadableFileSize(Utils.getStampEffectiveBytes(depth))
 
     return (
-      <Grid item container alignItems="center" className={classes.stampVolumeWrapper}>
+      <Grid container alignItems="center" className={classes.stampVolumeWrapper}>
         <Typography>
           Theoretical: ~{theoreticalMaximumVolume} / Effective: ~{effectiveVolume}
         </Typography>
@@ -276,7 +276,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       </Box>
 
       <Grid container justifyContent="space-between" alignItems="center">
-        <Grid item>
+        <Grid>
           <SwarmButton
             disabled={submitting || Boolean(depthError) || Boolean(amountError) || !depthInput || !amountInput}
             onClick={submit}
@@ -286,7 +286,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
             Buy New Stamp
           </SwarmButton>
         </Grid>
-        <Grid item>
+        <Grid>
           <Link to={ROUTES.ACCOUNT_STAMPS_NEW_STANDARD} className={classes.link}>
             Standard mode
           </Link>

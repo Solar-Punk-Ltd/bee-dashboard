@@ -137,7 +137,29 @@ async function makeReadySigner(privateKey: PrivateKey, jsonRpcProvider: string) 
   return signer
 }
 
-export const Rpc = {
+export interface Rpc {
+  getNetworkChainId: (url: string) => Promise<bigint>
+  sendNativeTransaction: (
+    privateKey: PrivateKey | string,
+    to: EthAddress | string,
+    value: DAI,
+    jsonRpcProvider: string,
+    externalGasPrice?: DAI,
+  ) => Promise<TransferResponse>
+  sendBzzTransaction: (
+    privateKey: PrivateKey | string,
+    to: EthAddress | string,
+    value: BZZ,
+    jsonRpcProvider: string,
+  ) => Promise<TransferResponse>
+  _eth_getBalance: (address: EthAddress | string, provider: JsonRpcProvider) => Promise<DAI>
+  _eth_getBalanceERC20: (address: EthAddress | string, provider: JsonRpcProvider, tokenAddress?: string) => Promise<BZZ>
+  eth_getBalance: (address: EthAddress | string, provider: JsonRpcProvider) => Promise<DAI>
+  eth_getBalanceERC20: (address: EthAddress | string, provider: JsonRpcProvider, tokenAddress: string) => Promise<BZZ>
+  eth_getBlockByNumber: (provider: JsonRpcProvider) => Promise<string>
+}
+
+export const RPC: Rpc = {
   getNetworkChainId,
   sendNativeTransaction,
   sendBzzTransaction,

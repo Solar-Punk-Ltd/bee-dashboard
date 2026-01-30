@@ -1,5 +1,5 @@
 import { ReactElement, useState } from 'react'
-import QRCode from 'qrcode.react'
+import QRCode from 'react-qr-code'
 import { IconButton, Dialog, DialogTitle } from '@mui/material'
 import { FilterCenterFocusSharp } from '@mui/icons-material'
 
@@ -27,15 +27,7 @@ export default function QRCodeModal(props: Props): ReactElement {
       <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
         <div style={{ padding: '30px', textAlign: 'center' }}>
           <DialogTitle id="simple-dialog-title">{props.label}</DialogTitle>
-          <QRCode
-            value={props.value}
-            size={150}
-            bgColor={'#ffffff'}
-            fgColor={'#000000'}
-            level={'L'}
-            includeMargin={false}
-            renderAs={'svg'}
-          />
+          <QRCode value={props.value} size={150} bgColor={'#ffffff'} fgColor={'#000000'} level={'L'} />
         </div>
       </Dialog>
     </div>

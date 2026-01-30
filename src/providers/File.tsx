@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { createContext, ReactChild, ReactElement, useState, useEffect } from 'react'
+import { createContext, ReactNode, ReactElement, useState, useEffect } from 'react'
 import { getMetadata } from '../utils/file'
 import { resize } from '../utils/image'
 import { PREVIEW_DIMENSIONS } from '../constants'
@@ -30,7 +30,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function Provider({ children }: Props): ReactElement {

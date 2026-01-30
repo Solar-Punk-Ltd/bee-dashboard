@@ -1,5 +1,5 @@
 import { Grid, IconButton, Tooltip, Typography } from '@mui/material'
-import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
 import { makeStyles } from 'tss-react/mui'
 import { ReactElement, ReactNode } from 'react'
 import Info from 'remixicon-react/InformationLineIcon'
@@ -31,7 +31,7 @@ export default function ExpandableListItem({ label, value, tooltip }: Props): Re
   const { classes } = useStyles()
 
   return (
-    <ListItem className={classes.header}>
+    <ListItemButton className={classes.header}>
       <Grid container direction="row" justifyContent="space-between" alignItems="center">
         {label && <Typography variant="body1">{label}</Typography>}
         {value && (
@@ -47,6 +47,6 @@ export default function ExpandableListItem({ label, value, tooltip }: Props): Re
           </Typography>
         )}
       </Grid>
-    </ListItem>
+    </ListItemButton>
   )
 }

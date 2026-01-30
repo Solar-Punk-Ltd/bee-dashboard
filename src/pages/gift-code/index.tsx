@@ -17,6 +17,7 @@ import { Context as TopUpContext } from '../../providers/TopUp'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { createGiftWallet } from '../../utils/desktop'
 import { ResolvedWallet } from '../../utils/wallet'
+import { generateWallet } from '../../utils/identity'
 
 const GIFT_WALLET_FUND_DAI_AMOUNT = DAI.fromDecimalString('0.1')
 const GIFT_WALLET_FUND_BZZ_AMOUNT = BZZ.fromDecimalString('0.5')
@@ -51,7 +52,7 @@ export default function Index(): ReactElement {
     enqueueSnackbar('Sending funds to gift wallet...')
     setLoading(true)
     try {
-      const wallet = Wallet.createRandom()
+      const wallet = generateWallet()
       addGiftWallet(wallet)
       await createGiftWallet(desktopUrl, wallet.address)
       enqueueSnackbar('Succesfully funded gift wallet', { variant: 'success' })

@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
               react: 'React',
               'react-dom': 'ReactDOM',
             },
-            assetFileNames: assetInfo => {
+            assetFileNames: (assetInfo: any) => {
               if (assetInfo.names?.[0] === 'style.css') return 'App.css'
               return assetInfo.names?.[0] || 'asset'
             },
@@ -52,7 +52,8 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       nodePolyfills({
-        include: ['stream', 'util', 'buffer', 'crypto'],
+        // TODO: util needed?
+        include: ['stream', 'util', 'buffer', 'crypto', 'fs'],
         globals: {
           Buffer: true,
           global: true,
@@ -63,6 +64,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
     },
+    // TODO: is optimizeDeps needed?
     optimizeDeps: {
       exclude: ['@solarpunkltd/file-manager-lib'],
     },

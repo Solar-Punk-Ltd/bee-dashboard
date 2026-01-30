@@ -6,13 +6,14 @@ import AlertCircle from 'remixicon-react/ErrorWarningFillIcon'
 import Connecting from 'remixicon-react/LinksLineIcon'
 import RefreshLine from 'remixicon-react/RefreshLineIcon'
 import { SwarmButton, SwarmButtonProps } from './SwarmButton'
+import { CheckState } from '../providers/Bee'
 
 interface Props {
   icon: ReactElement
   title: string
   subtitle: string
   buttonProps: SwarmButtonProps
-  status: 'ok' | 'error' | 'loading' | 'connecting'
+  status: CheckState
 }
 
 const useStyles = (backgroundColor: string) =>
@@ -54,20 +55,22 @@ const useStyles = (backgroundColor: string) =>
   }))
 
 export default function Card({ buttonProps, icon, title, subtitle, status }: Props): ReactElement {
-  const backgroundColor = status === 'error' ? 'white' : '#f3f3f3'
+  const backgroundColor = status === CheckState.ERROR ? 'white' : '#f3f3f3'
   const { className, ...rest } = buttonProps
   const { classes } = useStyles(backgroundColor)()
 
   let statusIcon = null
-  // TOOD: use statuscheck
-  if (status === 'ok') {
+
+  if (status === CheckState.OK) {
     statusIcon = <Check size="13" color="#09ca6c" />
-  } else if (status === 'error') {
-    statusIcon = <AlertCircle size="13" color="#f44336" />
-  } else if (status === 'loading') {
-    statusIcon = <RefreshLine size="13" color="orange" />
-  } else if (status === 'connecting') {
+  } else if (CheckState.STARTING) {
+    statusIcon = <RefreshLine size="13" color="#d99400d5" />
+  } else if (CheckState.CONNECTING) {
     statusIcon = <Connecting size="13" color="#0074D9" />
+  } else if (CheckState.WARNING) {
+    statusIcon = <Connecting size="13" color="#cbd900" />
+  } else {
+    statusIcon = <AlertCircle size="13" color="#f44336" />
   }
 
   return (

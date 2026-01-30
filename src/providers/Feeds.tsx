@@ -1,4 +1,4 @@
-import { createContext, ReactChild, ReactElement, useEffect, useState } from 'react'
+import { createContext, ReactNode, ReactElement, useEffect, useState } from 'react'
 
 export type IdentityType = 'V3' | 'PRIVATE_KEY'
 
@@ -25,7 +25,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function Provider({ children }: Props): ReactElement {

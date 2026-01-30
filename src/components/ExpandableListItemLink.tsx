@@ -1,4 +1,4 @@
-import { Grid, IconButton, ListItem, Tooltip, Typography } from '@mui/material'
+import { Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { ArrowForward, OpenInNewSharp } from '@mui/icons-material'
 import { ReactElement, useState } from 'react'
@@ -83,7 +83,7 @@ export default function ExpandableListItemLink({
   }
 
   return (
-    <ListItem className={classes.header}>
+    <ListItemButton className={classes.header}>
       <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
         <Grid container direction="row" justifyContent="space-between" alignItems="center">
           {label && <Typography variant="body1">{label}</Typography>}
@@ -103,6 +103,6 @@ export default function ExpandableListItemLink({
           </Typography>
         </Grid>
       </Grid>
-    </ListItem>
+    </ListItemButton>
   )
 }

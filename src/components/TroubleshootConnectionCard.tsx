@@ -27,12 +27,12 @@ export default function TroubleshootConnectionCard(): ReactElement {
 
   return (
     <Grid container direction="column" justifyContent="center" alignItems="center" className={classes.root}>
-      <Grid item className={classes.content}>
+      <Grid className={classes.content}>
         <Typography variant="h1" align="center">
           Uh oh, it looks like your node is not connected.
         </Typography>
       </Grid>
-      <Grid item className={classes.content}>
+      <Grid className={classes.content}>
         <Typography align="center">
           Please check your node status to fix the problem. You can also check out the{' '}
           <MuiLink href={BEE_DOCS_HOST} target="_blank" rel="noreferrer">
@@ -45,7 +45,7 @@ export default function TroubleshootConnectionCard(): ReactElement {
           .
         </Typography>
       </Grid>
-      <Grid item className={classes.content}>
+      <Grid className={classes.content}>
         <Typography align="center">
           <Button
             component={Link}

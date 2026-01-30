@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
 import { Context as SettingsContext } from './Settings'
 
 export interface EnrichedPostageBatch extends PostageBatch {
@@ -31,7 +31,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function enrichStamp(postageBatch: PostageBatch): EnrichedPostageBatch {

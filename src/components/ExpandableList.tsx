@@ -1,4 +1,4 @@
-import { Collapse, ListItem, ListItemText, Typography } from '@mui/material'
+import { Collapse, ListItemButton, ListItemText, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { ExpandLess, ExpandMore } from '@mui/icons-material'
 import { ReactElement, ReactNode, useState } from 'react'
@@ -62,7 +62,7 @@ export default function ExpandableList({ children, label, level, defaultOpen, in
 
   return (
     <div className={`${classes.root} ${rootLevelClass}`}>
-      <ListItem button onClick={handleClick} className={classes.header}>
+      <ListItemButton onClick={handleClick} className={classes.header}>
         <ListItemText primary={<Typography variant={typographyVariant}>{label}</Typography>} />
         <Flex>
           {!open && (
@@ -72,7 +72,7 @@ export default function ExpandableList({ children, label, level, defaultOpen, in
           )}
           {open ? <ExpandLess /> : <ExpandMore />}
         </Flex>
-      </ListItem>
+      </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <div className={contentLevelClass}>{children}</div>
       </Collapse>

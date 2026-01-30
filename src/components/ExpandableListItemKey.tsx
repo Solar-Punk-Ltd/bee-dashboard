@@ -1,4 +1,4 @@
-import { Collapse, Grid, IconButton, ListItem, Tooltip, Typography } from '@mui/material'
+import { Collapse, Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { ReactElement, useState } from 'react'
 import Eye from 'remixicon-react/EyeLineIcon'
@@ -77,7 +77,7 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
   }`
 
   return (
-    <ListItem className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
+    <ListItemButton className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
       <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
         <Grid container direction="row" justifyContent="space-between" alignItems="center">
           {label && <Typography variant="body1">{label}</Typography>}
@@ -111,6 +111,6 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
           </div>
         </Collapse>
       </Grid>
-    </ListItem>
+    </ListItemButton>
   )
 }

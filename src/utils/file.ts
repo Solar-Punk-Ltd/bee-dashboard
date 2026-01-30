@@ -134,5 +134,6 @@ export function packageFile(file: FilePath, pathOverwrite?: string): FilePath {
     slice: (start: number, end: number) => file.slice(start, end),
     text: file.text,
     arrayBuffer: async () => await file.arrayBuffer(),
+    bytes: file.bytes,
   }
 }

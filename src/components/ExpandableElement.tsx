@@ -1,4 +1,4 @@
-import { Collapse, ListItem } from '@mui/material'
+import { Collapse, ListItemButton } from '@mui/material'
 
 import { makeStyles } from 'tss-react/mui'
 import { ExpandLess, ExpandMore } from '@mui/icons-material'
@@ -49,10 +49,10 @@ export default function ExpandableElement({ children, expandable, defaultOpen }:
 
   return (
     <div className={`${classes.root} ${classes.rootLevel2}`}>
-      <ListItem button onClick={handleClick} className={classes.header}>
+      <ListItemButton onClick={handleClick} className={classes.header}>
         {children}
         {open ? <ExpandLess /> : <ExpandMore />}
-      </ListItem>
+      </ListItemButton>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <div className={classes.contentLevel12}>{expandable}</div>
       </Collapse>

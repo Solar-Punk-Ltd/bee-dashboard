@@ -20,7 +20,7 @@ interface Props {
   showHelp: boolean
 }
 
-const MAX_FILE_SIZE = 1_000_000_000 // 1 gigabyte
+const MAX_FILE_SIZE = 1_000_000_000 // 1 GB
 
 const useStyles = makeStyles()(theme => ({
   areaWrapper: { position: 'relative', marginBottom: theme.spacing(2) },

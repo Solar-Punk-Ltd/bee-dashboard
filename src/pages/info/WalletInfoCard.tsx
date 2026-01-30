@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import Upload from 'remixicon-react/UploadLineIcon'
 import Wallet from 'remixicon-react/Wallet3LineIcon'
 import Card from '../../components/Card'
-import { Context as BeeContext } from '../../providers/Bee'
+import { Context as BeeContext, CheckState } from '../../providers/Bee'
 import { ROUTES } from '../../routes'
 
 export function WalletInfoCard() {
@@ -29,7 +29,7 @@ export function WalletInfoCard() {
         icon={<Wallet />}
         title={balanceText}
         subtitle="Current wallet balance."
-        status="ok"
+        status={CheckState.OK}
       />
     )
   }
@@ -44,7 +44,7 @@ export function WalletInfoCard() {
       icon={<Upload />}
       title="Your wallet is not setup."
       subtitle="To share content on Swarm, please setup your wallet."
-      status="error"
+      status={CheckState.ERROR}
     />
   )
 }
