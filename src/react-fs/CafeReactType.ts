@@ -1,4 +1,3 @@
-// TODO: reuse with filemanager
 export enum FsItemType {
   FILE = 'file',
   DIRECTORY = 'directory',

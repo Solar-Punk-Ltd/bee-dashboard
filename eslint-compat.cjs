@@ -9,7 +9,6 @@ const prettierPlugin = require('eslint-plugin-prettier')
 const simpleImportSort = require('eslint-plugin-simple-import-sort')
 const react = require('eslint-plugin-react')
 
-// Export the required modules that the ESM config can import
 module.exports = {
   js,
   ts,

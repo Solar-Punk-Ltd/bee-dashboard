@@ -55,6 +55,7 @@ export function GiftCardFund(): ReactElement {
       await restartBeeNode(desktopUrl)
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
@@ -73,6 +74,7 @@ export function GiftCardFund(): ReactElement {
 
       if (canUpgradeToLightNode) await restart()
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(`Failed to fund: ${error}`, { variant: 'error' })
     } finally {

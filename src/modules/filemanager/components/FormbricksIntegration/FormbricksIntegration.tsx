@@ -2,9 +2,10 @@ import formbricks from '@formbricks/js'
 import { useCallback, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
-const FM_CLICK_STORAGE_KEY = 'fm_click_count_v1'
-const FM_SURVEY_TRIGGERED_KEY = 'fm_survey_triggered_v1'
+import { LocalStorageKeys } from '../../../../utils/local-storage'
+
 const FM_CLICK_THRESHOLD = 25
+const FM_FORMBRICKS_TRACK_CODE = 'file_manager_engagement_25_clicks'
 
 interface FormbricksIntegrationProps {
   isActive: boolean
@@ -20,10 +21,10 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
   const appUrl = process.env.REACT_APP_FORMBRICKS_APP_URL
 
   const flushPendingEvent = useCallback(() => {
-    if (pendingEventRef.current && localStorage.getItem(FM_SURVEY_TRIGGERED_KEY) !== 'true') {
+    if (pendingEventRef.current && localStorage.getItem(LocalStorageKeys.fmSurveyTriggered) !== 'true') {
       try {
-        formbricks.track('file_manager_engagement_25_clicks')
-        localStorage.setItem(FM_SURVEY_TRIGGERED_KEY, 'true')
+        formbricks.track(FM_FORMBRICKS_TRACK_CODE)
+        localStorage.setItem(LocalStorageKeys.fmSurveyTriggered, 'true')
         pendingEventRef.current = false
       } catch {
         // no-op
@@ -79,11 +80,11 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
     if (!isActive) return
 
     const handleClick = async () => {
-      if (localStorage.getItem(FM_SURVEY_TRIGGERED_KEY) === 'true') return
+      if (localStorage.getItem(LocalStorageKeys.fmSurveyTriggered) === 'true') return
 
       let count = 0
       try {
-        const stored = localStorage.getItem(FM_CLICK_STORAGE_KEY)
+        const stored = localStorage.getItem(LocalStorageKeys.fmClickStorage)
 
         if (stored) count = parseInt(stored, 10) || 0
       } catch {
@@ -92,7 +93,7 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
 
       count += 1
       try {
-        localStorage.setItem(FM_CLICK_STORAGE_KEY, String(count))
+        localStorage.setItem(LocalStorageKeys.fmClickStorage, String(count))
       } catch {
         // no-op
       }
@@ -111,8 +112,8 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
         }
 
         try {
-          await formbricks.track('file_manager_engagement_25_clicks')
-          localStorage.setItem(FM_SURVEY_TRIGGERED_KEY, 'true')
+          await formbricks.track(FM_FORMBRICKS_TRACK_CODE)
+          localStorage.setItem(LocalStorageKeys.fmSurveyTriggered, 'true')
         } catch {
           // no-op
         }

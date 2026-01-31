@@ -4,10 +4,7 @@ import { createContext, ReactElement, ReactNode, useEffect, useState } from 'rea
 
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
-
-const LocalStorageKeys = {
-  providerUrl: 'json-rpc-provider',
-}
+import { LocalStorageKeys } from '../utils/local-storage'
 
 interface ContextInterface {
   apiUrl: string
@@ -67,7 +64,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     localStorage.getItem(LocalStorageKeys.providerUrl) || propsSettings.defaultRpcUrl || DEFAULT_RPC_URL
 
   const [apiUrl, setApiUrl] = useState<string>(
-    localStorage.getItem('api_host') ?? propsSettings.beeApiUrl ?? initialValues.apiUrl,
+    localStorage.getItem(LocalStorageKeys.apiHost) ?? propsSettings.beeApiUrl ?? initialValues.apiUrl,
   )
   const [beeApi, setBeeApi] = useState<Bee | null>(null)
   const [desktopApiKey, setDesktopApiKey] = useState<string>(initialValues.desktopApiKey)
@@ -79,20 +76,29 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     const urlSearchParams = new URLSearchParams(window.location.search)
     const newApiKey = urlSearchParams.get('v')
 
-    if (newApiKey) {
-      localStorage.setItem('apiKey', newApiKey)
-      window.location.search = ''
-      setDesktopApiKey(newApiKey)
+    const setDesktopApiKeyState = () => {
+      if (newApiKey) {
+        localStorage.setItem(LocalStorageKeys.apiKey, newApiKey)
+        window.location.search = ''
+        setDesktopApiKey(newApiKey)
+      }
     }
+
+    setDesktopApiKeyState()
   }, [])
 
   useEffect(() => {
-    const url = makeHttpUrl(localStorage.getItem('api_host') ?? config?.['api-addr'] ?? apiUrl)
-    try {
-      setBeeApi(new Bee(url))
-    } catch (_) {
-      setBeeApi(null)
+    const url = makeHttpUrl(localStorage.getItem(LocalStorageKeys.apiHost) ?? config?.['api-addr'] ?? apiUrl)
+
+    const setBeeApiState = () => {
+      try {
+        setBeeApi(new Bee(url))
+      } catch (_) {
+        setBeeApi(null)
+      }
     }
+
+    setBeeApiState()
   }, [config, apiUrl])
 
   const updateApiUrl = (url: string) => {
@@ -100,7 +106,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
 
     try {
       setBeeApi(new Bee(userProvidedUrl))
-      localStorage.setItem('api_host', userProvidedUrl)
+      localStorage.setItem(LocalStorageKeys.apiHost, userProvidedUrl)
       setApiUrl(userProvidedUrl)
     } catch (_) {
       setBeeApi(null)

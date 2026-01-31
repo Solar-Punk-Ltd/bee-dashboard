@@ -1,13 +1,9 @@
 import { Wallet } from 'ethers'
 import { createContext, ReactElement, useContext, useEffect, useState } from 'react'
 
-import { Context as SettingsContext } from './Settings'
+import { LocalStorageKeys } from '../utils/local-storage'
 
-const LocalStorageKeys = {
-  depositWallet: 'deposit-wallet',
-  giftWallets: 'gift-wallets',
-  invitation: 'invitation',
-}
+import { Context as SettingsContext } from './Settings'
 
 interface ContextInterface {
   giftWallets: Wallet[]
@@ -36,7 +32,9 @@ export function Provider({ children }: Props): ReactElement {
     const existingGiftWallets = localStorage.getItem(LocalStorageKeys.giftWallets)
 
     if (existingGiftWallets) {
-      setGiftWallets(JSON.parse(existingGiftWallets).map((privateKey: string) => new Wallet(privateKey, rpcProvider)))
+      Promise.resolve().then(() => {
+        setGiftWallets(JSON.parse(existingGiftWallets).map((privateKey: string) => new Wallet(privateKey, rpcProvider)))
+      })
     }
   }, [rpcProvider])
 

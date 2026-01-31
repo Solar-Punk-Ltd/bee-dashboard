@@ -6,6 +6,7 @@ import RegisterIcon from 'remixicon-react/AddBoxLineIcon'
 import LoginIcon from 'remixicon-react/LoginBoxLineIcon'
 
 import { SwarmButton } from '../../components/SwarmButton'
+import { LocalStorageKeys } from '../../utils/local-storage'
 
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
@@ -15,17 +16,19 @@ interface Props {
   onSuccessfulLogin: () => void
 }
 
+export const DEFAULT_SEPOLIA_RPC = 'https://sepolia.drpc.org'
+
 export function FdpLogin({ fdp, onSuccessfulLogin }: Props) {
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [remember, setRemember] = useState<boolean>(false)
-  const [sepolia, setSepolia] = useState<string>('https://sepolia.drpc.org')
+  const [sepolia, setSepolia] = useState<string>(DEFAULT_SEPOLIA_RPC)
   const { enqueueSnackbar } = useSnackbar()
 
   const inputStyle = { background: 'white', padding: '2px 8px', width: '100%' }
 
   useEffect(() => {
-    const storedSepolia = localStorage.getItem('sepolia')
+    const storedSepolia = localStorage.getItem(LocalStorageKeys.sepolia)
 
     if (storedSepolia) {
       setSepolia(storedSepolia)
@@ -41,7 +44,7 @@ export function FdpLogin({ fdp, onSuccessfulLogin }: Props) {
   }, [])
 
   async function onLogin() {
-    localStorage.setItem('sepolia', sepolia)
+    localStorage.setItem(LocalStorageKeys.sepolia, sepolia)
 
     if (remember) {
       localStorage.setItem('fdpCredentials', JSON.stringify({ username, password }))

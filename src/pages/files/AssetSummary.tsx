@@ -8,17 +8,17 @@ import ExpandableListItemLink from '../../components/ExpandableListItemLink'
 
 interface Props {
   isWebsite?: boolean
-  reference: string
+  reference?: string
 }
 
 export function AssetSummary({ reference }: Props): ReactElement {
-  const isHash = Reference.isValid(reference)
+  const isHash = reference ? Reference.isValid(reference) : false
 
   return (
     <>
       <Box mb={4}>
-        {isHash && <ExpandableListItemKey label="Swarm hash" value={reference} />}
-        {!isHash && <ExpandableListItemLink label="ENS" value={reference} />}
+        {isHash && <ExpandableListItemKey label="Swarm hash" value={reference || ''} />}
+        {!isHash && <ExpandableListItemLink label="ENS" value={reference || ''} />}
       </Box>
       <DocumentationText>
         The Swarm Gateway is graciously provided by the Swarm Foundation. This service is under development and provided

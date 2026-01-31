@@ -2,11 +2,13 @@ import { BatchId, Bee, NULL_TOPIC, PrivateKey, Reference } from '@ethersphere/be
 import { randomBytes, Wallet } from 'ethers'
 
 import { Identity, IdentityType } from '../providers/Feeds'
+import { LocalStorageKeys } from '../utils/local-storage'
 
 import { uuidV4, waitUntilStampUsable } from '.'
 
 export function generateWallet(): Wallet {
   const privateKey = randomBytes(PrivateKey.LENGTH).toString()
+
   return new Wallet(privateKey)
 }
 
@@ -17,11 +19,11 @@ export function persistIdentity(identities: Identity[], identity: Identity): voi
     identities.splice(existingIndex, 1)
   }
   identities.unshift(identity)
-  localStorage.setItem('feeds', JSON.stringify(identities))
+  localStorage.setItem(LocalStorageKeys.feeds, JSON.stringify(identities))
 }
 
 export function persistIdentitiesWithoutUpdate(identities: Identity[]): void {
-  localStorage.setItem('feeds', JSON.stringify(identities))
+  localStorage.setItem(LocalStorageKeys.feeds, JSON.stringify(identities))
 }
 
 export async function convertWalletToIdentity(

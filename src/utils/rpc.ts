@@ -129,7 +129,6 @@ export async function sendBzzTransaction(
   return { transaction, receipt }
 }
 
-// TODO: make sure that privateKey.toString() works
 async function makeReadySigner(privateKey: PrivateKey, jsonRpcProvider: string) {
   const provider = new JsonRpcProvider(jsonRpcProvider, NETWORK_ID)
   await provider.getNetwork()

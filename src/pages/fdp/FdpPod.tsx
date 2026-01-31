@@ -53,6 +53,7 @@ export function FdpPod({ fdp, name }: Props) {
         })
       }}
       onCreateDirectory={async (path: string) => {
+        // eslint-disable-next-line no-alert
         const newDirectoryName = prompt('Directory name')
 
         if (!newDirectoryName) {
@@ -61,6 +62,7 @@ export function FdpPod({ fdp, name }: Props) {
         await fdp.directory.create(name, joinUrl(path, newDirectoryName))
         reload()
       }}
+      // eslint-disable-next-line require-await
       onSync={async () => {
         setReloader(reloader + 1)
       }}

@@ -1,6 +1,8 @@
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useEffect, useMemo, useState } from 'react'
 
+import { LocalStorageKeys } from '../../../utils/local-storage'
+
 export enum SortKey {
   Name = 'name',
   Size = 'size',
@@ -22,7 +24,6 @@ type Options = {
   getDriveName?: (fi: FileInfo) => string
 }
 
-const STORAGE_KEY = 'fm.sort.v1'
 const DEFAULT_STATE: SortState = { key: SortKey.Timestamp, dir: SortDir.Desc }
 
 const coerceNumber = (v: unknown): number => {
@@ -61,7 +62,7 @@ export function useSorting(
   toggle: (key: SortKey) => void
   reset: () => void
 } {
-  const { persist = true, defaultState = DEFAULT_STATE, storageKey = STORAGE_KEY, getDriveName } = opts
+  const { persist = true, defaultState = DEFAULT_STATE, storageKey = LocalStorageKeys.fmSortKey, getDriveName } = opts
 
   const [sort, setSort] = useState<SortState>(() => {
     if (!persist) return defaultState

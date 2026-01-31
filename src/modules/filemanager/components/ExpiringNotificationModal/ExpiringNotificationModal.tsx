@@ -52,11 +52,11 @@ export function ExpiringNotificationModal({
   const paginatedStamps = sortedStamps.slice(startIndex, startIndex + EXPIRING_ITEMS_PAGE_SIZE)
 
   useEffect(() => {
-    const setStatesAsync = async () => {
+    const setCurrentPageState = () => {
       setCurrentPage(0)
     }
 
-    setStatesAsync()
+    setCurrentPageState()
   }, [stamps])
 
   if (stamps.length === 0) return <></>

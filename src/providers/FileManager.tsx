@@ -43,10 +43,10 @@ const initialValues: ContextInterface = {
   setCurrentDrive: () => {},
   setCurrentStamp: () => {},
   resync: async () => {},
-  init: async () => null,
+  init: async () => null, // eslint-disable-line require-await
   setShowError: () => {},
   syncDrives: async () => {},
-  refreshStamp: async () => undefined,
+  refreshStamp: async () => undefined, // eslint-disable-line require-await
 }
 
 export const Context = createContext<ContextInterface>(initialValues)
@@ -227,6 +227,7 @@ export function Provider({ children }: Props) {
 
       if (success) {
         if (manager.adminStamp && !manager.adminStamp.usable) {
+          // eslint-disable-next-line no-console
           console.warn('Admin stamp exists but is not usable')
           setShallReset(true)
           setInitializationError(true)
@@ -284,8 +285,10 @@ export function Provider({ children }: Props) {
       await manager.initialize()
 
       return manager
-    } catch (e: any) {
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-console
       console.error('Failed to initialize FileManager', e)
+
       return null
     }
   }, [apiUrl, syncDrives, syncFiles])

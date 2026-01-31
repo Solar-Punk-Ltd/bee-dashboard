@@ -98,6 +98,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           const version = await fm.getVersion(fileInfo, FeedIndex.fromBigInt(i).toString())
           versions.push(version)
         } catch (e) {
+          // eslint-disable-next-line no-console
           console.warn(`Failed to get version: ${i}, err: ${e}`)
         }
       }

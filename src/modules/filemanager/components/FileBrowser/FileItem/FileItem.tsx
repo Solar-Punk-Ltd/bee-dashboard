@@ -250,7 +250,7 @@ export function FileItem({
         )
 
         refreshStamp(driveStamp.batchID.toString())
-      } catch (e: unknown) {
+      } catch (_) {
         setErrorMessage?.(`Error renaming file ${latestFileInfo.name}`)
         setShowError(true)
       }

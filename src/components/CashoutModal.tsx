@@ -42,6 +42,7 @@ export default function CheckoutModal({ peerId, uncashedAmount }: Props): ReactE
           })
         })
         .catch((e: Error) => {
+          // eslint-disable-next-line no-console
           console.error(e)
           enqueueSnackbar(<span>Error: {e.message}</span>, { variant: 'error' })
         })

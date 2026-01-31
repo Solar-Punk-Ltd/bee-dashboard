@@ -52,10 +52,17 @@ export function CafeReactFs({
   }
 
   useEffect(() => {
-    setLoading(true)
-    list(path)
-      .then(setItemsSorted)
-      .finally(() => setLoading(false))
+    const setStatesAsync = async () => {
+      setLoading(true)
+      try {
+        const items = await list(path)
+        setItemsSorted(items)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    setStatesAsync()
   }, [reloader, list, path])
 
   const pathParts = ['/', ...path.split('/').filter(x => x)]

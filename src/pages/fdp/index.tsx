@@ -8,16 +8,18 @@ import ImportIcon from 'remixicon-react/AddBoxLineIcon'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
 
 import { SwarmButton } from '../../components/SwarmButton'
+import { DEFAULT_BEE_API_HOST } from '../../constants'
 import { joinUrl } from '../../react-fs/Utility'
+import { LocalStorageKeys } from '../../utils/local-storage'
 
-import { FdpLogin } from './FdpLogin'
+import { DEFAULT_SEPOLIA_RPC, FdpLogin } from './FdpLogin'
 import { FdpPods } from './FdpPods'
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 
 async function makeFdp(): Promise<FdpStorage | null> {
-  const bee = new Bee('http://localhost:1633')
-  const sepolia = localStorage.getItem('sepolia') ?? 'https://sepolia.drpc.org'
+  const bee = new Bee(DEFAULT_BEE_API_HOST)
+  const sepolia = localStorage.getItem(LocalStorageKeys.sepolia) ?? DEFAULT_SEPOLIA_RPC
   const postageBatches = await bee.getPostageBatches()
   const usableBatches = postageBatches.filter(batch => batch.usable)
   const highestCapacityBatch = usableBatches.length ? usableBatches.reduce((a, b) => (a.depth > b.depth ? a : b)) : null
@@ -28,7 +30,8 @@ async function makeFdp(): Promise<FdpStorage | null> {
 
   // TODO: FDS has bad types
 
-  return new FdpStorage('http://localhost:1633', highestCapacityBatch.batchID.toHex() as any, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new FdpStorage(DEFAULT_BEE_API_HOST, highestCapacityBatch.batchID.toHex() as any, {
     ensOptions: {
       rpcUrl: sepolia,
       contractAddresses: {
@@ -66,12 +69,12 @@ export default function FDP(): ReactElement {
   }, [enqueueSnackbar])
 
   useEffect(() => {
-    const setStatesAsync = async () => {
+    const setLoadingState = () => {
       setLoadingPods(true)
     }
 
     if (fdp && loggedIn) {
-      setStatesAsync()
+      setLoadingState()
       fdp.personalStorage.list().then(pods => {
         setPods(pods.pods)
         setLoadingPods(false)
@@ -94,6 +97,7 @@ export default function FDP(): ReactElement {
       return
     }
 
+    // eslint-disable-next-line no-alert
     const name = prompt('Enter a name for the new pod')
 
     if (name) {
@@ -118,15 +122,17 @@ export default function FDP(): ReactElement {
       return
     }
 
+    // eslint-disable-next-line no-alert
     const name = prompt('Enter a name for the new pod')
 
+    // eslint-disable-next-line no-alert
     const importHash = prompt('Enter the Swarm reference')
 
     if (!name || !importHash) {
       return
     }
     setCreatingPod(true)
-    const bee = new Bee('http://localhost:1633')
+    const bee = new Bee(DEFAULT_BEE_API_HOST)
     const manifest = await MantarayNode.unmarshal(bee, importHash)
     await manifest.loadRecursively(bee)
     const nodes = manifest.collect()

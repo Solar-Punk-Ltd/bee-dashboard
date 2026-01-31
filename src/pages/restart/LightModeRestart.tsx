@@ -28,6 +28,7 @@ export default function LightModeRestart(): ReactElement {
             navigate(ROUTES.INFO)
           }
         })
+        // eslint-disable-next-line no-console
         .catch(console.error)
     }, 3_000)
 

@@ -4,6 +4,7 @@ import { toUtf8Bytes } from '@ethersproject/strings'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 import React from 'react'
 
+import { LocalStorageKeys } from '../../../utils/local-storage'
 import { lifetimeAdjustments } from '../constants/stamps'
 
 export function getDaysLeft(expiryDate: Date): number {
@@ -85,8 +86,6 @@ export function getFileId(fi: FileInfo): string {
   return fi.topic.toString()
 }
 
-export const KEY_STORAGE = 'privateKey'
-
 export function getSigner(input: string): PrivateKey {
   const normalized = input.trim().toLowerCase()
   const hash = keccak256(toUtf8Bytes(normalized))
@@ -97,9 +96,10 @@ export function getSigner(input: string): PrivateKey {
 
 export function getSignerPk(): PrivateKey | undefined {
   try {
-    const fromLocalPk = localStorage.getItem(KEY_STORAGE)
+    const fromLocalPk = localStorage.getItem(LocalStorageKeys.fmPrivateKey)
 
     if (!fromLocalPk) {
+      // eslint-disable-next-line no-console
       console.error('Private key not found, cannot initialize')
 
       return undefined
@@ -107,24 +107,25 @@ export function getSignerPk(): PrivateKey | undefined {
 
     return new PrivateKey(fromLocalPk)
   } catch (err) {
-    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
+    // eslint-disable-next-line no-console
+    console.error(`Private key error in localStorage under key "${LocalStorageKeys.fmPrivateKey}": `, err)
 
     return undefined
   }
 }
 
 export function setSignerPk(pk: string): void {
-  localStorage.setItem(KEY_STORAGE, pk)
+  localStorage.setItem(LocalStorageKeys.fmPrivateKey, pk)
 }
 
 export function removeSignerPk(): void {
-  localStorage.removeItem(KEY_STORAGE)
+  localStorage.removeItem(LocalStorageKeys.fmPrivateKey)
 }
 
 export const capitalizeFirstLetter = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1)
 
 export const safeSetState =
-  <T>(ref: React.MutableRefObject<boolean>, setter: React.Dispatch<React.SetStateAction<T>>) =>
+  <T>(ref: React.RefObject<boolean>, setter: React.Dispatch<React.SetStateAction<T>>) =>
   (value: React.SetStateAction<T>) => {
     if (ref.current) setter(value)
   }

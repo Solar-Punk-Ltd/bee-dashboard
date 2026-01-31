@@ -45,7 +45,7 @@ export function FileManagerPage(): ReactElement {
   }, [])
 
   useEffect(() => {
-    const setConnectionErrorState = async () => {
+    const setConnectionErrorState = () => {
       setShowConnectionError(status.all !== CheckState.OK)
     }
 
@@ -53,7 +53,7 @@ export function FileManagerPage(): ReactElement {
   }, [status.all])
 
   useEffect(() => {
-    const initStates = async () => {
+    const initStates = () => {
       if (!beeApi) {
         return
       }

@@ -15,6 +15,7 @@ export function ChainSync() {
         return
       }
 
+      // eslint-disable-next-line no-console
       beeApi.getChainState().then(setChainState).catch(console.error)
     }, 3_000)
 

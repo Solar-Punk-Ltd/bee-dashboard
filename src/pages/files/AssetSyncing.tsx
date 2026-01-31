@@ -7,7 +7,7 @@ import { LinearProgressWithLabel } from '../../components/ProgressBar'
 import { Context as SettingsContext } from '../../providers/Settings'
 
 interface Props {
-  reference: string
+  reference?: string
 }
 
 export function AssetSyncing({ reference }: Props): ReactElement {
@@ -18,7 +18,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
   const [syncProgress, setSyncProgress] = useState<number>(0)
 
   const syncCheck = async () => {
-    if (!beeApi) return
+    if (!beeApi || !reference) return
 
     let allTags: Tag[] = []
     let offset = 0
@@ -64,7 +64,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
           To ensure it's not due to invalid synchronization data,
           verify availability from at least 70% using one of the stewardship endpoints.
     */
-    if (beeApi && !isRetrieveChecking && syncProgress > 10 && syncProgress < 100) {
+    if (beeApi && reference && !isRetrieveChecking && syncProgress > 10 && syncProgress < 100) {
       // It's a long running task make sure only one run occurs at a time.
       setIsRetrieveChecking(true)
 

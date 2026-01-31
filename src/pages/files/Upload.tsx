@@ -17,7 +17,7 @@ import { ROUTES } from '../../routes'
 import { waitUntilStampUsable } from '../../utils'
 import { detectIndexHtml, getAssetNameFromFiles, packageFile } from '../../utils/file'
 import { persistIdentity, updateFeed } from '../../utils/identity'
-import { HISTORY_KEYS, putHistory } from '../../utils/local-storage'
+import { LocalStorageKeys, putHistory } from '../../utils/local-storage'
 import { FeedPasswordDialog } from '../feeds/FeedPasswordDialog'
 import { PostageStampAdvancedCreation } from '../stamps/PostageStampAdvancedCreation'
 import { PostageStampSelector } from '../stamps/PostageStampSelector'
@@ -116,7 +116,7 @@ export function Upload(): ReactElement {
     beeApi
       .uploadFiles(stamp.batchID, fls, { indexDocument, deferred: true })
       .then(hash => {
-        putHistory(HISTORY_KEYS.UPLOAD_HISTORY, hash.reference.toHex(), getAssetNameFromFiles(files))
+        putHistory(LocalStorageKeys.uploadHistory, hash.reference.toHex(), getAssetNameFromFiles(files))
 
         if (uploadOrigin.origin === 'UPLOAD') {
           navigate(ROUTES.HASH.replace(':hash', hash.reference.toHex()), { replace: true })
@@ -129,6 +129,7 @@ export function Upload(): ReactElement {
         }
       })
       .catch(e => {
+        // eslint-disable-next-line no-console
         console.error(e)
         enqueueSnackbar(`Error uploading: ${e.message}`, { variant: 'error' })
         setUploading(false)

@@ -308,7 +308,7 @@ export function Provider({ children }: Props): ReactElement {
   const status = getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt)
 
   useEffect(() => {
-    const setStatesAsync = async () => {
+    const setStates = () => {
       setIsLoading(true)
       setApiHealth(false)
       setNodeAddresses(null)
@@ -327,7 +327,7 @@ export function Provider({ children }: Props): ReactElement {
       }
     }
 
-    setStatesAsync()
+    setStates()
   }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -337,13 +337,13 @@ export function Provider({ children }: Props): ReactElement {
       newFrequency = REFRESH_WHEN_ERROR
     }
 
-    const setFrequencyAsync = async () => {
+    const setFrequencyState = () => {
       if (newFrequency !== frequency) {
         setFrequency(newFrequency)
       }
     }
 
-    setFrequencyAsync()
+    setFrequencyState()
   }, [status.all, frequency])
 
   // Start the update loop

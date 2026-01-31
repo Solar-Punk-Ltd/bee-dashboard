@@ -54,6 +54,7 @@ export default function WithdrawDepositModal({
       setOpen(false)
       enqueueSnackbar(`${successMessage} Transaction ${transactionHash}`, { variant: 'success' })
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e)
       enqueueSnackbar(`${errorMessage} Error: ${(e as Error).message}`, { variant: 'error' })
     }

@@ -79,7 +79,7 @@ export default defineConfig([
       },
     },
     languageOptions: {
-      ecmaVersion: 2020, // TODO: same as tsconfig?
+      ecmaVersion: 2022,
       sourceType: 'module',
       parser: tsParser,
       globals: {
@@ -147,7 +147,21 @@ export default defineConfig([
     },
   },
   {
-    files: ['tests/**/*.ts', 'src/**/*.test.ts', 'src/**/*.test.tsx', 'src/**/*.spec.ts', 'src/**/*.spec.tsx'],
+    //TODO: fix test linter errors
+    files: [
+      'test/**/*.ts',
+      'test/**/*.js',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'src/**/*.spec.ts',
+      'src/**/*.spec.tsx',
+      'ui-test/**/*.js',
+    ],
+    rules: {
+      'no-console': 'off',
+      'import/no-commonjs': 'off',
+      'max-nested-callbacks': ['error', 10], // allow describe/it/test nesting
+    },
     plugins: {
       jest: pluginJest,
     },
@@ -177,9 +191,58 @@ export default defineConfig([
       react: react,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      // '@typescript-eslint/explicit-function-return-type': 'error', // TODO: enable
-      '@typescript-eslint/no-non-null-assertion': 'off',
+      'array-bracket-newline': ['error', 'consistent'],
+      strict: ['error', 'safe'],
+      'block-scoped-var': 'error',
+      complexity: 'warn',
+      'default-case': 'error',
+      'dot-notation': 'warn',
+      eqeqeq: 'error',
+      'guard-for-in': 'warn',
+      'linebreak-style': ['warn', 'unix'],
+      'no-alert': 'error',
+      'no-case-declarations': 'error',
+      'no-console': 'error',
+      'no-constant-condition': 'error',
+      'no-continue': 'warn',
+      'no-div-regex': 'error',
+      'no-empty': 'warn',
+      'no-empty-pattern': 'error',
+      'no-implicit-coercion': 'error',
+      'prefer-arrow-callback': 'warn',
+      'no-labels': 'error',
+      'no-loop-func': 'error',
+      'no-nested-ternary': 'warn',
+      'no-script-url': 'error',
+      'quote-props': ['error', 'as-needed'],
+      'require-yield': 'error',
+      'max-depth': ['error', 4],
+      'require-await': 'error',
+      'space-before-function-paren': [
+        'error',
+        {
+          anonymous: 'never',
+          named: 'never',
+          asyncArrow: 'always',
+        },
+      ],
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'if' },
+        { blankLine: 'always', prev: '*', next: 'function' },
+        { blankLine: 'always', prev: '*', next: 'return' },
+      ],
+      'no-useless-constructor': 'off',
+      'no-dupe-class-members': 'off',
+      curly: ['error', 'multi-line'],
+      'object-curly-spacing': ['error', 'always'],
+      'comma-dangle': ['error', 'always-multiline'],
+      '@typescript-eslint/no-useless-constructor': 'error',
+      '@typescript-eslint/no-unused-expressions': 'error',
+      'react/react-in-jsx-scope': 'off',
+      'max-nested-callbacks': ['error', 4],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

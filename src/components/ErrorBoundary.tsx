@@ -28,6 +28,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       this.errorReporting(error)
     }
 
+    // eslint-disable-next-line no-console
     console.error({ error, errorInfo })
   }
 

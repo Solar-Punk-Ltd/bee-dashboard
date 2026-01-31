@@ -1,5 +1,7 @@
 import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
+import { LocalStorageKeys } from '../utils/local-storage'
+
 export type IdentityType = 'V3' | 'PRIVATE_KEY'
 
 export interface Identity {
@@ -32,15 +34,15 @@ export function Provider({ children }: Props): ReactElement {
   const [identities, setIdentities] = useState<Identity[]>(initialValues.identities)
 
   useEffect(() => {
-    const setIdentitiesAsync = async () => {
+    const setIdentitiesState = () => {
       try {
-        setIdentities(JSON.parse(localStorage.getItem('feeds') || '[]'))
+        setIdentities(JSON.parse(localStorage.getItem(LocalStorageKeys.feeds) || '[]'))
       } catch {
         setIdentities([])
       }
     }
 
-    setIdentitiesAsync()
+    setIdentitiesState()
   }, [])
 
   return <Context.Provider value={{ identities, setIdentities }}>{children}</Context.Provider>

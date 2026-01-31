@@ -115,6 +115,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       await refresh()
       onFinished()
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e)
       enqueueSnackbar(`Error: ${(e as Error).message}`, { variant: 'error' })
     }

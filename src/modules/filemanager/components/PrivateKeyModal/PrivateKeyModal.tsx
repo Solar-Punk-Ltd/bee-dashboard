@@ -1,5 +1,5 @@
 import { PrivateKey } from '@ethersphere/bee-js'
-import { ReactElement, useEffect, useState } from 'react'
+import { ReactElement, useState } from 'react'
 import CheckDoubleLineIcon from 'remixicon-react/CheckDoubleLineIcon'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
 
@@ -15,6 +15,7 @@ type Props = { onSaved: () => void }
 const generateNewPrivateKey = (): string => {
   const id = crypto.randomUUID()
   const signer = getSigner(id)
+
   return signer.toHex()
 }
 
@@ -29,6 +30,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
       await navigator.clipboard.writeText(value)
       setCopied(true)
     } catch {
+      // eslint-disable-next-line no-console
       console.debug('Failed to copy private key to clipboard')
     }
   }

@@ -11,7 +11,7 @@ import { Context as FileContext, defaultUploadOrigin } from '../../providers/Fil
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { recognizeEnsOrSwarmHash, regexpEns } from '../../utils'
-import { determineHistoryName, HISTORY_KEYS, putHistory } from '../../utils/local-storage'
+import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/local-storage'
 
 import { FileNavigation } from './FileNavigation'
 
@@ -60,7 +60,7 @@ export function Download(): ReactElement {
       const rootMetadata = manifest.getDocsMetadata()
 
       putHistory(
-        HISTORY_KEYS.DOWNLOAD_HISTORY,
+        LocalStorageKeys.downloadHistory,
         identifier,
         determineHistoryName(identifier, rootMetadata.indexDocument),
       )
@@ -76,6 +76,7 @@ export function Download(): ReactElement {
       if (message.includes('Not Found: Not Found')) {
         message = 'The specified hash was not found.'
       }
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
     } finally {
@@ -99,7 +100,7 @@ export function Download(): ReactElement {
         mapperFn={value => recognizeEnsOrSwarmHash(value)}
         loading={loading}
       />
-      <History title="Download History" localStorageKey={HISTORY_KEYS.DOWNLOAD_HISTORY} />
+      <History title="Download History" localStorageKey={LocalStorageKeys.downloadHistory} />
     </>
   )
 }

@@ -30,13 +30,13 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    const setStatesAsync = async () => {
+    const setStates = () => {
       setLoading(false)
       setError(null)
     }
 
     if (!isBeeDesktop) {
-      setStatesAsync()
+      setStates()
 
       return
     }

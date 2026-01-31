@@ -38,6 +38,7 @@ export function GiftCardTopUpIndex(): ReactElement {
       enqueueSnackbar('Successfully verified gift wallet', { variant: 'success' })
       navigate(ROUTES.TOP_UP_GIFT_CODE_FUND.replace(':privateKeyString', giftCode))
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(`Gift wallet could not be verified: ${error}`, { variant: 'error' })
     } finally {

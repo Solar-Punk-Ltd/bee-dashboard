@@ -26,6 +26,7 @@ import {
   restartBeeNode,
   upgradeToLightNode,
 } from '../../utils/desktop'
+import { LocalStorageKeys } from '../../utils/local-storage'
 import { RPC } from '../../utils/rpc'
 import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
 
@@ -59,6 +60,7 @@ export function Swap({ header }: Props): ReactElement {
 
   // Fetch current price of BZZ
   useEffect(() => {
+    // eslint-disable-next-line no-console
     getBzzPriceAsDai(desktopUrl).then(setPrice).catch(console.error)
   }, [desktopUrl])
 
@@ -127,6 +129,7 @@ export function Swap({ header }: Props): ReactElement {
 
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
@@ -136,13 +139,14 @@ export function Swap({ header }: Props): ReactElement {
     try {
       await performSwap(desktopUrl, daiToSwap)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       throw error
     }
   }
 
   async function performSwapWithChecks(daiToSwap: DAI) {
-    if (!localStorage.getItem('apiKey')) {
+    if (!localStorage.getItem(LocalStorageKeys.apiKey)) {
       throw new SwapError('API key is not set, reopen dashboard through Swarm Desktop')
     }
 
@@ -191,11 +195,13 @@ export function Swap({ header }: Props): ReactElement {
         enqueueSnackbar(error.snackbarMessage, { variant: 'error' })
 
         if (error.originalError) {
+          // eslint-disable-next-line no-console
           console.error(error.originalError)
         }
       } else {
         // we have an unexpected error
         enqueueSnackbar(`${GENERIC_SWAP_FAILED_ERROR_MESSAGE} ${error}`, { variant: 'error' })
+        // eslint-disable-next-line no-console
         console.error(error)
       }
     } finally {

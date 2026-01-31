@@ -14,10 +14,12 @@ interface GetInfoModalProps {
   onCancelClick: () => void
 }
 
+const COPY_TIMEOUT_MS = 2000
+
 export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const timeoutRef = useState<{ [key: string]: NodeJS.Timeout }>({})[0]
+  const [timeoutRef, setTimeoutRef] = useState<{ [key: string]: NodeJS.Timeout }>({})
 
   useEffect(() => {
     return () => {
@@ -35,10 +37,13 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
 
       setCopiedKey(prop.key)
 
-      timeoutRef[prop.key] = setTimeout(() => {
-        setCopiedKey(prev => (prev === prop.key ? null : prev))
-        delete timeoutRef[prop.key]
-      }, 2000)
+      setTimeoutRef(prev => ({
+        ...prev,
+        [prop.key]: setTimeout(() => {
+          setCopiedKey(prev => (prev === prop.key ? null : prev))
+          delete timeoutRef[prop.key]
+        }, COPY_TIMEOUT_MS),
+      }))
     } catch {
       /* noop */
     }

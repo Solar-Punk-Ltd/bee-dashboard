@@ -65,6 +65,7 @@ export function useStampPolling({
           stamp: updatedStamp,
         }
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('[useStampPolling] Error refreshing stamp:', error)
 
         return { updated: false, stamp: null }

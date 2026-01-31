@@ -59,6 +59,7 @@ export default function TopUp(): ReactElement {
       await restartBeeNode(desktopUrl)
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }

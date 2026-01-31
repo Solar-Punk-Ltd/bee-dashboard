@@ -75,8 +75,15 @@ export default function UpdateFeed(): ReactElement {
       return
     }
 
+    if (!hash) {
+      enqueueSnackbar(<span>Hash is invalid</span>, { variant: 'error' })
+      setLoading(false)
+
+      return
+    }
+
     try {
-      await updateFeed(beeApi, identity, hash!, selectedStamp, password as string)
+      await updateFeed(beeApi, identity, hash, selectedStamp, password as string)
       persistIdentity(identities, identity)
       setIdentities([...identities])
       navigate(ROUTES.ACCOUNT_FEEDS_VIEW.replace(':uuid', identity.uuid))

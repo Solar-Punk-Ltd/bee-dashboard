@@ -35,10 +35,14 @@ export function FileProgressNotification({
   }, [items])
 
   useEffect(() => {
-    if (open) {
-      setShowFileProgressWindow(true)
-      setOpenedByUser(false)
+    const setStates = () => {
+      if (open) {
+        setShowFileProgressWindow(true)
+        setOpenedByUser(false)
+      }
     }
+
+    setStates()
   }, [open])
 
   useEffect(() => {

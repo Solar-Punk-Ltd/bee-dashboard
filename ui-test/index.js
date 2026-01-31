@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 const handler = require('serve-handler')
 const http = require('http')
 const puppeteer = require('puppeteer')
