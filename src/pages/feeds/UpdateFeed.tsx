@@ -11,7 +11,7 @@ import { SwarmButton } from '../../components/SwarmButton'
 import { SelectEvent, SwarmSelect } from '../../components/SwarmSelect'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
 import { Context as BeeContext } from '../../providers/Bee'
-import { Context as IdentityContext, Identity } from '../../providers/Feeds'
+import { Context as IdentityContext, Identity, IdentityType } from '../../providers/Feeds'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
@@ -58,7 +58,7 @@ export default function UpdateFeed(): ReactElement {
       return
     }
 
-    if (selectedIdentity.type === 'V3') {
+    if (selectedIdentity.type === IdentityType.V3) {
       setShowPasswordPrompt(true)
     } else {
       onFeedUpdate(selectedIdentity)

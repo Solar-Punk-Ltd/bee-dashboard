@@ -11,7 +11,7 @@ import ExpandableListItemActions from '../../components/ExpandableListItemAction
 import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmDialog } from '../../components/SwarmDialog'
 import { TitleWithClose } from '../../components/TitleWithClose'
-import { Identity } from '../../providers/Feeds'
+import { Identity, IdentityType } from '../../providers/Feeds'
 
 interface Props {
   identity: Identity
@@ -39,7 +39,7 @@ export function ExportFeedDialog({ identity, onClose }: Props): ReactElement {
   }
 
   function getExportText() {
-    return identity.type === 'V3' ? 'JSON file' : 'the private key string'
+    return identity.type === IdentityType.V3 ? 'JSON file' : 'the private key string'
   }
 
   function onCopy() {

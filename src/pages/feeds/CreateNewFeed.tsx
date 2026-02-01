@@ -27,7 +27,7 @@ interface FormValues {
 
 const initialValues: FormValues = {
   identityName: '',
-  type: 'PRIVATE_KEY',
+  type: IdentityType.PrivateKey,
   password: '',
 }
 
@@ -103,12 +103,12 @@ export default function CreateNewFeed(): ReactElement {
                 formik
                 name="type"
                 options={[
-                  { label: 'Keypair Only', value: 'PRIVATE_KEY' },
-                  { label: 'Password Protected', value: 'V3' },
+                  { label: 'Keypair Only', value: IdentityType.PrivateKey },
+                  { label: 'Password Protected', value: IdentityType.V3 },
                 ]}
               />
             </Box>
-            {values.type === 'V3' && <SwarmTextInput name="password" label="Password" password formik />}
+            {values.type === IdentityType.V3 && <SwarmTextInput name="password" label="Password" password formik />}
             <Box mt={2}>
               <ExpandableListItemKey label="Topic" value={NULL_TOPIC.toHex()} />
             </Box>

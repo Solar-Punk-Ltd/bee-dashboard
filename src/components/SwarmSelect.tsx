@@ -26,7 +26,7 @@ interface Props {
   options: { value: string; label: string }[]
   onChange?: (event: SelectEvent) => void
   formik?: boolean
-  defaultValue?: string
+  value?: string
   placeholder?: string
   disabled?: boolean
 }
@@ -50,7 +50,7 @@ const useStyles = makeStyles()(theme => ({
 }))
 
 export function SwarmSelect({
-  defaultValue,
+  value,
   formik,
   name,
   options,
@@ -72,7 +72,7 @@ export function SwarmSelect({
           name={name}
           fullWidth
           variant="outlined"
-          defaultValue={defaultValue}
+          value={value}
           className={classes.select}
           displayEmpty
           renderValue={(value: unknown) => (value ? renderValue(value) : placeholder)}
@@ -98,7 +98,7 @@ export function SwarmSelect({
         fullWidth
         variant="outlined"
         className={classes.select}
-        defaultValue={defaultValue}
+        value={value}
         onChange={onChange}
         displayEmpty
         renderValue={(value: unknown) => (value ? renderValue(value) : placeholder)}

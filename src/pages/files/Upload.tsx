@@ -9,7 +9,7 @@ import { ProgressIndicator } from '../../components/ProgressIndicator'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
 import { META_FILE_NAME } from '../../constants'
 import { CheckState, Context as BeeContext } from '../../providers/Bee'
-import { Context as IdentityContext, Identity } from '../../providers/Feeds'
+import { Context as IdentityContext, Identity, IdentityType } from '../../providers/Feeds'
 import { Context as FileContext } from '../../providers/File'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext, EnrichedPostageBatch } from '../../providers/Stamps'
@@ -24,11 +24,11 @@ import { PostageStampSelector } from '../stamps/PostageStampSelector'
 
 import { AssetPreview } from './AssetPreview'
 import { StampPreview } from './StampPreview'
-import { UploadActionBar } from './UploadActionBar'
+import { StampMode, UploadActionBar } from './UploadActionBar'
 
 export function Upload(): ReactElement {
   const [step, setStep] = useState(0)
-  const [stampMode, setStampMode] = useState<'SELECT' | 'BUY'>('SELECT')
+  const [stampMode, setStampMode] = useState<StampMode>(StampMode.Select)
   const [stamp, setStamp] = useState<EnrichedPostageBatch | null>(null)
   const [isUploading, setUploading] = useState(false)
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
@@ -63,7 +63,7 @@ export function Upload(): ReactElement {
     if (uploadOrigin.origin === 'UPLOAD') {
       uploadFiles()
     } else {
-      if ((identity as Identity).type === 'PRIVATE_KEY') {
+      if ((identity as Identity).type === IdentityType.PrivateKey) {
         uploadFiles()
       } else {
         setShowPasswordPrompt(true)
@@ -166,10 +166,10 @@ export function Upload(): ReactElement {
       {step === 1 && (
         <>
           <Box mb={2}>
-            {hasAnyStamps && stampMode === 'SELECT' ? (
+            {hasAnyStamps && stampMode === StampMode.Select ? (
               <PostageStampSelector onSelect={stamp => setStamp(stamp)} defaultValue={stamp?.batchID.toHex()} />
             ) : (
-              <PostageStampAdvancedCreation onFinished={() => setStampMode('SELECT')} />
+              <PostageStampAdvancedCreation onFinished={() => setStampMode(StampMode.Select)} />
             )}
           </Box>
           <Box mb={4}>

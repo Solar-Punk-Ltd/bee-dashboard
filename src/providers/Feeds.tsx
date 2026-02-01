@@ -2,7 +2,10 @@ import { createContext, ReactElement, ReactNode, useEffect, useState } from 'rea
 
 import { LocalStorageKeys } from '../utils/local-storage'
 
-export type IdentityType = 'V3' | 'PRIVATE_KEY'
+export enum IdentityType {
+  V3 = 'V3',
+  PrivateKey = 'PRIVATE_KEY',
+}
 
 export interface Identity {
   uuid: string

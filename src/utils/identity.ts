@@ -32,16 +32,17 @@ export async function convertWalletToIdentity(
   name: string,
   password?: string,
 ): Promise<Identity> {
-  if (type === 'V3' && !password) {
+  if (type === IdentityType.V3 && !password) {
     throw Error('V3 passwords require password')
   }
 
-  const identityString = type === 'PRIVATE_KEY' ? identity.privateKey : await identity.encrypt(password as string)
+  const identityString =
+    type === IdentityType.PrivateKey ? identity.privateKey : await identity.encrypt(password as string)
 
   return {
     uuid: uuidV4(),
     name,
-    type: password ? 'V3' : 'PRIVATE_KEY',
+    type: password ? IdentityType.V3 : IdentityType.PrivateKey,
     address: identity.address,
     identity: identityString,
   }
@@ -49,26 +50,26 @@ export async function convertWalletToIdentity(
 
 export async function importIdentity(name: string, data: string): Promise<Identity | null> {
   if (data.length === 64) {
-    const wallet = await getWallet('PRIVATE_KEY', data)
+    const wallet = await getWallet(IdentityType.PrivateKey, data)
 
     return {
       uuid: uuidV4(),
       name,
-      type: 'PRIVATE_KEY',
+      type: IdentityType.PrivateKey,
       identity: data,
       address: wallet.address,
     }
   }
 
   if (data.length === 66 && data.toLowerCase().startsWith('0x')) {
-    const wallet = await getWallet('PRIVATE_KEY', data.slice(2))
+    const wallet = await getWallet(IdentityType.PrivateKey, data.slice(2))
 
-    return { uuid: uuidV4(), name, type: 'PRIVATE_KEY', identity: data, address: wallet.address }
+    return { uuid: uuidV4(), name, type: IdentityType.PrivateKey, identity: data, address: wallet.address }
   }
   try {
     const { address } = JSON.parse(data)
 
-    return { uuid: uuidV4(), name, type: 'V3', identity: data, address }
+    return { uuid: uuidV4(), name, type: IdentityType.V3, identity: data, address }
   } catch {
     return null
   }
@@ -79,7 +80,7 @@ function getWalletFromIdentity(identity: Identity, password?: string): Promise<W
 }
 
 async function getWallet(type: IdentityType, data: string, password?: string): Promise<Wallet> {
-  if (type === 'PRIVATE_KEY') {
+  if (type === IdentityType.PrivateKey) {
     return new Wallet(data)
   }
 

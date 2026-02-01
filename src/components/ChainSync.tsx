@@ -23,6 +23,7 @@ export function ChainSync() {
   })
 
   return (
+    // TODO: the text is align to the left instead of right
     <ExpandableListItem label="Chain state" value={chainState ? `${chainState.block} / ${chainState.chainTip}` : '-'} />
   )
 }
