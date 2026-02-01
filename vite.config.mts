@@ -55,7 +55,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       nodePolyfills({
-        // TODO: util needed?
         include: ['stream', 'util', 'buffer', 'crypto', 'fs'],
         globals: {
           Buffer: true,
@@ -70,9 +69,8 @@ export default defineConfig(({ mode }) => {
       },
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
     },
-    // TODO: is optimizeDeps needed?
     optimizeDeps: {
-      exclude: ['@solarpunkltd/file-manager-lib'],
+      // exclude: [], // add libs for local development, if needed, e.g.: @solarpunkltd/file-manager-lib
     },
     build: {
       outDir: 'build',
