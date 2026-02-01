@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
           fileName: () => 'App.js',
           formats: ['umd'],
         },
-        sourcemap: true,
+        sourcemap: !isProd,
         minify: false,
         outDir: 'lib',
         rollupOptions: {
@@ -43,6 +43,9 @@ export default defineConfig(({ mode }) => {
         }),
       ],
       resolve: {
+        alias: {
+          '@': path.resolve(__dirname, 'src'),
+        },
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
       },
     }
@@ -62,6 +65,9 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
       extensions: ['.ts', '.tsx', '.js', '.jsx', '.css', '.scss'],
     },
     // TODO: is optimizeDeps needed?
@@ -70,7 +76,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'build',
-      sourcemap: isProd,
+      sourcemap: !isProd,
       commonjsOptions: {
         transformMixedEsModules: true,
       },

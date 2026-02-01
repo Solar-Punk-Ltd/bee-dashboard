@@ -1,25 +1,10 @@
-'use strict'
-// TODO: do I still need this file?
-module.exports = function (api) {
-  const targets = '>1% and not ie 11 and not dead'
+module.exports = api => {
   api.cache(true)
-  api.cacheDirectory = true
 
   return {
-    presets: [
-      '@babel/preset-typescript',
-      [
-        '@babel/preset-env',
-        {
-          targets,
-          modules: false,
-        },
-      ],
-      ['@babel/preset-react', { runtime: 'automatic' }],
-    ],
+    presets: ['@babel/preset-typescript', ['@babel/preset-react', { runtime: 'automatic' }]],
     plugins: [
       [
-        'babel-plugin-tsconfig-paths',
         {
           relative: true,
           extensions: ['.js', '.jsx', '.ts', '.tsx', '.es', '.es6', '.mjs'],
@@ -27,9 +12,6 @@ module.exports = function (api) {
           tsconfig: 'tsconfig.lib.json',
         },
       ],
-      '@babel/plugin-proposal-numeric-separator',
-      'syntax-dynamic-import',
-      '@babel/plugin-proposal-class-properties',
       [
         '@babel/plugin-transform-runtime',
         {

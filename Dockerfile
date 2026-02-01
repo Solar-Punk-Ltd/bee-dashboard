@@ -1,11 +1,11 @@
 # TODO: update dokcerfile
-FROM node:15.14-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /src
 COPY . .
 RUN npm ci
 RUN npm run build
 
-FROM node:15.14-alpine AS final
+FROM node:20-alpine AS final
 RUN npm i -g serve
 WORKDIR /app
 COPY --from=build /src/build .

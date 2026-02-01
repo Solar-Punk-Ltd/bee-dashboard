@@ -67,6 +67,9 @@ export default defineConfig([
       '**/assets/**',
       '**/lib/**',
       '**/build/**',
+      'test-data/**',
+      'ui_samples/**',
+      'commitlint.config.js', // TODO: configure
     ],
   },
   {
@@ -83,6 +86,7 @@ export default defineConfig([
       sourceType: 'module',
       parser: tsParser,
       globals: {
+        require: 'readonly',
         // Browser environment
         window: 'readonly',
         document: 'readonly',
@@ -144,36 +148,6 @@ export default defineConfig([
         KeyboardEvent: 'readonly',
         cancelAnimationFrame: 'readonly',
       },
-    },
-  },
-  {
-    //TODO: fix test linter errors
-    files: [
-      'test/**/*.ts',
-      'test/**/*.js',
-      'src/**/*.test.ts',
-      'src/**/*.test.tsx',
-      'src/**/*.spec.ts',
-      'src/**/*.spec.tsx',
-      'ui-test/**/*.js',
-    ],
-    rules: {
-      'no-console': 'off',
-      'import/no-commonjs': 'off',
-      'max-nested-callbacks': ['error', 10], // allow describe/it/test nesting
-    },
-    plugins: {
-      jest: pluginJest,
-    },
-    languageOptions: {
-      globals: pluginJest.environments.globals.globals,
-    },
-    rules: {
-      'jest/no-disabled-tests': 'warn',
-      'jest/no-focused-tests': 'error',
-      'jest/no-identical-title': 'error',
-      'jest/prefer-to-have-length': 'warn',
-      'jest/valid-expect': 'error',
     },
   },
   // Include all the extended configs
@@ -259,6 +233,40 @@ export default defineConfig([
           ],
         },
       ],
+    },
+  },
+  {
+    // tests
+    files: [
+      'test/**/*.ts',
+      'test/**/*.js',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+      'src/**/*.spec.ts',
+      'src/**/*.spec.tsx',
+      'ui-test/**/*.js',
+    ],
+    rules: {
+      'no-console': 'off',
+      'import/no-commonjs': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'max-nested-callbacks': ['error', 10], // allow describe/it/test nesting
+      'jest/no-disabled-tests': 'warn',
+      'jest/no-focused-tests': 'error',
+      'jest/no-identical-title': 'error',
+      'jest/prefer-to-have-length': 'warn',
+      'jest/valid-expect': 'error',
+    },
+    plugins: {
+      jest: pluginJest,
+    },
+    languageOptions: {
+      globals: {
+        ...pluginJest.environments.globals.globals,
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+      },
     },
   },
 ])

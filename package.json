@@ -26,6 +26,7 @@
     "url": "https://github.com/ethersphere/bee-dashboard.git"
   },
   "scripts": {
+    "prepublishOnly": "cross-env NODE_ENV=production pnpm run prepare",
     "prepare": "pnpm run build && pnpm run build:component",
     "start": "vite",
     "desktop": "node ./desktop.mjs",
@@ -36,8 +37,9 @@
     "test:ui": "node ui-test/index.js",
     "serve": "node ./serve.js",
     "depcheck": "depcheck .",
-    "lint": "eslint --fix \"src/**/*.ts\" \"src/**/*.tsx\" && prettier --write \"src/**/*.ts\" \"src/**/*.tsx\"",
-    "lint:check": "eslint \"src/**/*.ts\" \"src/**/*.tsx\" && prettier --check \"src/**/*.ts\" \"src/**/*.tsx\"",
+    "lint": "eslint . --report-unused-disable-directives --no-cache",
+    "lint:check": "pnpm run lint . --max-warnings=0",
+    "lint:fix": "pnpm run lint --fix",
     "check:types": "tsc --project tsconfig.lib.json",
     "update-map-data": "node ./utils/update-map-data.js",
     "bee": "npx bee-factory start"
@@ -105,6 +107,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/ui": "^4.0.18",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "depcheck": "^1.4.7",
     "env-paths": "^3.0.0",
     "eslint": "9.39.2",
@@ -154,8 +157,9 @@
     ]
   },
   "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.9.0",
-    "bee": "1.16.1-8e269c8"
+    "node": ">=20.0.0",
+    "npm": ">=11.0.0",
+    "pnpm": ">=10.0.0",
+    "bee": "2.6.0"
   }
 }

@@ -3,11 +3,12 @@ import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
-import { getUsableStamps } from '../../src/modules/filemanager/utils/bee'
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
 import { getSignerPk } from '../modules/filemanager/utils/common'
 
 import { Context as SettingsContext } from './Settings'
+
+import { getUsableStamps } from '@/modules/filemanager/utils/bee'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -126,7 +127,7 @@ export function Provider({ children }: Props) {
 
   const syncDrives = useCallback(
     async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean): Promise<void> => {
-      const usableStamps = await getUsableStamps(beeApi)
+      const usableStamps: PostageBatch[] = await getUsableStamps(beeApi)
 
       if (di) {
         const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
@@ -196,8 +197,8 @@ export function Provider({ children }: Props) {
 
   // no useCallback is needed because it caches the stamp
   const refreshStamp = async (batchId: string): Promise<PostageBatch | undefined> => {
-    const usableStamps = await getUsableStamps(beeApi)
-    const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
+    const usableStamps: PostageBatch[] = await getUsableStamps(beeApi)
+    const refreshedStamp: PostageBatch | undefined = usableStamps.find(s => s.batchID.toString() === batchId)
 
     if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
       setCurrentStamp(refreshedStamp)
@@ -303,9 +304,8 @@ export function Provider({ children }: Props) {
       const refreshedDrive = manager.driveList.find(d => d.id.toString() === prevDriveId)
       setCurrentDrive(refreshedDrive)
 
-      const isValidCurrentStamp = (await getUsableStamps(beeApi)).find(
-        s => s.batchID.toString() === prevStamp?.batchID.toString(),
-      )
+      const uStamps: PostageBatch[] = await getUsableStamps(beeApi)
+      const isValidCurrentStamp = uStamps.find(s => s.batchID.toString() === prevStamp?.batchID.toString())
 
       setCurrentStamp(isValidCurrentStamp)
     }

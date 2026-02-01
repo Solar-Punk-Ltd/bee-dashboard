@@ -1,4 +1,3 @@
-const puppeteer = require('puppeteer')
 const { Assert, Click } = require('../library')
 const { selectStampAndUpload } = require('../helpers')
 

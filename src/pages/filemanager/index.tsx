@@ -1,7 +1,5 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
-import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { Button } from '../../modules/filemanager/components/Button/Button'
 import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
@@ -19,6 +17,9 @@ import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
 
 import './FileManager.scss'
+
+import { ErrorModal } from '@/modules/filemanager/components/ErrorModal/ErrorModal'
+import { getSignerPk, removeSignerPk } from '@/modules/filemanager/utils/common'
 
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)

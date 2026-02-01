@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js'
-import { extractSwarmHash, isInteger, makeBigNumber } from './index'
+
+import { extractSwarmHash, isInteger, makeBigNumber } from '@/utils'
 
 describe('utils', () => {
   describe('isInteger', () => {
@@ -42,7 +43,7 @@ describe('utils', () => {
       1,
       -1,
     ]
-    const wrongValues = [new Function()] // eslint-disable-line no-new-func
+    const wrongValues = [new Function()]
 
     correctValues.forEach(v => {
       test(`testing ${v}`, () => {
