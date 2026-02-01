@@ -11,7 +11,7 @@ const useStyles = makeStyles()(theme => ({
     padding: 0,
     margin: 0,
     marginTop: theme.spacing(4),
-    '&:first-child': {
+    '&:first-of-type': {
       marginTop: 0,
     },
   },

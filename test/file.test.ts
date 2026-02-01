@@ -1,4 +1,4 @@
-import { detectIndexHtml } from '@/utils/file'
+const { detectIndexHtml } = require('@/utils/file')
 
 const mockFileParams = {
   lastModified: 0,

@@ -80,8 +80,12 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
     <ListItemButton className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
       <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
         <Grid container direction="row" justifyContent="space-between" alignItems="center">
-          {label && <Typography variant="body1">{label}</Typography>}
-          <Typography variant="body2">
+          {label && (
+            <Typography variant="body1" component="span">
+              {label}
+            </Typography>
+          )}
+          <Typography variant="body2" component="span">
             {!open && (
               <span className={classes.copyValue}>
                 <Tooltip title={copied ? 'Copied' : 'Copy'} placement="top" arrow onClose={tooltipCloseHandler}>

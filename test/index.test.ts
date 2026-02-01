@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js'
+const { BigNumber } = require('bignumber.js')
 
 import { extractSwarmHash, isInteger, makeBigNumber } from '@/utils'
 

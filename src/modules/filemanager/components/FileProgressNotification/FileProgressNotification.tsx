@@ -16,6 +16,8 @@ interface FileProgressNotificationProps {
   onCloseAll?: () => void
 }
 
+const HIDER_TIMEOUT_MS = 3000
+
 export function FileProgressNotification({
   label,
   type,
@@ -55,7 +57,7 @@ export function FileProgressNotification({
       autoHideTimer.current = window.setTimeout(() => {
         setShowFileProgressWindow(false)
         autoHideTimer.current = null
-      }, 3000) as unknown as number
+      }, HIDER_TIMEOUT_MS) as unknown as number
     }
 
     return () => {

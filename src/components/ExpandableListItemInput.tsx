@@ -99,19 +99,19 @@ export default function ExpandableListItemKey({
         <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
           <Grid container direction="row" justifyContent="space-between" alignItems="center">
             {label && (
-              <Typography variant="body1" className={classes.unselectableLabel}>
+              <Typography variant="body1" className={classes.unselectableLabel} component="span">
                 {label}
               </Typography>
             )}
-            <Typography variant="body2">
-              <div>
+            <Typography variant="body2" component="span">
+              <span>
                 {!open && value}
                 {!expandedOnly && !locked && (
                   <IconButton size="small" className={classes.copyValue} onClick={toggleOpen}>
                     {open ? <Minus strokeWidth={1} /> : <Edit strokeWidth={1} />}
                   </IconButton>
                 )}
-              </div>
+              </span>
             </Typography>
           </Grid>
           <Collapse in={open} timeout="auto" unmountOnExit>
