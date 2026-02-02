@@ -141,6 +141,14 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "puppeteer",
+      "unrs-resolver"
+    ]
+  },
   "files": [
     "lib",
     "build",
