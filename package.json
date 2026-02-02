@@ -28,7 +28,6 @@
   "scripts": {
     "prepublishOnly": "cross-env NODE_ENV=production pnpm run prepare",
     "prepare": "pnpm run build && pnpm run build:component",
-    "postinstall": "pnpm husky install",
     "start": "vite",
     "desktop": "node ./desktop.mjs",
     "build": "vite build",

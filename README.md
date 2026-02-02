@@ -18,8 +18,8 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
 
 ![Status page](/ui_samples/info.png)
 
-| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                       |
-| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | ---------------------------------- |
+| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                                  |
+| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | --------------------------------------------- |
 | ![Setup](/ui_samples/node_setup.png) | ![Upload](/ui_samples/file_upload.png) | ![Download](/ui_samples/file_download.png) | ![Accounting](/ui_samples/accounting.png) | ![Settings](/ui_samples/settings.png) | ![File Manager](/ui_samples/file_manager.png) |
 
 ## Table of Contents
@@ -36,10 +36,10 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
 
 ## Install
 
-Install globally with npm. We require Node.js's version of at least 12.x and npm v6.x (or yarn v2.x).
+Install globally with pnpm. We require Node.js's version of at least v20.x and pnpm v11.x.
 
 ```sh
-npm install -g @ethersphere/bee-dashboard
+pnpm install -g @ethersphere/bee-dashboard
 ```
 
 For the latest stable version, always use the official npm registry.
@@ -88,9 +88,11 @@ git clone git@github.com:ethersphere/bee-dashboard.git
 
 cd  bee-dashboard
 
-npm i
+pnpm i
 
-npm start
+pnpm husky install
+
+pnpm start
 ```
 
 The Bee Dashboard runs in development mode on [http://localhost:3031/](http://localhost:3031/)
@@ -121,8 +123,8 @@ is initialized (eq. the splash screen disappear) and:
 echo "REACT_APP_BEE_DESKTOP_URL=http://localhost:3054
 REACT_APP_BEE_DESKTOP_ENABLED=true" > .env.development.local
 
-npm start
-npm run desktop # This will inject the API key to the Dashboard
+pnpm start
+pnpm run desktop # This will inject the API key to the Dashboard
 ```
 
 ## File Manager
