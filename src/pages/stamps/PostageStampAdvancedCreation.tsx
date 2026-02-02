@@ -242,7 +242,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       <Box mb={2}>
         <SwarmSelect
           label="Immutable"
-          defaultValue="No"
+          value="No"
           onChange={event => setImmutable(event.target.value === 'Yes')}
           options={[
             { value: 'Yes', label: 'Yes' },

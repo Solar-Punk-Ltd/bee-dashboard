@@ -9,6 +9,8 @@ import { Waiting } from '../../components/Waiting'
 import { Context } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 
+const LIGHTMODE_START_INTERVAL_MS = 3_000
+
 export default function LightModeRestart(): ReactElement {
   const navigate = useNavigate()
   const { enqueueSnackbar } = useSnackbar()
@@ -30,7 +32,7 @@ export default function LightModeRestart(): ReactElement {
         })
         // eslint-disable-next-line no-console
         .catch(console.error)
-    }, 3_000)
+    }, LIGHTMODE_START_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [beeApi, enqueueSnackbar, navigate])

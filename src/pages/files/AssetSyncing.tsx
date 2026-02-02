@@ -10,6 +10,8 @@ interface Props {
   reference?: string
 }
 
+const SYNC_CHECK_INTERVAL_MS = 2000
+
 export function AssetSyncing({ reference }: Props): ReactElement {
   const { beeApi } = useContext(SettingsContext)
 
@@ -40,7 +42,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
   }
 
   useEffect(() => {
-    syncTimer.current = setInterval(syncCheck, 2000)
+    syncTimer.current = setInterval(syncCheck, SYNC_CHECK_INTERVAL_MS)
 
     return () => {
       if (syncTimer.current) {

@@ -22,6 +22,8 @@ export interface NewDesktopVersionHook {
   newBeeDesktopVersion: string
 }
 
+const REACHABILITY_CHECK_INTERVAL_MS = 10_000
+
 export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesktopHook => {
   const [reachable, setReachable] = useState(false)
   const [desktopAutoUpdateEnabled, setDesktopAutoUpdateEnabled] = useState<boolean>(true)
@@ -67,7 +69,7 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
     }
 
     runReachabilityCheck()
-    const interval = setInterval(runReachabilityCheck, 10_000)
+    const interval = setInterval(runReachabilityCheck, REACHABILITY_CHECK_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [desktopUrl, isBeeDesktop])

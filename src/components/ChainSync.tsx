@@ -5,6 +5,8 @@ import { Context } from '../providers/Settings'
 
 import ExpandableListItem from './ExpandableListItem'
 
+const CHAIN_STATE_INTERVAL_MS = 3_000
+
 export function ChainSync() {
   const { beeApi } = useContext(Context)
   const [chainState, setChainState] = useState<ChainState | null>(null)
@@ -17,7 +19,7 @@ export function ChainSync() {
 
       // eslint-disable-next-line no-console
       beeApi.getChainState().then(setChainState).catch(console.error)
-    }, 3_000)
+    }, CHAIN_STATE_INTERVAL_MS)
 
     return () => clearInterval(interval)
   })

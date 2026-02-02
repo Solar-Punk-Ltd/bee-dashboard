@@ -6,6 +6,7 @@ import { LocalStorageKeys } from '../../../../utils/local-storage'
 
 const FM_CLICK_THRESHOLD = 25
 const FM_FORMBRICKS_TRACK_CODE = 'file_manager_engagement_25_clicks'
+const FORMBRICKS_INIT_TIMEOUT_MS = 1000
 
 interface FormbricksIntegrationProps {
   isActive: boolean
@@ -46,7 +47,7 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
           appUrl,
         })
 
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, FORMBRICKS_INIT_TIMEOUT_MS))
 
         if (!cancelled) {
           formbricksReadyRef.current = true
