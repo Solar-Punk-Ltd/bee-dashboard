@@ -1,4 +1,4 @@
-import { Box, Grid, IconButton, InputBase, ListItemButton, Typography } from '@mui/material'
+import { Box, IconButton, InputBase, ListItemButton, Typography } from '@mui/material'
 import Collapse from '@mui/material/Collapse'
 import React, { ChangeEvent, ReactElement, useState } from 'react'
 import type { RemixiconReactIconProps } from 'remixicon-react'
@@ -64,18 +64,18 @@ interface Props {
   locked?: boolean
 }
 
-export default function ExpandableListItemKey({
+export default function ExpandableListItemInput({
   label,
-  value,
-  onConfirm,
-  onChange,
+  value = '',
+  placeholder,
+  helperText,
+  expandedOnly,
   confirmLabel,
   confirmLabelDisabled,
   confirmIcon,
-  expandedOnly,
-  helperText,
-  placeholder,
   loading,
+  onChange,
+  onConfirm,
   mapperFn,
   locked,
 }: Props): ReactElement | null {
@@ -83,80 +83,99 @@ export default function ExpandableListItemKey({
   const [open, setOpen] = useState(Boolean(expandedOnly))
   const [inputValue, setInputValue] = useState<string>(value || '')
   const toggleOpen = () => setOpen(!open)
-  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    let newValue = e.target.value
+
     if (mapperFn) {
-      e.target.value = mapperFn(e.target.value)
+      newValue = mapperFn(newValue)
     }
+    setInputValue(newValue)
 
-    setInputValue(e.target.value.trim())
-
-    if (onChange) onChange(e.target.value.trim())
+    if (onChange) onChange(newValue)
   }
 
   return (
-    <>
-      <ListItemButton className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
-        <Grid container direction="column" justifyContent="space-between" alignItems="stretch">
-          <Grid container direction="row" justifyContent="space-between" alignItems="center">
-            {label && (
+    <ListItemButton className={`${classes.header} ${open ? classes.headerOpen : ''}`}>
+      <Box display="flex" flexDirection="column" width="100%">
+        <Box display="flex" flexDirection="row" alignItems="center" width="100%">
+          {label && (
+            <Box flex={1} minWidth={0}>
               <Typography variant="body1" className={classes.unselectableLabel} component="span">
                 {label}
               </Typography>
+            </Box>
+          )}
+          <Box flex={3} display="flex" alignItems="center" justifyContent="flex-end" minWidth={0} gap={1}>
+            {!open && value && (
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {value}
+              </Typography>
             )}
-            <Typography variant="body2" component="span">
-              <span>
-                {!open && value}
-                {!expandedOnly && !locked && (
-                  <IconButton size="small" className={classes.copyValue} onClick={toggleOpen}>
-                    {open ? <Minus strokeWidth={1} /> : <Edit strokeWidth={1} />}
-                  </IconButton>
-                )}
-              </span>
-            </Typography>
-          </Grid>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <InputBase
-              value={inputValue}
-              placeholder={placeholder}
-              onChange={handleChange}
-              fullWidth
-              className={classes.content}
-              autoFocus
-              hidden={locked}
-            />
-          </Collapse>
-        </Grid>
-      </ListItemButton>
-      <Collapse in={open} timeout="auto" unmountOnExit>
-        {helperText && <ExpandableListItemNote>{helperText}</ExpandableListItemNote>}
-        <Box mt={2}>
-          <ExpandableListItemActions>
-            <SwarmButton
-              disabled={
-                loading ||
-                inputValue === value ||
-                Boolean(confirmLabelDisabled) || // Disable if external validation is provided
-                (inputValue === '' && value === undefined) // Disable if no initial value was not provided and the field is empty. The undefined check is improtant so that it is possible to submit with empty input in other cases
-              }
-              loading={loading}
-              iconType={confirmIcon ?? Check}
-              onClick={() => {
-                if (onConfirm) onConfirm(inputValue)
-              }}
-            >
-              {confirmLabel || 'Save'}
-            </SwarmButton>
-            <SwarmButton
-              disabled={loading || inputValue === value || inputValue === ''}
-              iconType={X}
-              onClick={() => setInputValue(value || '')}
-              cancel
-            >
-              Cancel
-            </SwarmButton>
-          </ExpandableListItemActions>
+            {!expandedOnly && !locked && (
+              <IconButton size="small" className={classes.copyValue} onClick={toggleOpen}>
+                {open ? <Minus strokeWidth={1} /> : <Edit strokeWidth={1} />}
+              </IconButton>
+            )}
+          </Box>
         </Box>
-      </Collapse>
-    </>
+        <Collapse in={open} timeout="auto" unmountOnExit>
+          <Box display="flex" flexDirection="column" width="100%">
+            <Box display="flex" alignItems="center" width="100%" minWidth={0}>
+              <InputBase
+                value={inputValue}
+                placeholder={placeholder}
+                onChange={handleChange}
+                fullWidth
+                className={classes.content}
+                autoFocus
+                hidden={locked}
+                inputProps={{
+                  style: {
+                    width: '100%',
+                    minWidth: 220,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  },
+                  maxLength: 512,
+                }}
+              />
+            </Box>
+            {helperText && <ExpandableListItemNote>{helperText}</ExpandableListItemNote>}
+            <Box mt={2}>
+              <ExpandableListItemActions>
+                <SwarmButton
+                  disabled={
+                    loading ||
+                    inputValue === value ||
+                    Boolean(confirmLabelDisabled) ||
+                    (inputValue === '' && value === undefined)
+                  }
+                  loading={loading}
+                  iconType={confirmIcon ?? Check}
+                  onClick={() => {
+                    if (onConfirm) onConfirm(inputValue.trim())
+                  }}
+                >
+                  {confirmLabel || 'Save'}
+                </SwarmButton>
+                <SwarmButton
+                  disabled={loading || inputValue === value || inputValue === ''}
+                  iconType={X}
+                  onClick={() => setInputValue(value || '')}
+                  cancel
+                >
+                  Cancel
+                </SwarmButton>
+              </ExpandableListItemActions>
+            </Box>
+          </Box>
+        </Collapse>
+      </Box>
+    </ListItemButton>
   )
 }

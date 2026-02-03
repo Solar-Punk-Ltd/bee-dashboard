@@ -78,7 +78,7 @@ export default function WithdrawDepositModal({
 
   return (
     <div>
-      <Button variant="contained" onClick={handleClickOpen} startIcon={icon}>
+      <Button variant="text" onClick={handleClickOpen} startIcon={icon}>
         {label}
       </Button>
       <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">

@@ -67,7 +67,7 @@ export function Provider({ children }: Props): ReactElement {
 
     try {
       setIsLoading(true)
-      const stamps = await beeApi.getAllPostageBatch()
+      const stamps = await beeApi.getPostageBatches()
 
       setStamps(stamps.map(enrichStamp))
       setLastUpdate(Date.now())

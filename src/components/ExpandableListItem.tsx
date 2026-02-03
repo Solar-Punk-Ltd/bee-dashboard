@@ -1,4 +1,4 @@
-import { Grid, IconButton, Tooltip, Typography } from '@mui/material'
+import { Box, IconButton, Tooltip, Typography } from '@mui/material'
 import ListItemButton from '@mui/material/ListItemButton'
 import { ReactElement, ReactNode } from 'react'
 import Info from 'remixicon-react/InformationLineIcon'
@@ -32,21 +32,27 @@ export default function ExpandableListItem({ label, value, tooltip }: Props): Re
 
   return (
     <ListItemButton className={classes.header}>
-      <Grid container direction="row" justifyContent="space-between" alignItems="center">
-        {label && <Typography variant="body1">{label}</Typography>}
-        {value && (
-          <Typography variant="body2">
-            {value}
-            {tooltip && (
-              <Tooltip title={tooltip} placement="top" arrow>
-                <IconButton size="small" className={classes.copyValue}>
-                  <Info strokeWidth={1} />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Typography>
+      <Box display="flex" flexDirection="row" alignItems="center" width="100%">
+        {label && (
+          <Box flex={2}>
+            <Typography variant="body1">{label}</Typography>
+          </Box>
         )}
-      </Grid>
+        {value && (
+          <Box flex={1} textAlign="right">
+            <Typography variant="body2">
+              {value}
+              {tooltip && (
+                <Tooltip title={tooltip} placement="top" arrow>
+                  <IconButton size="small" className={classes.copyValue}>
+                    <Info strokeWidth={1} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </ListItemButton>
   )
 }
