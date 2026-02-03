@@ -4,10 +4,8 @@ import { fileURLToPath } from 'url'
 import reactHooks from 'eslint-plugin-react-hooks'
 import { defineConfig } from 'eslint/config'
 
-// Calculate current directory for proper file path resolution
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// Import the modules from our CommonJS compatibility wrapper
 const compat = await import(`${__dirname}/eslint-compat.cjs`)
 const js = compat.default.js
 const ts = compat.default.ts
@@ -19,10 +17,8 @@ const prettierPlugin = compat.default.prettierPlugin
 const simpleImportSort = compat.default.simpleImportSort
 const react = compat.default.react
 
-// Recreate eslint:recommended
 const eslintRecommended = js.configs.recommended
 
-// Recreate plugin:@typescript-eslint/recommended
 const typescriptRecommended = {
   plugins: {
     '@typescript-eslint': ts,
@@ -32,7 +28,6 @@ const typescriptRecommended = {
   },
 }
 
-// Recreate plugin:import/errors, plugin:import/warnings, plugin:import/typescript
 const importRules = {
   plugins: {
     import: importPlugin,
@@ -44,7 +39,6 @@ const importRules = {
   },
 }
 
-// Recreate plugin:prettier/recommended
 const prettierRecommended = {
   plugins: {
     prettier: prettierPlugin,
@@ -69,7 +63,7 @@ export default defineConfig([
       '**/build/**',
       'test-data/**',
       'ui_samples/**',
-      'commitlint.config.js', // TODO: configure
+      'commitlint.config.js',
     ],
   },
   {
@@ -87,7 +81,6 @@ export default defineConfig([
       parser: tsParser,
       globals: {
         require: 'readonly',
-        // Browser environment
         window: 'readonly',
         document: 'readonly',
         navigator: 'readonly',
@@ -150,15 +143,13 @@ export default defineConfig([
       },
     },
   },
-  // Include all the extended configs
   eslintRecommended,
   typescriptRecommended,
   importRules,
   prettierRecommended,
-  prettier, // Additional prettier config
+  prettier,
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    // Plugin and rule configurations
     plugins: {
       '@typescript-eslint': ts,
       'simple-import-sort': simpleImportSort,
@@ -208,11 +199,14 @@ export default defineConfig([
       ],
       'no-useless-constructor': 'off',
       'no-dupe-class-members': 'off',
+      'no-unused-expressions': 'off',
+      'no-unused-vars': 'off',
       curly: ['error', 'multi-line'],
       'object-curly-spacing': ['error', 'always'],
       'comma-dangle': ['error', 'always-multiline'],
       '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
+      '@typescript-eslint/no-dupe-class-members': 'error',
       'react/react-in-jsx-scope': 'off',
       'max-nested-callbacks': ['error', 4],
       '@typescript-eslint/no-explicit-any': 'error',

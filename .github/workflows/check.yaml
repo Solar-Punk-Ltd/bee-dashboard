@@ -41,7 +41,7 @@ jobs:
         uses: wagoid/commitlint-github-action@v2
 
       - name: Code linting
-        run: pnpm run lint:check
+        run: pnpm run lint
         env:
           CI: true
 

@@ -16,7 +16,13 @@
     "bee-dashboard": "./serve.js"
   },
   "main": "lib/App.js",
-  "types": "lib/src/App.d.ts",
+  "types": "lib/App.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/App.d.ts",
+      "default": "./lib/App.js"
+    }
+  },
   "bugs": {
     "url": "https://github.com/ethersphere/bee-dashboard/issues/"
   },
@@ -37,17 +43,22 @@
     "test:ui": "node ui-test/index.js",
     "serve": "node ./serve.js",
     "depcheck": "depcheck .",
-    "lint": "eslint . --report-unused-disable-directives --no-cache",
-    "lint:check": "pnpm run lint . --max-warnings=5",
+    "lint": "eslint . --report-unused-disable-directives --no-cache --max-warnings=5",
     "lint:fix": "pnpm run lint --fix",
     "check:types": "tsc --project tsconfig.lib.json",
-    "update-map-data": "node ./utils/update-map-data.js",
-    "bee": "npx bee-factory start"
+    "update-map-data": "node ./utils/update-map-data.js"
   },
   "overrides": {
     "@fairdatasociety/fdp-storage": {
       "@ethersphere/bee-js": "^10.4.0"
     }
+  },
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "7.13.0",
+    "react-router-dom": "7.13.0",
+    "tss-react": "^4.9.20"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -70,16 +81,11 @@
     "jszip": "^3.10.1",
     "notistack": "^3.0.2",
     "opener": "1.5.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-dropzone": "^14.3.5",
+    "react-dropzone": "^14.4.0",
     "react-qr-code": "^2.0.18",
-    "react-router": "7.13.0",
-    "react-router-dom": "7.13.0",
     "react-syntax-highlighter": "16.1.0",
     "remixicon-react": "^1.0.0",
-    "serve-handler": "6.1.6",
-    "tss-react": "^4.9.20"
+    "serve-handler": "6.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",
@@ -136,10 +142,6 @@
     "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.0.18",
     "web-vitals": "5.1.0"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
