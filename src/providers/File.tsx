@@ -4,9 +4,11 @@ import { PREVIEW_DIMENSIONS } from '../constants'
 import { getMetadata } from '../utils/file'
 import { resize } from '../utils/image'
 
-export type UploadOrigin = { origin: 'UPLOAD' | 'FEED'; uuid?: string }
+import { FileOrigin } from '@/pages/files/FileNavigation'
 
-export const defaultUploadOrigin: UploadOrigin = { origin: 'UPLOAD' }
+export type UploadOrigin = { origin: FileOrigin.Upload | FileOrigin.Feed; uuid?: string }
+
+export const defaultUploadOrigin: UploadOrigin = { origin: FileOrigin.Upload }
 
 interface ContextInterface {
   files: FilePath[]

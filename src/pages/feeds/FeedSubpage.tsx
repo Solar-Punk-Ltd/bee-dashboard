@@ -12,6 +12,7 @@ import { Context as BeeContext } from '../../providers/Bee'
 import { Context as IdentityContext } from '../../providers/Feeds'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
+import { FileOrigin } from '../files/FileNavigation'
 import { UploadArea } from '../files/UploadArea'
 
 export function FeedSubpage(): ReactElement {
@@ -50,7 +51,7 @@ export function FeedSubpage(): ReactElement {
   return (
     <div>
       <HistoryHeader>{`${identity.name} Website`}</HistoryHeader>
-      <UploadArea showHelp={false} uploadOrigin={{ origin: 'FEED', uuid }} />
+      <UploadArea showHelp={false} uploadOrigin={{ origin: FileOrigin.Feed, uuid }} />
       {available && identity.feedHash ? (
         <>
           <Box mb={4}>

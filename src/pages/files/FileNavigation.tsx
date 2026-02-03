@@ -5,8 +5,14 @@ import { makeStyles } from 'tss-react/mui'
 
 import { ROUTES } from '../../routes'
 
+export enum FileOrigin {
+  Upload = 'UPLOAD',
+  Download = 'DOWNLOAD',
+  Feed = 'FEED',
+}
+
 interface Props {
-  active: 'UPLOAD' | 'DOWNLOAD'
+  active: FileOrigin
 }
 
 const useStyles = makeStyles()(theme => ({
@@ -32,9 +38,9 @@ export function FileNavigation({ active }: Props): ReactElement {
 
   return (
     <div className={classes.root}>
-      <Tabs value={active === 'UPLOAD' ? 0 : 1} onChange={onChange} variant="fullWidth">
-        <Tab className={classes.leftTab} key="UPLOAD" label="Upload" />
-        <Tab className={classes.rightTab} key="DOWNLOAD" label="Download" />
+      <Tabs value={active === FileOrigin.Upload ? 0 : 1} onChange={onChange} variant="fullWidth">
+        <Tab className={classes.leftTab} key={FileOrigin.Upload} label="Upload" />
+        <Tab className={classes.rightTab} key={FileOrigin.Download} label="Download" />
       </Tabs>
     </div>
   )

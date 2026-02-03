@@ -6,7 +6,7 @@ import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { defaultUploadOrigin } from '../../providers/File'
 import { LocalStorageKeys } from '../../utils/local-storage'
 
-import { FileNavigation } from './FileNavigation'
+import { FileNavigation, FileOrigin } from './FileNavigation'
 import { UploadArea } from './UploadArea'
 
 export function UploadLander(): ReactElement {
@@ -16,7 +16,7 @@ export function UploadLander(): ReactElement {
 
   return (
     <>
-      <FileNavigation active="UPLOAD" />
+      <FileNavigation active={FileOrigin.Upload} />
       <UploadArea showHelp={true} uploadOrigin={defaultUploadOrigin} />
       <History title="Upload History" localStorageKey={LocalStorageKeys.uploadHistory} />
     </>

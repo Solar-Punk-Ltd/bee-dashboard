@@ -4,6 +4,7 @@ import { createContext, ReactElement, ReactNode, useEffect, useState } from 'rea
 
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
+import { newGnosisProvider } from '../utils/chain'
 import { LocalStorageKeys } from '../utils/local-storage'
 
 interface ContextInterface {
@@ -69,7 +70,8 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   const [beeApi, setBeeApi] = useState<Bee | null>(null)
   const [desktopApiKey, setDesktopApiKey] = useState<string>(initialValues.desktopApiKey)
   const [rpcProviderUrl, setRpcProviderUrl] = useState(propsProviderUrl)
-  const [rpcProvider, setRpcProvider] = useState(new JsonRpcProvider(propsProviderUrl))
+  const [rpcProvider, setRpcProvider] = useState(newGnosisProvider(propsProviderUrl))
+
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
 
   useEffect(() => {
@@ -153,6 +155,6 @@ function setAndPersistJsonRpcProviderClosure(
   return (providerUrl: string) => {
     localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
     setProviderUrl(providerUrl)
-    setProvider(new JsonRpcProvider(providerUrl))
+    setProvider(newGnosisProvider(providerUrl))
   }
 }

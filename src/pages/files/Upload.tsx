@@ -23,6 +23,7 @@ import { PostageStampAdvancedCreation } from '../stamps/PostageStampAdvancedCrea
 import { PostageStampSelector } from '../stamps/PostageStampSelector'
 
 import { AssetPreview } from './AssetPreview'
+import { FileOrigin } from './FileNavigation'
 import { StampPreview } from './StampPreview'
 import { StampMode, UploadActionBar } from './UploadActionBar'
 
@@ -60,7 +61,7 @@ export function Upload(): ReactElement {
   const identity = uploadOrigin.uuid ? identities.find(x => x.uuid === uploadOrigin.uuid) : null
 
   const onUpload = () => {
-    if (uploadOrigin.origin === 'UPLOAD') {
+    if (uploadOrigin.origin === FileOrigin.Upload) {
       uploadFiles()
     } else {
       if ((identity as Identity).type === IdentityType.PrivateKey) {
@@ -118,7 +119,7 @@ export function Upload(): ReactElement {
       .then(hash => {
         putHistory(LocalStorageKeys.uploadHistory, hash.reference.toHex(), getAssetNameFromFiles(files))
 
-        if (uploadOrigin.origin === 'UPLOAD') {
+        if (uploadOrigin.origin === FileOrigin.Upload) {
           navigate(ROUTES.HASH.replace(':hash', hash.reference.toHex()), { replace: true })
         } else {
           updateFeed(beeApi, identity as Identity, hash.reference, stamp.batchID, password as string).then(() => {

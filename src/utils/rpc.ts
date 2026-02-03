@@ -3,20 +3,18 @@ import { debounce } from '@mui/material'
 import { Contract, JsonRpcProvider, TransactionReceipt, TransactionResponse, Wallet } from 'ethers'
 
 import { BZZ_TOKEN_ADDRESS, bzzABI } from './bzz-abi'
-
-const NETWORK_ID = 100
+import { ethAddressString, newGnosisProvider } from './chain'
 
 async function getNetworkChainId(url: string): Promise<bigint> {
-  const provider = new JsonRpcProvider(url, NETWORK_ID)
+  const provider = newGnosisProvider(url)
   const network = await provider.getNetwork()
 
   return network.chainId
 }
 
 async function eth_getBalance(address: EthAddress | string, provider: JsonRpcProvider): Promise<DAI> {
-  address = new EthAddress(address)
-
-  const balance = await provider.getBalance(address.toHex())
+  const addressString = ethAddressString(address)
+  const balance = await provider.getBalance(addressString)
 
   return DAI.fromWei(balance.toString())
 }
@@ -32,10 +30,10 @@ async function eth_getBalanceERC20(
   provider: JsonRpcProvider,
   tokenAddress = BZZ_TOKEN_ADDRESS,
 ): Promise<BZZ> {
-  address = new EthAddress(address)
-
+  const addressString = ethAddressString(address)
   const contract = new Contract(tokenAddress, bzzABI, provider)
-  const balance = await contract.balanceOf(address.toHex())
+  // Use staticCall directly to bypass argument resolution
+  const balance = await contract.balanceOf.staticCall(addressString)
 
   return BZZ.fromPLUR(balance.toString())
 }
@@ -47,11 +45,11 @@ interface TransferResponse {
 
 export async function estimateNativeTransferTransactionCost(
   privateKey: PrivateKey | string,
-  jsonRpcProvider: string,
+  jsonRpcProviderUrl: string,
 ): Promise<{ gasPrice: DAI; totalCost: DAI }> {
   privateKey = new PrivateKey(privateKey)
 
-  const signer = await makeReadySigner(privateKey, jsonRpcProvider)
+  const signer = await makeReadySigner(privateKey, jsonRpcProviderUrl)
 
   if (!signer.provider) {
     throw new Error('Signer provider is invalid!')
@@ -71,13 +69,13 @@ export async function sendNativeTransaction(
   privateKey: PrivateKey | string,
   to: EthAddress | string,
   value: DAI,
-  jsonRpcProvider: string,
+  jsonRpcProviderUrl: string,
   externalGasPrice?: DAI,
 ): Promise<TransferResponse> {
   privateKey = new PrivateKey(privateKey)
   to = new EthAddress(to)
 
-  const signer = await makeReadySigner(privateKey, jsonRpcProvider)
+  const signer = await makeReadySigner(privateKey, jsonRpcProviderUrl)
 
   if (!signer.provider) {
     throw new Error('Signer provider is invalid!')
@@ -105,12 +103,12 @@ export async function sendBzzTransaction(
   privateKey: PrivateKey | string,
   to: EthAddress | string,
   value: BZZ,
-  jsonRpcProvider: string,
+  jsonRpcProviderUrl: string,
 ): Promise<TransferResponse> {
   privateKey = new PrivateKey(privateKey)
   to = new EthAddress(to)
 
-  const signer = await makeReadySigner(privateKey, jsonRpcProvider)
+  const signer = await makeReadySigner(privateKey, jsonRpcProviderUrl)
 
   if (!signer.provider) {
     throw new Error('Signer provider is invalid!')
@@ -129,8 +127,8 @@ export async function sendBzzTransaction(
   return { transaction, receipt }
 }
 
-async function makeReadySigner(privateKey: PrivateKey, jsonRpcProvider: string) {
-  const provider = new JsonRpcProvider(jsonRpcProvider, NETWORK_ID)
+async function makeReadySigner(privateKey: PrivateKey, jsonRpcProviderUrl: string) {
+  const provider = newGnosisProvider(jsonRpcProviderUrl)
   await provider.getNetwork()
   const signer = new Wallet(privateKey.toString(), provider)
 
@@ -143,14 +141,14 @@ export interface Rpc {
     privateKey: PrivateKey | string,
     to: EthAddress | string,
     value: DAI,
-    jsonRpcProvider: string,
+    jsonRpcProviderUrl: string,
     externalGasPrice?: DAI,
   ) => Promise<TransferResponse>
   sendBzzTransaction: (
     privateKey: PrivateKey | string,
     to: EthAddress | string,
     value: BZZ,
-    jsonRpcProvider: string,
+    jsonRpcProviderUrl: string,
   ) => Promise<TransferResponse>
   _eth_getBalance: (address: EthAddress | string, provider: JsonRpcProvider) => Promise<DAI>
   _eth_getBalanceERC20: (address: EthAddress | string, provider: JsonRpcProvider, tokenAddress?: string) => Promise<BZZ>

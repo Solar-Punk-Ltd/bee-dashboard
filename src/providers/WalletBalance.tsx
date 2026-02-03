@@ -32,6 +32,8 @@ interface Props {
   children: ReactNode
 }
 
+const DEFUALT_REFRESH_REQUENCY_MS = 30000
+
 export function Provider({ children }: Props): ReactElement {
   const { rpcProvider } = useContext(SettingsContext)
   const { nodeAddresses } = useContext(BeeContext)
@@ -67,7 +69,7 @@ export function Provider({ children }: Props): ReactElement {
     }
   }
 
-  const start = (freq = 30000) => setFrequency(freq)
+  const start = (freq = DEFUALT_REFRESH_REQUENCY_MS) => setFrequency(freq)
   const stop = () => setFrequency(null)
 
   // Start the update loop

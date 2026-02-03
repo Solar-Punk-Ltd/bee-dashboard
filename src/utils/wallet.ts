@@ -57,20 +57,20 @@ export class ResolvedWallet {
     return this
   }
 
-  public async transfer(destination: EthAddress | string, jsonRpcProvider: string): Promise<void> {
+  public async transfer(destination: EthAddress | string, jsonRpcProviderUrl: string): Promise<void> {
     if (this.bzz.gt(BZZ.fromDecimalString('0.05'))) {
-      await RPC.sendBzzTransaction(this.privateKey, destination, this.bzz, jsonRpcProvider)
+      await RPC.sendBzzTransaction(this.privateKey, destination, this.bzz, jsonRpcProviderUrl)
       await this.refresh()
     }
 
-    const { gasPrice, totalCost } = await estimateNativeTransferTransactionCost(this.privateKey, jsonRpcProvider)
+    const { gasPrice, totalCost } = await estimateNativeTransferTransactionCost(this.privateKey, jsonRpcProviderUrl)
 
     if (this.dai.gt(totalCost)) {
       await RPC.sendNativeTransaction(
         this.privateKey,
         destination,
         this.dai.minus(totalCost),
-        jsonRpcProvider,
+        jsonRpcProviderUrl,
         gasPrice,
       )
       await this.refresh()

@@ -1,4 +1,4 @@
-import { Bytes, MantarayNode, NULL_ADDRESS } from '@ethersphere/bee-js'
+import { Bytes } from '@ethersphere/bee-js'
 import { Box, Typography } from '@mui/material'
 import { saveAs } from 'file-saver'
 import JSZip from 'jszip'
@@ -14,6 +14,7 @@ import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/local-storage'
+import { loadManifest } from '../../utils/manifest'
 
 import { AssetPreview } from './AssetPreview'
 import { AssetSummary } from './AssetSummary'
@@ -45,18 +46,7 @@ export function Share(): ReactElement {
     }
 
     try {
-      let manifest = await MantarayNode.unmarshal(beeApi, hash)
-      await manifest.loadRecursively(beeApi)
-
-      // If the manifest is a feed, resolve it and overwrite the manifest
-      await manifest.resolveFeed(beeApi).then(
-        async feed =>
-          await feed.ifPresentAsync(async feedUpdate => {
-            manifest = MantarayNode.unmarshalFromData(feedUpdate.payload.toUint8Array(), NULL_ADDRESS)
-            await manifest.loadRecursively(beeApi)
-          }),
-      )
-
+      const manifest = await loadManifest(beeApi, hash)
       const entries = manifest.collectAndMap()
       delete entries[META_FILE_NAME]
 
@@ -139,6 +129,8 @@ export function Share(): ReactElement {
   }
 
   useEffect(() => {
+    isMountedRef.current = true
+
     return () => {
       isMountedRef.current = false
     }

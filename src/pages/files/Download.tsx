@@ -1,4 +1,4 @@
-import { BeeModes, MantarayNode, NULL_ADDRESS, Reference } from '@ethersphere/bee-js'
+import { BeeModes, Reference } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -12,8 +12,9 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { recognizeEnsOrSwarmHash, regexpEns } from '../../utils'
 import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/local-storage'
+import { loadManifest } from '../../utils/manifest'
 
-import { FileNavigation } from './FileNavigation'
+import { FileNavigation, FileOrigin } from './FileNavigation'
 
 export function Download(): ReactElement {
   const [loading, setLoading] = useState(false)
@@ -45,18 +46,7 @@ export function Download(): ReactElement {
     setLoading(true)
 
     try {
-      let manifest = await MantarayNode.unmarshal(beeApi, identifier)
-      await manifest.loadRecursively(beeApi)
-
-      // If the manifest is a feed, resolve it and overwrite the manifest
-      await manifest.resolveFeed(beeApi).then(
-        async feed =>
-          await feed.ifPresentAsync(async feedUpdate => {
-            manifest = MantarayNode.unmarshalFromData(feedUpdate.payload.toUint8Array(), NULL_ADDRESS)
-            await manifest.loadRecursively(beeApi)
-          }),
-      )
-
+      const manifest = await loadManifest(beeApi, identifier)
       const rootMetadata = manifest.getDocsMetadata()
 
       putHistory(
@@ -86,7 +76,7 @@ export function Download(): ReactElement {
 
   return (
     <>
-      {nodeInfo?.beeMode !== BeeModes.ULTRA_LIGHT && <FileNavigation active="DOWNLOAD" />}
+      {nodeInfo?.beeMode !== BeeModes.ULTRA_LIGHT && <FileNavigation active={FileOrigin.Download} />}
       <ExpandableListItemInput
         label="Swarm Hash or ENS"
         onConfirm={value => onSwarmIdentifier(value)}
