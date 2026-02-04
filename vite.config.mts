@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       nodePolyfills({
-        include: ['stream', 'util', 'buffer', 'crypto', 'fs'],
+        include: ['util', 'buffer'],
         globals: {
           Buffer: true,
           global: true,

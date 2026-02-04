@@ -62,7 +62,7 @@ export default defineConfig([
       '**/build/**',
       'tests/ui/test-data/**',
       'ui_samples/**',
-      'commitlint.config.js',
+      'commitlint.config.cjs',
     ],
   },
   {
