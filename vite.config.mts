@@ -14,8 +14,8 @@ export default defineConfig(({ mode }) => {
         lib: {
           entry: path.resolve(__dirname, 'src/App.tsx'),
           name: 'beeDashboard',
-          fileName: () => 'App.js',
-          formats: ['umd'],
+          fileName: format => `App.${format}.js`,
+          formats: ['umd', 'cjs'],
         },
         sourcemap: !isProd,
         minify: false,
@@ -77,6 +77,22 @@ export default defineConfig(({ mode }) => {
       sourcemap: !isProd,
       commonjsOptions: {
         transformMixedEsModules: true,
+      },
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom') || id.includes('@mui') || id.includes('@emotion'))
+                return 'vendor-react-mui'
+              if (id.includes('ethers') || id.includes('@ethersproject')) return 'vendor-ethers'
+              if (id.includes('@ethersphere/bee-js')) return 'vendor-bee-js'
+              if (id.includes('@fairdatasociety')) return 'vendor-fdp'
+              if (id.includes('notistack')) return 'vendor-notistack'
+
+              // let Vite handle the rest
+            }
+          },
+        },
       },
     },
     server: {

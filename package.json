@@ -15,12 +15,15 @@
   "bin": {
     "bee-dashboard": "./serve.js"
   },
-  "main": "lib/App.js",
+  "main": "lib/App.cjs.js",
+  "browser": "lib/App.umd.js",
   "types": "lib/App.d.ts",
   "exports": {
     ".": {
       "types": "./lib/App.d.ts",
-      "default": "./lib/App.js"
+      "require": "./lib/App.cjs.js",
+      "import": "./lib/App.umd.js",
+      "default": "./lib/App.cjs.js"
     }
   },
   "bugs": {
@@ -36,7 +39,7 @@
     "prepare": "pnpm run build && pnpm run build:component",
     "start": "vite",
     "desktop": "node ./desktop.mjs",
-    "build": "vite build",
+    "build": "rimraf ./build && vite build",
     "build:component": "rimraf ./lib && BUILD_MODE=component vite build && pnpm run compile:types",
     "compile:types": "tsc --project tsconfig.lib.json --emitDeclarationOnly --declaration",
     "test": "jest",
@@ -111,7 +114,6 @@
     "@typescript-eslint/parser": "8.54.0",
     "@vitejs/plugin-react": "^5.1.2",
     "cors": "^2.8.5",
-    "cross-env": "^10.1.0",
     "depcheck": "^1.4.7",
     "env-paths": "^3.0.0",
     "eslint": "9.39.2",
