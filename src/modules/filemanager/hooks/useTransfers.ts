@@ -433,6 +433,12 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           { signal },
         )
 
+        uploadPromise.catch((err: unknown) => {
+          const isAbortError =
+            signal?.aborted || (err instanceof Error && (err.message.includes('aborted') || err.name === 'AbortError'))
+          void isAbortError
+        })
+
         await Promise.race([uploadPromise, checkCancellation])
 
         if (currentStamp) {
