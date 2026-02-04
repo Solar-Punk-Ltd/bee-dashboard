@@ -52,20 +52,6 @@ export const theme = createTheme({
     },
   },
   components: {
-    MuiListItem: {
-      styleOverrides: {
-        root: {
-          '&.MuiButtonBase-root:hover': {
-            backgroundColor: '#fcf2e8',
-            color: '#dd7700',
-            '@media (hover: none)': {
-              backgroundColor: '#fcf2e8',
-              color: '#dd7700',
-            },
-          },
-        },
-      },
-    },
     MuiContainer: {
       styleOverrides: {
         root: { padding: '64px' },

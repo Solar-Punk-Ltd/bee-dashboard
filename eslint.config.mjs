@@ -57,11 +57,10 @@ export default defineConfig([
       '**/dist/**',
       'eslint.config.mjs',
       'eslint-compat.cjs',
-      '**/icons/**',
       '**/assets/**',
       '**/lib/**',
       '**/build/**',
-      'test-data/**',
+      'tests/ui/test-data/**',
       'ui_samples/**',
       'commitlint.config.js',
     ],
@@ -231,15 +230,7 @@ export default defineConfig([
   },
   {
     // tests
-    files: [
-      'test/**/*.ts',
-      'test/**/*.js',
-      'src/**/*.test.ts',
-      'src/**/*.test.tsx',
-      'src/**/*.spec.ts',
-      'src/**/*.spec.tsx',
-      'ui-test/**/*.js',
-    ],
+    files: ['tests/**/*.{ts,js}', , 'tests/**/*.spec.ts'],
     rules: {
       'no-console': 'off',
       'import/no-commonjs': 'off',
@@ -260,6 +251,7 @@ export default defineConfig([
         require: 'readonly',
         module: 'readonly',
         exports: 'readonly',
+        XPathResult: 'readonly',
       },
     },
   },

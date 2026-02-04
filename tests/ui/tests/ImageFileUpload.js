@@ -1,3 +1,4 @@
+const path = require('path')
 const { Assert, Click } = require('../library')
 const { selectStampAndUpload } = require('../helpers')
 
@@ -6,7 +7,12 @@ const { selectStampAndUpload } = require('../helpers')
  */
 async function testImageFileUpload(page) {
   await Click.elementWithText(page, 'a', 'Files')
-  await Click.elementWithTextAndUpload(page, 'button', 'Add File', 'test-data/1337x1337.jpg')
+  await Click.elementWithTextAndUpload(
+    page,
+    'button',
+    'Add File',
+    path.resolve(__dirname, '../test-data/1337x1337.jpg'),
+  )
   await assertUploadPreview(page)
   await selectStampAndUpload(page)
   await assertDownloadPreview(page)
@@ -18,7 +24,7 @@ async function testImageFileUpload(page) {
 async function assertUploadPreview(page) {
   await Assert.elementWithTextExists(page, 'p', 'Filename: 1337x1337.jpg')
   await Assert.elementWithTextExists(page, 'p', 'Kind: image/jpeg')
-  await Assert.elementWithTextExists(page, 'p', 'Size: 116.88 kB')
+  await Assert.elementWithTextExists(page, 'p', 'Size: 116.88 KB')
 }
 
 /**
@@ -26,7 +32,7 @@ async function assertUploadPreview(page) {
  */
 async function assertDownloadPreview(page) {
   await assertUploadPreview(page)
-  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: 5de1d879[…]3427432d')
+  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: 91a70e81[…]758fbbde')
 }
 
 module.exports = { testImageFileUpload }

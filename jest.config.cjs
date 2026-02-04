@@ -6,7 +6,10 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  transformIgnorePatterns: ['/node_modules/'],
+  transformIgnorePatterns: ['node_modules/(?!(std-env|cafe-utility|bee-js)/)'],
   extensionsToTreatAsEsm: ['.ts', '.tsx', '.jsx'],
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/build/'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
+  testMatch: ['<rootDir>/tests/**/*.spec.ts'],
 }
