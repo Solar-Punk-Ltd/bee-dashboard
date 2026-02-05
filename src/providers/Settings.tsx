@@ -1,6 +1,6 @@
 import { Bee } from '@ethersphere/bee-js'
 import { JsonRpcProvider } from 'ethers'
-import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
@@ -103,7 +103,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     setBeeApiState()
   }, [config, apiUrl])
 
-  const updateApiUrl = (url: string) => {
+  const updateApiUrl = useCallback((url: string) => {
     const userProvidedUrl = makeHttpUrl(url)
 
     try {
@@ -113,31 +113,50 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     } catch (_) {
       setBeeApi(null)
     }
-  }
+  }, [])
 
-  return (
-    <Context.Provider
-      value={{
-        apiUrl,
-        beeApi,
-        setApiUrl: updateApiUrl,
-        lockedApiSettings: Boolean(propsSettings.lockedApiSettings),
-        desktopApiKey,
-        isDesktop,
-        desktopUrl,
-        rpcProvider,
-        rpcProviderUrl,
-        cors: config?.['cors-allowed-origins'] ?? null,
-        dataDir: config?.['data-dir'] ?? null,
-        ensResolver: config?.['resolver-options'] ?? null,
-        setAndPersistJsonRpcProvider: setAndPersistJsonRpcProviderClosure(setRpcProviderUrl, setRpcProvider),
-        isLoading,
-        error,
-      }}
-    >
-      {children}
-    </Context.Provider>
+  const setAndPersistJsonRpcProvider = useCallback((providerUrl: string) => {
+    localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
+    setRpcProviderUrl(providerUrl)
+    setRpcProvider(newGnosisProvider(providerUrl))
+  }, [])
+
+  const contextValue = useMemo(
+    () => ({
+      apiUrl,
+      beeApi,
+      setApiUrl: updateApiUrl,
+      lockedApiSettings: Boolean(propsSettings.lockedApiSettings),
+      desktopApiKey,
+      isDesktop,
+      desktopUrl,
+      rpcProvider,
+      rpcProviderUrl,
+      cors: config?.['cors-allowed-origins'] ?? null,
+      dataDir: config?.['data-dir'] ?? null,
+      ensResolver: config?.['resolver-options'] ?? null,
+      setAndPersistJsonRpcProvider,
+      isLoading,
+      error,
+    }),
+    [
+      apiUrl,
+      beeApi,
+      updateApiUrl,
+      propsSettings.lockedApiSettings,
+      desktopApiKey,
+      isDesktop,
+      desktopUrl,
+      rpcProvider,
+      rpcProviderUrl,
+      config,
+      setAndPersistJsonRpcProvider,
+      isLoading,
+      error,
+    ],
   )
+
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
 function makeHttpUrl(string: string): string {
@@ -146,15 +165,4 @@ function makeHttpUrl(string: string): string {
   }
 
   return string
-}
-
-function setAndPersistJsonRpcProviderClosure(
-  setProviderUrl: (url: string) => void,
-  setProvider: (prov: JsonRpcProvider) => void,
-) {
-  return (providerUrl: string) => {
-    localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
-    setProviderUrl(providerUrl)
-    setProvider(newGnosisProvider(providerUrl))
-  }
 }

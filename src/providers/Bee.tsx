@@ -13,7 +13,7 @@ import {
   Topology,
   WalletBalance,
 } from '@ethersphere/bee-js'
-import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { useLatestBeeRelease } from '../hooks/apiHooks'
 
@@ -189,7 +189,7 @@ export function Provider({ children }: Props): ReactElement {
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(30000)
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     // Don't want to refresh when already refreshing
     if (isRefreshing) {
       return
@@ -297,15 +297,72 @@ export function Provider({ children }: Props): ReactElement {
     setIsLoading(false)
     isRefreshing = false
     setLastUpdate(Date.now())
-  }
+  }, [beeApi])
 
-  const start = (freq = REFRESH_WHEN_OK) => {
-    refresh()
-    setFrequency(freq)
-  }
-  const stop = () => setFrequency(null)
+  const start = useCallback(
+    (freq = REFRESH_WHEN_OK) => {
+      refresh()
+      setFrequency(freq)
+    },
+    [refresh],
+  )
+  const stop = useCallback(() => setFrequency(null), [])
 
-  const status = getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt)
+  const status = useMemo(
+    () => getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt),
+    [nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt],
+  )
+
+  const contextValue = useMemo(
+    () => ({
+      beeVersion,
+      status,
+      error,
+      apiHealth,
+      nodeAddresses,
+      nodeInfo,
+      topology,
+      chequebookAddress,
+      peers,
+      chequebookBalance,
+      stake,
+      peerBalances,
+      peerCheques,
+      settlements,
+      chainState,
+      walletBalance,
+      latestBeeRelease,
+      isLoading,
+      lastUpdate,
+      start,
+      stop,
+      refresh,
+    }),
+    [
+      beeVersion,
+      status,
+      error,
+      apiHealth,
+      nodeAddresses,
+      nodeInfo,
+      topology,
+      chequebookAddress,
+      peers,
+      chequebookBalance,
+      stake,
+      peerBalances,
+      peerCheques,
+      settlements,
+      chainState,
+      walletBalance,
+      latestBeeRelease,
+      isLoading,
+      lastUpdate,
+      start,
+      stop,
+      refresh,
+    ],
+  )
 
   useEffect(() => {
     const setStates = () => {
@@ -331,20 +388,13 @@ export function Provider({ children }: Props): ReactElement {
   }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    let newFrequency = REFRESH_WHEN_OK
-
-    if (status.all !== CheckState.OK) {
-      newFrequency = REFRESH_WHEN_ERROR
-    }
-
+    const newFrequency = status.all !== CheckState.OK ? REFRESH_WHEN_ERROR : REFRESH_WHEN_OK
     const setFrequencyState = () => {
-      if (newFrequency !== frequency) {
-        setFrequency(newFrequency)
-      }
+      setFrequency(newFrequency)
     }
 
     setFrequencyState()
-  }, [status.all, frequency])
+  }, [status.all])
 
   // Start the update loop
   useEffect(() => {
@@ -356,34 +406,5 @@ export function Provider({ children }: Props): ReactElement {
     }
   }, [frequency, beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <Context.Provider
-      value={{
-        beeVersion,
-        status,
-        error,
-        apiHealth,
-        nodeAddresses,
-        nodeInfo,
-        topology,
-        chequebookAddress,
-        peers,
-        chequebookBalance,
-        stake,
-        peerBalances,
-        peerCheques,
-        settlements,
-        chainState,
-        walletBalance,
-        latestBeeRelease,
-        isLoading,
-        lastUpdate,
-        start,
-        stop,
-        refresh,
-      }}
-    >
-      {children}
-    </Context.Provider>
-  )
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
