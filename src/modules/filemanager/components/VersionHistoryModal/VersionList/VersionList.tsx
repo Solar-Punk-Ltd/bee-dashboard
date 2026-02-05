@@ -430,10 +430,13 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
       const rawSize = fileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
       const driveName = drives.find(d => d.id.toString() === fileInfo.driveId.toString())?.name ?? currentDrive?.name
+      const uuid = uuidV4()
       await startDownloadingQueue(
         fm,
         [fileInfo],
-        [onDownload({ uuid: uuidV4(), name: fileInfo.name, size: formatBytes(rawSize), expectedSize, driveName })],
+        [onDownload({ uuid, name: fileInfo.name, size: formatBytes(rawSize), expectedSize, driveName })],
+        false,
+        [uuid],
       )
     },
     [handleCloseContext, fm, beeApi, onDownload, drives, currentDrive],

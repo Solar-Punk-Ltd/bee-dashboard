@@ -430,7 +430,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
+          { signal },
         )
+
+        uploadPromise.catch((err: unknown) => {
+          const isAbortError =
+            signal?.aborted || (err instanceof Error && (err.message.includes('aborted') || err.name === 'AbortError'))
+          void isAbortError
+        })
 
         await Promise.race([uploadPromise, checkCancellation])
 
@@ -689,10 +696,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           currentDrive.name,
         )
 
+        const signal = uploadAbortsRef.current.create(uuid)?.signal
+
         void fm.upload(
           currentDrive,
           { ...info, onUploadProgress: progressCallback },
           { actHistoryAddress: prepared.isReplace ? prepared.replaceHistory : undefined },
+          { signal },
         )
       }
 
