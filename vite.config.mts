@@ -86,7 +86,6 @@ export default defineConfig(({ mode }) => {
                 return 'vendor-react-mui'
               if (id.includes('ethers') || id.includes('@ethersproject')) return 'vendor-ethers'
               if (id.includes('@ethersphere/bee-js')) return 'vendor-bee-js'
-              if (id.includes('@fairdatasociety')) return 'vendor-fdp'
               if (id.includes('notistack')) return 'vendor-notistack'
 
               // let Vite handle the rest

@@ -6,7 +6,6 @@ import { AccountFeeds } from './pages/account/feeds/AccountFeeds'
 import { AccountStaking } from './pages/account/staking/AccountStaking'
 import { AccountStamps } from './pages/account/stamps/AccountStamps'
 import { AccountWallet } from './pages/account/wallet/AccountWallet'
-import FDP from './pages/fdp'
 import CreateNewFeed from './pages/feeds/CreateNewFeed'
 import { FeedSubpage } from './pages/feeds/FeedSubpage'
 import UpdateFeed from './pages/feeds/UpdateFeed'
@@ -60,7 +59,6 @@ export enum ROUTES {
   ACCOUNT_FEEDS_VIEW = '/account/feeds/view/:uuid',
   ACCOUNT_INVITATIONS = '/account/invitations',
   ACCOUNT_STAKING = '/account/staking',
-  FDP = '/fdp',
 }
 
 export const ACCOUNT_TABS = [
@@ -102,7 +100,6 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.ACCOUNT_FEEDS_UPDATE} element={<UpdateFeed />} />
       <Route path={ROUTES.ACCOUNT_FEEDS_VIEW} element={<FeedSubpage />} />
       <Route path={ROUTES.ACCOUNT_STAKING} element={<AccountStaking />} />
-      <Route path={ROUTES.FDP} element={<FDP />} />
       {isDesktop && <Route path={ROUTES.ACCOUNT_INVITATIONS} element={<GiftCards />} />}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
