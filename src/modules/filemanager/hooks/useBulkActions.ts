@@ -77,13 +77,16 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
       if (!fm || !list?.length) return
 
       const trackers: Array<(progress: DownloadProgress) => void> = []
+      const abortKeys: string[] = []
       for (const fi of list) {
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
         const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name
+        const uuid = uuidV4()
+        abortKeys.push(uuid)
         const tracker = trackDownload({
-          uuid: uuidV4(),
+          uuid,
           name: fi.name,
           size: prettySize,
           expectedSize: expected,
@@ -92,7 +95,7 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
         trackers.push(tracker)
       }
 
-      await startDownloadingQueue(fm, list, trackers)
+      await startDownloadingQueue(fm, list, trackers, false, abortKeys)
     },
     [fm, trackDownload, drives],
   )

@@ -23,7 +23,7 @@ import { Tooltip } from '../../Tooltip/Tooltip'
 import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
 import { FileAction } from '../../../constants/transfers'
 import { TOOLTIPS } from '../../../constants/tooltips'
-import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
+import { startDownloadingQueue } from '../../../utils/download'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
 import { guessMime } from '../../../utils/view'
@@ -177,15 +177,14 @@ export function FileItem({
 
       const rawSize = latestFileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
-
-      createDownloadAbort(latestFileInfo.name)
+      const uuid = uuidV4()
 
       await startDownloadingQueue(
         fm,
         [latestFileInfo],
         [
           onDownload({
-            uuid: uuidV4(),
+            uuid,
             name: latestFileInfo.name,
             size: formatBytes(rawSize),
             expectedSize,
@@ -193,6 +192,7 @@ export function FileItem({
           }),
         ],
         isNewWindow,
+        [uuid],
       )
     },
     [handleCloseContext, fm, beeApi, latestFileInfo, onDownload, driveName],
