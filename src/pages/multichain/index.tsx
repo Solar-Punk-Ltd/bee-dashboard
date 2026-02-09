@@ -1,3 +1,4 @@
+import { BeeModes } from '@ethersphere/bee-js'
 import { MultichainWidget } from '@upcoming/multichain-widget'
 import React, { ReactElement, useContext, useEffect, useRef, useState } from 'react'
 
@@ -48,39 +49,35 @@ interface Props {
 }
 
 const defaultMultichainTheme: MultichainTheme = {
-  // borderRadius: '',
   backgroundColor: '#ededed',
   textColor: '#000000',
   errorTextColor: '',
   fontSize: '0.85rem',
   fontWeight: 500,
   fontFamily: ['iAWriterQuattroV', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'].join(','),
-  // smallFontSize: '',
-  // smallFontWeight: 14,
-  // secondaryTextColor: '#f3f3f3',
   inputBackgroundColor: '#f3f3f3',
-  // inputBorderColor: '',
   inputTextColor: '#000000',
-  // inputVerticalPadding: '',
-  // inputHorizontalPadding: '',
-  // buttonBackgroundColor: '',
-  // buttonTextColor: '#f3f3f3',
   buttonSecondaryBackgroundColor: '#AAAAAA',
   buttonSecondaryTextColor: '#f3f3f3',
-  // buttonVerticalPadding: '',
-  // buttonHorizontalPadding: '',
-  // labelSpacing: '',
+}
+
+const getFundIntent = (beeMode: BeeModes | undefined): Intent => {
+  if (beeMode === BeeModes.ULTRA_LIGHT) {
+    return Intent.InitialFunding
+  }
+
+  return Intent.Arbitrary
 }
 
 export function MultichainPage({ intent, theme }: Props): ReactElement {
-  const { status, walletBalance } = useContext(BeeContext)
+  const { nodeInfo, status, walletBalance } = useContext(BeeContext)
   const { beeApi, rpcProviderUrl } = useContext(SettingsContext)
 
   const isMountedRef = useRef(true)
 
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [walletAddress, setWalletAddress] = useState<string>('')
-  const [fundIntent, setFundIntent] = useState<Intent>(intent || Intent.Arbitrary)
+  const [fundIntent, setFundIntent] = useState<Intent>(intent || getFundIntent(nodeInfo?.beeMode))
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [showError, setShowError] = useState<boolean>(false)
 
@@ -104,8 +101,16 @@ export function MultichainPage({ intent, theme }: Props): ReactElement {
   }, [status.all])
 
   useEffect(() => {
+    const setIntentState = () => {
+      setFundIntent(getFundIntent(nodeInfo?.beeMode))
+    }
+
+    setIntentState()
+  }, [nodeInfo?.beeMode])
+
+  useEffect(() => {
     const setStates = () => {
-      if (isMountedRef.current && beeApi && walletBalance?.walletAddress) {
+      if (beeApi && walletBalance?.walletAddress) {
         setIsLoading(false)
         setWalletAddress(walletBalance.walletAddress.toString())
       }
@@ -113,20 +118,6 @@ export function MultichainPage({ intent, theme }: Props): ReactElement {
 
     setStates()
   }, [beeApi, walletBalance?.walletAddress])
-
-  if (showError) {
-    return (
-      <div className="multichain-widget-main">
-        <ErrorModal
-          label={errorMessage}
-          onClick={() => {
-            setShowError(false)
-            setErrorMessage('')
-          }}
-        />
-      </div>
-    )
-  }
 
   if (isLoading) {
     return (
@@ -153,10 +144,8 @@ export function MultichainPage({ intent, theme }: Props): ReactElement {
           },
           // eslint-disable-next-line require-await
           onCompletion: async () => {
-            // eslint-disable-next-line no-console
-            console.log('Swap completed successfully!')
-            setErrorMessage('')
-            setShowError(false)
+            setErrorMessage('Multichain transaction completed successfully!')
+            setShowError(true)
           },
           // eslint-disable-next-line require-await
           onUserAbort: async () => {
@@ -169,7 +158,16 @@ export function MultichainPage({ intent, theme }: Props): ReactElement {
         destination={walletAddress}
         dai={undefined}
         bzz={undefined}
-      />
+      ></MultichainWidget>
+      {showError && (
+        <ErrorModal
+          label={errorMessage}
+          onClick={() => {
+            setShowError(false)
+            setErrorMessage('')
+          }}
+        />
+      )}
     </div>
   )
 }
