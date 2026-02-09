@@ -16,6 +16,7 @@ import { Upload } from './pages/files/Upload'
 import { UploadLander } from './pages/files/UploadLander'
 import GiftCards from './pages/gift-code'
 import Info from './pages/info'
+import { MultichainPage } from './pages/multichain'
 import PageNotFound from './pages/not-found/PageNotFound'
 import LightModeRestart from './pages/restart/LightModeRestart'
 import Settings from './pages/settings'
@@ -34,6 +35,7 @@ export enum ROUTES {
   INFO = '/',
   FILES = '/files',
   FILEMANAGER = '/filemanager',
+  MULTICHAIN = '/multichain',
   UPLOAD = '/files/upload',
   UPLOAD_IN_PROGRESS = '/files/upload/workflow',
   DOWNLOAD = '/files/download',
@@ -77,6 +79,7 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.UPLOAD_IN_PROGRESS} element={<Upload />} />
       <Route path={ROUTES.UPLOAD} element={<UploadLander />} />
       <Route path={ROUTES.FILEMANAGER} element={<FileManagerPage />} />
+      <Route path={ROUTES.MULTICHAIN} element={<MultichainPage />} />
       <Route path={ROUTES.DOWNLOAD} element={<Download />} />
       <Route path={ROUTES.HASH} element={<Share />} />
       <Route path={ROUTES.SETTINGS} element={<Settings />} />
