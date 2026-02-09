@@ -1,6 +1,6 @@
 import { ReactElement } from 'react'
-import ImageIcon from 'remixicon-react/Image2LineIcon'
 import FileIcon from 'remixicon-react/FileTextLineIcon'
+import ImageIcon from 'remixicon-react/Image2LineIcon'
 
 interface ContextMenuProps {
   icon: string

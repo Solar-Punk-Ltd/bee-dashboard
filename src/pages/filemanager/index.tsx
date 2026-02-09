@@ -1,21 +1,25 @@
-import { ReactElement, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import './FileManager.scss'
-import { SearchProvider } from './SearchContext'
-import { ViewProvider } from './ViewContext'
-import { Header } from '../../modules/filemanager/components/Header/Header'
-import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
+import { Button } from '../../modules/filemanager/components/Button/Button'
+import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
 import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
+import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
+import { Header } from '../../modules/filemanager/components/Header/Header'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
+import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { Context as FMContext } from '../../providers/FileManager'
 import { Context as SettingsContext } from '../../providers/Settings'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
-import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
-import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
-import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
-import { Button } from '../../modules/filemanager/components/Button/Button'
-import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
+
+import { SearchProvider } from './SearchContext'
+import { ViewProvider } from './ViewContext'
+
+import './FileManager.scss'
+
+import { ErrorModal } from '@/modules/filemanager/components/ErrorModal/ErrorModal'
+import { getSignerPk, removeSignerPk } from '@/modules/filemanager/utils/common'
 
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
@@ -42,50 +46,54 @@ export function FileManagerPage(): ReactElement {
   }, [])
 
   useEffect(() => {
-    if (status.all !== CheckState.OK) {
-      setShowConnectionError(true)
-    } else {
-      setShowConnectionError(false)
+    const setConnectionErrorState = () => {
+      setShowConnectionError(status.all !== CheckState.OK)
     }
+
+    setConnectionErrorState()
   }, [status.all])
 
   useEffect(() => {
-    if (!beeApi) {
-      return
+    const initStates = () => {
+      if (!beeApi) {
+        return
+      }
+
+      if (!hasPk) {
+        setIsLoading(false)
+
+        return
+      }
+
+      setShowResetModal(shallReset)
+
+      if (shallReset) {
+        setShowInitialModal(true)
+
+        return
+      }
+
+      if (initializationError) {
+        setIsLoading(false)
+
+        return
+      }
+
+      if (fm) {
+        const hasAdminStamp = Boolean(fm.adminStamp)
+        const tmpHasAdminDrive = Boolean(adminDrive)
+        setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
+        setIsLoading(false)
+
+        setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
+
+        return
+      }
+
+      setIsLoading(true)
     }
 
-    if (!hasPk) {
-      setIsLoading(false)
-
-      return
-    }
-
-    setShowResetModal(shallReset)
-
-    if (shallReset) {
-      setShowInitialModal(true)
-
-      return
-    }
-
-    if (initializationError) {
-      setIsLoading(false)
-
-      return
-    }
-
-    if (fm) {
-      const hasAdminStamp = Boolean(fm.adminStamp)
-      const tmpHasAdminDrive = Boolean(adminDrive)
-      setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
-      setIsLoading(false)
-
-      setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
-
-      return
-    }
-
-    setIsLoading(true)
+    initStates()
   }, [fm, beeApi, hasPk, initializationError, adminDrive, shallReset])
 
   const handlePrivateKeySaved = useCallback(async () => {

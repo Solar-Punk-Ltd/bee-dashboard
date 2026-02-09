@@ -1,4 +1,4 @@
-import { Box, Dialog, Grid } from '@material-ui/core'
+import { Box, Dialog, Grid } from '@mui/material'
 import { ReactElement } from 'react'
 
 interface Props {
@@ -9,8 +9,11 @@ export function SwarmDialog({ children }: Props): ReactElement {
   return (
     <Dialog
       open={true}
-      PaperProps={{
-        style: { borderRadius: 0, background: '#efefef' },
+      sx={{
+        '& .MuiPaper-root': {
+          borderRadius: 0,
+          background: '#efefef',
+        },
       }}
     >
       <Box p={4} sx={{ maxWidth: '100%', width: '650px' }}>

@@ -1,5 +1,5 @@
 import { BeeModes, BZZ, DAI } from '@ethersphere/bee-js'
-import { Box, createStyles, Grid, makeStyles, Typography } from '@material-ui/core'
+import { Box, Grid, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -8,37 +8,37 @@ import Check from 'remixicon-react/CheckLineIcon'
 import Download from 'remixicon-react/DownloadLineIcon'
 import Gift from 'remixicon-react/GiftLineIcon'
 import MoneyDollarCircle from 'remixicon-react/MoneyDollarCircleLineIcon'
+import { makeStyles } from 'tss-react/mui'
+
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { Loading } from '../../components/Loading'
 import { SwarmButton } from '../../components/SwarmButton'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
+import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
 import { restartBeeNode, upgradeToLightNode } from '../../utils/desktop'
 
-const useStyles = makeStyles(() =>
-  createStyles({
-    checkWrapper: {
-      background: 'rgba(0, 230, 118, 0.25)',
-      borderRadius: 99999,
-      width: '180px',
-      height: '180px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  }),
-)
+const useStyles = makeStyles()(() => ({
+  checkWrapper: {
+    background: 'rgba(0, 230, 118, 0.25)',
+    borderRadius: 99999,
+    width: '180px',
+    height: '180px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+}))
 
 const MINIMUM_XDAI = DAI.fromDecimalString('0.05')
 const MINIMUM_XBZZ = BZZ.fromDecimalString('0.1')
 
 export default function TopUp(): ReactElement {
   const navigate = useNavigate()
-  const styles = useStyles()
+  const { classes } = useStyles()
   const { isDesktop, desktopUrl } = useContext(SettingsContext)
   const { nodeInfo, status } = useContext(BeeContext)
   const { balance } = useContext(BalanceProvider)
@@ -59,7 +59,8 @@ export default function TopUp(): ReactElement {
       await restartBeeNode(desktopUrl)
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      // eslint-disable-next-line no-console
+      console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
     setLoading(false)
@@ -76,7 +77,7 @@ export default function TopUp(): ReactElement {
       <HistoryHeader>Account</HistoryHeader>
       <Grid container direction="column" alignItems="center">
         <Box mb={6}>
-          <div className={styles.checkWrapper}>
+          <div className={classes.checkWrapper}>
             <Download size={100} color="#ededed" />
           </div>
         </Box>

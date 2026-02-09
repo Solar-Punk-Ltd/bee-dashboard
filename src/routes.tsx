@@ -1,20 +1,23 @@
 import { ReactElement, useContext } from 'react'
 import { Route, Routes } from 'react-router-dom'
+
 import { AccountChequebook } from './pages/account/chequebook/AccountChequebook'
 import { AccountFeeds } from './pages/account/feeds/AccountFeeds'
 import { AccountStaking } from './pages/account/staking/AccountStaking'
 import { AccountStamps } from './pages/account/stamps/AccountStamps'
 import { AccountWallet } from './pages/account/wallet/AccountWallet'
-import FDP from './pages/fdp'
 import CreateNewFeed from './pages/feeds/CreateNewFeed'
 import { FeedSubpage } from './pages/feeds/FeedSubpage'
 import UpdateFeed from './pages/feeds/UpdateFeed'
+import { FileManagerPage } from './pages/filemanager'
 import { Download } from './pages/files/Download'
 import { Share } from './pages/files/Share'
 import { Upload } from './pages/files/Upload'
 import { UploadLander } from './pages/files/UploadLander'
 import GiftCards from './pages/gift-code'
 import Info from './pages/info'
+import { MultichainPage } from './pages/multichain'
+import PageNotFound from './pages/not-found/PageNotFound'
 import LightModeRestart from './pages/restart/LightModeRestart'
 import Settings from './pages/settings'
 import { CreatePostageStampPage } from './pages/stamps/CreatePostageStampAdvancedPage'
@@ -27,13 +30,12 @@ import { GiftCardFund } from './pages/top-up/GiftCardFund'
 import { GiftCardTopUpIndex } from './pages/top-up/GiftCardTopUpIndex'
 import { Swap } from './pages/top-up/Swap'
 import { Context as SettingsContext } from './providers/Settings'
-import { FileManagerPage } from './pages/filemanager'
-import PageNotFound from './pages/not-found/PageNotFound'
 
 export enum ROUTES {
   INFO = '/',
   FILES = '/files',
   FILEMANAGER = '/filemanager',
+  MULTICHAIN = '/multichain',
   UPLOAD = '/files/upload',
   UPLOAD_IN_PROGRESS = '/files/upload/workflow',
   DOWNLOAD = '/files/download',
@@ -59,7 +61,6 @@ export enum ROUTES {
   ACCOUNT_FEEDS_VIEW = '/account/feeds/view/:uuid',
   ACCOUNT_INVITATIONS = '/account/invitations',
   ACCOUNT_STAKING = '/account/staking',
-  FDP = '/fdp',
 }
 
 export const ACCOUNT_TABS = [
@@ -78,6 +79,7 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.UPLOAD_IN_PROGRESS} element={<Upload />} />
       <Route path={ROUTES.UPLOAD} element={<UploadLander />} />
       <Route path={ROUTES.FILEMANAGER} element={<FileManagerPage />} />
+      <Route path={ROUTES.MULTICHAIN} element={<MultichainPage />} />
       <Route path={ROUTES.DOWNLOAD} element={<Download />} />
       <Route path={ROUTES.HASH} element={<Share />} />
       <Route path={ROUTES.SETTINGS} element={<Settings />} />
@@ -101,7 +103,6 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.ACCOUNT_FEEDS_UPDATE} element={<UpdateFeed />} />
       <Route path={ROUTES.ACCOUNT_FEEDS_VIEW} element={<FeedSubpage />} />
       <Route path={ROUTES.ACCOUNT_STAKING} element={<AccountStaking />} />
-      <Route path={ROUTES.FDP} element={<FDP />} />
       {isDesktop && <Route path={ROUTES.ACCOUNT_INVITATIONS} element={<GiftCards />} />}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

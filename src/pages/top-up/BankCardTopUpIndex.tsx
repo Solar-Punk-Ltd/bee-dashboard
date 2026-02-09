@@ -1,7 +1,9 @@
-import { Typography } from '@material-ui/core'
+import { Typography } from '@mui/material'
 import { ReactElement } from 'react'
-import Balance from './Balance'
+
 import { ROUTES } from '../../routes'
+
+import Balance from './Balance'
 
 export function BankCardTopUpIndex(): ReactElement {
   return (

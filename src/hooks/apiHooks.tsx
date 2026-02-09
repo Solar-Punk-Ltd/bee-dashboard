@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
+
 import { GITHUB_REPO_URL } from '../constants'
 import { BeeConfig, getDesktopConfiguration, getLatestBeeDesktopVersion } from '../utils/desktop'
 
@@ -21,6 +22,8 @@ export interface NewDesktopVersionHook {
   newBeeDesktopVersion: string
 }
 
+const REACHABILITY_CHECK_INTERVAL_MS = 10_000
+
 export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesktopHook => {
   const [reachable, setReachable] = useState(false)
   const [desktopAutoUpdateEnabled, setDesktopAutoUpdateEnabled] = useState<boolean>(true)
@@ -29,9 +32,30 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
+    const setStates = () => {
+      setLoading(false)
+      setError(null)
+    }
+
     if (!isBeeDesktop) {
+      setStates()
+
       return
     }
+
+    axios
+      .get(`${desktopUrl}/info`)
+      .then(res => {
+        setBeeDesktopVersion(res.data?.version)
+        setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
+        setError(null)
+      })
+      .catch(e => {
+        setError(e)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
 
     function runReachabilityCheck() {
       axios
@@ -45,30 +69,9 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
     }
 
     runReachabilityCheck()
-    const interval = setInterval(runReachabilityCheck, 10_000)
+    const interval = setInterval(runReachabilityCheck, REACHABILITY_CHECK_INTERVAL_MS)
 
     return () => clearInterval(interval)
-  }, [desktopUrl, isBeeDesktop])
-
-  useEffect(() => {
-    if (!isBeeDesktop) {
-      setLoading(false)
-      setError(null)
-    } else {
-      axios
-        .get(`${desktopUrl}/info`)
-        .then(res => {
-          setBeeDesktopVersion(res.data?.version)
-          setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
-          setError(null)
-        })
-        .catch(e => {
-          setError(e)
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    }
   }, [desktopUrl, isBeeDesktop])
 
   return { error, isLoading, beeDesktopVersion, desktopAutoUpdateEnabled, reachable }

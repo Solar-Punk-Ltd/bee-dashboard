@@ -1,12 +1,11 @@
 import { Bee } from '@ethersphere/bee-js'
-import { providers } from 'ethers'
-import { ReactElement, ReactNode, createContext, useEffect, useState } from 'react'
+import { JsonRpcProvider } from 'ethers'
+import { createContext, ReactElement, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
-
-const LocalStorageKeys = {
-  providerUrl: 'json-rpc-provider',
-}
+import { newGnosisProvider } from '../utils/chain'
+import { LocalStorageKeys } from '../utils/local-storage'
 
 interface ContextInterface {
   apiUrl: string
@@ -16,7 +15,7 @@ interface ContextInterface {
   isDesktop: boolean
   desktopUrl: string
   rpcProviderUrl: string
-  rpcProvider: providers.JsonRpcProvider | null
+  rpcProvider: JsonRpcProvider | null
   cors: string | null
   dataDir: string | null
   ensResolver: string | null
@@ -29,12 +28,12 @@ interface ContextInterface {
 const initialValues: ContextInterface = {
   beeApi: null,
   apiUrl: DEFAULT_BEE_API_HOST,
-  setApiUrl: () => {}, // eslint-disable-line
+  setApiUrl: () => {},
   lockedApiSettings: false,
   isDesktop: false,
   desktopApiKey: '',
   desktopUrl: window.location.origin,
-  setAndPersistJsonRpcProvider: async () => {}, // eslint-disable-line
+  setAndPersistJsonRpcProvider: async () => {},
   rpcProviderUrl: '',
   rpcProvider: null,
   cors: null,
@@ -66,69 +65,98 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     localStorage.getItem(LocalStorageKeys.providerUrl) || propsSettings.defaultRpcUrl || DEFAULT_RPC_URL
 
   const [apiUrl, setApiUrl] = useState<string>(
-    localStorage.getItem('api_host') ?? propsSettings.beeApiUrl ?? initialValues.apiUrl,
+    localStorage.getItem(LocalStorageKeys.apiHost) ?? propsSettings.beeApiUrl ?? initialValues.apiUrl,
   )
   const [beeApi, setBeeApi] = useState<Bee | null>(null)
   const [desktopApiKey, setDesktopApiKey] = useState<string>(initialValues.desktopApiKey)
   const [rpcProviderUrl, setRpcProviderUrl] = useState(propsProviderUrl)
-  const [rpcProvider, setRpcProvider] = useState(new providers.JsonRpcProvider(propsProviderUrl))
+  const [rpcProvider, setRpcProvider] = useState(newGnosisProvider(propsProviderUrl))
+
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
 
   useEffect(() => {
     const urlSearchParams = new URLSearchParams(window.location.search)
     const newApiKey = urlSearchParams.get('v')
 
-    if (newApiKey) {
-      localStorage.setItem('apiKey', newApiKey)
-      window.location.search = ''
-      setDesktopApiKey(newApiKey)
+    const setDesktopApiKeyState = () => {
+      if (newApiKey) {
+        localStorage.setItem(LocalStorageKeys.apiKey, newApiKey)
+        window.location.search = ''
+        setDesktopApiKey(newApiKey)
+      }
     }
+
+    setDesktopApiKeyState()
   }, [])
 
   useEffect(() => {
-    const url = makeHttpUrl(localStorage.getItem('api_host') ?? config?.['api-addr'] ?? apiUrl)
-    try {
-      setBeeApi(new Bee(url))
-    } catch (e) {
-      setBeeApi(null)
+    const url = makeHttpUrl(localStorage.getItem(LocalStorageKeys.apiHost) ?? config?.['api-addr'] ?? apiUrl)
+
+    const setBeeApiState = () => {
+      try {
+        setBeeApi(new Bee(url))
+      } catch (_) {
+        setBeeApi(null)
+      }
     }
+
+    setBeeApiState()
   }, [config, apiUrl])
 
-  const updateApiUrl = (url: string) => {
+  const updateApiUrl = useCallback((url: string) => {
     const userProvidedUrl = makeHttpUrl(url)
 
     try {
       setBeeApi(new Bee(userProvidedUrl))
-      localStorage.setItem('api_host', userProvidedUrl)
+      localStorage.setItem(LocalStorageKeys.apiHost, userProvidedUrl)
       setApiUrl(userProvidedUrl)
-    } catch (e) {
+    } catch (_) {
       setBeeApi(null)
     }
-  }
+  }, [])
 
-  return (
-    <Context.Provider
-      value={{
-        apiUrl,
-        beeApi,
-        setApiUrl: updateApiUrl,
-        lockedApiSettings: Boolean(propsSettings.lockedApiSettings),
-        desktopApiKey,
-        isDesktop,
-        desktopUrl,
-        rpcProvider,
-        rpcProviderUrl,
-        cors: config?.['cors-allowed-origins'] ?? null,
-        dataDir: config?.['data-dir'] ?? null,
-        ensResolver: config?.['resolver-options'] ?? null,
-        setAndPersistJsonRpcProvider: setAndPersistJsonRpcProviderClosure(setRpcProviderUrl, setRpcProvider),
-        isLoading,
-        error,
-      }}
-    >
-      {children}
-    </Context.Provider>
+  const setAndPersistJsonRpcProvider = useCallback((providerUrl: string) => {
+    localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
+    setRpcProviderUrl(providerUrl)
+    setRpcProvider(newGnosisProvider(providerUrl))
+  }, [])
+
+  const contextValue = useMemo(
+    () => ({
+      apiUrl,
+      beeApi,
+      setApiUrl: updateApiUrl,
+      lockedApiSettings: Boolean(propsSettings.lockedApiSettings),
+      desktopApiKey,
+      isDesktop,
+      desktopUrl,
+      rpcProvider,
+      rpcProviderUrl,
+      cors: config?.['cors-allowed-origins'] ?? null,
+      dataDir: config?.['data-dir'] ?? null,
+      ensResolver: config?.['resolver-options'] ?? null,
+      setAndPersistJsonRpcProvider,
+      isLoading,
+      error,
+    }),
+    [
+      apiUrl,
+      beeApi,
+      updateApiUrl,
+      propsSettings.lockedApiSettings,
+      desktopApiKey,
+      isDesktop,
+      desktopUrl,
+      rpcProvider,
+      rpcProviderUrl,
+      config,
+      setAndPersistJsonRpcProvider,
+      isLoading,
+      error,
+    ],
   )
+
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
 function makeHttpUrl(string: string): string {
@@ -137,15 +165,4 @@ function makeHttpUrl(string: string): string {
   }
 
   return string
-}
-
-function setAndPersistJsonRpcProviderClosure(
-  setProviderUrl: (url: string) => void,
-  setProvider: (prov: providers.JsonRpcProvider) => void,
-) {
-  return (providerUrl: string) => {
-    localStorage.setItem(LocalStorageKeys.providerUrl, providerUrl)
-    setProviderUrl(providerUrl)
-    setProvider(new providers.JsonRpcProvider(providerUrl))
-  }
 }

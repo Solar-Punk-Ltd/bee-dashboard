@@ -1,30 +1,41 @@
-import { ReactElement, useEffect, useLayoutEffect, useRef, useState, useContext, useMemo, useCallback } from 'react'
-import './FileBrowser.scss'
-import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
-import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
-import { useContextMenu } from '../../hooks/useContextMenu'
-import { NotificationBar } from '../NotificationBar/NotificationBar'
-import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
-import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
+import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import React, {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+
+import { useSearch } from '../../../../pages/filemanager/SearchContext'
 import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
-import { useTransfers } from '../../hooks/useTransfers'
-import { useSearch } from '../../../../pages/filemanager/SearchContext'
-import { useFileFiltering } from '../../hooks/useFileFiltering'
-import { useDragAndDrop } from '../../hooks/useDragAndDrop'
-import { useBulkActions } from '../../hooks/useBulkActions'
-import { SortKey, SortDir, useSorting } from '../../hooks/useSorting'
-
-import { Point, Dir, safeSetState, getFileId } from '../../utils/common'
-import { computeContextMenuPosition } from '../../utils/ui'
-import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
-import { handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Context as SettingsContext } from '../../../../providers/Settings'
-import { ErrorModal } from '../ErrorModal/ErrorModal'
-import { FileBrowserModals } from './FileBrowserModals'
-import { FileBrowserContextMenu } from './FileBrowserMenu/FileBrowserContextMenu'
-import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
+import { useBulkActions } from '../../hooks/useBulkActions'
+import { useContextMenu } from '../../hooks/useContextMenu'
+import { useDragAndDrop } from '../../hooks/useDragAndDrop'
+import { useFileFiltering } from '../../hooks/useFileFiltering'
+import { SortDir, SortKey, useSorting } from '../../hooks/useSorting'
+import { useTransfers } from '../../hooks/useTransfers'
+import { handleDestroyAndForgetDrive } from '../../utils/bee'
+import { Dir, getFileId, Point, safeSetState } from '../../utils/common'
+import { computeContextMenuPosition } from '../../utils/ui'
 import { ProgressDestroyModal } from '../DestroyDriveModal/DestroyDriveModal'
+import { ErrorModal } from '../ErrorModal/ErrorModal'
+import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
+import { NotificationBar } from '../NotificationBar/NotificationBar'
+
+import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
+import { FileBrowserHeader } from './FileBrowserHeader/FileBrowserHeader'
+import { FileBrowserContextMenu } from './FileBrowserMenu/FileBrowserContextMenu'
+import { FileBrowserTopBar } from './FileBrowserTopBar/FileBrowserTopBar'
+import { FileBrowserModals } from './FileBrowserModals'
+
+import './FileBrowser.scss'
 
 const renderDestroySpinner = (
   isDestroying: boolean,
@@ -133,9 +144,8 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     const minY = (bodyRect?.top ?? 0) + 8
     const clickY = Math.max(Math.round(r.bottom + 6), minY)
     const fakeEvt = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault: () => {},
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       stopPropagation: () => {},
       clientX: clickX,
       clientY: clickY,

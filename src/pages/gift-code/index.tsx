@@ -1,11 +1,11 @@
 import { BZZ, DAI } from '@ethersphere/bee-js'
-import { Box, Tooltip, Typography } from '@material-ui/core'
-import { Wallet } from 'ethers'
+import { Box, Tooltip, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import Check from 'remixicon-react/CheckLineIcon'
 import X from 'remixicon-react/CloseLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
@@ -16,6 +16,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as TopUpContext } from '../../providers/TopUp'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { createGiftWallet } from '../../utils/desktop'
+import { generateWallet } from '../../utils/identity'
 import { ResolvedWallet } from '../../utils/wallet'
 
 const GIFT_WALLET_FUND_DAI_AMOUNT = DAI.fromDecimalString('0.1')
@@ -51,12 +52,13 @@ export default function Index(): ReactElement {
     enqueueSnackbar('Sending funds to gift wallet...')
     setLoading(true)
     try {
-      const wallet = Wallet.createRandom()
+      const wallet = generateWallet()
       addGiftWallet(wallet)
       await createGiftWallet(desktopUrl, wallet.address)
       enqueueSnackbar('Succesfully funded gift wallet', { variant: 'success' })
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      // eslint-disable-next-line no-console
+      console.error(error)
       enqueueSnackbar(`Failed to fund gift wallet: ${error}`, { variant: 'error' })
     } finally {
       setLoading(false)
