@@ -2,6 +2,7 @@ import { BeeModes } from '@ethersphere/bee-js'
 import { Box, Divider, Drawer, Grid, Link as MUILink, List, Typography } from '@mui/material'
 import { ReactElement, useContext } from 'react'
 import { Link } from 'react-router-dom'
+import MultichainIcon from 'remixicon-react/ArrowLeftRightLineIcon'
 import FilesIcon from 'remixicon-react/ArrowUpDownLineIcon'
 import DocsIcon from 'remixicon-react/BookOpenLineIcon'
 import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
@@ -88,6 +89,12 @@ export default function SideBar(): ReactElement {
       path: ROUTES.FILEMANAGER,
       icon: FileManagerIcon,
       pathMatcherSubstring: '/filemanager/',
+    },
+    {
+      label: 'Multichain App',
+      path: ROUTES.MULTICHAIN,
+      icon: MultichainIcon,
+      pathMatcherSubstring: '/multichain/',
     },
     {
       label: 'Account',

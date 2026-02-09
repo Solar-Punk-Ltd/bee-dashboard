@@ -71,7 +71,7 @@ export const fmFetchCost = async (
   erasureCodeLevel: RedundancyLevel,
   beeApi: Bee | null,
   setCost: (cost: BZZ) => void,
-  currentFetch: React.MutableRefObject<Promise<void> | null>,
+  currentFetch: React.RefObject<Promise<void> | null>,
   onError?: (error: unknown) => void,
 ) => {
   if (currentFetch.current) {
