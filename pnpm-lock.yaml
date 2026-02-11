@@ -8,33 +8,18 @@ importers:
 
   .:
     dependencies:
-      '@emotion/react':
-        specifier: ^11.14.0
-        version: 11.14.0(@types/react@19.2.10)(react@19.2.4)
-      '@emotion/styled':
-        specifier: ^11.14.1
-        version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4)
       '@ethersphere/bee-js':
         specifier: ^10.4.0
         version: 10.4.0
-      '@ethersproject/keccak256':
-        specifier: ^5.8.0
-        version: 5.8.0
-      '@ethersproject/strings':
-        specifier: ^5.8.0
-        version: 5.8.0
-      '@formbricks/js':
-        specifier: ^4.3.0
-        version: 4.3.0
       '@mui/icons-material':
         specifier: ^7.3.7
         version: 7.3.7(@mui/material@7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.10)(react@19.2.4)
       '@mui/material':
         specifier: ^7.3.7
         version: 7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@solarpunkltd/file-manager-lib':
-        specifier: file:../file-manager-lib
-        version: file:../file-manager-lib
+      '@solarpunkltd/file-manager-widget':
+        specifier: file:../file-manager-widget
+        version: file:../file-manager-widget(@types/react@19.2.10)(eslint@9.39.2(jiti@2.6.1))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tss-react@4.9.20(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@mui/material@7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))
       axios:
         specifier: ^0.30.2
         version: 0.30.2(debug@4.4.3)
@@ -1257,9 +1242,6 @@ packages:
   '@ethersproject/strings@5.8.0':
     resolution: {integrity: sha512-qWEAk0MAvl0LszjdfnZ2uC8xbR2wdv4cDabyHiBh3Cldq/T8dPH3V4BbBsAYJUeonwD+8afVXld274Ls+Y1xXg==}
 
-  '@formbricks/js@4.3.0':
-    resolution: {integrity: sha512-IR1SAdHsthC3js7O3BjW14EbpAy/u3/8R0Jekzrkglt+b0LGFrFL/vUcK6IypG4HbopTlDcpU9A45i1YPJ8jrA==}
-
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1822,9 +1804,16 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
-    resolution: {directory: ../file-manager-lib, type: directory}
+  '@solarpunkltd/file-manager-lib@1.0.5':
+    resolution: {integrity: sha512-s/2HP/VCrdoWOAZfZ7gl+maxO4D8wR3INdz9XSIjjvwlWU/KBUV3Vke5ANRuy28ikyDT4qOggu4G69EBHrl5YA==}
     engines: {bee: 2.6.0, node: '>=20.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
+
+  '@solarpunkltd/file-manager-widget@file:../file-manager-widget':
+    resolution: {directory: ../file-manager-widget, type: directory}
+    peerDependencies:
+      react: '>=19'
+      react-dom: '>=19'
+      tss-react: '>=4'
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -6978,8 +6967,6 @@ snapshots:
       '@ethersproject/constants': 5.8.0
       '@ethersproject/logger': 5.8.0
 
-  '@formbricks/js@4.3.0': {}
-
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -7588,12 +7575,34 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
+  '@solarpunkltd/file-manager-lib@1.0.5':
     dependencies:
       '@ethersphere/bee-js': 10.4.0
       std-env: 3.10.0
     transitivePeerDependencies:
       - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@solarpunkltd/file-manager-widget@file:../file-manager-widget(@types/react@19.2.10)(eslint@9.39.2(jiti@2.6.1))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tss-react@4.9.20(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@mui/material@7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))':
+    dependencies:
+      '@emotion/react': 11.14.0(@types/react@19.2.10)(react@19.2.4)
+      '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4)
+      '@ethersproject/keccak256': 5.8.0
+      '@ethersproject/strings': 5.8.0
+      '@mui/icons-material': 7.3.7(@mui/material@7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.10)(react@19.2.4)
+      '@mui/material': 7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@solarpunkltd/file-manager-lib': 1.0.5
+      eslint-plugin-react-hooks: 7.0.1(eslint@9.39.2(jiti@2.6.1))
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      remixicon-react: 1.0.0(react@19.2.4)
+      tss-react: 4.9.20(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@mui/material@7.3.7(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react@19.2.4))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.10)(react@19.2.4)
+    transitivePeerDependencies:
+      - '@mui/material-pigment-css'
+      - '@types/react'
+      - bufferutil
+      - eslint
       - supports-color
       - utf-8-validate
 
