@@ -1,25 +1,24 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
-import { Button } from '../../modules/filemanager/components/Button/Button'
-import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
-import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
-import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
-import { Header } from '../../modules/filemanager/components/Header/Header'
-import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
-import { CheckState, Context as BeeContext } from '../../providers/Bee'
-import { Context as FMContext } from '../../providers/FileManager'
-import { Context as SettingsContext } from '../../providers/Settings'
-
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
 
 import './FileManager.scss'
 
+import { AdminStatusBar } from '@/modules/filemanager/components/AdminStatusBar/AdminStatusBar'
+import { Button } from '@/modules/filemanager/components/Button/Button'
+import { ConfirmModal } from '@/modules/filemanager/components/ConfirmModal/ConfirmModal'
 import { ErrorModal } from '@/modules/filemanager/components/ErrorModal/ErrorModal'
+import { FileBrowser } from '@/modules/filemanager/components/FileBrowser/FileBrowser'
+import { FormbricksIntegration } from '@/modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
+import { Header } from '@/modules/filemanager/components/Header/Header'
+import { InitialModal } from '@/modules/filemanager/components/InitialModal/InitialModal'
+import { PrivateKeyModal } from '@/modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+import { Sidebar } from '@/modules/filemanager/components/Sidebar/Sidebar'
 import { getSignerPk, removeSignerPk } from '@/modules/filemanager/utils/common'
+import { CheckState, Context as BeeContext } from '@/providers/Bee'
+import { Context as FMContext } from '@/providers/FileManager'
+import { Context as SettingsContext } from '@/providers/Settings'
 
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
@@ -47,11 +46,11 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     const setConnectionErrorState = () => {
-      setShowConnectionError(status.all !== CheckState.OK)
+      setShowConnectionError(status.apiConnection.checkState !== CheckState.OK || !status.apiConnection.isEnabled)
     }
 
     setConnectionErrorState()
-  }, [status.all])
+  }, [status.apiConnection, status.apiConnection.isEnabled])
 
   useEffect(() => {
     const initStates = () => {

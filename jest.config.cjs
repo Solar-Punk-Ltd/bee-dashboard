@@ -6,7 +6,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  transformIgnorePatterns: ['node_modules/(?!(std-env|cafe-utility|bee-js)/)'],
+  transformIgnorePatterns: ['node_modules/(?!(std-env|cafe-utility|bee-js)/)'], // TODO: review all test configs
   extensionsToTreatAsEsm: ['.ts', '.tsx', '.jsx'],
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   modulePathIgnorePatterns: ['<rootDir>/build/'],

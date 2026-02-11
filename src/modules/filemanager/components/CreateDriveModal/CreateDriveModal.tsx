@@ -73,7 +73,7 @@ export function CreateDriveModal({
     }
   }, [duplicate, nameExists])
 
-  const handleCapacityChange = (value: number, index: number) => {
+  const handleCapacityChange = (_: number, index: number) => {
     setCapacityIndex(index)
   }
 
