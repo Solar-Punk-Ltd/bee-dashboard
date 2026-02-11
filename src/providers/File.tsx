@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
-import { createContext, ReactChild, ReactElement, useState, useEffect } from 'react'
+import { PREVIEW_DIMENSIONS } from '../constants'
 import { getMetadata } from '../utils/file'
 import { resize } from '../utils/image'
-import { PREVIEW_DIMENSIONS } from '../constants'
 
-export type UploadOrigin = { origin: 'UPLOAD' | 'FEED'; uuid?: string }
+import { FileOrigin } from '@/pages/files/FileNavigation'
 
-export const defaultUploadOrigin: UploadOrigin = { origin: 'UPLOAD' }
+export type UploadOrigin = { origin: FileOrigin.Upload | FileOrigin.Feed; uuid?: string }
+
+export const defaultUploadOrigin: UploadOrigin = { origin: FileOrigin.Upload }
 
 interface ContextInterface {
   files: FilePath[]
@@ -30,7 +31,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function Provider({ children }: Props): ReactElement {
@@ -41,37 +42,41 @@ export function Provider({ children }: Props): ReactElement {
   const [previewBlob, setPreviewBlob] = useState<Blob | undefined>(undefined)
 
   useEffect(() => {
-    const metadata = getMetadata(files)
-    setMetadata(metadata)
+    const setStates = () => {
+      const metadata = getMetadata(files)
+      setMetadata(metadata)
 
-    if (previewUri) {
-      URL.revokeObjectURL(previewUri) // Clear the preview from memory
-      setPreviewUri(undefined)
-      setPreviewBlob(undefined)
+      if (previewUri) {
+        URL.revokeObjectURL(previewUri) // Clear the preview from memory
+        setPreviewUri(undefined)
+        setPreviewBlob(undefined)
+      }
+
+      if (files.length !== 1) return
+
+      if (metadata.isVideo) {
+        const videoFile = files[0]
+        const videoBlob = new Blob([videoFile], { type: videoFile.type })
+        setPreviewUri(URL.createObjectURL(videoBlob))
+        setPreviewBlob(videoBlob)
+      }
+
+      if (metadata.isAudio) {
+        const audioFile = files[0]
+        const audioBlob = new Blob([audioFile], { type: audioFile.type })
+        setPreviewUri(URL.createObjectURL(audioBlob))
+        setPreviewBlob(audioBlob)
+      }
+
+      if (metadata.isImage) {
+        resize(files[0], PREVIEW_DIMENSIONS.maxWidth, PREVIEW_DIMENSIONS.maxHeight).then(blob => {
+          setPreviewUri(URL.createObjectURL(blob)) // NOTE: Until it is cleared with URL.revokeObjectURL, the file stays allocated in memory
+          setPreviewBlob(blob)
+        })
+      }
     }
 
-    if (files.length !== 1) return
-
-    if (metadata.isVideo) {
-      const videoFile = files[0]
-      const videoBlob = new Blob([videoFile], { type: videoFile.type })
-      setPreviewUri(URL.createObjectURL(videoBlob))
-      setPreviewBlob(videoBlob)
-    }
-
-    if (metadata.isAudio) {
-      const audioFile = files[0]
-      const audioBlob = new Blob([audioFile], { type: audioFile.type })
-      setPreviewUri(URL.createObjectURL(audioBlob))
-      setPreviewBlob(audioBlob)
-    }
-
-    if (metadata.isImage) {
-      resize(files[0], PREVIEW_DIMENSIONS.maxWidth, PREVIEW_DIMENSIONS.maxHeight).then(blob => {
-        setPreviewUri(URL.createObjectURL(blob)) // NOTE: Until it is cleared with URL.revokeObjectURL, the file stays allocated in memory
-        setPreviewBlob(blob)
-      })
-    }
+    setStates()
 
     return () => {
       if (previewUri) {

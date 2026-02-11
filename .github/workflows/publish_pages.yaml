@@ -15,16 +15,19 @@ jobs:
       REACT_APP_FORMBRICKS_APP_URL: ${{ secrets.REACT_APP_FORMBRICKS_APP_URL }}
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
-          node-version: 18
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run build
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
       - run: echo "dashboard.ethswarm.org" > ./build/CNAME
       - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build

@@ -1,14 +1,13 @@
-/* eslint-disable no-console */
 const handler = require('serve-handler')
 const http = require('http')
 const puppeteer = require('puppeteer')
-const { testFolderUpload } = require('./test-case/FolderUpload')
-const { testImageFileUpload } = require('./test-case/ImageFileUpload')
-const { testTextFileUpload } = require('./test-case/TextFileUpload')
-const { testWebsiteUpload } = require('./test-case/WebsiteUpload')
-const { testReactWebsiteUpload } = require('./test-case/ReactWebsiteUpload')
-const { testUnicodeFileUpload } = require('./test-case/UnicodeFileUpload')
-const { testUnicodeWebsiteUpload } = require('./test-case/UnicodeWebsiteUpload')
+const { testFolderUpload } = require('./tests/FolderUpload')
+const { testImageFileUpload } = require('./tests/ImageFileUpload')
+const { testTextFileUpload } = require('./tests/TextFileUpload')
+const { testWebsiteUpload } = require('./tests/WebsiteUpload')
+const { testReactWebsiteUpload } = require('./tests/ReactWebsiteUpload')
+const { testUnicodeFileUpload } = require('./tests/UnicodeFileUpload')
+const { testUnicodeWebsiteUpload } = require('./tests/UnicodeWebsiteUpload')
 
 const VIEWPORT = { width: 1366, height: 768 }
 
@@ -50,7 +49,7 @@ async function preparePage() {
     args: [`--window-size=${VIEWPORT.width},${VIEWPORT.height}`],
   })
   const page = await browser.newPage()
-  await page.goto('http://localhost:8080' || process.env.PORT, { waitUntil: 'networkidle0' })
+  await page.goto(process.env.PORT || 'http://localhost:8080', { waitUntil: 'networkidle0' })
 
   return { browser, page }
 }

@@ -1,12 +1,14 @@
 import { ReactElement, useLayoutEffect, useRef } from 'react'
-import CloseIcon from 'remixicon-react/CloseLineIcon'
 import ArrowDownIcon from 'remixicon-react/ArrowDownSLineIcon'
-import './FileProgressWindow.scss'
-import { GetIconElement } from '../../utils/GetIconElement'
-import { ProgressBar } from '../ProgressBar/ProgressBar'
-import { FileTransferType, TransferBarColor, TransferStatus, ProgressItem } from '../../constants/transfers'
+import CloseIcon from 'remixicon-react/CloseLineIcon'
+
+import { FileTransferType, ProgressItem, TransferBarColor, TransferStatus } from '../../constants/transfers'
 import { capitalizeFirstLetter, truncateNameMiddle } from '../../utils/common'
+import { GetIconElement } from '../../utils/GetIconElement'
 import { guessMime } from '../../utils/view'
+import { ProgressBar } from '../ProgressBar/ProgressBar'
+
+import './FileProgressWindow.scss'
 
 interface FileProgressWindowProps {
   items?: ProgressItem[]
