@@ -1,9 +1,23 @@
 import { shortenHash } from './hash'
 
-export enum HISTORY_KEYS {
-  UPLOAD_HISTORY = 'UPLOAD_HISTORY',
-  DOWNLOAD_HISTORY = 'DOWNLOAD_HISTORY',
-}
+export const LocalStorageKeys = {
+  providerUrl: 'json-rpc-provider',
+  apiHost: 'api_host',
+  apiKey: 'apiKey',
+  fmClickStorage: 'fm_click_count_v1',
+  fmSurveyTriggered: 'fm_survey_triggered_v1',
+  fmSortKey: 'fm.sort.v1',
+  fmPrivateKey: 'privateKey',
+  sepolia: 'sepolia',
+  feeds: 'feeds',
+  depositWallet: 'deposit-wallet',
+  giftWallets: 'gift-wallets',
+  invitation: 'invitation',
+  uploadHistory: 'UPLOAD_HISTORY',
+  downloadHistory: 'DOWNLOAD_HISTORY',
+} as const
+
+export type HISTORY_KEYS = typeof LocalStorageKeys.uploadHistory | typeof LocalStorageKeys.downloadHistory
 
 export interface HistoryItem {
   createdAt: number
@@ -11,7 +25,7 @@ export interface HistoryItem {
   hash: string
 }
 
-export function putHistory(key: string, hash: string, name: string): void {
+export function putHistory(key: HISTORY_KEYS, hash: string, name: string): void {
   const history = getHistorySafe(key)
 
   const existingIndex = history.findIndex(x => x.hash === hash)
@@ -32,7 +46,7 @@ export function putHistory(key: string, hash: string, name: string): void {
   localStorage.setItem(key, JSON.stringify(history))
 }
 
-export function getHistorySafe(key: string): HistoryItem[] {
+export function getHistorySafe(key: HISTORY_KEYS): HistoryItem[] {
   const items = localStorage.getItem(key)
 
   if (!items) {
