@@ -40,6 +40,7 @@ export default defineConfig(({ mode }) => {
           exclude: ['**/tests/**', 'src/index.tsx'],
           outDir: 'lib',
           entryRoot: 'src',
+          tsconfigPath: './tsconfig.lib.json',
         }),
       ],
       resolve: {
