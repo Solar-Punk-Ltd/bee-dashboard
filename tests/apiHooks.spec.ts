@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react-hooks'
 import cors from 'cors'
 import express from 'express'
 import type { Server } from 'http'
-import { useBeeDesktop } from './apiHooks'
+import { useBeeDesktop } from '@/hooks/apiHooks'
 
 interface AddressInfo {
   address: string
