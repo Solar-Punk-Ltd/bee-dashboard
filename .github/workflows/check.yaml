@@ -43,7 +43,7 @@ jobs:
           configFile: ./commitlint.config.cjs
 
       - name: Code linting
-        run: pnpm run lint:check
+        run: pnpm run lint
         env:
           CI: true
 
