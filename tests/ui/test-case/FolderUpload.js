@@ -1,3 +1,4 @@
+const path = require('path')
 const { selectStampAndUpload } = require('../helpers')
 const { Assert, Click } = require('../library')
 
@@ -6,7 +7,12 @@ const { Assert, Click } = require('../library')
  */
 async function testFolderUpload(page) {
   await Click.elementWithText(page, 'a', 'Files')
-  await Click.elementWithTextAndUpload(page, 'button', 'Add Folder', 'test-data/test-folder')
+  await Click.elementWithTextAndUpload(
+    page,
+    'button',
+    'Add Folder',
+    path.resolve(__dirname, '../test-data/test-folder'),
+  )
   await assertUploadPreview(page)
   await selectStampAndUpload(page)
   await assertDownloadPreview(page)
@@ -17,7 +23,7 @@ async function testFolderUpload(page) {
  */
 async function assertDownloadPreview(page) {
   await assertUploadPreview(page)
-  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: 89ef8f3e[…]504e5d1c')
+  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: f3cace09[…]6a30aff5')
   await Assert.elementWithTextExists(page, 'p', 'Folder Name: test-folder')
   await Assert.elementWithTextExists(page, 'p', 'Kind: Folder')
   await Assert.elementWithTextExists(page, 'h6', '4 items')
@@ -29,7 +35,7 @@ async function assertDownloadPreview(page) {
 async function assertUploadPreview(page) {
   await Assert.elementWithTextExists(page, 'p', 'Folder Name: test-folder')
   await Assert.elementWithTextExists(page, 'p', 'Kind: Folder')
-  await Assert.elementWithTextExists(page, 'p', 'Size: 6.56 kB')
+  await Assert.elementWithTextExists(page, 'p', 'Size: 6.56 KB')
 }
 
 module.exports = { testFolderUpload }

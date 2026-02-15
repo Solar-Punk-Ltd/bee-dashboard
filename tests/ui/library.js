@@ -9,11 +9,18 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
  */
 async function waitForElementXPath(page, selector) {
   for (let i = 0; i < SLEEP_ITERATIONS; i++) {
-    const [element] = await page.$x(selector)
+    const element = await page.evaluateHandle(selector => {
+      const result = document.evaluate(selector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
 
-    if (element) {
+      return result.singleNodeValue
+    }, selector)
+
+    const isNull = await page.evaluate(el => el === null, element)
+
+    if (!isNull) {
       return element
     }
+
     await sleep(SLEEP_MS)
   }
 

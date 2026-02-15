@@ -1,3 +1,4 @@
+const path = require('path')
 const { selectStampAndUpload } = require('../helpers')
 const { Assert, Click } = require('../library')
 
@@ -6,7 +7,12 @@ const { Assert, Click } = require('../library')
  */
 async function testWebsiteUpload(page) {
   await Click.elementWithText(page, 'a', 'Files')
-  await Click.elementWithTextAndUpload(page, 'button', 'Add Website', 'test-data/test-website')
+  await Click.elementWithTextAndUpload(
+    page,
+    'button',
+    'Add Website',
+    path.resolve(__dirname, '../test-data/test-website'),
+  )
   await assertUploadPreview(page)
   await selectStampAndUpload(page)
   await assertDownloadPreview(page)
@@ -18,7 +24,7 @@ async function testWebsiteUpload(page) {
 async function assertUploadPreview(page) {
   await Assert.elementWithTextExists(page, 'p', 'Folder Name: test-website')
   await Assert.elementWithTextExists(page, 'p', 'Kind: Website')
-  await Assert.elementWithTextExists(page, 'p', 'Size: 390.10 kB')
+  await Assert.elementWithTextExists(page, 'p', 'Size: 390.10 KB')
 }
 
 /**
@@ -26,7 +32,7 @@ async function assertUploadPreview(page) {
  */
 async function assertDownloadPreview(page) {
   await assertUploadPreview(page)
-  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: b9a6d15d[…]d0d48b81')
+  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: d7fc1259[…]ac11e6f7')
   await Assert.elementWithTextExists(page, 'p', 'Folder Name: test-website')
   await Assert.elementWithTextExists(page, 'p', 'Kind: Website')
   await Assert.elementWithTextExists(page, 'h6', '3 items')

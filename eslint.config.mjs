@@ -60,7 +60,7 @@ export default defineConfig([
       '**/assets/*',
       'lib/**',
       'build/**',
-      'test-data/**',
+      '**/test-data/**',
       'ui_samples/**',
       'commitlint.config.cjs',
     ],
@@ -231,7 +231,7 @@ export default defineConfig([
   },
   {
     // tests
-    files: ['tests/**/*.{ts,js}', , 'tests/**/*.spec.ts', 'ui-test/**/*.{ts,js}'],
+    files: ['tests/**/*.{ts,js}', , 'tests/**/*.spec.ts'],
     rules: {
       'no-console': 'off',
       'import/no-commonjs': 'off',
