@@ -1,6 +1,7 @@
 import type { Peer } from '@ethersphere/bee-js'
 import DottedMap, { DottedMapWithoutCountriesLib } from 'dotted-map/without-countries'
 import { CSSProperties, ReactElement, useContext, useEffect, useState } from 'react'
+
 import mapData from '../assets/data/map-data.json'
 import nodesDb from '../assets/data/nodes-db.json'
 import { Context } from '../providers/Bee'
@@ -20,10 +21,10 @@ type MapDB = Record<string, MapRecord>
 const fullMapDb = nodesDb as unknown as MapDB
 const deduplicatedRecords = deduplicate(fullMapDb)
 
-function deduplicate(db: MapDB): MapRecord[] {
+function deduplicate(_: MapDB): MapRecord[] {
   const noDuplicates: Record<string, MapRecord> = {}
 
-  Object.entries(fullMapDb).forEach(([key, record]) => {
+  Object.entries(fullMapDb).forEach(([_, record]) => {
     noDuplicates[`${record.lat} ${record.lng}`] = record
   })
 
@@ -58,16 +59,23 @@ export default function Card({ style, error }: Props): ReactElement {
   const [map, setMap] = useState<string>(mapPrecomputed.getSVG(mapSvgOptions))
 
   useEffect(() => {
-    // Display error map
-    if (error) setMap(mapNoPins.getSVG({ ...mapSvgOptions, color: '#eaeaea' }))
+    let newSvg: string
 
-    // Display just the base map without any connections
-    if (!peers) return
+    if (error) {
+      newSvg = mapNoPins.getSVG({ ...mapSvgOptions, color: '#eaeaea' })
+    } else if (peers) {
+      const points = findIntersection(fullMapDb, peers)
+      const mapNew = Object.create(mapPrecomputed)
+      addPins(mapNew, points, '#09CA6C')
+      newSvg = mapNew.getSVG(mapSvgOptions)
+    } else {
+      return
+    }
 
-    const points = findIntersection(fullMapDb, peers)
-    const mapNew = Object.create(mapPrecomputed)
-    addPins(mapNew, points, '#09CA6C')
-    setMap(mapNew.getSVG(mapSvgOptions))
+    if (newSvg !== map) {
+      setMap(newSvg)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peers, error])
 
   return (
