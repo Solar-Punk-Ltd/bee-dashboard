@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
+
 import { GITHUB_REPO_URL } from '../constants'
 import { BeeConfig, getDesktopConfiguration, getLatestBeeDesktopVersion } from '../utils/desktop'
 
@@ -52,6 +53,8 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
 
   useEffect(() => {
     if (!isBeeDesktop) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false)
       setError(null)
     } else {

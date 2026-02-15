@@ -1,5 +1,6 @@
 import { AllSettlements, Bee, BZZ, LastCashoutActionResponse, PeerBalance, Settlements } from '@ethersphere/bee-js'
 import { useEffect, useState } from 'react'
+
 import { makeRetriablePromise, unwrapPromiseSettlements } from '../utils'
 
 interface UseAccountingHook {
@@ -90,6 +91,8 @@ export const useAccounting = (
     // We don't have any settlements loaded yet or we are already loading/have loaded the uncashed amounts
     if (isLoadingUncashed || !beeApi || !settlements || uncashedAmounts) return
 
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsloadingUncashed(true)
     const promises = settlements.settlements
       .filter(({ received }) => received.gt(BZZ.fromPLUR('0')))

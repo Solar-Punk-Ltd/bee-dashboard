@@ -1,5 +1,4 @@
 const axios = require('axios')
-const puppeteer = require('puppeteer')
 const { Assert, Click, sleep, Wait } = require('./library')
 
 /**

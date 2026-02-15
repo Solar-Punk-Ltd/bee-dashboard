@@ -1,23 +1,27 @@
-import { ReactElement, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import './FileManager.scss'
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
-import { Header } from '../../modules/filemanager/components/Header/Header'
-import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
-import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
-import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/FileBrowser'
-import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { Context as FMContext } from '../../providers/FileManager'
-import { BrowserPlatform, cacheClearUrls, detectBrowser } from '../../providers/Platform'
-import { Context as SettingsContext } from '../../providers/Settings'
-import { Context as BeeContext, CheckState } from '../../providers/Bee'
-import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
-import { getSignerPk, removeSignerPk } from '../../../src/modules/filemanager/utils/common'
-import { ErrorModal } from '../../../src/modules/filemanager/components/ErrorModal/ErrorModal'
-import { ConfirmModal } from '../../modules/filemanager/components/ConfirmModal/ConfirmModal'
-import { Button } from '../../modules/filemanager/components/Button/Button'
-import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
 
+import './FileManager.scss'
+
+import { AdminStatusBar } from '@/modules/filemanager/components/AdminStatusBar/AdminStatusBar'
+import { Button } from '@/modules/filemanager/components/Button/Button'
+import { ConfirmModal } from '@/modules/filemanager/components/ConfirmModal/ConfirmModal'
+import { ErrorModal } from '@/modules/filemanager/components/ErrorModal/ErrorModal'
+import { FileBrowser } from '@/modules/filemanager/components/FileBrowser/FileBrowser'
+import { FormbricksIntegration } from '@/modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
+import { Header } from '@/modules/filemanager/components/Header/Header'
+import { InitialModal } from '@/modules/filemanager/components/InitialModal/InitialModal'
+import { PrivateKeyModal } from '@/modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
+import { Sidebar } from '@/modules/filemanager/components/Sidebar/Sidebar'
+import { getSignerPk, removeSignerPk } from '@/modules/filemanager/utils/common'
+import { CheckState, Context as BeeContext } from '@/providers/Bee'
+import { Context as FMContext } from '@/providers/FileManager'
+import { BrowserPlatform, cacheClearUrls, detectBrowser } from '@/providers/Platform'
+import { Context as SettingsContext } from '@/providers/Settings'
+
+// TODO: refactor and fix complexitiy warnings
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -52,6 +56,8 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     if (status.all !== CheckState.OK) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConnectionError(true)
     } else {
       setShowConnectionError(false)
@@ -64,6 +70,8 @@ export function FileManagerPage(): ReactElement {
     }
 
     if (!hasPk) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false)
 
       return

@@ -1,5 +1,7 @@
+import { Bytes } from '@ethersphere/bee-js'
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { useState } from 'react'
+
 import { CafeReactFs } from '../../react-fs/CafeReactFs'
 import { FsItem, FsItemType } from '../../react-fs/CafeReactType'
 import { joinUrl } from '../../react-fs/Utility'
@@ -67,7 +69,8 @@ export function FdpPod({ fdp, name }: Props) {
       }}
       download={async (path: string) => {
         const data = await fdp.file.downloadData(name, path)
-        const url = URL.createObjectURL(new Blob([data]))
+        const dataBytes = new Uint8Array(new Bytes(data).toUint8Array())
+        const url = URL.createObjectURL(new Blob([dataBytes]))
         const a = document.createElement('a')
         a.href = url
         a.download = path.split('/').pop() || 'Untitled'

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+
 import { CafeReactFsCreate } from './CafeReactFsCreate'
 import { CafeReactFsItem } from './CafeReactFsItem'
 import { CafeReactFsLoading } from './CafeReactFsLoading'
@@ -51,6 +52,8 @@ export function CafeReactFs({
   }
 
   useEffect(() => {
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     list(path)
       .then(setItemsSorted)
