@@ -1,4 +1,4 @@
-import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
 import { WalletAddress } from '../utils/wallet'
 import { Context as BeeContext } from './Bee'
 import { Context as SettingsContext } from './Settings'
@@ -27,7 +27,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function Provider({ children }: Props): ReactElement {

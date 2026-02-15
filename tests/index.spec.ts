@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js'
-import { extractSwarmHash, isInteger, makeBigNumber } from './index'
+import { extractSwarmHash, isInteger, makeBigNumber } from '@/utils'
 
 describe('utils', () => {
   describe('isInteger', () => {
@@ -91,16 +91,16 @@ describe('utils', () => {
       )
     })
 
-    test('should return null when nothing is found', () => {
-      expect(extractSwarmHash('Bee Dashboard')).toBe(null)
+    test('should return undefined when nothing is found', () => {
+      expect(extractSwarmHash('Bee Dashboard')).toBe(undefined)
     })
 
-    test('should return null when length is incorrect', () => {
-      expect(extractSwarmHash('7f0fe712cdd78bdea52d040369eb32b6af5ecd01fa5ae49b7506412abdd81a')).toBe(null)
+    test('should return undefined when length is incorrect', () => {
+      expect(extractSwarmHash('7f0fe712cdd78bdea52d040369eb32b6af5ecd01fa5ae49b7506412abdd81a')).toBe(undefined)
     })
 
-    test('should return null when alphanumeric', () => {
-      expect(extractSwarmHash('gkQ6duo5iHJ099g908P0t17ZWFf8Ke2klrywLP5BGtLkcaEC5W0kLEfbe4wUnDI6')).toBe(null)
+    test('should return undefined when alphanumeric', () => {
+      expect(extractSwarmHash('gkQ6duo5iHJ099g908P0t17ZWFf8Ke2klrywLP5BGtLkcaEC5W0kLEfbe4wUnDI6')).toBe(undefined)
     })
   })
 })

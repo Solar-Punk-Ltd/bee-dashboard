@@ -1,6 +1,6 @@
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
-import { CircularProgress, Typography } from '@material-ui/core'
+import { CircularProgress, Typography } from '@mui/material'
 import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useEffect, useState } from 'react'
@@ -16,7 +16,7 @@ import { Vertical } from './Vertical'
 async function makeFdp(): Promise<FdpStorage | null> {
   const bee = new Bee('http://localhost:1633')
   const sepolia = localStorage.getItem('sepolia') ?? 'https://sepolia.drpc.org'
-  const postageBatches = await bee.getAllPostageBatch()
+  const postageBatches = await bee.getPostageBatches()
   const usableBatches = postageBatches.filter(batch => batch.usable)
   const highestCapacityBatch = usableBatches.length ? usableBatches.reduce((a, b) => (a.depth > b.depth ? a : b)) : null
 

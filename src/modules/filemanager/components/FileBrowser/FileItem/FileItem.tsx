@@ -1,33 +1,42 @@
-import { ReactElement, useContext, useLayoutEffect, useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import React, {
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
-import './FileItem.scss'
-import { GetIconElement } from '../../../utils/GetIconElement'
-import { ContextMenu } from '../../ContextMenu/ContextMenu'
-import { useContextMenu } from '../../../hooks/useContextMenu'
-import { Context as SettingsContext } from '../../../../../providers/Settings'
-import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
-import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
-import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
-import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
-import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
-import { buildGetInfoGroups } from '../../../utils/infoGroups'
-import type { FilePropertyGroup } from '../../../utils/infoGroups'
 import { useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
-import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
-import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
-import { Tooltip } from '../../Tooltip/Tooltip'
-import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
-import { FileAction } from '../../../constants/transfers'
-import { TOOLTIPS } from '../../../constants/tooltips'
-import { startDownloadingQueue, createDownloadAbort } from '../../../utils/download'
-import { computeContextMenuPosition } from '../../../utils/ui'
-import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
-import { guessMime } from '../../../utils/view'
-import { performFileOperation, FileOperation } from '../../../utils/fileOperations'
+import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { uuidV4 } from '../../../../../utils'
+import { TOOLTIPS } from '../../../constants/tooltips'
+import { DownloadProgress, FileAction, TrackDownloadProps, ViewType } from '../../../constants/transfers'
+import { useContextMenu } from '../../../hooks/useContextMenu'
+import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
+import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
+import { createDownloadAbort, startDownloadingQueue } from '../../../utils/download'
+import { FileOperation, performFileOperation } from '../../../utils/fileOperations'
+import { GetIconElement } from '../../../utils/GetIconElement'
+import type { FilePropertyGroup } from '../../../utils/infoGroups'
+import { buildGetInfoGroups } from '../../../utils/infoGroups'
+import { computeContextMenuPosition } from '../../../utils/ui'
+import { guessMime } from '../../../utils/view'
+import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
+import { ContextMenu } from '../../ContextMenu/ContextMenu'
+import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
+import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
+import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
+import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
+import { Tooltip } from '../../Tooltip/Tooltip'
+import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
+
+import './FileItem.scss'
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -241,7 +250,7 @@ export function FileItem({
         )
 
         refreshStamp(driveStamp.batchID.toString())
-      } catch (e: unknown) {
+      } catch (_) {
         setErrorMessage?.(`Error renaming file ${latestFileInfo.name}`)
         setShowError(true)
       }

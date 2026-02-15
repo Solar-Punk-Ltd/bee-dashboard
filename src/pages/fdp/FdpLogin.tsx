@@ -1,5 +1,5 @@
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
-import { Checkbox, InputBase, Typography } from '@material-ui/core'
+import { Checkbox, InputBase, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { useEffect, useState } from 'react'
 import RegisterIcon from 'remixicon-react/AddBoxLineIcon'
