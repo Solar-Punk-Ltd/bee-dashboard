@@ -1,11 +1,12 @@
-import { ReactElement, useState, useEffect } from 'react'
-import './GetInfoModal.scss'
-import { Button } from '../Button/Button'
+import { ReactElement, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import InfoIcon from 'remixicon-react/InformationLineIcon'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
+import InfoIcon from 'remixicon-react/InformationLineIcon'
 
 import type { FileProperty, FilePropertyGroup } from '../../utils/infoGroups'
+import { Button } from '../Button/Button'
+
+import './GetInfoModal.scss'
 
 interface GetInfoModalProps {
   name: string
@@ -13,10 +14,12 @@ interface GetInfoModalProps {
   onCancelClick: () => void
 }
 
+const COPY_TIMEOUT_MS = 2000
+
 export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const timeoutRef = useState<{ [key: string]: NodeJS.Timeout }>({})[0]
+  const [timeoutRef, setTimeoutRef] = useState<{ [key: string]: NodeJS.Timeout }>({})
 
   useEffect(() => {
     return () => {
@@ -34,10 +37,13 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
 
       setCopiedKey(prop.key)
 
-      timeoutRef[prop.key] = setTimeout(() => {
-        setCopiedKey(prev => (prev === prop.key ? null : prev))
-        delete timeoutRef[prop.key]
-      }, 2000)
+      setTimeoutRef(prev => ({
+        ...prev,
+        [prop.key]: setTimeout(() => {
+          setCopiedKey(prev => (prev === prop.key ? null : prev))
+          delete timeoutRef[prop.key]
+        }, COPY_TIMEOUT_MS),
+      }))
     } catch {
       /* noop */
     }

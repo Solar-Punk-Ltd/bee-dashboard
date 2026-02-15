@@ -1,6 +1,6 @@
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
-import { CircularProgress, Typography } from '@material-ui/core'
+import { CircularProgress, Typography } from '@mui/material'
 import { FdpPod } from './FdpPod'
 import { Vertical } from './Vertical'
 

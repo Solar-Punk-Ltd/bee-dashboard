@@ -1,10 +1,11 @@
 import { BeeModes, BZZ, DAI } from '@ethersphere/bee-js'
-import { Box, Typography } from '@material-ui/core'
+import { Box, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import ArrowDown from 'remixicon-react/ArrowDownCircleLineIcon'
 import Check from 'remixicon-react/CheckLineIcon'
+
 import ExpandableListItem from '../../components/ExpandableListItem'
 import ExpandableListItemActions from '../../components/ExpandableListItemActions'
 import ExpandableListItemKey from '../../components/ExpandableListItemKey'
@@ -18,7 +19,6 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
 import { sleepMs } from '../../utils'
-import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
 import {
   getBzzPriceAsDai,
   getDesktopConfiguration,
@@ -26,7 +26,10 @@ import {
   restartBeeNode,
   upgradeToLightNode,
 } from '../../utils/desktop'
-import { Rpc } from '../../utils/rpc'
+import { LocalStorageKeys } from '../../utils/local-storage'
+import { RPC } from '../../utils/rpc'
+import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
+
 import { TopUpProgressIndicator } from './TopUpProgressIndicator'
 
 const MINIMUM_XDAI = DAI.fromDecimalString('0.1')
@@ -126,7 +129,8 @@ export function Swap({ header }: Props): ReactElement {
 
       navigate(ROUTES.RESTART_LIGHT)
     } catch (error) {
-      console.error(error) // eslint-disable-line
+      // eslint-disable-next-line no-console
+      console.error(error)
       enqueueSnackbar(`Failed to upgrade: ${error}`, { variant: 'error' })
     }
   }
@@ -142,7 +146,7 @@ export function Swap({ header }: Props): ReactElement {
   }
 
   async function performSwapWithChecks(daiToSwap: DAI) {
-    if (!localStorage.getItem('apiKey')) {
+    if (!localStorage.getItem(LocalStorageKeys.apiKey)) {
       throw new SwapError('API key is not set, reopen dashboard through Swarm Desktop')
     }
 
@@ -162,7 +166,7 @@ export function Swap({ header }: Props): ReactElement {
       throw new SwapError('Blockchain RPC endpoint is not configured in Swarm Desktop')
     }
     await wrapWithSwapError(
-      Rpc.getNetworkChainId(desktopConfiguration['blockchain-rpc-endpoint']),
+      RPC.getNetworkChainId(desktopConfiguration['blockchain-rpc-endpoint']),
       `Blockchain RPC endpoint not reachable at ${desktopConfiguration['blockchain-rpc-endpoint']}`,
     )
     await wrapWithSwapError(sendSwapRequest(daiToSwap), GENERIC_SWAP_FAILED_ERROR_MESSAGE)
@@ -191,12 +195,14 @@ export function Swap({ header }: Props): ReactElement {
         enqueueSnackbar(error.snackbarMessage, { variant: 'error' })
 
         if (error.originalError) {
-          console.error(error.originalError) // eslint-disable-line
+          // eslint-disable-next-line no-console
+          console.error(error.originalError)
         }
       } else {
         // we have an unexpected error
         enqueueSnackbar(`${GENERIC_SWAP_FAILED_ERROR_MESSAGE} ${error}`, { variant: 'error' })
-        console.error(error) // eslint-disable-line
+        // eslint-disable-next-line no-console
+        console.error(error)
       }
     } finally {
       setLoading(false)
