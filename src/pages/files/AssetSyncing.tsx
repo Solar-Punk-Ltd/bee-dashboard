@@ -1,6 +1,6 @@
 import { Tag } from '@ethersphere/bee-js'
 import { Box } from '@mui/material'
-import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { DocumentationText } from '../../components/DocumentationText'
 import { LinearProgressWithLabel } from '../../components/ProgressBar'
@@ -19,7 +19,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
   const [isRetrieveChecking, setIsRetrieveChecking] = useState<boolean>(false)
   const [syncProgress, setSyncProgress] = useState<number>(0)
 
-  const syncCheck = async () => {
+  const syncCheck = useCallback(async () => {
     if (!beeApi || !reference) return
 
     let allTags: Tag[] = []
@@ -39,7 +39,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
       const progress = ((tag.seen + tag.synced) / tag.split) * 100
       setSyncProgress(progress)
     }
-  }
+  }, [beeApi, reference])
 
   useEffect(() => {
     syncTimer.current = setInterval(syncCheck, SYNC_CHECK_INTERVAL_MS)
@@ -50,8 +50,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
         syncTimer.current = null
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reference])
+  }, [reference, syncCheck])
 
   useEffect(() => {
     if (syncProgress === 100 && syncTimer.current) {
@@ -68,6 +67,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
     */
     if (beeApi && reference && !isRetrieveChecking && syncProgress > 10 && syncProgress < 100) {
       // It's a long running task make sure only one run occurs at a time.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRetrieveChecking(true)
 
       beeApi.isReferenceRetrievable(reference).then(isRetriavable => {

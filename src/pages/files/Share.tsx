@@ -75,7 +75,7 @@ export function Share(): ReactElement {
         if (!isMountedRef.current) return
 
         setMetadata({ ...formattedMetadata, hash })
-      } catch (_) {
+      } catch {
         // if metadata is not available or invalid go with the default one
         const count = Object.keys(entries).length
 

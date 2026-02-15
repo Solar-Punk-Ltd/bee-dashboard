@@ -146,7 +146,6 @@ export function FileItem({
     handleContextMenu(e)
   }
 
-  // TODO: handleOpen shall only be available for images, videos etc... -> do not download 10GB into memory
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       if (!fm || !beeApi) return
@@ -251,7 +250,7 @@ export function FileItem({
         )
 
         refreshStamp(driveStamp.batchID.toString())
-      } catch (_) {
+      } catch {
         setErrorMessage?.(`Error renaming file ${latestFileInfo.name}`)
         setShowError(true)
       }

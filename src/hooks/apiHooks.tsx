@@ -22,6 +22,8 @@ export interface NewDesktopVersionHook {
   newBeeDesktopVersion: string
 }
 
+const REACHABILITY_CHECK_INTERVAL_MS = 10_000
+
 export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesktopHook => {
   const [reachable, setReachable] = useState(false)
   const [desktopAutoUpdateEnabled, setDesktopAutoUpdateEnabled] = useState<boolean>(true)
@@ -31,6 +33,10 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
 
   useEffect(() => {
     if (!isBeeDesktop) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoading(false)
+      setError(null)
+
       return
     }
 
@@ -46,32 +52,23 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
     }
 
     runReachabilityCheck()
-    const interval = setInterval(runReachabilityCheck, 10_000)
+    const interval = setInterval(runReachabilityCheck, REACHABILITY_CHECK_INTERVAL_MS)
+
+    axios
+      .get(`${desktopUrl}/info`)
+      .then(res => {
+        setBeeDesktopVersion(res.data?.version)
+        setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
+        setError(null)
+      })
+      .catch(e => {
+        setError(e)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
 
     return () => clearInterval(interval)
-  }, [desktopUrl, isBeeDesktop])
-
-  useEffect(() => {
-    if (!isBeeDesktop) {
-      // TODO: refactor and fix react state setters
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false)
-      setError(null)
-    } else {
-      axios
-        .get(`${desktopUrl}/info`)
-        .then(res => {
-          setBeeDesktopVersion(res.data?.version)
-          setDesktopAutoUpdateEnabled(res.data?.autoUpdateEnabled)
-          setError(null)
-        })
-        .catch(e => {
-          setError(e)
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    }
   }, [desktopUrl, isBeeDesktop])
 
   return { error, isLoading, beeDesktopVersion, desktopAutoUpdateEnabled, reachable }

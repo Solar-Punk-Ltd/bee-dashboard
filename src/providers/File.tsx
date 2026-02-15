@@ -45,7 +45,6 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     const metadata = getMetadata(files)
-    // TODO: refactor and fix react state setters
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMetadata(metadata)
 

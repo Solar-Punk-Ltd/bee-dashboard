@@ -1,5 +1,7 @@
 import { Collapse, Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
+import { closeSnackbar, useSnackbar } from 'notistack'
 import { ReactElement, useState } from 'react'
+import CloseLineIcon from 'remixicon-react/CloseLineIcon'
 import Eye from 'remixicon-react/EyeLineIcon'
 import Minus from 'remixicon-react/SubtractLineIcon'
 import { makeStyles } from 'tss-react/mui'
@@ -54,6 +56,8 @@ const split = (s: string): string[] => {
 
 export default function ExpandableListItemKey({ label, value, expanded }: Props): ReactElement | null {
   const { classes } = useStyles()
+  const { enqueueSnackbar } = useSnackbar()
+
   const [open, setOpen] = useState(expanded || false)
   const [copied, setCopied] = useState(false)
   const toggleOpen = () => setOpen(!open)
@@ -63,8 +67,14 @@ export default function ExpandableListItemKey({ label, value, expanded }: Props)
       await navigator.clipboard.writeText(value)
       setCopied(true)
     } catch {
-      // TODO: handle fail
-      // Silently fail
+      enqueueSnackbar(`Failed to copy text`, {
+        variant: 'error',
+        action: key => (
+          <IconButton onClick={() => closeSnackbar(key)} size="small" color="inherit">
+            <CloseLineIcon fontSize="small" />
+          </IconButton>
+        ),
+      })
     }
   }
 

@@ -118,7 +118,7 @@ export function UpgradeDriveModal({
 
       try {
         cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
-      } catch (_) {
+      } catch {
         setErrorMessage?.('Failed to calculate extension cost')
         setShowError(true)
 

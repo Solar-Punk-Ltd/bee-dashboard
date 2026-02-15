@@ -38,7 +38,6 @@ export function FileProgressNotification({
 
   useEffect(() => {
     if (open) {
-      // TODO: refactor and fix react state setters
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowFileProgressWindow(true)
       setOpenedByUser(false)

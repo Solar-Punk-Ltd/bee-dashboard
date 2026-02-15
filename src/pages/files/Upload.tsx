@@ -47,7 +47,7 @@ export function Upload(): ReactElement {
 
   useEffect(() => {
     refresh()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [refresh])
 
   if (status.all === CheckState.ERROR) return <TroubleshootConnectionCard />
 

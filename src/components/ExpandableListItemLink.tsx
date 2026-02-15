@@ -1,7 +1,9 @@
 import { ArrowForward, OpenInNewSharp } from '@mui/icons-material'
 import { Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
+import { closeSnackbar, useSnackbar } from 'notistack'
 import { ReactElement, useState } from 'react'
 import { useNavigate } from 'react-router'
+import CloseLineIcon from 'remixicon-react/CloseLineIcon'
 import { makeStyles } from 'tss-react/mui'
 
 const useStyles = makeStyles()(theme => ({
@@ -57,6 +59,8 @@ export default function ExpandableListItemLink({
   allowClipboard = true,
 }: Props): ReactElement | null {
   const { classes } = useStyles()
+  const { enqueueSnackbar } = useSnackbar()
+
   const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
 
@@ -65,8 +69,14 @@ export default function ExpandableListItemLink({
       await navigator.clipboard.writeText(value)
       setCopied(true)
     } catch {
-      // TODO: handle fail, maybe have a helper for this function
-      // Silently fail
+      enqueueSnackbar(`Failed to copy text`, {
+        variant: 'error',
+        action: key => (
+          <IconButton onClick={() => closeSnackbar(key)} size="small" color="inherit">
+            <CloseLineIcon fontSize="small" />
+          </IconButton>
+        ),
+      })
     }
   }
 

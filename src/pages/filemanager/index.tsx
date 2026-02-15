@@ -56,7 +56,6 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     if (status.all !== CheckState.OK) {
-      // TODO: refactor and fix react state setters
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConnectionError(true)
     } else {
@@ -70,7 +69,6 @@ export function FileManagerPage(): ReactElement {
     }
 
     if (!hasPk) {
-      // TODO: refactor and fix react state setters
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false)
 

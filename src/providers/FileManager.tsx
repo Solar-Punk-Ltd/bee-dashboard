@@ -1,7 +1,7 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
 import { getUsableStamps } from '../modules/filemanager/utils/bee'
@@ -88,6 +88,8 @@ const findDrives = (
 }
 
 export function Provider({ children }: Props) {
+  const initInProgressRef = useRef(false)
+
   const { apiUrl, beeApi } = useContext(SettingsContext)
 
   const [fm, setFm] = useState<FileManagerBase | null>(null)
@@ -199,22 +201,26 @@ export function Provider({ children }: Props) {
     }
   }, [fm, syncDrives])
 
-  // no useCallback is needed because it caches the stamp
-  const refreshStamp = async (batchId: string): Promise<PostageBatch | undefined> => {
-    const usableStamps = await getUsableStamps(beeApi)
-    const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
+  const refreshStamp = useCallback(
+    async (batchId: string): Promise<PostageBatch | undefined> => {
+      const usableStamps = await getUsableStamps(beeApi)
+      const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
 
-    if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
-      setCurrentStamp(refreshedStamp)
-    }
+      if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
+        setCurrentStamp(refreshedStamp)
+      }
 
-    return refreshedStamp
-  }
+      return refreshedStamp
+    },
+    [beeApi, currentStamp],
+  )
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
 
-    if (!apiUrl || !pk) return null
+    if (!apiUrl || !pk || initInProgressRef.current) return null
+
+    initInProgressRef.current = true
 
     setFm(null)
     setFiles([])
@@ -241,7 +247,6 @@ export function Provider({ children }: Props) {
         }
 
         setFm(manager)
-        syncDrives(manager)
         syncFiles(manager)
       }
     }
@@ -296,8 +301,10 @@ export function Provider({ children }: Props) {
       await manager.initialize()
 
       return manager
-    } catch (_) {
+    } catch {
       return null
+    } finally {
+      initInProgressRef.current = false
     }
   }, [apiUrl, syncDrives, syncFiles])
 
@@ -311,18 +318,17 @@ export function Provider({ children }: Props) {
       const refreshedDrive = manager.driveList.find(d => d.id.toString() === prevDriveId)
       setCurrentDrive(refreshedDrive)
 
-      const isValidCurrentStamp = (await getUsableStamps(beeApi)).find(
-        s => s.batchID.toString() === prevStamp?.batchID.toString(),
-      )
+      const uStamps: PostageBatch[] = await getUsableStamps(beeApi)
+      const isValidCurrentStamp = uStamps.find(s => s.batchID.toString() === prevStamp?.batchID.toString())
 
       setCurrentStamp(isValidCurrentStamp)
     }
-  }, [currentDrive?.id, currentStamp, init, setCurrentDrive, setCurrentStamp, beeApi])
+  }, [currentDrive?.id, currentStamp, init, beeApi])
 
   useEffect(() => {
     const pk = getSignerPk()
 
-    if (!pk || fm) return
+    if (!pk || fm || initInProgressRef.current) return
 
     const initFromLocalState = async () => {
       await init()
@@ -331,29 +337,52 @@ export function Provider({ children }: Props) {
     initFromLocalState()
   }, [fm, init])
 
-  return (
-    <Context.Provider
-      value={{
-        fm,
-        files,
-        currentDrive,
-        currentStamp,
-        drives,
-        expiredDrives,
-        adminDrive,
-        initializationError,
-        showError,
-        shallReset,
-        setCurrentDrive,
-        setCurrentStamp,
-        resync,
-        init,
-        setShowError,
-        syncDrives: syncDrivesPublic,
-        refreshStamp,
-      }}
-    >
-      {children}
-    </Context.Provider>
+  useEffect(() => {
+    if (fm && drives.length === 0 && !adminDrive) {
+      syncDrives(fm)
+    }
+  }, [fm, drives.length, adminDrive, syncDrives])
+
+  const contextValue = useMemo(
+    () => ({
+      fm,
+      files,
+      currentDrive,
+      currentStamp,
+      drives,
+      expiredDrives,
+      adminDrive,
+      initializationError,
+      showError,
+      shallReset,
+      setCurrentDrive,
+      setCurrentStamp,
+      resync,
+      init,
+      setShowError,
+      syncDrives: syncDrivesPublic,
+      refreshStamp,
+    }),
+    [
+      fm,
+      files,
+      currentDrive,
+      currentStamp,
+      drives,
+      expiredDrives,
+      adminDrive,
+      initializationError,
+      showError,
+      shallReset,
+      setCurrentDrive,
+      setCurrentStamp,
+      resync,
+      init,
+      setShowError,
+      syncDrivesPublic,
+      refreshStamp,
+    ],
   )
+
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
