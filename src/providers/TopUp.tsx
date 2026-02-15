@@ -33,6 +33,8 @@ export function Provider({ children }: Props): ReactElement {
     const existingGiftWallets = localStorage.getItem(LocalStorageKeys.giftWallets)
 
     if (existingGiftWallets) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGiftWallets(JSON.parse(existingGiftWallets).map((privateKey: string) => new Wallet(privateKey, rpcProvider)))
     }
   }, [rpcProvider])

@@ -1,5 +1,3 @@
-const puppeteer = require('puppeteer')
-
 const SLEEP_MS = 500
 const SLEEP_ITERATIONS = 20
 

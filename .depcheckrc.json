@@ -6,7 +6,6 @@
     "@babel/*",
     "@eslint/*",
     "@eslint/*",
-    "babel*",
     "eslint*",
     "ts-node",
     "env-paths",

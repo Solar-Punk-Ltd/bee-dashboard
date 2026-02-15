@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from 'react'
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
-import { Context as SettingsContext } from './Settings'
-import { getSignerPk } from '../modules/filemanager/utils/common'
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
 import { getUsableStamps } from '../modules/filemanager/utils/bee'
+import { getSignerPk } from '../modules/filemanager/utils/common'
+
+import { Context as SettingsContext } from './Settings'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -38,12 +40,17 @@ const initialValues: ContextInterface = {
   initializationError: false,
   showError: false,
   shallReset: false,
-  setCurrentDrive: () => {}, // eslint-disable-line
-  setCurrentStamp: () => {}, // eslint-disable-line
-  resync: async () => {}, // eslint-disable-line
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  setCurrentDrive: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  setCurrentStamp: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  resync: async () => {},
   init: async () => null, // eslint-disable-line
-  setShowError: () => {}, // eslint-disable-line
-  syncDrives: async () => {}, // eslint-disable-line
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  setShowError: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  syncDrives: async () => {},
   refreshStamp: async () => undefined, // eslint-disable-line
 }
 
@@ -289,7 +296,7 @@ export function Provider({ children }: Props) {
       await manager.initialize()
 
       return manager
-    } catch (error) {
+    } catch (_) {
       return null
     }
   }, [apiUrl, syncDrives, syncFiles])

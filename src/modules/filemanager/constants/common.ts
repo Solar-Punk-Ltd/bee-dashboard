@@ -18,7 +18,7 @@ export const FILE_MANAGER_EVENTS = {
   DRIVE_UPGRADE_TIMEOUT: 'fm:drive-upgrade-timeout',
 } as const
 
-export type FileManagerEventName = typeof FILE_MANAGER_EVENTS[keyof typeof FILE_MANAGER_EVENTS]
+export type FileManagerEventName = (typeof FILE_MANAGER_EVENTS)[keyof typeof FILE_MANAGER_EVENTS]
 
 export const POLLING_TIMEOUT_MS = 90000
 export const UPLOAD_POLLING_TIMEOUT_MS = 10000

@@ -18,9 +18,10 @@ import { Sidebar } from '@/modules/filemanager/components/Sidebar/Sidebar'
 import { getSignerPk, removeSignerPk } from '@/modules/filemanager/utils/common'
 import { CheckState, Context as BeeContext } from '@/providers/Bee'
 import { Context as FMContext } from '@/providers/FileManager'
-import { Context as SettingsContext } from '@/providers/Settings'
 import { BrowserPlatform, cacheClearUrls, detectBrowser } from '@/providers/Platform'
+import { Context as SettingsContext } from '@/providers/Settings'
 
+// TODO: refactor and fix complexitiy warnings
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
   const [showInitialModal, setShowInitialModal] = useState(false)
@@ -55,6 +56,8 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     if (status.all !== CheckState.OK) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConnectionError(true)
     } else {
       setShowConnectionError(false)
@@ -67,6 +70,8 @@ export function FileManagerPage(): ReactElement {
     }
 
     if (!hasPk) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false)
 
       return

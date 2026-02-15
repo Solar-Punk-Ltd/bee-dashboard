@@ -1,21 +1,25 @@
+import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { Pod } from '@fairdatasociety/fdp-storage/dist/pod/types'
 import { CircularProgress, Typography } from '@mui/material'
-import { Bee, MantarayNode } from '@ethersphere/bee-js'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useEffect, useState } from 'react'
 import ImportIcon from 'remixicon-react/AddBoxLineIcon'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
+
 import { SwarmButton } from '../../components/SwarmButton'
 import { joinUrl } from '../../react-fs/Utility'
+
 import { FdpLogin } from './FdpLogin'
 import { FdpPods } from './FdpPods'
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 
+import { LocalStorageKeys } from '@/utils/local-storage'
+
 async function makeFdp(): Promise<FdpStorage | null> {
   const bee = new Bee('http://localhost:1633')
-  const sepolia = localStorage.getItem('sepolia') ?? 'https://sepolia.drpc.org'
+  const sepolia = localStorage.getItem(LocalStorageKeys.sepolia) ?? 'https://sepolia.drpc.org'
   const postageBatches = await bee.getPostageBatches()
   const usableBatches = postageBatches.filter(batch => batch.usable)
   const highestCapacityBatch = usableBatches.length ? usableBatches.reduce((a, b) => (a.depth > b.depth ? a : b)) : null
@@ -65,6 +69,8 @@ export default function FDP(): ReactElement {
 
   useEffect(() => {
     if (fdp && loggedIn) {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingPods(true)
       fdp.personalStorage.list().then(pods => {
         setPods(pods.pods)

@@ -83,6 +83,8 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     if (newApiKey) {
       localStorage.setItem(LocalStorageKeys.apiKey, newApiKey)
       window.location.search = ''
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDesktopApiKey(newApiKey)
     }
   }, [])
@@ -91,6 +93,8 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     const url = makeHttpUrl(localStorage.getItem(LocalStorageKeys.apiHost) ?? config?.['api-addr'] ?? apiUrl)
 
     try {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBeeApi(new Bee(url))
     } catch (_) {
       setBeeApi(null)
@@ -102,9 +106,9 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
 
     try {
       setBeeApi(new Bee(userProvidedUrl))
-      localStorage.setItem('api_host', userProvidedUrl)
+      localStorage.setItem(LocalStorageKeys.apiHost, userProvidedUrl)
       setApiUrl(userProvidedUrl)
-    } catch (e) {
+    } catch (_) {
       setBeeApi(null)
     }
   }

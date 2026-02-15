@@ -56,6 +56,7 @@ interface FileItemProps {
   setErrorMessage?: (error: string) => void
 }
 
+// TODO: refactor and fix complexitiy warnings
 export function FileItem({
   fileInfo,
   onDownload,

@@ -1,9 +1,10 @@
+import { Bytes } from '@ethersphere/bee-js'
 import { FdpStorage } from '@fairdatasociety/fdp-storage'
 import { useState } from 'react'
+
 import { CafeReactFs } from '../../react-fs/CafeReactFs'
 import { FsItem, FsItemType } from '../../react-fs/CafeReactType'
 import { joinUrl } from '../../react-fs/Utility'
-import { Bytes } from '@ethersphere/bee-js'
 
 interface Props {
   fdp: FdpStorage
