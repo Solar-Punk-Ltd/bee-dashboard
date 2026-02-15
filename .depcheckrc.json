@@ -1,19 +1,17 @@
 {
   "ignores": [
-    "@testing-library/react",
     "@types/*",
-    "@commitlint/config-conventional",
+    "@commitlint/*",
     "@babel/*",
     "@eslint/*",
     "@eslint/*",
     "eslint*",
-    "ts-node",
     "env-paths",
-    "open",
-    "sass",
-    "@ethersproject/*",
-    "@vitejs/plugin-react",
+    "husky",
     "jest-environment-jsdom",
-    "rimraf"
+    "open",
+    "rimraf",
+    "sass",
+    "ts-node"
   ]
 }

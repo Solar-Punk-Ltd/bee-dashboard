@@ -18,8 +18,8 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
 
 ![Status page](/ui_samples/info.png)
 
-| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                       |
-| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | ---------------------------------- |
+| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                                  |
+| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | --------------------------------------------- |
 | ![Setup](/ui_samples/node_setup.png) | ![Upload](/ui_samples/file_upload.png) | ![Download](/ui_samples/file_download.png) | ![Accounting](/ui_samples/accounting.png) | ![Settings](/ui_samples/settings.png) | ![File Manager](/ui_samples/file_manager.png) |
 
 ## Table of Contents
@@ -89,6 +89,8 @@ git clone git@github.com:ethersphere/bee-dashboard.git
 cd  bee-dashboard
 
 pnpm install
+
+pnpm husky install
 
 pnpm start
 ```
