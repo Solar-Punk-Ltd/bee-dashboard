@@ -1,7 +1,7 @@
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useEffect, useMemo, useState } from 'react'
 
-import { LocalStorageKeys } from '../../../utils/local-storage'
+import { LocalStorageKeys } from '../../../utils/localStorage'
 
 export enum SortKey {
   Name = 'name',

@@ -2,8 +2,8 @@ import { BatchId, Bee, NULL_TOPIC, PrivateKey, Reference } from '@ethersphere/be
 import { randomBytes, Wallet } from 'ethers'
 
 import { Identity, IdentityType } from '../providers/Feeds'
-import { LocalStorageKeys } from '../utils/local-storage'
 
+import { LocalStorageKeys } from './localStorage'
 import { uuidV4, waitUntilStampUsable } from '.'
 
 export function generateWallet(): Wallet {

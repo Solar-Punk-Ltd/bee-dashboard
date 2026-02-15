@@ -5,7 +5,7 @@ import { createContext, ReactElement, ReactNode, useEffect, useState } from 'rea
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
 import { newGnosisProvider } from '../utils/chain'
-import { LocalStorageKeys } from '../utils/local-storage'
+import { LocalStorageKeys } from '../utils/localStorage'
 
 interface ContextInterface {
   apiUrl: string

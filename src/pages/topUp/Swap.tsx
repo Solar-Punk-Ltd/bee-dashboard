@@ -26,9 +26,9 @@ import {
   restartBeeNode,
   upgradeToLightNode,
 } from '../../utils/desktop'
-import { LocalStorageKeys } from '../../utils/local-storage'
+import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/errors'
+import { LocalStorageKeys } from '../../utils/localStorage'
 import { RPC } from '../../utils/rpc'
-import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/SwapError'
 
 import { TopUpProgressIndicator } from './TopUpProgressIndicator'
 

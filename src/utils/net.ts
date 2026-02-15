@@ -1,8 +1,7 @@
 import axios from 'axios'
 
-import { LocalStorageKeys } from '../utils/local-storage'
-
-import { AuthError } from './AuthError'
+import { AuthError } from './errors'
+import { LocalStorageKeys } from './localStorage'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getJson<T extends Record<string, any>>(url: string): Promise<T> {

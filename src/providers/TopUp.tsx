@@ -1,7 +1,7 @@
 import { Wallet } from 'ethers'
 import { createContext, ReactElement, useContext, useEffect, useState } from 'react'
 
-import { LocalStorageKeys } from '../utils/local-storage'
+import { LocalStorageKeys } from '../utils/localStorage'
 
 import { Context as SettingsContext } from './Settings'
 

@@ -4,7 +4,7 @@ import { toUtf8Bytes } from '@ethersproject/strings'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
 import React from 'react'
 
-import { LocalStorageKeys } from '../../../utils/local-storage'
+import { LocalStorageKeys } from '../../../utils/localStorage'
 import { lifetimeAdjustments } from '../constants/stamps'
 
 export function getDaysLeft(expiryDate: Date): number {

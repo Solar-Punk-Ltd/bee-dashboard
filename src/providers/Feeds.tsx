@@ -1,6 +1,6 @@
 import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
-import { LocalStorageKeys } from '../utils/local-storage'
+import { LocalStorageKeys } from '../utils/localStorage'
 
 export enum IdentityType {
   V3 = 'V3',

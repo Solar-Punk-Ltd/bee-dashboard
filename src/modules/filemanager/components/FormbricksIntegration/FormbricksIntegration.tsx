@@ -2,7 +2,7 @@ import formbricks from '@formbricks/js'
 import { useCallback, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { LocalStorageKeys } from '../../../../utils/local-storage'
+import { LocalStorageKeys } from '../../../../utils/localStorage'
 
 const FM_CLICK_THRESHOLD = 25
 const FM_FORMBRICKS_TRACK_CODE = 'file_manager_engagement_25_clicks'
