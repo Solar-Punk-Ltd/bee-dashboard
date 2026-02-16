@@ -26,7 +26,6 @@ import { GetIconElement } from '../../../utils/GetIconElement'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
 import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import { computeContextMenuPosition } from '../../../utils/ui'
-import { guessMime } from '../../../utils/view'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
@@ -37,6 +36,27 @@ import { Tooltip } from '../../Tooltip/Tooltip'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
 
 import './FileItem.scss'
+
+const MenuItem = ({
+  disabled,
+  danger,
+  onClick,
+  children,
+}: {
+  disabled?: boolean
+  danger?: boolean
+  onClick?: () => void
+  children: React.ReactNode
+}) => (
+  <div
+    className={`fm-context-item${danger ? ' red' : ''}`}
+    aria-disabled={disabled ? 'true' : 'false'}
+    style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+    onClick={disabled ? undefined : onClick}
+  >
+    {children}
+  </div>
+)
 
 interface FileItemProps {
   fileInfo: FileInfo
@@ -56,7 +76,6 @@ interface FileItemProps {
   setErrorMessage?: (error: string) => void
 }
 
-// TODO: refactor and fix complexitiy warnings
 export function FileItem({
   fileInfo,
   onDownload,
@@ -140,11 +159,6 @@ export function FileItem({
 
     return out
   }, [files, currentDrive, fileInfo.topic])
-
-  const handleItemContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.shiftKey) return
-    handleContextMenu(e)
-  }
 
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
@@ -259,41 +273,16 @@ export function FileItem({
     [fm, driveStamp, currentDrive, latestFileInfo, takenNames, refreshStamp, setErrorMessage, setShowError],
   )
 
-  const MenuItem = ({
-    disabled,
-    danger,
-    onClick,
-    children,
-  }: {
-    disabled?: boolean
-    danger?: boolean
-    onClick?: () => void
-    children: React.ReactNode
-  }) => (
-    <div
-      className={`fm-context-item${danger ? ' red' : ''}`}
-      aria-disabled={disabled ? 'true' : 'false'}
-      style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
-      onClick={disabled ? undefined : onClick}
-    >
-      {children}
-    </div>
-  )
-
-  const isBulk = (bulkSelectedCount ?? 0) > 1
-
   const renderContextMenuItems = useCallback(() => {
+    const isBulk = (bulkSelectedCount ?? 0) > 1
+
     const viewItem = (
       <MenuItem disabled={isBulk} onClick={() => handleDownload(true)}>
         View / Open
       </MenuItem>
     )
 
-    const downloadItem = isBulk ? (
-      <MenuItem onClick={onBulk.download}>Download</MenuItem>
-    ) : (
-      <MenuItem onClick={() => handleDownload(false)}>Download</MenuItem>
-    )
+    const downloadItem = <MenuItem onClick={isBulk ? onBulk.download : () => handleDownload(false)}>Download</MenuItem>
 
     const getInfoItem = (
       <MenuItem
@@ -414,15 +403,15 @@ export function FileItem({
       </>
     )
   }, [
-    isBulk,
     view,
+    currentDrive,
+    drives,
+    bulkSelectedCount,
+    onBulk,
+    fileInfo.driveId,
     handleDownload,
     handleCloseContext,
     openGetInfo,
-    onBulk,
-    currentDrive,
-    drives,
-    fileInfo.driveId,
     setErrorMessage,
     setShowError,
   ])
@@ -472,11 +461,15 @@ export function FileItem({
     return <div className="fm-file-item-content">Error</div>
   }
 
-  const { mime } = guessMime(fileInfo.name, fileInfo.customMetadata)
-  const mimeType = mime.split('/')[0]?.toLowerCase() || 'file'
-
   return (
-    <div className="fm-file-item-content" onContextMenu={handleItemContextMenu} onClick={handleCloseContext}>
+    <div
+      className="fm-file-item-content"
+      onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.shiftKey) return
+        handleContextMenu(e)
+      }}
+      onClick={handleCloseContext}
+    >
       <div className="fm-file-item-content-item fm-checkbox">
         <input
           type="checkbox"
@@ -487,7 +480,7 @@ export function FileItem({
       </div>
 
       <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
-        <GetIconElement icon={mimeType} />
+        <GetIconElement name={fileInfo.name} metadata={fileInfo.customMetadata} />
         {truncateNameMiddle(fileInfo.name)}
       </div>
 
