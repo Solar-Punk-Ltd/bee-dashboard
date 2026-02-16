@@ -10,10 +10,12 @@ import { Tooltip } from '../Tooltip/Tooltip'
 
 import './PrivateKeyModal.scss'
 
+import { uuidV4 } from '@/utils'
+
 type Props = { onSaved: () => void }
 
 const generateNewPrivateKey = (): string => {
-  const id = crypto.randomUUID()
+  const id = uuidV4()
   const signer = getSigner(id)
 
   return signer.toHex()

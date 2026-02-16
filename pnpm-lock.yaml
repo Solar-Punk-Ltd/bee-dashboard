@@ -17,12 +17,6 @@ importers:
       '@ethersphere/bee-js':
         specifier: ^10.4.0
         version: 10.4.0
-      '@ethersproject/keccak256':
-        specifier: ^5.8.0
-        version: 5.8.0
-      '@ethersproject/strings':
-        specifier: ^5.8.0
-        version: 5.8.0
       '@fairdatasociety/fdp-storage':
         specifier: ^0.19.0
         version: 0.19.0
