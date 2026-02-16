@@ -36,8 +36,8 @@ importers:
         specifier: ^2.2.8
         version: 2.2.10(@tanstack/react-query@5.90.20(react@19.2.4))(@types/react@19.2.10)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(viem@2.45.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(wagmi@2.19.5(@tanstack/query-core@5.90.20)(@tanstack/react-query@5.90.20(react@19.2.4))(@types/react@19.2.10)(bufferutil@4.1.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(viem@2.45.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76))
       '@solarpunkltd/file-manager-lib':
-        specifier: file:../file-manager-lib
-        version: file:../file-manager-lib(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+        specifier: 1.0.5
+        version: 1.0.5(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@upcoming/multichain-widget':
         specifier: ^0.8.0
         version: 0.8.0(@tanstack/query-core@5.90.20)(@types/react@19.2.10)(babel-plugin-macros@3.1.0)(bufferutil@4.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
@@ -2483,8 +2483,8 @@ packages:
   '@solana/web3.js@1.98.4':
     resolution: {integrity: sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==}
 
-  '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
-    resolution: {directory: ../file-manager-lib, type: directory}
+  '@solarpunkltd/file-manager-lib@1.0.5':
+    resolution: {integrity: sha512-s/2HP/VCrdoWOAZfZ7gl+maxO4D8wR3INdz9XSIjjvwlWU/KBUV3Vke5ANRuy28ikyDT4qOggu4G69EBHrl5YA==}
     engines: {bee: 2.6.0, node: '>=20.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
 
   '@swc/helpers@0.5.18':
@@ -10503,7 +10503,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@solarpunkltd/file-manager-lib@file:../file-manager-lib(bufferutil@4.1.0)(utf-8-validate@5.0.10)':
+  '@solarpunkltd/file-manager-lib@1.0.5(bufferutil@4.1.0)(utf-8-validate@5.0.10)':
     dependencies:
       '@ethersphere/bee-js': 10.4.0(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       std-env: 3.10.0
