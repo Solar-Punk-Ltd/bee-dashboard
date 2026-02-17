@@ -21,6 +21,10 @@
     "css-loader",
     "process",
     "sass-loader",
-    "style-loader"
+    "style-loader",
+    "@vitejs/plugin-react",
+    "jest-environment-jsdom",
+    "browserify-fs",
+    "path-browserify"
   ]
 }
