@@ -15,6 +15,16 @@
     "env-paths",
     "open",
     "base64-inline-loader",
-    "sass"
+    "sass",
+    "@ethersproject/keccak256",
+    "@ethersproject/strings",
+    "css-loader",
+    "process",
+    "sass-loader",
+    "style-loader",
+    "@vitejs/plugin-react",
+    "jest-environment-jsdom",
+    "browserify-fs",
+    "path-browserify"
   ]
 }
