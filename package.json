@@ -15,8 +15,19 @@
   "bin": {
     "bee-dashboard": "./serve.js"
   },
-  "main": "lib/App.js",
-  "types": "lib/src/App.d.ts",
+  "main": "lib/App.cjs.js",
+  "browser": "lib/App.js",
+  "types": "lib/App.d.ts",
+  "style": "lib/bee-dashboard.css",
+  "exports": {
+    ".": {
+      "types": "./lib/App.d.ts",
+      "require": "./lib/App.cjs.js",
+      "import": "./lib/App.js",
+      "default": "./lib/App.cjs.js"
+    },
+    "./style.css": "./lib/bee-dashboard.css"
+  },
   "bugs": {
     "url": "https://github.com/ethersphere/bee-dashboard/issues/"
   },
