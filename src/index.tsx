@@ -6,10 +6,10 @@ import reportWebVitals from './reportWebVitals'
 
 import './index.css'
 
-const desktopEnabled = process.env.REACT_APP_BEE_DESKTOP_ENABLED === 'true'
-const desktopUrl = process.env.REACT_APP_BEE_DESKTOP_URL
-const beeApiUrl = process.env.REACT_APP_BEE_HOST
-const defaultRpcUrl = process.env.REACT_APP_DEFAULT_RPC_URL
+const desktopEnabled = import.meta.env.VITE_BEE_DESKTOP_ENABLED === 'true'
+const desktopUrl = import.meta.env.VITE_BEE_DESKTOP_URL
+const beeApiUrl = import.meta.env.VITE_BEE_HOST
+const defaultRpcUrl = import.meta.env.VITE_DEFAULT_RPC_URL
 
 const root = createRoot(document.getElementById('root') as HTMLElement)
 root.render(

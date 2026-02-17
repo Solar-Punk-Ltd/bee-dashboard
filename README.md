@@ -18,8 +18,8 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
 
 ![Status page](/ui_samples/info.png)
 
-| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                       |
-| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | ---------------------------------- |
+| Node Setup                           | Upload Files                           | Download Content                           | Accounting                                | Settings                              | File Manager                                  |
+| ------------------------------------ | -------------------------------------- | ------------------------------------------ | ----------------------------------------- | ------------------------------------- | --------------------------------------------- |
 | ![Setup](/ui_samples/node_setup.png) | ![Upload](/ui_samples/file_upload.png) | ![Download](/ui_samples/file_download.png) | ![Accounting](/ui_samples/accounting.png) | ![Settings](/ui_samples/settings.png) | ![File Manager](/ui_samples/file_manager.png) |
 
 ## Table of Contents
@@ -100,17 +100,17 @@ The Bee Dashboard runs in development mode on [http://localhost:3031/](http://lo
 The CRA supports to specify "environmental variables" during build time which are then hardcoded into the served static
 files. We support following variables:
 
-- `REACT_APP_BEE_DESKTOP_ENABLED` (`boolean`) that toggles if the Dashboard is in Desktop mode or not.
-- `REACT_APP_BEE_DESKTOP_URL` (`string`) defines custom URL where the Desktop API is expected. By default, it is same
-  origin under which the Dashboard is served.
-- `REACT_APP_BEE_HOST` (`string`) defines custom Bee API URL to be used as default one. By default, the
+- `VITE_BEE_DESKTOP_ENABLED` (`boolean`) that toggles if the Dashboard is in Desktop mode or not.
+- `VITE_BEE_DESKTOP_URL` (`string`) defines custom URL where the Desktop API is expected. By default, it is same origin
+  under which the Dashboard is served.
+- `VITE_BEE_HOST` (`string`) defines custom Bee API URL to be used as default one. By default, the
   `http://localhost:1633` is used.
-- `REACT_APP_DEFAULT_RPC_URL` (`string`) defines the default RPC provider URL. Be aware, that his only configures the
-  default value. The user can override this in Settings, which is then persisted in local store and has priority over
-  the value set in this env. variable. By default `https://xdai.fairdatasociety.org` is used.
-- `REACT_APP_FORMBRICKS_ENV_ID` and `REACT_APP_FORMBRICKS_APP_URL` (`string`) configures the
-  [Formbricks](https://formbricks.com/) integration for user feedback collection. If these variables are not set, the
-  feedback form is not available in the app.
+- `VITE_DEFAULT_RPC_URL` (`string`) defines the default RPC provider URL. Be aware, that his only configures the default
+  value. The user can override this in Settings, which is then persisted in local store and has priority over the value
+  set in this env. variable. By default `https://xdai.fairdatasociety.org` is used.
+- `VITE_FORMBRICKS_ENV_ID` and `VITE_FORMBRICKS_APP_URL` (`string`) configures the [Formbricks](https://formbricks.com/)
+  integration for user feedback collection. If these variables are not set, the feedback form is not available in the
+  app.
 
 #### Swarm Desktop development
 
@@ -118,8 +118,8 @@ If you want to develop Bee Dashboard in the Swarm Desktop mode, then spin up `sw
 is initialized (eq. the splash screen disappear) and:
 
 ```sh
-echo "REACT_APP_BEE_DESKTOP_URL=http://localhost:3054
-REACT_APP_BEE_DESKTOP_ENABLED=true" > .env.development.local
+echo "VITE_BEE_DESKTOP_URL=http://localhost:3054
+VITE_BEE_DESKTOP_ENABLED=true" > .env.development.local
 
 pnpm start
 pnpm run desktop # This will inject the API key to the Dashboard

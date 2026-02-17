@@ -2,7 +2,6 @@ import { renderHook, waitFor } from '@testing-library/react'
 import cors from 'cors'
 import express from 'express'
 import type { Server } from 'http'
-
 import { useBeeDesktop } from '@/hooks/apiHooks'
 
 interface AddressInfo {

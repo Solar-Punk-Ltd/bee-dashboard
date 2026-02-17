@@ -17,9 +17,9 @@ jobs:
         node-version: [18.x]
 
     env:
-      REACT_APP_BEE_HOST: https://api.test-node.staging.ethswarm.org/
-      REACT_APP_FORMBRICKS_ENV_ID: ${{ secrets.REACT_APP_FORMBRICKS_ENV_ID }}
-      REACT_APP_FORMBRICKS_APP_URL: ${{ secrets.REACT_APP_FORMBRICKS_APP_URL }}
+      VITE_BEE_HOST: https://api.test-node.staging.ethswarm.org/
+      VITE_FORMBRICKS_ENV_ID: ${{ secrets.VITE_FORMBRICKS_ENV_ID }}
+      VITE_FORMBRICKS_APP_URL: ${{ secrets.VITE_FORMBRICKS_APP_URL }}
 
     steps:
       - uses: actions/checkout@v2
