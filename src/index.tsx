@@ -4,10 +4,10 @@ import App from './App'
 import './index.css'
 import reportWebVitals from './reportWebVitals'
 
-const desktopEnabled = process.env.REACT_APP_BEE_DESKTOP_ENABLED === 'true'
-const desktopUrl = process.env.REACT_APP_BEE_DESKTOP_URL
-const beeApiUrl = process.env.REACT_APP_BEE_HOST
-const defaultRpcUrl = process.env.REACT_APP_DEFAULT_RPC_URL
+const desktopEnabled = import.meta.env.VITE_BEE_DESKTOP_ENABLED === 'true'
+const desktopUrl = import.meta.env.VITE_BEE_DESKTOP_URL
+const beeApiUrl = import.meta.env.VITE_BEE_HOST
+const defaultRpcUrl = import.meta.env.VITE_DEFAULT_RPC_URL
 
 ReactDOM.render(
   <React.StrictMode>
