@@ -39,6 +39,8 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     try {
+      // TODO: refactor and fix react state setters
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIdentities(JSON.parse(localStorage.getItem(LocalStorageKeys.feeds) || '[]'))
     } catch {
       setIdentities([])

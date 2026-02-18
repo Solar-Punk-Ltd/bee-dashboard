@@ -52,6 +52,8 @@ export function ExpiringNotificationModal({
   const paginatedStamps = sortedStamps.slice(startIndex, startIndex + EXPIRING_ITEMS_PAGE_SIZE)
 
   useEffect(() => {
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(0)
   }, [stamps])
 

@@ -4,9 +4,13 @@ import { useSnackbar } from 'notistack'
 import { useEffect, useState } from 'react'
 import RegisterIcon from 'remixicon-react/AddBoxLineIcon'
 import LoginIcon from 'remixicon-react/LoginBoxLineIcon'
+
 import { SwarmButton } from '../../components/SwarmButton'
+
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
+
+import { LocalStorageKeys } from '@/utils/local-storage'
 
 interface Props {
   fdp: FdpStorage
@@ -23,12 +27,12 @@ export function FdpLogin({ fdp, onSuccessfulLogin }: Props) {
   const inputStyle = { background: 'white', padding: '2px 8px', width: '100%' }
 
   useEffect(() => {
-    const storedSepolia = localStorage.getItem('sepolia')
+    const storedSepolia = localStorage.getItem(LocalStorageKeys.sepolia)
 
     if (storedSepolia) {
       setSepolia(storedSepolia)
     }
-    const fdpCredentials = localStorage.getItem('fdpCredentials')
+    const fdpCredentials = localStorage.getItem(LocalStorageKeys.fdpCredentials)
 
     if (fdpCredentials) {
       const { username, password } = JSON.parse(fdpCredentials)
@@ -39,12 +43,12 @@ export function FdpLogin({ fdp, onSuccessfulLogin }: Props) {
   }, [])
 
   async function onLogin() {
-    localStorage.setItem('sepolia', sepolia)
+    localStorage.setItem(LocalStorageKeys.sepolia, sepolia)
 
     if (remember) {
-      localStorage.setItem('fdpCredentials', JSON.stringify({ username, password }))
+      localStorage.setItem(LocalStorageKeys.fdpCredentials, JSON.stringify({ username, password }))
     } else {
-      localStorage.removeItem('fdpCredentials')
+      localStorage.removeItem(LocalStorageKeys.fdpCredentials)
     }
     enqueueSnackbar('Logging in...', { variant: 'info' })
     try {

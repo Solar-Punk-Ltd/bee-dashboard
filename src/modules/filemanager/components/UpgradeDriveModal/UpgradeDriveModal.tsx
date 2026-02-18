@@ -204,7 +204,11 @@ export function UpgradeDriveModal({
   }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, lifetimeIndex, stamp.batchID, stamp.duration])
 
   useEffect(() => {
-    setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
+    const setValidityEndDateState = () => {
+      setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
+    }
+
+    setValidityEndDateState()
   }, [lifetimeIndex, stamp.duration])
 
   useEffect(() => {

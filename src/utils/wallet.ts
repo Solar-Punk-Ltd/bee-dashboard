@@ -4,7 +4,12 @@ import { JsonRpcProvider, Wallet } from 'ethers'
 import { estimateNativeTransferTransactionCost, RPC } from './rpc'
 
 export class WalletAddress {
-  private constructor(public address: string, public bzz: BZZ, public dai: DAI, public provider: JsonRpcProvider) {}
+  private constructor(
+    public address: string,
+    public bzz: BZZ,
+    public dai: DAI,
+    public provider: JsonRpcProvider,
+  ) {}
 
   static async make(address: string, provider: JsonRpcProvider): Promise<WalletAddress> {
     const bzz = await RPC._eth_getBalanceERC20(address, provider)
@@ -25,7 +30,12 @@ export class ResolvedWallet {
   public address: string
   public privateKey: string
 
-  private constructor(public wallet: Wallet, public bzz: BZZ, public dai: DAI, public provider: JsonRpcProvider) {
+  private constructor(
+    public wallet: Wallet,
+    public bzz: BZZ,
+    public dai: DAI,
+    public provider: JsonRpcProvider,
+  ) {
     this.address = wallet.address
     this.privateKey = wallet.privateKey
   }

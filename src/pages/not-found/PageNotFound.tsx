@@ -1,6 +1,6 @@
 import { Typography } from '@mui/material'
-import { Link } from 'react-router-dom'
 import { ReactElement } from 'react'
+import { Link } from 'react-router-dom'
 
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { ROUTES } from '../../routes'

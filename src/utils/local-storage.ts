@@ -4,6 +4,7 @@ export const LocalStorageKeys = {
   providerUrl: 'json-rpc-provider',
   apiHost: 'api_host',
   apiKey: 'apiKey',
+  fdpCredentials: 'fdpCredentials',
   fmClickStorage: 'fm_click_count_v1',
   fmSurveyTriggered: 'fm_survey_triggered_v1',
   fmSortKey: 'fm.sort.v1',

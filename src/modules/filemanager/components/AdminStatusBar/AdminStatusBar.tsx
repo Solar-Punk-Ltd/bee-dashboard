@@ -5,6 +5,7 @@ import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } f
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { getHumanReadableFileSize } from '../../../../utils/file'
 import { FILE_MANAGER_EVENTS, POLLING_TIMEOUT_MS } from '../../constants/common'
+import { TOOLTIPS } from '../../constants/tooltips'
 import { useStampPolling } from '../../hooks/useStampPolling'
 import { calculateStampCapacityMetrics } from '../../utils/bee'
 import { ConfirmModal } from '../ConfirmModal/ConfirmModal'
@@ -14,7 +15,6 @@ import { UpgradeDriveModal } from '../UpgradeDriveModal/UpgradeDriveModal'
 import { UpgradeTimeoutModal } from '../UpgradeTimeoutModal/UpgradeTimeoutModal'
 
 import './AdminStatusBar.scss'
-import { TOOLTIPS } from '../../constants/tooltips'
 
 interface AdminStatusBarProps {
   adminStamp: PostageBatch | null

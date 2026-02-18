@@ -89,6 +89,7 @@ interface FileBrowserProps {
   setErrorMessage?: (error: string) => void
 }
 
+// TODO: refactor and fix complexitiy warnings
 export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView } = useView()

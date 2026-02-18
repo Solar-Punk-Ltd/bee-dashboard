@@ -13,8 +13,10 @@ import {
   Topology,
   WalletBalance,
 } from '@ethersphere/bee-js'
-import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+
 import { useLatestBeeRelease } from '../hooks/apiHooks'
+
 import { Context as SettingsContext } from './Settings'
 
 const LAUNCH_GRACE_PERIOD = 15_000
@@ -189,32 +191,6 @@ export function Provider({ children }: Props): ReactElement {
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(30000)
 
-  useEffect(() => {
-    setIsLoading(true)
-
-    setApiHealth(false)
-
-    if (beeApi !== null) refresh()
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setIsLoading(true)
-    setNodeAddresses(null)
-    setNodeTopology(null)
-    setNodeInfo(null)
-    setPeers(null)
-    setChequebookAddress(null)
-    setChequebookBalance(null)
-    setPeerBalances(null)
-    setPeerCheques(null)
-    setSettlements(null)
-    setChainState(null)
-
-    if (beeApi !== null) {
-      refresh()
-    }
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const refresh = async () => {
     // Don't want to refresh when already refreshing
     if (isRefreshing) {
@@ -325,6 +301,36 @@ export function Provider({ children }: Props): ReactElement {
     setLastUpdate(Date.now())
   }
 
+  useEffect(() => {
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(true)
+
+    setApiHealth(false)
+
+    if (beeApi !== null) refresh()
+  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoading(true)
+    setNodeAddresses(null)
+    setNodeTopology(null)
+    setNodeInfo(null)
+    setPeers(null)
+    setChequebookAddress(null)
+    setChequebookBalance(null)
+    setPeerBalances(null)
+    setPeerCheques(null)
+    setSettlements(null)
+    setChainState(null)
+
+    if (beeApi !== null) {
+      refresh()
+    }
+  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const start = (freq = REFRESH_WHEN_OK) => {
     refresh()
     setFrequency(freq)
@@ -338,6 +344,8 @@ export function Provider({ children }: Props): ReactElement {
 
     if (status.all !== 'OK') newFrequency = REFRESH_WHEN_ERROR
 
+    // TODO: refactor and fix react state setters
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (newFrequency !== frequency) setFrequency(newFrequency)
   }, [status.all, frequency])
 

@@ -90,6 +90,8 @@ cd  bee-dashboard
 
 pnpm install
 
+pnpm husky install
+
 pnpm start
 ```
 

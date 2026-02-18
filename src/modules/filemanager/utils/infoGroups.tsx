@@ -168,7 +168,7 @@ function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch
 
   const redundancyLabel =
     fi.redundancyLevel !== undefined
-      ? erasureCodeMarks.find(mark => mark.value === fi.redundancyLevel)?.label ?? fi.redundancyLevel.toString()
+      ? (erasureCodeMarks.find(mark => mark.value === fi.redundancyLevel)?.label ?? fi.redundancyLevel.toString())
       : dash
 
   return {
