@@ -19,17 +19,10 @@ interface MapRecord {
 type MapDB = Record<string, MapRecord>
 
 const fullMapDb = nodesDb as unknown as MapDB
-const deduplicatedRecords = deduplicate(fullMapDb)
 
-function deduplicate(_: MapDB): MapRecord[] {
-  const noDuplicates: Record<string, MapRecord> = {}
-
-  Object.entries(fullMapDb).forEach(([_, record]) => {
-    noDuplicates[`${record.lat} ${record.lng}`] = record
-  })
-
-  return Object.values(noDuplicates)
-}
+const deduplicatedRecords = Object.values(
+  Object.fromEntries(Object.values(fullMapDb).map(r => [`${r.lat} ${r.lng}`, r])),
+)
 
 function findIntersection(db: MapDB, peers: Peer[]): MapRecord[] {
   const noDuplicates: Record<string, MapRecord> = {}
@@ -48,11 +41,22 @@ function addPins(map: DottedMap, pins: MapRecord[], color: string) {
   })
 }
 
+enum PeerColors {
+  Black = '#303030',
+  Green = '#09CA6C',
+  LightGrey = '#dadada',
+  White = '#eaeaea',
+}
+
 const mapPrecomputed = new DottedMap({ map: JSON.parse(mapData) })
 const mapNoPins = new DottedMap({ map: JSON.parse(mapData) })
-addPins(mapPrecomputed, deduplicatedRecords, '#303030')
+addPins(mapPrecomputed, deduplicatedRecords, PeerColors.Black)
 
-const mapSvgOptions: DottedMapWithoutCountriesLib.SvgSettings = { shape: 'hexagon', radius: 0.21, color: '#dadada' }
+const mapSvgOptions: DottedMapWithoutCountriesLib.SvgSettings = {
+  shape: 'hexagon',
+  radius: 0.21,
+  color: PeerColors.LightGrey,
+}
 
 export default function Card({ style, error }: Props): ReactElement {
   const { peers } = useContext(Context)
@@ -62,11 +66,11 @@ export default function Card({ style, error }: Props): ReactElement {
     let newSvg: string
 
     if (error) {
-      newSvg = mapNoPins.getSVG({ ...mapSvgOptions, color: '#eaeaea' })
+      newSvg = mapNoPins.getSVG({ ...mapSvgOptions, color: PeerColors.White })
     } else if (peers) {
       const points = findIntersection(fullMapDb, peers)
       const mapNew = Object.create(mapPrecomputed)
-      addPins(mapNew, points, '#09CA6C')
+      addPins(mapNew, points, PeerColors.Green)
       newSvg = mapNew.getSVG(mapSvgOptions)
     } else {
       return

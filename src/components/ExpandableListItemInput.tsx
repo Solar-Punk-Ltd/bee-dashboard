@@ -158,7 +158,7 @@ export default function ExpandableListItemInput({
                   loading={loading}
                   iconType={confirmIcon ?? Check}
                   onClick={() => {
-                    if (onConfirm) onConfirm(inputValue.trim())
+                    onConfirm?.(inputValue.trim())
                   }}
                 >
                   {confirmLabel || 'Save'}
