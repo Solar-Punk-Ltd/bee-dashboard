@@ -1,12 +1,9 @@
 import { Wallet } from 'ethers'
 import { createContext, ReactElement, useContext, useEffect, useState } from 'react'
-import { Context as SettingsContext } from './Settings'
 
-const LocalStorageKeys = {
-  depositWallet: 'deposit-wallet',
-  giftWallets: 'gift-wallets',
-  invitation: 'invitation',
-}
+import { LocalStorageKeys } from '../utils/local-storage'
+
+import { Context as SettingsContext } from './Settings'
 
 interface ContextInterface {
   giftWallets: Wallet[]
@@ -15,7 +12,8 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   giftWallets: [],
-  addGiftWallet: () => {}, // eslint-disable-line
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  addGiftWallet: () => {},
 }
 
 export const Context = createContext<ContextInterface>(initialValues)

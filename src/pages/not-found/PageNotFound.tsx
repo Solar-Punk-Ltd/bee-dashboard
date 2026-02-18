@@ -1,7 +1,8 @@
-import { ReactElement } from 'react'
-import { HistoryHeader } from '../../components/HistoryHeader'
-import { Typography } from '@material-ui/core'
+import { Typography } from '@mui/material'
 import { Link } from 'react-router-dom'
+import { ReactElement } from 'react'
+
+import { HistoryHeader } from '../../components/HistoryHeader'
 import { ROUTES } from '../../routes'
 
 export default function PageNotFound(): ReactElement {

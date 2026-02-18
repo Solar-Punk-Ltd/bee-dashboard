@@ -13,7 +13,7 @@ import {
   Topology,
   WalletBalance,
 } from '@ethersphere/bee-js'
-import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactNode, ReactElement, useContext, useEffect, useState } from 'react'
 import { useLatestBeeRelease } from '../hooks/apiHooks'
 import { Context as SettingsContext } from './Settings'
 
@@ -92,8 +92,10 @@ const initialValues: ContextInterface = {
   latestBeeRelease: null,
   isLoading: true,
   lastUpdate: null,
-  start: () => {}, // eslint-disable-line
-  stop: () => {}, // eslint-disable-line
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  start: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  stop: () => {},
   refresh: () => Promise.reject(),
 }
 
@@ -101,7 +103,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 function getStatus(
@@ -162,10 +164,6 @@ function determineOverallStatus(status: Status, startedAt: number): CheckState {
 // This does not need to be exposed and works much better as variable than state variable which may trigger some unnecessary re-renders
 let isRefreshing = false
 
-interface Props {
-  children: ReactChild
-}
-
 export function Provider({ children }: Props): ReactElement {
   const { beeApi } = useContext(SettingsContext)
   const [beeVersion, setBeeVersion] = useState<string | null>(null)
@@ -182,7 +180,7 @@ export function Provider({ children }: Props): ReactElement {
   const [settlements, setSettlements] = useState<AllSettlements | null>(null)
   const [chainState, setChainState] = useState<ChainState | null>(null)
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null)
-  const [startedAt] = useState(Date.now())
+  const [startedAt] = useState(() => Date.now())
 
   const { latestBeeRelease } = useLatestBeeRelease()
 

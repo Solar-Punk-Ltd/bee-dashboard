@@ -1,5 +1,6 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { createContext, ReactChild, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+
 import { Context as SettingsContext } from './Settings'
 
 export interface EnrichedPostageBatch extends PostageBatch {
@@ -22,8 +23,10 @@ const initialValues: ContextInterface = {
   error: null,
   isLoading: false,
   lastUpdate: null,
-  start: () => {}, // eslint-disable-line
-  stop: () => {}, // eslint-disable-line
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  start: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  stop: () => {},
   refresh: () => Promise.reject(),
 }
 
@@ -31,7 +34,7 @@ export const Context = createContext<ContextInterface>(initialValues)
 export const Consumer = Context.Consumer
 
 interface Props {
-  children: ReactChild
+  children: ReactNode
 }
 
 export function enrichStamp(postageBatch: PostageBatch): EnrichedPostageBatch {
@@ -66,7 +69,7 @@ export function Provider({ children }: Props): ReactElement {
 
     try {
       setIsLoading(true)
-      const stamps = await beeApi.getAllPostageBatch()
+      const stamps = await beeApi.getPostageBatches()
 
       setStamps(stamps.map(enrichStamp))
       setLastUpdate(Date.now())
