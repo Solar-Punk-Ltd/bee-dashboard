@@ -18,8 +18,8 @@ export function FormbricksIntegration({ isActive }: FormbricksIntegrationProps) 
   const formbricksReadyRef = useRef(false)
   const pendingEventRef = useRef(false)
 
-  const environmentId = process.env.REACT_APP_FORMBRICKS_ENV_ID
-  const appUrl = process.env.REACT_APP_FORMBRICKS_APP_URL
+  const environmentId = import.meta.env.VITE_FORMBRICKS_ENV_ID
+  const appUrl = import.meta.env.VITE_FORMBRICKS_APP_URL
 
   const flushPendingEvent = useCallback(() => {
     if (pendingEventRef.current && localStorage.getItem(LocalStorageKeys.fmSurveyTriggered) !== 'true') {

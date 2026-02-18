@@ -11,13 +11,11 @@ export async function loadManifest(
   await manifest.loadRecursively(beeApi, options, requestOptions)
 
   // If the manifest is a feed, resolve it and overwrite the manifest
-  await manifest.resolveFeed(beeApi, requestOptions).then(
-    async feed =>
-      await feed.ifPresentAsync(async feedUpdate => {
-        manifest = MantarayNode.unmarshalFromData(feedUpdate.payload.toUint8Array(), NULL_ADDRESS)
-        await manifest.loadRecursively(beeApi, options, requestOptions)
-      }),
-  )
+  const feed = await manifest.resolveFeed(beeApi, requestOptions)
+  await feed.ifPresentAsync(async feedUpdate => {
+    manifest = MantarayNode.unmarshalFromData(feedUpdate.payload.toUint8Array(), NULL_ADDRESS)
+    await manifest.loadRecursively(beeApi, options, requestOptions)
+  })
 
   return manifest
 }
