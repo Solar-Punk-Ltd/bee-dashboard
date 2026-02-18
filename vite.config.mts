@@ -14,8 +14,8 @@ export default defineConfig(({ mode }) => {
         lib: {
           entry: path.resolve(__dirname, 'src/App.tsx'),
           name: 'beeDashboard',
-          fileName: format => `App.${format}.js`,
-          formats: ['umd', 'cjs'],
+          fileName: format => `App.${format === 'es' ? 'js' : 'cjs.js'}`,
+          formats: ['es', 'cjs'],
         },
         sourcemap: !isProd,
         minify: false,
@@ -26,10 +26,6 @@ export default defineConfig(({ mode }) => {
             globals: {
               react: 'React',
               'react-dom': 'ReactDOM',
-            },
-            assetFileNames: (assetInfo: any) => {
-              if (assetInfo.names?.[0] === 'style.css') return 'App.css'
-              return assetInfo.names?.[0] || 'asset'
             },
           },
         },

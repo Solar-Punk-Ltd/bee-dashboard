@@ -83,6 +83,7 @@ export function Tooltip({
               }
             : undefined
         }
+        // Safe: label is always from static TOOLTIPS constant or hardcoded strings, never user input
         dangerouslySetInnerHTML={{ __html: label }}
       />
     </span>
