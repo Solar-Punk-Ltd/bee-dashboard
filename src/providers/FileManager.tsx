@@ -203,13 +203,17 @@ export function Provider({ children }: Props) {
       const usableStamps = await getUsableStamps(beeApi)
       const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
 
-      if (currentStamp && currentStamp.batchID.toString() === batchId && refreshedStamp) {
-        setCurrentStamp(refreshedStamp)
-      }
+      setCurrentStamp(prev => {
+        if (prev && prev.batchID.toString() === batchId && refreshedStamp) {
+          return refreshedStamp
+        }
+
+        return prev
+      })
 
       return refreshedStamp
     },
-    [beeApi, currentStamp],
+    [beeApi],
   )
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {

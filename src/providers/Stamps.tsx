@@ -65,11 +65,7 @@ export function Provider({ children }: Props): ReactElement {
   }, [isLoading])
 
   const refresh = useCallback(async () => {
-    if (isLoadingRef.current) {
-      return
-    }
-
-    if (!beeApi) {
+    if (isLoadingRef.current || !beeApi) {
       return
     }
 
@@ -91,8 +87,12 @@ export function Provider({ children }: Props): ReactElement {
   const stop = () => setFrequency(null)
 
   useEffect(() => {
-    refresh()
+    if (beeApi) {
+      refresh()
+    }
+  }, [beeApi, refresh])
 
+  useEffect(() => {
     if (frequency) {
       const interval = setInterval(refresh, frequency)
 
