@@ -12,7 +12,6 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   giftWallets: [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   addGiftWallet: () => {},
 }
 
@@ -33,7 +32,6 @@ export function Provider({ children }: Props): ReactElement {
     const existingGiftWallets = localStorage.getItem(LocalStorageKeys.giftWallets)
 
     if (existingGiftWallets) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGiftWallets(JSON.parse(existingGiftWallets).map((privateKey: string) => new Wallet(privateKey, rpcProvider)))
     }
   }, [rpcProvider])

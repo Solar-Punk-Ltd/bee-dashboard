@@ -12,6 +12,7 @@
     "open",
     "rimraf",
     "sass",
-    "ts-node"
+    "ts-node",
+    "@vitejs/plugin-react"
   ]
 }

@@ -104,9 +104,7 @@ const initialValues: ContextInterface = {
   latestBeeRelease: null,
   isLoading: true,
   lastUpdate: null,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   start: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   stop: () => {},
   refresh: () => Promise.reject(),
 }

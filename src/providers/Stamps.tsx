@@ -25,9 +25,7 @@ const initialValues: ContextInterface = {
   error: null,
   isLoading: false,
   lastUpdate: null,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   start: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   stop: () => {},
   refresh: () => Promise.reject(),
 }
@@ -67,11 +65,7 @@ export function Provider({ children }: Props): ReactElement {
   }, [isLoading])
 
   const refresh = useCallback(async () => {
-    if (isLoadingRef.current) {
-      return
-    }
-
-    if (!beeApi) {
+    if (isLoadingRef.current || !beeApi) {
       return
     }
 
@@ -93,8 +87,12 @@ export function Provider({ children }: Props): ReactElement {
   const stop = () => setFrequency(null)
 
   useEffect(() => {
-    refresh()
+    if (beeApi) {
+      refresh()
+    }
+  }, [beeApi, refresh])
 
+  useEffect(() => {
     if (frequency) {
       const interval = setInterval(refresh, frequency)
 

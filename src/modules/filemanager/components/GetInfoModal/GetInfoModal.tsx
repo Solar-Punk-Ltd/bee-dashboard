@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useState } from 'react'
+import { ReactElement, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ClipboardIcon from 'remixicon-react/FileCopyLineIcon'
 import InfoIcon from 'remixicon-react/InformationLineIcon'
@@ -19,31 +19,30 @@ const COPY_TIMEOUT_MS = 2000
 export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-  const [timeoutRef, setTimeoutRef] = useState<{ [key: string]: NodeJS.Timeout }>({})
+
+  const timeoutRef = useRef<Record<string, NodeJS.Timeout>>({})
 
   useEffect(() => {
     return () => {
-      Object.values(timeoutRef).forEach(timeout => clearTimeout(timeout))
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(timeoutRef.current).forEach(clearTimeout)
     }
-  }, [timeoutRef])
+  }, [])
 
   const handleCopy = async (prop: FileProperty) => {
     try {
       await navigator.clipboard.writeText(prop.raw ?? prop.value)
 
-      if (timeoutRef[prop.key]) {
-        clearTimeout(timeoutRef[prop.key])
+      if (timeoutRef.current[prop.key]) {
+        clearTimeout(timeoutRef.current[prop.key])
       }
 
       setCopiedKey(prop.key)
 
-      setTimeoutRef(prev => ({
-        ...prev,
-        [prop.key]: setTimeout(() => {
-          setCopiedKey(prev => (prev === prop.key ? null : prev))
-          delete timeoutRef[prop.key]
-        }, COPY_TIMEOUT_MS),
-      }))
+      timeoutRef.current[prop.key] = setTimeout(() => {
+        setCopiedKey(prev => (prev === prop.key ? null : prev))
+        delete timeoutRef.current[prop.key]
+      }, COPY_TIMEOUT_MS)
     } catch {
       /* noop */
     }

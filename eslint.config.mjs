@@ -203,6 +203,7 @@ export default defineConfig([
       curly: ['error', 'multi-line'],
       'object-curly-spacing': ['error', 'always'],
       'comma-dangle': ['error', 'always-multiline'],
+      'react-hooks/set-state-in-effect': 'off',
       '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-dupe-class-members': 'error',
@@ -210,7 +211,7 @@ export default defineConfig([
       'max-nested-callbacks': ['error', 4],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/no-empty-function': 'error',
+      '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },

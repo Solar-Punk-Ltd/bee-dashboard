@@ -21,7 +21,6 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   platform: SupportedPlatforms.macOS,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setPlatform: () => {},
 }
 

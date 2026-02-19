@@ -67,7 +67,6 @@ export function AssetSyncing({ reference }: Props): ReactElement {
     */
     if (beeApi && reference && !isRetrieveChecking && syncProgress > 10 && syncProgress < 100) {
       // It's a long running task make sure only one run occurs at a time.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRetrieveChecking(true)
 
       beeApi.isReferenceRetrievable(reference).then(isRetriavable => {

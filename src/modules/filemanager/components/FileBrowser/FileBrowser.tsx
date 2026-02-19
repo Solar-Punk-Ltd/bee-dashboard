@@ -214,13 +214,12 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
 
-  const getDriveName = useMemo(
-    () =>
-      (driveId: string): string => {
-        const match = drives.find(d => d.id.toString() === driveId)
+  const getDriveName = useCallback(
+    (driveId: string): string => {
+      const match = drives.find(d => d.id.toString() === driveId)
 
-        return match?.name ?? ''
-      },
+      return match?.name ?? ''
+    },
     [drives],
   )
 
@@ -231,9 +230,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     const minY = (bodyRect?.top ?? 0) + 8
     const clickY = Math.max(Math.round(r.bottom + 6), minY)
     const fakeEvt = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault: () => {},
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       stopPropagation: () => {},
       clientX: clickX,
       clientY: clickY,

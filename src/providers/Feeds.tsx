@@ -23,7 +23,6 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   identities: [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setIdentities: () => {},
 }
 
@@ -39,7 +38,6 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIdentities(JSON.parse(localStorage.getItem(LocalStorageKeys.feeds) || '[]'))
     } catch {
       setIdentities([])

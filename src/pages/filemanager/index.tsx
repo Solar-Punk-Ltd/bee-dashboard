@@ -187,7 +187,6 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     if (status.all !== CheckState.OK) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowConnectionError(true)
     } else {
       setShowConnectionError(false)
@@ -200,7 +199,6 @@ export function FileManagerPage(): ReactElement {
     }
 
     if (!hasPk) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false)
 
       return
