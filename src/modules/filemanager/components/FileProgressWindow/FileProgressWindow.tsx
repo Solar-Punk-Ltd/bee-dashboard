@@ -5,7 +5,6 @@ import CloseIcon from 'remixicon-react/CloseLineIcon'
 import { FileTransferType, ProgressItem, TransferBarColor, TransferStatus } from '../../constants/transfers'
 import { capitalizeFirstLetter, truncateNameMiddle } from '../../utils/common'
 import { GetIconElement } from '../../utils/GetIconElement'
-import { guessMime } from '../../utils/view'
 import { ProgressBar } from '../ProgressBar/ProgressBar'
 
 import './FileProgressWindow.scss'
@@ -140,9 +139,6 @@ export function FileProgressWindow({
 
           const centerDisplay = getCenterText() || '\u00A0'
 
-          const { mime } = guessMime(item.name)
-          const mimeType = mime.split('/')[0].toLowerCase() || 'file'
-
           return (
             <div
               className="fm-file-progress-window-file-item"
@@ -150,7 +146,7 @@ export function FileProgressWindow({
               ref={idx === 0 ? firstRowRef : undefined}
             >
               <div className="fm-file-progress-window-file-type-icon">
-                <GetIconElement size="14" icon={mimeType} color="black" />
+                <GetIconElement size="14" name={item.name} color="black" />
               </div>
 
               <div className="fm-file-progress-window-file-datas">

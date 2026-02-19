@@ -11,7 +11,7 @@ import { Context as FileContext, defaultUploadOrigin } from '../../providers/Fil
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
 import { recognizeEnsOrSwarmHash, regexpEns } from '../../utils'
-import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/local-storage'
+import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/localStorage'
 import { loadManifest } from '../../utils/manifest'
 
 import { FileNavigation, FileOrigin } from './FileNavigation'

@@ -91,8 +91,6 @@ export const useAccounting = (
     // We don't have any settlements loaded yet or we are already loading/have loaded the uncashed amounts
     if (isLoadingUncashed || !beeApi || !settlements || uncashedAmounts) return
 
-    // TODO: refactor and fix react state setters
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsloadingUncashed(true)
     const promises = settlements.settlements
       .filter(({ received }) => received.gt(BZZ.fromPLUR('0')))

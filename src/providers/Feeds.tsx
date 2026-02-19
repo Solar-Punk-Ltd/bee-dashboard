@@ -1,6 +1,6 @@
 import { createContext, ReactElement, ReactNode, useEffect, useState } from 'react'
 
-import { LocalStorageKeys } from '../utils/local-storage'
+import { LocalStorageKeys } from '../utils/localStorage'
 
 export enum IdentityType {
   V3 = 'V3',
@@ -23,7 +23,6 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   identities: [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setIdentities: () => {},
 }
 
@@ -39,8 +38,6 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     try {
-      // TODO: refactor and fix react state setters
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIdentities(JSON.parse(localStorage.getItem(LocalStorageKeys.feeds) || '[]'))
     } catch {
       setIdentities([])

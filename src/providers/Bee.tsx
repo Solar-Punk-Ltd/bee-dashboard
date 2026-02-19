@@ -13,7 +13,17 @@ import {
   Topology,
   WalletBalance,
 } from '@ethersphere/bee-js'
-import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  ReactElement,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import { useLatestBeeRelease } from '../hooks/apiHooks'
 
@@ -94,9 +104,7 @@ const initialValues: ContextInterface = {
   latestBeeRelease: null,
   isLoading: true,
   lastUpdate: null,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   start: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   stop: () => {},
   refresh: () => Promise.reject(),
 }
@@ -168,6 +176,7 @@ let isRefreshing = false
 
 export function Provider({ children }: Props): ReactElement {
   const { beeApi } = useContext(SettingsContext)
+
   const [beeVersion, setBeeVersion] = useState<string | null>(null)
   const [apiHealth, setApiHealth] = useState<boolean>(false)
   const [nodeAddresses, setNodeAddresses] = useState<NodeAddresses | null>(null)
@@ -189,9 +198,11 @@ export function Provider({ children }: Props): ReactElement {
   const [error, setError] = useState<Error | null>(initialValues.error)
   const [isLoading, setIsLoading] = useState<boolean>(initialValues.isLoading)
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
-  const [frequency, setFrequency] = useState<number | null>(30000)
+  const [frequency, setFrequency] = useState<number | null>(REFRESH_WHEN_OK)
 
-  const refresh = async () => {
+  const frequencyRef = useRef<number | null>(frequency)
+
+  const refresh = useCallback(async () => {
     // Don't want to refresh when already refreshing
     if (isRefreshing) {
       return
@@ -299,55 +310,59 @@ export function Provider({ children }: Props): ReactElement {
     setIsLoading(false)
     isRefreshing = false
     setLastUpdate(Date.now())
-  }
+  }, [beeApi])
 
-  useEffect(() => {
-    // TODO: refactor and fix react state setters
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true)
-
-    setApiHealth(false)
-
-    if (beeApi !== null) refresh()
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    // TODO: refactor and fix react state setters
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true)
-    setNodeAddresses(null)
-    setNodeTopology(null)
-    setNodeInfo(null)
-    setPeers(null)
-    setChequebookAddress(null)
-    setChequebookBalance(null)
-    setPeerBalances(null)
-    setPeerCheques(null)
-    setSettlements(null)
-    setChainState(null)
-
-    if (beeApi !== null) {
+  const start = useCallback(
+    (freq = REFRESH_WHEN_OK) => {
       refresh()
-    }
-  }, [beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
+      setFrequency(freq)
+    },
+    [refresh],
+  )
+  const stop = useCallback(() => setFrequency(null), [])
 
-  const start = (freq = REFRESH_WHEN_OK) => {
-    refresh()
-    setFrequency(freq)
-  }
-  const stop = () => setFrequency(null)
-
-  const status = getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt)
+  const status = useMemo(
+    () => getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt),
+    [nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt],
+  )
 
   useEffect(() => {
-    let newFrequency = REFRESH_WHEN_OK
+    const setStates = () => {
+      setIsLoading(true)
+      setApiHealth(false)
+      setNodeAddresses(null)
+      setNodeTopology(null)
+      setNodeInfo(null)
+      setPeers(null)
+      setChequebookAddress(null)
+      setChequebookBalance(null)
+      setPeerBalances(null)
+      setPeerCheques(null)
+      setSettlements(null)
+      setChainState(null)
 
-    if (status.all !== 'OK') newFrequency = REFRESH_WHEN_ERROR
+      if (beeApi !== null) {
+        refresh()
+      }
+    }
 
-    // TODO: refactor and fix react state setters
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (newFrequency !== frequency) setFrequency(newFrequency)
-  }, [status.all, frequency])
+    setStates()
+  }, [beeApi, refresh])
+
+  useEffect(() => {
+    frequencyRef.current = frequency
+  }, [frequency])
+
+  useEffect(() => {
+    const newFrequency = status.all !== CheckState.OK ? REFRESH_WHEN_ERROR : REFRESH_WHEN_OK
+    const setFrequencyState = () => {
+      if (newFrequency !== frequencyRef.current) {
+        setFrequency(newFrequency)
+      }
+    }
+
+    setFrequencyState()
+  }, [status.all])
 
   // Start the update loop
   useEffect(() => {
@@ -357,36 +372,58 @@ export function Provider({ children }: Props): ReactElement {
 
       return () => clearInterval(interval)
     }
-  }, [frequency, beeApi]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frequency, beeApi, refresh])
 
-  return (
-    <Context.Provider
-      value={{
-        beeVersion,
-        status,
-        error,
-        apiHealth,
-        nodeAddresses,
-        nodeInfo,
-        topology,
-        chequebookAddress,
-        peers,
-        chequebookBalance,
-        stake,
-        peerBalances,
-        peerCheques,
-        settlements,
-        chainState,
-        walletBalance,
-        latestBeeRelease,
-        isLoading,
-        lastUpdate,
-        start,
-        stop,
-        refresh,
-      }}
-    >
-      {children}
-    </Context.Provider>
+  const contextValue = useMemo(
+    () => ({
+      beeVersion,
+      status,
+      error,
+      apiHealth,
+      nodeAddresses,
+      nodeInfo,
+      topology,
+      chequebookAddress,
+      peers,
+      chequebookBalance,
+      stake,
+      peerBalances,
+      peerCheques,
+      settlements,
+      chainState,
+      walletBalance,
+      latestBeeRelease,
+      isLoading,
+      lastUpdate,
+      start,
+      stop,
+      refresh,
+    }),
+    [
+      beeVersion,
+      status,
+      error,
+      apiHealth,
+      nodeAddresses,
+      nodeInfo,
+      topology,
+      chequebookAddress,
+      peers,
+      chequebookBalance,
+      stake,
+      peerBalances,
+      peerCheques,
+      settlements,
+      chainState,
+      walletBalance,
+      latestBeeRelease,
+      isLoading,
+      lastUpdate,
+      start,
+      stop,
+      refresh,
+    ],
   )
+
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }

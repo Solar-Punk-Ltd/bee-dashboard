@@ -118,7 +118,7 @@ export function UpgradeDriveModal({
 
       try {
         cost = await beeApi?.getExtensionCost(batchId, capacity, duration, options, encryption, erasureCodeLevel)
-      } catch (_) {
+      } catch {
         setErrorMessage?.('Failed to calculate extension cost')
         setShowError(true)
 
@@ -204,11 +204,7 @@ export function UpgradeDriveModal({
   }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, lifetimeIndex, stamp.batchID, stamp.duration])
 
   useEffect(() => {
-    const setValidityEndDateState = () => {
-      setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
-    }
-
-    setValidityEndDateState()
+    setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
   }, [lifetimeIndex, stamp.duration])
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { Wallet } from 'ethers'
-import { createContext, ReactElement, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, useCallback, useContext, useEffect, useState } from 'react'
 
-import { LocalStorageKeys } from '../utils/local-storage'
+import { LocalStorageKeys } from '../utils/localStorage'
 
 import { Context as SettingsContext } from './Settings'
 
@@ -12,7 +12,6 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   giftWallets: [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   addGiftWallet: () => {},
 }
 
@@ -33,17 +32,18 @@ export function Provider({ children }: Props): ReactElement {
     const existingGiftWallets = localStorage.getItem(LocalStorageKeys.giftWallets)
 
     if (existingGiftWallets) {
-      // TODO: refactor and fix react state setters
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGiftWallets(JSON.parse(existingGiftWallets).map((privateKey: string) => new Wallet(privateKey, rpcProvider)))
     }
   }, [rpcProvider])
 
-  function addGiftWallet(wallet: Wallet) {
-    const newArray = [...giftWallets, wallet]
-    localStorage.setItem(LocalStorageKeys.giftWallets, JSON.stringify(newArray.map(x => x.privateKey)))
-    setGiftWallets(newArray)
-  }
+  const addGiftWallet = useCallback((wallet: Wallet) => {
+    setGiftWallets(prev => {
+      const newArray = [...prev, wallet]
+      localStorage.setItem(LocalStorageKeys.giftWallets, JSON.stringify(newArray.map(x => x.privateKey)))
+
+      return newArray
+    })
+  }, [])
 
   return (
     <Context.Provider

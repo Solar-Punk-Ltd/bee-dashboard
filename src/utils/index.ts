@@ -135,7 +135,7 @@ export function extractSwarmCid(s: string): string | undefined {
   const cid = matches[1]
   try {
     return new Reference(cid).toHex()
-  } catch (_) {
+  } catch {
     return
   }
 }
@@ -216,7 +216,6 @@ interface Options {
   timeout?: number
 }
 
-// TODO: merge this with FM component getUsableStamps()
 export function waitUntilStampUsable(batchId: BatchId | string, bee: Bee, options?: Options): Promise<PostageBatch> {
   return waitForStamp(batchId, bee, options)
 }

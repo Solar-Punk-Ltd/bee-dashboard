@@ -2,15 +2,6 @@
   "name": "@ethersphere/bee-dashboard",
   "version": "0.33.4",
   "description": "An app which helps users to setup their Bee node and do actions like cash out cheques",
-  "keywords": [
-    "bee",
-    "swarm",
-    "decentralised",
-    "storage",
-    "ethereum",
-    "typescript",
-    "p2p"
-  ],
   "homepage": ".",
   "bin": {
     "bee-dashboard": "./serve.js"
@@ -36,17 +27,33 @@
     "type": "git",
     "url": "https://github.com/ethersphere/bee-dashboard.git"
   },
-  "overrides": {
-    "@fairdatasociety/fdp-storage": {
-      "@ethersphere/bee-js": "^10.4.0"
-    }
+  "scripts": {
+    "prepublishOnly": "cross-env NODE_ENV=production pnpm run prepare",
+    "prepare": "pnpm run build && pnpm run build:component",
+    "start": "vite",
+    "desktop": "node ./desktop.mjs",
+    "build": "rimraf ./build && vite build",
+    "build:component": "rimraf ./lib && BUILD_MODE=component vite build",
+    "test": "jest",
+    "test:ui": "node tests/ui/index.js",
+    "serve": "node ./serve.js",
+    "depcheck": "depcheck .",
+    "lint": "eslint . --report-unused-disable-directives --no-cache --max-warnings=5",
+    "lint:fix": "pnpm run lint --fix",
+    "check:types": "tsc --project tsconfig.lib.json",
+    "update-map-data": "node ./utils/update-map-data.js"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19",
+    "react-router": ">=7",
+    "react-router-dom": ">=7",
+    "tss-react": ">=4"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@ethersphere/bee-js": "^10.4.0",
-    "@ethersproject/keccak256": "^5.8.0",
-    "@ethersproject/strings": "^5.8.0",
     "@fairdatasociety/fdp-storage": "^0.19.0",
     "@formbricks/js": "^4.3.0",
     "@mui/icons-material": "^7.3.7",
@@ -121,12 +128,10 @@
     "vite-plugin-node-polyfills": "^0.25.0",
     "web-vitals": "5.1.0"
   },
-  "peerDependencies": {
-    "react": ">=19",
-    "react-dom": ">=19",
-    "react-router": ">=7",
-    "react-router-dom": ">=7",
-    "tss-react": ">=4"
+  "overrides": {
+    "@fairdatasociety/fdp-storage": {
+      "@ethersphere/bee-js": "^10.4.0"
+    }
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -136,22 +141,15 @@
       "unrs-resolver"
     ]
   },
-  "scripts": {
-    "prepublishOnly": "cross-env NODE_ENV=production pnpm run prepare",
-    "prepare": "pnpm run build && pnpm run build:component",
-    "start": "vite",
-    "desktop": "node ./desktop.mjs",
-    "build": "rimraf ./build && vite build",
-    "build:component": "rimraf ./lib && BUILD_MODE=component vite build",
-    "test": "jest",
-    "test:ui": "node ui-test/index.js",
-    "serve": "node ./serve.js",
-    "depcheck": "depcheck .",
-    "lint": "eslint . --report-unused-disable-directives --no-cache --max-warnings=5",
-    "lint:fix": "pnpm run lint --fix",
-    "check:types": "tsc --project tsconfig.lib.json",
-    "update-map-data": "node ./utils/update-map-data.js"
-  },
+  "keywords": [
+    "bee",
+    "swarm",
+    "decentralised",
+    "storage",
+    "ethereum",
+    "typescript",
+    "p2p"
+  ],
   "files": [
     "lib",
     "build",
@@ -170,7 +168,7 @@
     ]
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=24.0.0",
     "npm": ">=11.0.0",
     "pnpm": ">=10.0.0",
     "bee": "2.6.0"

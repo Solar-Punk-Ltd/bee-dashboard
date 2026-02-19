@@ -1,7 +1,7 @@
 import type { FileInfo } from '@solarpunkltd/file-manager-lib'
 import { useEffect, useMemo, useState } from 'react'
 
-import { LocalStorageKeys } from '../../../utils/local-storage'
+import { LocalStorageKeys } from '../../../utils/localStorage'
 
 export enum SortKey {
   Name = 'name',
@@ -21,7 +21,7 @@ type Options = {
   persist?: boolean
   defaultState?: SortState
   storageKey?: string
-  getDriveName?: (fi: FileInfo) => string
+  getDriveName?: (driveId: string) => string
 }
 
 const DEFAULT_STATE: SortState = { key: SortKey.Timestamp, dir: SortDir.Desc }
@@ -128,8 +128,8 @@ export function useSorting(
       }
 
       if (sort.key === SortKey.Drive) {
-        const ad = (getDriveName?.(a) ?? '').toLocaleLowerCase()
-        const bd = (getDriveName?.(b) ?? '').toLocaleLowerCase()
+        const ad = (getDriveName?.(a.driveId.toString()) ?? '').toLocaleLowerCase()
+        const bd = (getDriveName?.(b.driveId.toString()) ?? '').toLocaleLowerCase()
 
         if (ad < bd) return -1 * mul
 

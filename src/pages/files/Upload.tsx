@@ -17,7 +17,7 @@ import { ROUTES } from '../../routes'
 import { waitUntilStampUsable } from '../../utils'
 import { detectIndexHtml, getAssetNameFromFiles, packageFile } from '../../utils/file'
 import { persistIdentity, updateFeed } from '../../utils/identity'
-import { LocalStorageKeys, putHistory } from '../../utils/local-storage'
+import { LocalStorageKeys, putHistory } from '../../utils/localStorage'
 import { FeedPasswordDialog } from '../feeds/FeedPasswordDialog'
 import { PostageStampAdvancedCreation } from '../stamps/PostageStampAdvancedCreation'
 import { PostageStampSelector } from '../stamps/PostageStampSelector'
@@ -47,7 +47,7 @@ export function Upload(): ReactElement {
 
   useEffect(() => {
     refresh()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [refresh])
 
   if (status.all === CheckState.ERROR) return <TroubleshootConnectionCard />
 

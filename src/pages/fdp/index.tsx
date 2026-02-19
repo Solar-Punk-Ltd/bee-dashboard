@@ -8,14 +8,14 @@ import ImportIcon from 'remixicon-react/AddBoxLineIcon'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
 
 import { SwarmButton } from '../../components/SwarmButton'
-import { joinUrl } from '../../react-fs/Utility'
+import { joinUrl } from '../../reactFs/Utility'
 
 import { FdpLogin } from './FdpLogin'
 import { FdpPods } from './FdpPods'
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 
-import { LocalStorageKeys } from '@/utils/local-storage'
+import { LocalStorageKeys } from '@/utils/localStorage'
 
 async function makeFdp(): Promise<FdpStorage | null> {
   const bee = new Bee('http://localhost:1633')
@@ -69,8 +69,6 @@ export default function FDP(): ReactElement {
 
   useEffect(() => {
     if (fdp && loggedIn) {
-      // TODO: refactor and fix react state setters
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingPods(true)
       fdp.personalStorage.list().then(pods => {
         setPods(pods.pods)

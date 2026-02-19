@@ -2,7 +2,7 @@ import { BZZ, DAI, EthAddress, PrivateKey } from '@ethersphere/bee-js'
 import { debounce } from '@mui/material'
 import { Contract, JsonRpcProvider, TransactionReceipt, TransactionResponse, Wallet } from 'ethers'
 
-import { BZZ_TOKEN_ADDRESS, bzzABI } from './bzz-abi'
+import { BZZ_TOKEN_ADDRESS, bzzABI } from './bzzAbi'
 import { ethAddressString, newGnosisProvider } from './chain'
 
 async function getNetworkChainId(url: string): Promise<bigint> {

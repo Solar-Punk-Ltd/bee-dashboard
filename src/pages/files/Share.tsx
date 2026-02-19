@@ -13,7 +13,7 @@ import { META_FILE_NAME } from '../../constants'
 import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
-import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/local-storage'
+import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/localStorage'
 import { loadManifest } from '../../utils/manifest'
 
 import { AssetPreview } from './AssetPreview'
@@ -75,7 +75,7 @@ export function Share(): ReactElement {
         if (!isMountedRef.current) return
 
         setMetadata({ ...formattedMetadata, hash })
-      } catch (_) {
+      } catch {
         // if metadata is not available or invalid go with the default one
         const count = Object.keys(entries).length
 

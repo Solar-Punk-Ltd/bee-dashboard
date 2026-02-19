@@ -43,6 +43,7 @@ async function main() {
  * @returns {Promise<{ browser: puppeteer.Browser, page: puppeteer.Page }>}
  */
 async function preparePage() {
+  // TODO: run in CI, headless mode
   const browser = await puppeteer.launch({
     defaultViewport: null,
     headless: false,

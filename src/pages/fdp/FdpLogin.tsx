@@ -10,7 +10,7 @@ import { SwarmButton } from '../../components/SwarmButton'
 import { Horizontal } from './Horizontal'
 import { Vertical } from './Vertical'
 
-import { LocalStorageKeys } from '@/utils/local-storage'
+import { LocalStorageKeys } from '@/utils/localStorage'
 
 interface Props {
   fdp: FdpStorage

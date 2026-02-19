@@ -1,7 +1,9 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { createContext, ReactElement, ReactNode, useContext, useEffect, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { Context as SettingsContext } from './Settings'
+
+const DEFUALT_REFRESH_REQUENCY_MS = 30_000
 
 export interface EnrichedPostageBatch extends PostageBatch {
   usage: number
@@ -23,9 +25,7 @@ const initialValues: ContextInterface = {
   error: null,
   isLoading: false,
   lastUpdate: null,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   start: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   stop: () => {},
   refresh: () => Promise.reject(),
 }
@@ -58,12 +58,14 @@ export function Provider({ children }: Props): ReactElement {
   const [lastUpdate, setLastUpdate] = useState<number | null>(initialValues.lastUpdate)
   const [frequency, setFrequency] = useState<number | null>(null)
 
-  const refresh = async () => {
-    if (isLoading) {
-      return
-    }
+  const isLoadingRef = useRef<boolean>(isLoading)
 
-    if (!beeApi) {
+  useEffect(() => {
+    isLoadingRef.current = isLoading
+  }, [isLoading])
+
+  const refresh = useCallback(async () => {
+    if (isLoadingRef.current || !beeApi) {
       return
     }
 
@@ -79,22 +81,24 @@ export function Provider({ children }: Props): ReactElement {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [beeApi])
 
-  const start = (freq = 30000) => setFrequency(freq)
+  const start = (freq = DEFUALT_REFRESH_REQUENCY_MS) => setFrequency(freq)
   const stop = () => setFrequency(null)
 
-  // Start the update loop
   useEffect(() => {
-    refresh()
+    if (beeApi) {
+      refresh()
+    }
+  }, [beeApi, refresh])
 
-    // Start autorefresh only if the frequency is set
+  useEffect(() => {
     if (frequency) {
       const interval = setInterval(refresh, frequency)
 
       return () => clearInterval(interval)
     }
-  }, [frequency]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [frequency, refresh])
 
   return (
     <Context.Provider value={{ stamps, error, isLoading, lastUpdate, start, stop, refresh }}>

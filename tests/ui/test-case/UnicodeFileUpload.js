@@ -1,12 +1,18 @@
+const path = require('path')
 const { selectStampAndUpload } = require('../helpers')
 const { Assert, Click } = require('../library')
 
 /**
  * @param {puppeteer.Page} page Puppeteer Page object returned by `browser.newPage()`
  */
-async function testTextFileUpload(page) {
+async function testUnicodeFileUpload(page) {
   await Click.elementWithText(page, 'a', 'Files')
-  await Click.elementWithTextAndUpload(page, 'button', 'Add File', 'test-data/text.txt')
+  await Click.elementWithTextAndUpload(
+    page,
+    'button',
+    'Add File',
+    path.resolve(__dirname, '../test-data/—𝖆𝖆🙇\\𝖈𝖈.txt'),
+  )
   await assertUploadPreview(page)
   await selectStampAndUpload(page)
   await assertDownloadPreview(page)
@@ -16,9 +22,9 @@ async function testTextFileUpload(page) {
  * @param {puppeteer.Page} page Puppeteer Page object returned by `browser.newPage()`
  */
 async function assertUploadPreview(page) {
-  await Assert.elementWithTextExists(page, 'p', 'Filename: text.txt')
+  await Assert.elementWithTextExists(page, 'p', 'Filename: —𝖆𝖆🙇\\𝖈𝖈.txt')
   await Assert.elementWithTextExists(page, 'p', 'Kind: text/plain')
-  await Assert.elementWithTextExists(page, 'p', 'Size: 1.64 kB')
+  await Assert.elementWithTextExists(page, 'p', 'Size: 5.51 KB')
 }
 
 /**
@@ -26,7 +32,7 @@ async function assertUploadPreview(page) {
  */
 async function assertDownloadPreview(page) {
   assertUploadPreview(page)
-  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: da0773a9[…]5f7a1b54')
+  await Assert.elementWithTextExists(page, 'p', 'Swarm Hash: 2a3f5bfc[…]77e2a4c1')
 }
 
-module.exports = { testTextFileUpload }
+module.exports = { testUnicodeFileUpload }

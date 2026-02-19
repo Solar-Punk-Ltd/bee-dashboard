@@ -4,7 +4,7 @@ import { History } from '../../components/History'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
 import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { defaultUploadOrigin } from '../../providers/File'
-import { LocalStorageKeys } from '../../utils/local-storage'
+import { LocalStorageKeys } from '../../utils/localStorage'
 
 import { FileNavigation, FileOrigin } from './FileNavigation'
 import { UploadArea } from './UploadArea'

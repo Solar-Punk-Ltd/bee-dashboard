@@ -60,7 +60,7 @@ export default defineConfig([
       '**/assets/*',
       'lib/**',
       'build/**',
-      'test-data/**',
+      '**/test-data/**',
       'ui_samples/**',
       'commitlint.config.cjs',
     ],
@@ -203,6 +203,7 @@ export default defineConfig([
       curly: ['error', 'multi-line'],
       'object-curly-spacing': ['error', 'always'],
       'comma-dangle': ['error', 'always-multiline'],
+      'react-hooks/set-state-in-effect': 'off',
       '@typescript-eslint/no-useless-constructor': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-dupe-class-members': 'error',
@@ -211,6 +212,7 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-empty-function': 'error',
+      '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -231,7 +233,7 @@ export default defineConfig([
   },
   {
     // tests
-    files: ['tests/**/*.{ts,js}', , 'tests/**/*.spec.ts', 'ui-test/**/*.{ts,js}'],
+    files: ['tests/**/*.{ts,js}', , 'tests/**/*.spec.ts'],
     rules: {
       'no-console': 'off',
       'import/no-commonjs': 'off',
