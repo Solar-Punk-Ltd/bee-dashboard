@@ -231,9 +231,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     const minY = (bodyRect?.top ?? 0) + 8
     const clickY = Math.max(Math.round(r.bottom + 6), minY)
     const fakeEvt = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault: () => {},
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       stopPropagation: () => {},
       clientX: clickX,
       clientY: clickY,

@@ -69,7 +69,6 @@ export default function FDP(): ReactElement {
 
   useEffect(() => {
     if (fdp && loggedIn) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadingPods(true)
       fdp.personalStorage.list().then(pods => {
         setPods(pods.pods)

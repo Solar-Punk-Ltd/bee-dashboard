@@ -40,18 +40,15 @@ const initialValues: ContextInterface = {
   initializationError: false,
   showError: false,
   shallReset: false,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setCurrentDrive: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setCurrentStamp: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   resync: async () => {},
-  init: async () => null, // eslint-disable-line
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  // eslint-disable-next-line require-await
+  init: async () => null,
   setShowError: () => {},
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   syncDrives: async () => {},
-  refreshStamp: async () => undefined, // eslint-disable-line
+  // eslint-disable-next-line require-await
+  refreshStamp: async () => undefined,
 }
 
 export const Context = createContext<ContextInterface>(initialValues)

@@ -33,7 +33,6 @@ export const useBeeDesktop = (isBeeDesktop = false, desktopUrl: string): BeeDesk
 
   useEffect(() => {
     if (!isBeeDesktop) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false)
       setError(null)
 

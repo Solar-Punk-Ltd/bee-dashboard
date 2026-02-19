@@ -22,10 +22,8 @@ interface ContextInterface {
 
 const initialValues: ContextInterface = {
   files: [],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setFiles: () => {},
   uploadOrigin: defaultUploadOrigin,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setUploadOrigin: () => {},
 }
 
@@ -45,7 +43,7 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     const metadata = getMetadata(files)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setMetadata(metadata)
 
     if (previewUri) {

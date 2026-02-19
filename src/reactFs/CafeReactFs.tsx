@@ -52,7 +52,6 @@ export function CafeReactFs({
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     list(path)
       .then(setItemsSorted)

@@ -28,13 +28,11 @@ interface ContextInterface {
 const initialValues: ContextInterface = {
   beeApi: null,
   apiUrl: DEFAULT_BEE_API_HOST,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setApiUrl: () => {},
   lockedApiSettings: false,
   isDesktop: false,
   desktopApiKey: '',
   desktopUrl: window.location.origin,
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setAndPersistJsonRpcProvider: async () => {},
   rpcProviderUrl: '',
   rpcProvider: null,
@@ -83,7 +81,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     if (newApiKey) {
       localStorage.setItem(LocalStorageKeys.apiKey, newApiKey)
       window.location.search = ''
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setDesktopApiKey(newApiKey)
     }
   }, [])
