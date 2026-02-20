@@ -36,7 +36,7 @@ Stay up to date by joining the [official Discord](https://discord.gg/GU22h2utj6)
 
 ## Install
 
-Install globally with pnpm. We require Node.js's version of at least 14.x and pnpm v10.x.
+Install globally with pnpm. We require Node.js's version of at least 24.x and pnpm v10.x, npm v11.x.
 
 ```sh
 pnpm add -g @ethersphere/bee-dashboard

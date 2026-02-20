@@ -43,7 +43,6 @@ export function Provider({ children }: Props): ReactElement {
 
   useEffect(() => {
     const metadata = getMetadata(files)
-
     setMetadata(metadata)
 
     if (previewUri) {

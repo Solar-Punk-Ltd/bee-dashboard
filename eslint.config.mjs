@@ -211,7 +211,6 @@ export default defineConfig([
       'max-nested-callbacks': ['error', 4],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/no-empty-function': 'error',
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',

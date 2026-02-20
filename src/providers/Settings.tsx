@@ -81,7 +81,6 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     if (newApiKey) {
       localStorage.setItem(LocalStorageKeys.apiKey, newApiKey)
       window.location.search = ''
-
       setDesktopApiKey(newApiKey)
     }
   }, [])
