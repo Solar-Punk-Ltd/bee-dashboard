@@ -1,10 +1,11 @@
-import { useCallback, useState, useContext, useRef, useEffect } from 'react'
+import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+
+import { ItemType } from '../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
-import { ItemType } from '../../../pages/filemanager/ViewContext'
-import type { FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
-import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
-import { formatBytes, safeSetState, truncateNameMiddle } from '../utils/common'
+import { uuidV4 } from '../../../utils'
+import { FILE_MANAGER_EVENTS } from '../constants/common'
 import {
   DownloadProgress,
   DownloadState,
@@ -12,12 +13,12 @@ import {
   TrackDownloadProps,
   TransferStatus,
 } from '../constants/transfers'
-import { validateStampStillExists, verifyDriveSpace } from '../utils/bee'
-import { isTrashed } from '../utils/common'
-import { abortDownload } from '../utils/download'
 import { AbortManager } from '../utils/abortManager'
-import { uuidV4 } from '../../../utils'
-import { FILE_MANAGER_EVENTS } from '../constants/common'
+import { validateStampStillExists, verifyDriveSpace } from '../utils/bee'
+import { formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../utils/common'
+import { abortDownload } from '../utils/download'
+
+import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDialog'
 
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
@@ -578,6 +579,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     [],
   )
 
+  // TODO: reduce complexity
   const prepareUploadEntry = useCallback(
     async ({
       originalName,
@@ -591,7 +593,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       const sizeSource = typeof meta.size === 'string' || typeof meta.size === 'number' ? meta.size : filesToUpload
       const prettySize = formatBytes(sizeSource) ?? '0'
 
-      // eslint-disable-next-line prefer-const
       let { finalName, isReplace, replaceTopic, replaceHistory, cancelled } = await resolveConflict(
         originalName,
         sameDrive,
