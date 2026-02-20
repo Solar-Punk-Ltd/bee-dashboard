@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
               react: 'React',
               'react-dom': 'ReactDOM',
             },
+            assetFileNames: (assetInfo: any) => {
+              if (assetInfo.originalFileNames?.includes('style.css') || assetInfo.names?.includes('bee-dashboard.css'))
+                return 'App.css'
+              return assetInfo.names?.[0] || 'asset'
+            },
           },
         },
       },
