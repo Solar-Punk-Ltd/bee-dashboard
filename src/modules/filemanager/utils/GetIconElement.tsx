@@ -1,6 +1,9 @@
 import { ReactElement } from 'react'
 import FileIcon from 'remixicon-react/FileTextLineIcon'
+import FolderIcon from 'remixicon-react/Folder3LineIcon'
 import ImageIcon from 'remixicon-react/Image2LineIcon'
+
+import { ItemType } from '../../../pages/filemanager/ViewContext'
 
 import { guessMime } from './view'
 
@@ -19,6 +22,8 @@ export function GetIconElement({ name, metadata, size = '21px', color = '#ed8131
   switch (iconType) {
     case 'image':
       return <ImageIcon size={size} color={color} />
+    case ItemType.Folder:
+      return <FolderIcon size={size} color={color} />
     default:
       return <FileIcon size={size} color={color} />
   }

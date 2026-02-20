@@ -12,7 +12,7 @@ import React, {
 } from 'react'
 
 import { useSearch } from '../../../../pages/filemanager/SearchContext'
-import { useView } from '../../../../pages/filemanager/ViewContext'
+import { ItemType, useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
@@ -24,6 +24,7 @@ import { SortDir, SortKey, useSorting } from '../../hooks/useSorting'
 import { useTransfers } from '../../hooks/useTransfers'
 import { handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Dir, getFileId, Point, safeSetState } from '../../utils/common'
+import { isDirectoryPickerSupported } from '../../utils/download'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { ProgressDestroyModal } from '../DestroyDriveModal/DestroyDriveModal'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
@@ -122,6 +123,7 @@ type FileBrowserContextMenuBlockProps = {
   adminStamp: PostageBatch | undefined
   doRefresh: () => void
   onContextUploadFile: () => void
+  onUploadFolder: () => void
   setConfirmBulkRestore: (b: boolean) => void
   setShowBulkDeleteModal: (b: boolean) => void
   setShowDestroyDriveModal: (b: boolean) => void
@@ -138,6 +140,7 @@ function FileBrowserContextMenuBlock({
   adminStamp,
   doRefresh,
   onContextUploadFile,
+  onUploadFolder,
   setConfirmBulkRestore,
   setShowBulkDeleteModal,
   setShowDestroyDriveModal,
@@ -162,6 +165,7 @@ function FileBrowserContextMenuBlock({
         onRefresh={doRefresh}
         enableRefresh={Boolean(adminStamp)}
         onUploadFile={onContextUploadFile}
+        onUploadFolder={onUploadFolder}
         onBulkDownload={() => bulk.bulkDownload(bulk.selectedFiles)}
         onBulkRestore={() => setConfirmBulkRestore(true)}
         onBulkDelete={() => setShowBulkDeleteModal(true)}
@@ -485,6 +489,74 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     [bulk],
   )
 
+  async function selectFolder() {
+    if (!currentDrive) {
+      return
+    }
+
+    if (!isDirectoryPickerSupported()) {
+      return
+    }
+
+    handleCloseContext()
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dirHandle = await (window as any).showDirectoryPicker()
+      const dataTransfer = new DataTransfer()
+      const metadataMap = new Map()
+
+      const queue: Array<{ handle: FileSystemHandle; path: string }> = []
+
+      for await (const [, handle] of dirHandle.entries()) {
+        queue.push({ handle, path: `${dirHandle.name}/` })
+      }
+
+      while (queue.length > 0) {
+        const nextEntry = queue.shift()
+
+        if (!nextEntry) {
+          break
+        }
+
+        const { handle, path } = nextEntry
+
+        if (handle.kind === ItemType.File) {
+          const file = await (handle as FileSystemFileHandle).getFile()
+
+          const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
+          dataTransfer.items.add(createdFile)
+          metadataMap.set(createdFile, { name: file.name, itemType: ItemType.File, path: `${path}${file.name}` })
+        } else if (handle.kind === ItemType.Folder) {
+          const dirHandle = handle as FileSystemDirectoryHandle
+
+          const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: ItemType.Folder })
+          metadataMap.set(folderFileItem, {
+            name: dirHandle.name,
+            itemType: ItemType.Folder,
+            path: `${path}${folderFileItem.name}`,
+          })
+          dataTransfer.items.add(folderFileItem)
+
+          for await (const [, childHandle] of dirHandle.entries()) {
+            queue.push({ handle: childHandle, path: `${path}${dirHandle.name}/` })
+          }
+        } else {
+          throw new Error(`Unsupported file system handle kind: ${handle.kind}`)
+        }
+      }
+
+      const fileList = dataTransfer.files
+
+      if (fileList.length === 0) {
+        return
+      }
+
+      uploadFiles(fileList, true, dirHandle.name)
+    } catch {
+      setShowError(true)
+    }
+  }
+
   return (
     <>
       {conflictPortal}
@@ -561,6 +633,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               adminStamp={fm?.adminStamp}
               doRefresh={doRefresh}
               onContextUploadFile={onContextUploadFile}
+              onUploadFolder={selectFolder}
               setConfirmBulkRestore={setConfirmBulkRestore}
               setShowBulkDeleteModal={setShowBulkDeleteModal}
               setShowDestroyDriveModal={setShowDestroyDriveModal}
