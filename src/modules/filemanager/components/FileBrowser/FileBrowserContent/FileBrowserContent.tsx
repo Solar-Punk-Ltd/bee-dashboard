@@ -1,10 +1,11 @@
-import { ReactElement, useCallback, memo, useState } from 'react'
-import { FileItem } from '../FileItem/FileItem'
-import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { memo, ReactElement, useCallback, useState } from 'react'
+
+import { FolderTree, ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
+import { FileItem } from '../FileItem/FileItem'
 
-import { useView, FolderTree, ItemType } from '../../../../../pages/filemanager/ViewContext'
 import FolderSubItems from './FolderSubItems'
 
 export type FileSystemItem = {

@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 import dts from 'vite-plugin-dts'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
+const DEFAULT_VITE_DEV_PORT = 3002
+
 export default defineConfig(({ mode }) => {
   const isProd = mode === 'production'
   const isComponentBuild = process.env.BUILD_MODE === 'component'
@@ -26,6 +28,11 @@ export default defineConfig(({ mode }) => {
             globals: {
               react: 'React',
               'react-dom': 'ReactDOM',
+            },
+            assetFileNames: (assetInfo: any) => {
+              if (assetInfo.originalFileNames?.includes('style.css') || assetInfo.names?.includes('bee-dashboard.css'))
+                return 'App.css'
+              return assetInfo.names?.[0] || 'asset'
             },
           },
         },
@@ -92,7 +99,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 3002,
+      port: DEFAULT_VITE_DEV_PORT,
       open: true,
     },
     publicDir: 'public',

@@ -1,6 +1,7 @@
 import { ReactElement } from 'react'
 
-import { useView, TreeNode, ItemType } from '../../../../../pages/filemanager/ViewContext'
+import { ItemType, TreeNode, useView } from '../../../../../pages/filemanager/ViewContext'
+
 import { SubItem } from './SubItem'
 
 export function FolderSubItems(): ReactElement {
