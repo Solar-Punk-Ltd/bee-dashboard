@@ -20,7 +20,7 @@ import { DownloadProgress, FileAction, TrackDownloadProps, ViewType } from '../.
 import { useContextMenu } from '../../../hooks/useContextMenu'
 import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
 import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
-import { createDownloadAbort, startDownloadingQueue } from '../../../utils/download'
+import { startDownloadingQueue } from '../../../utils/download'
 import { FileOperation, performFileOperation } from '../../../utils/fileOperations'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import type { FilePropertyGroup } from '../../../utils/infoGroups'
@@ -202,15 +202,14 @@ export function FileItem({
 
       const rawSize = latestFileInfo.customMetadata?.size
       const expectedSize = rawSize ? Number(rawSize) : undefined
-
-      createDownloadAbort(latestFileInfo.name)
+      const uuid = uuidV4()
 
       await startDownloadingQueue(
         fm,
         [latestFileInfo],
         [
           onDownload({
-            uuid: uuidV4(),
+            uuid,
             name: latestFileInfo.name,
             size: formatBytes(rawSize),
             expectedSize,
@@ -218,6 +217,7 @@ export function FileItem({
           }),
         ],
         isNewWindow,
+        [uuid],
       )
     },
     [handleCloseContext, fm, beeApi, latestFileInfo, onDownload, driveName],

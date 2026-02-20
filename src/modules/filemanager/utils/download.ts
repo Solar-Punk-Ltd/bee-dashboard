@@ -327,8 +327,11 @@ export const startDownloadingQueue = async (
   infoList: FileInfo[],
   trackers?: Array<(progress: DownloadProgress) => void>,
   isOpenWindow?: boolean,
+  abortKeys?: string[],
 ): Promise<void> => {
   if (!infoList.length || (trackers && trackers.length !== infoList.length)) return
+
+  if (abortKeys && abortKeys.length !== infoList.length) return
 
   try {
     const fileHandles: FileInfoWithHandle[] | undefined = isOpenWindow
@@ -339,11 +342,11 @@ export const startDownloadingQueue = async (
 
     await Promise.all(
       fileHandles.map(async (fh, i) => {
-        const name = fh.info.name
+        const abortKey = abortKeys ? abortKeys[i] : fh.info.name
         const tracker = trackers ? trackers[i] : undefined
 
-        createDownloadAbort(name)
-        const signal = downloadAborts.getSignal(name)
+        createDownloadAbort(abortKey)
+        const signal = downloadAborts.getSignal(abortKey)
 
         try {
           if (fh.cancelled) {
@@ -352,11 +355,13 @@ export const startDownloadingQueue = async (
             return
           }
 
-          const dataStreams = (await fm.download(fh.info)) as ReadableStream<Uint8Array>[]
+          const dataStreams = (await fm.download(fh.info, undefined, undefined, {
+            signal,
+          })) as ReadableStream<Uint8Array>[]
 
           if (!dataStreams || dataStreams.length === 0) {
             // eslint-disable-next-line no-console
-            console.error(`No data streams returned for ${name}`)
+            console.error(`No data streams returned for ${fh.info.name}`)
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Error })
 
             return
@@ -397,7 +402,7 @@ export const startDownloadingQueue = async (
             tracker?.({ progress: 0, isDownloading: false, state: DownloadState.Cancelled })
           }
         } finally {
-          downloadAborts.abort(name)
+          downloadAborts.abort(abortKey)
         }
       }),
     )
