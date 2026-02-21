@@ -8,27 +8,18 @@ importers:
 
   .:
     dependencies:
-      '@emotion/react':
-        specifier: ^11.14.0
-        version: 11.14.0(@types/react@19.2.14)(react@19.2.4)
-      '@emotion/styled':
-        specifier: ^11.14.1
-        version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@ethersphere/bee-js':
         specifier: ^10.4.0
         version: 10.4.0
-      '@formbricks/js':
-        specifier: ^4.3.0
-        version: 4.3.0
       '@mui/icons-material':
         specifier: ^7.3.7
         version: 7.3.8(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@mui/material':
         specifier: ^7.3.7
         version: 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@solarpunkltd/file-manager-lib':
-        specifier: ^1.0.5
-        version: 1.0.5
+      '@solarpunkltd/file-manager-widget':
+        specifier: file:../file-manager-widget
+        version: file:../file-manager-widget(@types/react@19.2.14)(eslint@9.39.2(jiti@2.6.1))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tss-react@4.9.20(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))
       axios:
         specifier: ^0.30.2
         version: 0.30.2(debug@4.4.3)
@@ -1260,8 +1251,23 @@ packages:
     resolution: {integrity: sha512-dtnyvKA3prBj22k2mfZWPq+uiK1hLMKr/jrGX4vaS41JsHX9uJ1GMGr4vCc41ANstGUGbp1dwCUWsXkqqjWuvg==}
     engines: {bee: 2.4.0-390a402e, beeApiVersion: 7.2.0}
 
-  '@formbricks/js@4.3.0':
-    resolution: {integrity: sha512-IR1SAdHsthC3js7O3BjW14EbpAy/u3/8R0Jekzrkglt+b0LGFrFL/vUcK6IypG4HbopTlDcpU9A45i1YPJ8jrA==}
+  '@ethersproject/bignumber@5.8.0':
+    resolution: {integrity: sha512-ZyaT24bHaSeJon2tGPKIiHszWjD/54Sz8t57Toch475lCLljC6MgPmxk7Gtzz+ddNN5LuHea9qhAe0x3D+uYPA==}
+
+  '@ethersproject/bytes@5.8.0':
+    resolution: {integrity: sha512-vTkeohgJVCPVHu5c25XWaWQOZ4v+DkGoC42/TS2ond+PARCxTJvgTFUNDZovyQ/uAQ4EcpqqowKydcdmRKjg7A==}
+
+  '@ethersproject/constants@5.8.0':
+    resolution: {integrity: sha512-wigX4lrf5Vu+axVTIvNsuL6YrV4O5AXl5ubcURKMEME5TnWBouUh0CDTWxZ2GpnRn1kcCgE7l8O5+VbV9QTTcg==}
+
+  '@ethersproject/keccak256@5.8.0':
+    resolution: {integrity: sha512-A1pkKLZSz8pDaQ1ftutZoaN46I6+jvuqugx5KYNeQOPqq+JZ0Txm7dlWesCHB5cndJSu5vP2VKptKf7cksERng==}
+
+  '@ethersproject/logger@5.8.0':
+    resolution: {integrity: sha512-Qe6knGmY+zPPWTC+wQrpitodgBfH7XoceCGL5bJVejmH+yCS3R8jJm8iiWuvWbG76RUmyEG53oqv6GMVWqunjA==}
+
+  '@ethersproject/strings@5.8.0':
+    resolution: {integrity: sha512-qWEAk0MAvl0LszjdfnZ2uC8xbR2wdv4cDabyHiBh3Cldq/T8dPH3V4BbBsAYJUeonwD+8afVXld274Ls+Y1xXg==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -1836,6 +1842,13 @@ packages:
   '@solarpunkltd/file-manager-lib@1.0.5':
     resolution: {integrity: sha512-s/2HP/VCrdoWOAZfZ7gl+maxO4D8wR3INdz9XSIjjvwlWU/KBUV3Vke5ANRuy28ikyDT4qOggu4G69EBHrl5YA==}
     engines: {bee: 2.6.0, node: '>=20.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
+
+  '@solarpunkltd/file-manager-widget@file:../file-manager-widget':
+    resolution: {directory: ../file-manager-widget, type: directory}
+    peerDependencies:
+      react: '>=19'
+      react-dom: '>=19'
+      tss-react: '>=4'
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -4131,6 +4144,9 @@ packages:
 
   jju@1.4.0:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
+
+  js-sha3@0.8.0:
+    resolution: {integrity: sha512-gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -6922,7 +6938,32 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@formbricks/js@4.3.0': {}
+  '@ethersproject/bignumber@5.8.0':
+    dependencies:
+      '@ethersproject/bytes': 5.8.0
+      '@ethersproject/logger': 5.8.0
+      bn.js: 5.2.2
+
+  '@ethersproject/bytes@5.8.0':
+    dependencies:
+      '@ethersproject/logger': 5.8.0
+
+  '@ethersproject/constants@5.8.0':
+    dependencies:
+      '@ethersproject/bignumber': 5.8.0
+
+  '@ethersproject/keccak256@5.8.0':
+    dependencies:
+      '@ethersproject/bytes': 5.8.0
+      js-sha3: 0.8.0
+
+  '@ethersproject/logger@5.8.0': {}
+
+  '@ethersproject/strings@5.8.0':
+    dependencies:
+      '@ethersproject/bytes': 5.8.0
+      '@ethersproject/constants': 5.8.0
+      '@ethersproject/logger': 5.8.0
 
   '@humanfs/core@0.19.1': {}
 
@@ -7545,6 +7586,28 @@ snapshots:
       std-env: 3.10.0
     transitivePeerDependencies:
       - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@solarpunkltd/file-manager-widget@file:../file-manager-widget(@types/react@19.2.14)(eslint@9.39.2(jiti@2.6.1))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tss-react@4.9.20(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))':
+    dependencies:
+      '@emotion/react': 11.14.0(@types/react@19.2.14)(react@19.2.4)
+      '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@ethersproject/keccak256': 5.8.0
+      '@ethersproject/strings': 5.8.0
+      '@mui/icons-material': 7.3.8(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@mui/material': 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@solarpunkltd/file-manager-lib': 1.0.5
+      eslint-plugin-react-hooks: 7.0.1(eslint@9.39.2(jiti@2.6.1))
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      remixicon-react: 1.0.0(react@19.2.4)
+      tss-react: 4.9.20(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+    transitivePeerDependencies:
+      - '@mui/material-pigment-css'
+      - '@types/react'
+      - bufferutil
+      - eslint
       - supports-color
       - utf-8-validate
 
@@ -10364,6 +10427,8 @@ snapshots:
   jiti@2.6.1: {}
 
   jju@1.4.0: {}
+
+  js-sha3@0.8.0: {}
 
   js-tokens@4.0.0: {}
 
