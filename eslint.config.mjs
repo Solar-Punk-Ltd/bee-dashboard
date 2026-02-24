@@ -139,6 +139,7 @@ export default defineConfig([
         LatestBeeRelease: 'readonly',
         KeyboardEvent: 'readonly',
         cancelAnimationFrame: 'readonly',
+        FileSystemHandle: 'readonly',
       },
     },
   },

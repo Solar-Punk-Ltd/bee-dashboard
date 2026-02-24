@@ -55,6 +55,8 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     syncDrives,
   } = useContext(FMContext)
 
+  const { setViewFolders, setFolderView } = useView()
+
   useEffect(() => {
     let isMounted = true
 
@@ -209,6 +211,8 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setCurrentDrive(d)
                     setCurrentStamp(stamp)
                     setView(ViewType.File)
+                    setViewFolders([])
+                    setFolderView(false)
                   }}
                 >
                   <DriveItem drive={d} stamp={stamp} isSelected={isSelected} setErrorMessage={setErrorMessage} />

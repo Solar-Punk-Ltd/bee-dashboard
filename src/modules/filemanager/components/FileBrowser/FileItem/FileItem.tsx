@@ -11,7 +11,7 @@ import React, {
   useState,
 } from 'react'
 
-import { useView } from '../../../../../pages/filemanager/ViewContext'
+import { ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { uuidV4 } from '../../../../../utils'
@@ -34,8 +34,11 @@ import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
+import { FileSystemItem } from '../FileBrowserContent/FileBrowserContent'
 
 import './FileItem.scss'
+
+import { guessMime } from '@/modules/filemanager/utils/view'
 
 const MenuItem = ({
   disabled,
@@ -74,6 +77,7 @@ interface FileItemProps {
     delete?: () => void
   }
   setErrorMessage?: (error: string) => void
+  folderItemDoubleClick: (folderFileItems: FileSystemItem[] | null, fileName: string) => void
 }
 
 export function FileItem({
@@ -86,6 +90,7 @@ export function FileItem({
   bulkSelectedCount,
   onBulk,
   setErrorMessage,
+  folderItemDoubleClick,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, adminDrive, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
@@ -148,6 +153,20 @@ export function FileItem({
     setShowGetInfoModal(true)
   }, [fm, fileInfo, driveName, driveStamp])
 
+  const handleOpenFolder = useCallback(async (): Promise<FileSystemItem[] | undefined> => {
+    if (!fm) return
+    const list = await fm.listFiles(fileInfo)
+    const paths = Object.keys(list)
+    const refs = Object.values(list)
+
+    const result: FileSystemItem[] = paths.map((path, index) => ({
+      path,
+      ref: refs[index],
+    }))
+
+    return result
+  }, [fm, fileInfo])
+
   const takenNames = useMemo(() => {
     if (!currentDrive || !files) return new Set<string>()
     const wanted = currentDrive.batchId.toString()
@@ -159,6 +178,21 @@ export function FileItem({
 
     return out
   }, [files, currentDrive, fileInfo.topic])
+
+  const handleOpen = async (isNewWindow?: boolean) => {
+    handleCloseContext()
+
+    if (!fm || !beeApi) return
+
+    if (guessMime(fileInfo.name, fileInfo.customMetadata).mime === ItemType.Folder) {
+      const fileDatas = await handleOpenFolder()
+      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.name)
+
+      return
+    }
+
+    handleDownload(isNewWindow)
+  }
 
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
@@ -479,7 +513,7 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleOpen(true)}>
         <GetIconElement name={fileInfo.name} metadata={fileInfo.customMetadata} />
         {truncateNameMiddle(fileInfo.name)}
       </div>

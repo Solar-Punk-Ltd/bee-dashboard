@@ -140,7 +140,7 @@ interface FileInfoWithHandle {
 const isPickerSupported = (): boolean => typeof (window as any).showSaveFilePicker === 'function'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isDirectoryPickerSupported = (): boolean => typeof (window as any).showDirectoryPicker === 'function'
+export const isDirectoryPickerSupported = (): boolean => typeof (window as any).showDirectoryPicker === 'function'
 
 const isUserCancellation = (error: unknown): boolean => {
   const errName = (error as { name?: string })?.name
