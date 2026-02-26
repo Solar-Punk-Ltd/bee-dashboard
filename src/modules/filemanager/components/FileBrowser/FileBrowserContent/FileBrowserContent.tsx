@@ -1,8 +1,17 @@
-import { ReactElement, useCallback, memo } from 'react'
-import { FileItem } from '../FileItem/FileItem'
-import { FileInfo, DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { memo, ReactElement, useCallback, useState } from 'react'
+
+import { FolderTree, ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
+import { FileItem } from '../FileItem/FileItem'
+
+import FolderSubItems from './FolderSubItems'
+
+export type FileSystemItem = {
+  path: string
+  ref: string
+}
 
 interface FileBrowserContentProps {
   listToRender: FileInfo[]
@@ -24,6 +33,28 @@ interface FileBrowserContentProps {
   setErrorMessage?: (error: string) => void
 }
 
+function buildTree(items: FileSystemItem[]): FolderTree {
+  const root: FolderTree = {}
+
+  items.forEach(item => {
+    const parts = item.path.split('/').filter(Boolean).slice(1)
+    let current: FolderTree = root
+
+    parts.forEach((part, index) => {
+      if (!current[part]) {
+        current[part] = {
+          type: index === parts.length - 1 && item.path.includes('.') ? ItemType.File : ItemType.Folder,
+          children: {},
+          ref: index === parts.length - 1 ? item.ref : undefined,
+        }
+      }
+      current = current[part].children
+    })
+  })
+
+  return root
+}
+
 function FileBrowserContentInner({
   listToRender,
   drives,
@@ -37,6 +68,10 @@ function FileBrowserContentInner({
   onBulk,
   setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
+  const { folderView, setFolderView, setCurrentTree, viewFolders, setViewFolders } = useView()
+
+  const [folderFileItems, setFolderFileItems] = useState<FileSystemItem[] | null>(null)
+
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
       return <div className="fm-drop-hint">Create a drive to start using the file manager</div>
@@ -57,8 +92,17 @@ function FileBrowserContentInner({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
-  const renderFileList = useCallback(
-    (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
+  const handleFolderItemDoubleClick = (folderFileItems: FileSystemItem[] | null, name: string) => {
+    const actualTree = buildTree(folderFileItems || [])
+
+    setFolderView(true)
+    setFolderFileItems(folderFileItems)
+    setCurrentTree(actualTree)
+    setViewFolders([...viewFolders, { folderName: name, tree: actualTree }])
+  }
+
+  const renderFileList = (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
+    if (!folderView) {
       return filesToRender
         .map(fi => {
           const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
@@ -81,12 +125,16 @@ function FileBrowserContentInner({
               bulkSelectedCount={bulkSelectedCount}
               onBulk={onBulk}
               setErrorMessage={setErrorMessage}
+              folderItemDoubleClick={(folderFileItems: FileSystemItem[] | null, name: string) =>
+                handleFolderItemDoubleClick(folderFileItems, name)
+              }
             />
           )
         })
-    },
-    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk, setErrorMessage],
-  )
+    }
+
+    return folderFileItems ? <FolderSubItems /> : null
+  }
 
   if (drives.length === 0) {
     return renderEmptyState()

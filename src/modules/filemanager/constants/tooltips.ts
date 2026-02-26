@@ -53,8 +53,8 @@ This action will do two things:
   ADMIN_PURCHASE_BUTTON_ALREADY_EXISTED_ADMIN_DRIVE: `${getTitleWithStyle('Create Admin Drive')}
 
 It will create the Admin Drive.`,
-
-  // Drive Creation
+  ADMIN_STATUS_WARNING:
+    'The File Manager works only while your storage remains valid. If it expires, all catalogue metadata is permanently lost.',
   DRIVE_NAME: `${getTitleWithStyle('About Drive Name')}
 Set a human-readable label for this drive (e.g. Personal files). This name is stored as metadata.`,
 

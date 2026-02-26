@@ -1,27 +1,29 @@
-import { ReactElement, useContext, useEffect, useState } from 'react'
-
-import './Sidebar.scss'
-import Add from 'remixicon-react/AddLineIcon'
-import Folder from 'remixicon-react/Folder3LineIcon'
-import FolderFill from 'remixicon-react/Folder3FillIcon'
-import ArrowRight from 'remixicon-react/ArrowRightSLineIcon'
-import ArrowDown from 'remixicon-react/ArrowDownSLineIcon'
-import Delete from 'remixicon-react/DeleteBin6LineIcon'
-import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
-import History from 'remixicon-react/HistoryLineIcon'
-import HistoryFill from 'remixicon-react/HistoryFillIcon'
-import { DriveItem } from './DriveItem/DriveItem'
-import { ExpiredDriveItem } from './DriveItem/ExpiredDriveItem'
-import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
-import { ViewType } from '../../constants/transfers'
 import { PostageBatch } from '@ethersphere/bee-js'
-import { Context as SettingsContext } from '../../../../providers/Settings'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { ReactElement, useContext, useEffect, useState } from 'react'
+import Add from 'remixicon-react/AddLineIcon'
+import ArrowDown from 'remixicon-react/ArrowDownSLineIcon'
+import ArrowRight from 'remixicon-react/ArrowRightSLineIcon'
+import DeleteFill from 'remixicon-react/DeleteBin6FillIcon'
+import Delete from 'remixicon-react/DeleteBin6LineIcon'
+import FolderFill from 'remixicon-react/Folder3FillIcon'
+import Folder from 'remixicon-react/Folder3LineIcon'
+import HistoryFill from 'remixicon-react/HistoryFillIcon'
+import History from 'remixicon-react/HistoryLineIcon'
+
 import { useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
-import { getUsableStamps } from '../../utils/bee'
-import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { truncateNameMiddle } from '../../utils/common'
+import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FILE_MANAGER_EVENTS } from '../../constants/common'
+import { ViewType } from '../../constants/transfers'
+import { getUsableStamps } from '../../utils/bee'
+import { truncateNameMiddle } from '../../utils/common'
+import { CreateDriveModal } from '../CreateDriveModal/CreateDriveModal'
+
+import { DriveItem } from './DriveItem/DriveItem'
+import { ExpiredDriveItem } from './DriveItem/ExpiredDriveItem'
+
+import './Sidebar.scss'
 
 interface SidebarProps {
   loading: boolean
@@ -52,6 +54,8 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     setShowError,
     syncDrives,
   } = useContext(FMContext)
+
+  const { setViewFolders, setFolderView } = useView()
 
   useEffect(() => {
     let isMounted = true
@@ -207,6 +211,8 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setCurrentDrive(d)
                     setCurrentStamp(stamp)
                     setView(ViewType.File)
+                    setViewFolders([])
+                    setFolderView(false)
                   }}
                 >
                   <DriveItem drive={d} stamp={stamp} isSelected={isSelected} setErrorMessage={setErrorMessage} />

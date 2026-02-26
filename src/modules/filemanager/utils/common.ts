@@ -1,7 +1,8 @@
-import { PrivateKey } from '@ethersphere/bee-js'
+import { Bytes, PrivateKey } from '@ethersphere/bee-js'
 import { FileInfo, FileStatus } from '@solarpunkltd/file-manager-lib'
-import { keccak256 } from '@ethersproject/keccak256'
-import { toUtf8Bytes } from '@ethersproject/strings'
+import React from 'react'
+
+import { LocalStorageKeys } from '../../../utils/localStorage'
 import { lifetimeAdjustments } from '../constants/stamps'
 
 export function getDaysLeft(expiryDate: Date): number {
@@ -49,12 +50,18 @@ export const indexStrToBigint = (indexStr?: string): bigint | undefined => {
   return BigInt(parseInt(indexStr, 10))
 }
 
-export const formatBytes = (v?: string | number): string | undefined => {
+export const formatBytes = (v?: string | number | File[]): string | undefined => {
   let n: number
 
-  if (typeof v === 'string') n = Number(v)
-  else if (typeof v === 'number') n = v
-  else n = NaN
+  if (typeof v === 'string') {
+    n = Number(v)
+  } else if (typeof v === 'number') {
+    n = v
+  } else if (Array.isArray(v)) {
+    n = v.reduce((total, file) => total + file.size, 0) // Sum up the sizes of all files
+  } else {
+    n = NaN
+  }
 
   if (!Number.isFinite(n) || n < 0) return undefined
 
@@ -83,19 +90,17 @@ export function getFileId(fi: FileInfo): string {
   return fi.topic.toString()
 }
 
-export const KEY_STORAGE = 'privateKey'
-
 export function getSigner(input: string): PrivateKey {
   const normalized = input.trim().toLowerCase()
-  const hash = keccak256(toUtf8Bytes(normalized))
-  const privateKeyHex = hash.slice(2)
+  const inputBytes = Bytes.fromUtf8(normalized)
+  const privateKeyHex = Bytes.keccak256(inputBytes).toHex()
 
   return new PrivateKey(privateKeyHex)
 }
 
 export function getSignerPk(): PrivateKey | undefined {
   try {
-    const fromLocalPk = localStorage.getItem(KEY_STORAGE)
+    const fromLocalPk = localStorage.getItem(LocalStorageKeys.fmPrivateKey)
 
     if (!fromLocalPk) {
       // eslint-disable-next-line no-console
@@ -107,24 +112,24 @@ export function getSignerPk(): PrivateKey | undefined {
     return new PrivateKey(fromLocalPk)
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(`Private key error in localStorage under key "${KEY_STORAGE}": `, err)
+    console.error(`Private key error in localStorage under key "${LocalStorageKeys.fmPrivateKey}": `, err)
 
     return undefined
   }
 }
 
 export function setSignerPk(pk: string): void {
-  localStorage.setItem(KEY_STORAGE, pk)
+  localStorage.setItem(LocalStorageKeys.fmPrivateKey, pk)
 }
 
 export function removeSignerPk(): void {
-  localStorage.removeItem(KEY_STORAGE)
+  localStorage.removeItem(LocalStorageKeys.fmPrivateKey)
 }
 
 export const capitalizeFirstLetter = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1)
 
 export const safeSetState =
-  <T>(ref: React.MutableRefObject<boolean>, setter: React.Dispatch<React.SetStateAction<T>>) =>
+  <T>(ref: React.RefObject<boolean>, setter: React.Dispatch<React.SetStateAction<T>>) =>
   (value: React.SetStateAction<T>) => {
     if (ref.current) setter(value)
   }

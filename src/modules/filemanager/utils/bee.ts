@@ -1,11 +1,13 @@
 import { BatchId, Bee, BZZ, Duration, PostageBatch, RedundancyLevel, Size } from '@ethersphere/bee-js'
 import {
-  FileManagerBase,
   DriveInfo,
   estimateDriveListMetadataSize,
   estimateFileInfoMetadataSize,
   FileInfo,
+  FileManagerBase,
 } from '@solarpunkltd/file-manager-lib'
+import React from 'react'
+
 import { getHumanReadableFileSize } from '../../../utils/file'
 import { ActionTag } from '../constants/transfers'
 
@@ -57,7 +59,7 @@ export const fmGetStorageCost = async (
     }
 
     return undefined
-  } catch (e) {
+  } catch {
     return undefined
   }
 }
