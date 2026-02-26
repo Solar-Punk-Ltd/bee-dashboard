@@ -1,5 +1,4 @@
 import { ReactElement } from 'react'
-import CloseIcon from 'remixicon-react/CloseLineIcon'
 import ArrowDownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import CloseIcon from 'remixicon-react/CloseLineIcon'
 
