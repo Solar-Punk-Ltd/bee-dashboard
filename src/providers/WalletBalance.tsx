@@ -42,7 +42,7 @@ interface Props {
   children: ReactNode
 }
 
-const DEFUALT_REFRESH_REQUENCY_MS = 30_000
+const DEFAULT_REFRESH_REQUENCY_MS = 30_000
 
 export function Provider({ children }: Props): ReactElement {
   const { rpcProvider } = useContext(SettingsContext)
@@ -90,7 +90,7 @@ export function Provider({ children }: Props): ReactElement {
     }
   }, [])
 
-  const start = useCallback((freq = DEFUALT_REFRESH_REQUENCY_MS) => setFrequency(freq), [])
+  const start = useCallback((freq = DEFAULT_REFRESH_REQUENCY_MS) => setFrequency(freq), [])
   const stop = useCallback(() => setFrequency(null), [])
 
   // Start the update loop

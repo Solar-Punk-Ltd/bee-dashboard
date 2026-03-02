@@ -3,7 +3,7 @@ import { createContext, ReactElement, ReactNode, useCallback, useContext, useEff
 
 import { Context as SettingsContext } from './Settings'
 
-const DEFUALT_REFRESH_REQUENCY_MS = 30_000
+const DEFAULT_REFRESH_REQUENCY_MS = 30_000
 
 export interface EnrichedPostageBatch extends PostageBatch {
   usage: number
@@ -83,7 +83,7 @@ export function Provider({ children }: Props): ReactElement {
     }
   }, [beeApi])
 
-  const start = (freq = DEFUALT_REFRESH_REQUENCY_MS) => setFrequency(freq)
+  const start = (freq = DEFAULT_REFRESH_REQUENCY_MS) => setFrequency(freq)
   const stop = () => setFrequency(null)
 
   useEffect(() => {
