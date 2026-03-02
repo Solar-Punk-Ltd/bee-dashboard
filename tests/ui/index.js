@@ -50,7 +50,7 @@ async function preparePage() {
     args: [`--window-size=${VIEWPORT.width},${VIEWPORT.height}`],
   })
   const page = await browser.newPage()
-  await page.goto(process.env.PORT || 'http://localhost:8080', { waitUntil: 'networkidle0' })
+  await page.goto(`http://localhost:${process.env.PORT ?? 8080}`, { waitUntil: 'networkidle0' })
 
   return { browser, page }
 }
