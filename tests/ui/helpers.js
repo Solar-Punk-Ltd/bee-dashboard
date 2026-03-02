@@ -1,5 +1,5 @@
 const axios = require('axios')
-const { Assert, Click, sleep, Wait } = require('./library')
+const { Assert, Click, Wait } = require('./library')
 
 /**
  * @param {puppeteer.Page} page Puppeteer Page object returned by `browser.newPage()`
@@ -11,12 +11,10 @@ async function selectStampAndUpload(page) {
   await page.click('[role="combobox"]') // Click the select trigger
   await page.click('[role="option"]') // Click first option in the dropdown
   await Wait.forEnabledStateXPath(page, 'button', 'Proceed With Selected Stamp')
-  // seems necessary, even though button is enabled by the previous step, it is only highlighted and not clicked
-  await sleep(500)
   await Click.elementWithText(page, 'button', 'Proceed With Selected Stamp')
+  await Wait.forElementXPath(page, "//button[contains(., 'Upload To Your Node')]")
   await Click.elementWithText(page, 'button', 'Upload To Your Node')
-  // Wait for upload to complete
-  await sleep(100)
+  await Wait.forElementXPath(page, "//button[contains(., 'Download')]")
   // check if the upload was successful
   await Assert.elementWithTextExists(page, 'button', 'Download')
   await Assert.elementWithTextExists(page, 'button', 'Update Feed')
