@@ -2,8 +2,9 @@ import { ArrowForward, OpenInNewSharp } from '@mui/icons-material'
 import { Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
 import { ReactElement } from 'react'
 import { useNavigate } from 'react-router'
-import { useClipboardCopy } from 'src/hooks/useClipboardCopy'
 import { makeStyles } from 'tss-react/mui'
+
+import { useClipboardCopy } from '../hooks/useClipboardCopy'
 
 const useStyles = makeStyles()(theme => ({
   header: {

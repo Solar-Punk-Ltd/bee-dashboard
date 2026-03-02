@@ -2,8 +2,9 @@ import { Collapse, Grid, IconButton, ListItemButton, Tooltip, Typography } from 
 import { ReactElement, useState } from 'react'
 import Eye from 'remixicon-react/EyeLineIcon'
 import Minus from 'remixicon-react/SubtractLineIcon'
-import { useClipboardCopy } from 'src/hooks/useClipboardCopy'
 import { makeStyles } from 'tss-react/mui'
+
+import { useClipboardCopy } from '../hooks/useClipboardCopy'
 
 const useStyles = makeStyles()(theme => ({
   header: {
