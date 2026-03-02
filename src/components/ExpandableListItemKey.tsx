@@ -1,9 +1,8 @@
 import { Collapse, Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
-import { closeSnackbar, useSnackbar } from 'notistack'
 import { ReactElement, useState } from 'react'
-import CloseLineIcon from 'remixicon-react/CloseLineIcon'
 import Eye from 'remixicon-react/EyeLineIcon'
 import Minus from 'remixicon-react/SubtractLineIcon'
+import { useClipboardCopy } from 'src/hooks/useClipboardCopy'
 import { makeStyles } from 'tss-react/mui'
 
 const useStyles = makeStyles()(theme => ({
@@ -56,29 +55,10 @@ const split = (s: string): string[] => {
 
 export default function ExpandableListItemKey({ label, value, expanded }: Props): ReactElement | null {
   const { classes } = useStyles()
-  const { enqueueSnackbar } = useSnackbar()
 
   const [open, setOpen] = useState(expanded || false)
-  const [copied, setCopied] = useState(false)
+  const { copied, handleCopy, tooltipCloseHandler } = useClipboardCopy(value)
   const toggleOpen = () => setOpen(!open)
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-    } catch {
-      enqueueSnackbar(`Failed to copy text`, {
-        variant: 'error',
-        action: key => (
-          <IconButton onClick={() => closeSnackbar(key)} size="small" color="inherit">
-            <CloseLineIcon fontSize="small" />
-          </IconButton>
-        ),
-      })
-    }
-  }
-
-  const tooltipCloseHandler = () => setCopied(false)
 
   const splitValues = split(value)
   const hasPrefix = isPrefixedHexString(value)

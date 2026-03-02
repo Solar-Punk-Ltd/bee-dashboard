@@ -1,9 +1,8 @@
 import { ArrowForward, OpenInNewSharp } from '@mui/icons-material'
 import { Grid, IconButton, ListItemButton, Tooltip, Typography } from '@mui/material'
-import { closeSnackbar, useSnackbar } from 'notistack'
-import { ReactElement, useState } from 'react'
+import { ReactElement } from 'react'
 import { useNavigate } from 'react-router'
-import CloseLineIcon from 'remixicon-react/CloseLineIcon'
+import { useClipboardCopy } from 'src/hooks/useClipboardCopy'
 import { makeStyles } from 'tss-react/mui'
 
 const useStyles = makeStyles()(theme => ({
@@ -59,28 +58,8 @@ export default function ExpandableListItemLink({
   allowClipboard = true,
 }: Props): ReactElement | null {
   const { classes } = useStyles()
-  const { enqueueSnackbar } = useSnackbar()
-
-  const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-    } catch {
-      enqueueSnackbar(`Failed to copy text`, {
-        variant: 'error',
-        action: key => (
-          <IconButton onClick={() => closeSnackbar(key)} size="small" color="inherit">
-            <CloseLineIcon fontSize="small" />
-          </IconButton>
-        ),
-      })
-    }
-  }
-
-  const tooltipCloseHandler = () => setCopied(false)
+  const { copied, handleCopy, tooltipCloseHandler } = useClipboardCopy(value)
 
   const displayValue = value.length > 22 ? value.slice(0, 19) + '...' : value
 
