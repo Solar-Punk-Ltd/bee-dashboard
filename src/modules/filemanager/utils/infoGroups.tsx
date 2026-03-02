@@ -99,7 +99,7 @@ function buildGeneralGroup(
     icon: <GeneralIcon size="14px" color="rgb(237, 129, 49)" />,
     properties: [
       { key: 'type', label: 'Type', value: mime ?? dash },
-      { key: 'size', label: 'Size', value: size !== undefined ? formatBytes(size) : dash },
+      { key: 'size', label: 'Size', value: size !== undefined && size !== null ? formatBytes(size) : dash },
       { key: 'count', label: 'Items', value: fileCount ?? '1' },
       { key: 'path', label: 'Location', value: truncateNameMiddle(path || dash, 35, 10, 10) },
       {
@@ -138,7 +138,11 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
         raw: fi.owner.toString(),
       },
       { key: 'shared', label: 'Sharing', value: fi.shared ? 'Shared' : 'Private' },
-      { key: 'grantees', label: 'Grantees', value: granteeCount !== undefined ? `${granteeCount}` : dash },
+      {
+        key: 'grantees',
+        label: 'Grantees',
+        value: granteeCount !== undefined && granteeCount !== null ? `${granteeCount}` : dash,
+      },
       {
         key: 'actpub',
         label: 'ACT Publisher',
