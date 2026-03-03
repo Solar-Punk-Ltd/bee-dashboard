@@ -113,17 +113,22 @@ export function InitialModal({
   )
 
   const handleCostFetch = useCallback(
-    (cost: BZZ) => {
-      safeSetState(isMountedRef, setIsNodeSyncing)(false)
+    (cost: BZZ) => {      
+      setIsNodeSyncing(false)
       checkBalances(cost)
-      safeSetState(isMountedRef, setCost)(cost.toSignificantDigits(2))
+      
+      const costDecimal = parseFloat(cost.toDecimalString())
+      const formattedCost = costDecimal < 0.01 && costDecimal > 0 
+        ? costDecimal.toExponential(1) 
+        : costDecimal.toPrecision(2)
+      setCost(formattedCost)
     },
     [checkBalances],
   )
 
-  const handleCostFetchError = useCallback(() => {
-    safeSetState(isMountedRef, setIsNodeSyncing)(true)
-    safeSetState(isMountedRef, setCost)('0')
+  const handleCostFetchError = useCallback(() => {    
+    setIsNodeSyncing(true)
+    setCost('0')
   }, [])
 
   const createAdminDrive = useCallback(async () => {
@@ -183,7 +188,7 @@ export function InitialModal({
     setCapacity(newSizes[2])
   }, [erasureCodeLevel])
 
-  useEffect(() => {
+  useEffect(() => {    
     if (validityEndDate.getTime() > new Date().getTime()) {
       fmFetchCost(
         capacity,
@@ -195,26 +200,19 @@ export function InitialModal({
         currentFetch,
         handleCostFetchError,
       )
-
-      if (lifetimeIndex >= 0 && !isNodeSyncing) {
-        setIsCreateEnabled(true)
-      } else {
-        setIsCreateEnabled(false)
-      }
     } else {
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [
-    validityEndDate,
-    erasureCodeLevel,
-    beeApi,
-    capacity,
-    lifetimeIndex,
-    isNodeSyncing,
-    handleCostFetch,
-    handleCostFetchError,
-  ])
+  }, [validityEndDate, erasureCodeLevel, beeApi, capacity, handleCostFetch, handleCostFetchError])
+
+  useEffect(() => {
+    if (lifetimeIndex >= 0 && !isNodeSyncing) {
+      setIsCreateEnabled(true)
+    } else {
+      setIsCreateEnabled(false)
+    }
+  }, [lifetimeIndex, isNodeSyncing])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
