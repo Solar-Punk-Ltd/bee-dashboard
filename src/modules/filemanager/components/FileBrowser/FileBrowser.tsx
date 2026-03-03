@@ -210,6 +210,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const [confirmBulkRestore, setConfirmBulkRestore] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [pendingCancelUpload, setPendingCancelUpload] = useState<string | null>(null)
+  const [pendingCancelDownload, setPendingCancelDownload] = useState<string | null>(null)
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -370,6 +371,16 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     setShowDestroyDriveModal,
     setShowError,
   ])
+
+  const handleDownloadClose = (uuid: string) => {
+    const row = downloadItems.find(i => i.uuid === uuid)
+
+    if (row?.status === TransferStatus.Downloading) {
+      setPendingCancelDownload(uuid)
+    } else {
+      cancelOrDismissDownload(uuid)
+    }
+  }
 
   const handleUploadClose = (uuid: string) => {
     const row = uploadItems.find(i => i.uuid === uuid)
@@ -610,6 +621,14 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               }
             }}
             onCancelUploadCancel={() => setPendingCancelUpload(null)}
+            pendingCancelDownload={pendingCancelDownload}
+            onCancelDownloadConfirm={() => {
+              if (pendingCancelDownload) {
+                cancelOrDismissDownload(pendingCancelDownload)
+                setPendingCancelDownload(null)
+              }
+            }}
+            onCancelDownloadCancel={() => setPendingCancelDownload(null)}
           />
 
           {isRefreshing && (
@@ -644,7 +663,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             type={FileTransferType.Download}
             open={isDownloading}
             items={downloadItems}
-            onRowClose={(name: string) => cancelOrDismissDownload(name)}
+            onRowClose={handleDownloadClose}
             onCloseAll={() => dismissAllDownloads()}
           />
           <NotificationBar setErrorMessage={setErrorMessage} />

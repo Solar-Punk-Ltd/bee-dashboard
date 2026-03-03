@@ -406,6 +406,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           taskDrive,
           { ...info, onUploadProgress: progressCb },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
+          { signal },
         )
 
         await Promise.race([uploadPromise, checkCancellation])
