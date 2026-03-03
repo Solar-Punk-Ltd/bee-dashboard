@@ -8,6 +8,7 @@ import ExternalLinkIcon from 'remixicon-react/ExternalLinkLineIcon'
 import FileManagerIcon from 'remixicon-react/FolderOpenLineIcon'
 import GithubIcon from 'remixicon-react/GithubFillIcon'
 import HomeIcon from 'remixicon-react/Home3LineIcon'
+import MultichainIcon from 'remixicon-react/LinksLineIcon'
 import SettingsIcon from 'remixicon-react/Settings2LineIcon'
 import AccountIcon from 'remixicon-react/Wallet3LineIcon'
 import { makeStyles } from 'tss-react/mui'
@@ -88,6 +89,12 @@ export default function SideBar(): ReactElement {
       path: ROUTES.FILEMANAGER,
       icon: FileManagerIcon,
       pathMatcherSubstring: '/filemanager/',
+    },
+    {
+      label: 'Multichain App',
+      path: ROUTES.MULTICHAIN,
+      icon: MultichainIcon,
+      pathMatcherSubstring: '/multichain/',
     },
     {
       label: 'Account',
