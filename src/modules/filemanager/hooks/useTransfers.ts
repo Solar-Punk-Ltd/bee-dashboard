@@ -172,6 +172,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   const { fm, adminDrive, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const [openConflict, conflictPortal] = useUploadConflictDialog()
+
   const isMountedRef = useRef(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
   const queueRef = useRef<UploadTask[]>([])
@@ -829,6 +830,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   }, [])
 
   useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
     const handleFileUploaded = (e: Event) => {
       const { fileInfo } = (e as CustomEvent).detail || {}
 
@@ -854,7 +863,6 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
     return () => {
       window.removeEventListener(FILE_MANAGER_EVENTS.FILE_UPLOADED, handleFileUploaded as EventListener)
-      isMountedRef.current = false
     }
   }, [])
 

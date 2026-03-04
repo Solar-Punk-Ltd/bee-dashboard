@@ -437,6 +437,18 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   }, [showContext, pos, contextRef])
 
   useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     let title = currentDrive?.name || ''
 
     if (isSearchMode) {
@@ -456,16 +468,6 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode])
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current)
-      }
-    }
-  }, [])
 
   const doRefresh = async () => {
     handleCloseContext()
