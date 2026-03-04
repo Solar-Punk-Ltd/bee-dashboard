@@ -58,7 +58,7 @@
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "@rainbow-me/rainbowkit": "^2.2.8",
-    "@solarpunkltd/file-manager-lib": "file:../../file-manager-lib",
+    "@solarpunkltd/file-manager-lib": "^1.0.6",
     "@upcoming/multichain-widget": "^0.10.4",
     "axios": "^0.30.2",
     "bignumber.js": "^9.3.1",
@@ -132,9 +132,12 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@parcel/watcher",
+      "bufferutil",
       "esbuild",
+      "keccak",
       "puppeteer",
-      "unrs-resolver"
+      "unrs-resolver",
+      "utf-8-validate"
     ]
   },
   "keywords": [
