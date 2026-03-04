@@ -117,17 +117,14 @@ export function InitialModal({
       setIsNodeSyncing(false)
       checkBalances(cost)
       const costDecimal = parseFloat(cost.toDecimalString())
-      const formattedCost = costDecimal < 0.01 && costDecimal > 0 
-        ? costDecimal.toExponential(1) 
-        : costDecimal.toPrecision(2)
+      const formattedCost =
+        costDecimal < 0.01 && costDecimal > 0 ? costDecimal.toExponential(1) : costDecimal.toPrecision(2)
       setCost(formattedCost)
-      
     },
     [checkBalances],
   )
 
   const handleCostFetchError = useCallback(() => {
-    
     setIsNodeSyncing(true)
     setCost('0')
   }, [])
@@ -207,7 +204,7 @@ export function InitialModal({
     }
   }, [validityEndDate, erasureCodeLevel, beeApi, capacity, handleCostFetch, handleCostFetchError])
 
-useEffect(() => {
+  useEffect(() => {
     if (lifetimeIndex >= 0 && !isNodeSyncing) {
       setIsCreateEnabled(true)
     } else {
