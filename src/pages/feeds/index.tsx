@@ -23,6 +23,7 @@ import { DeleteFeedDialog } from './DeleteFeedDialog'
 import { ExportFeedDialog } from './ExportFeedDialog'
 import { ImportFeedDialog } from './ImportFeedDialog'
 
+// TODO: is this component used at all?
 export default function Feeds(): ReactElement {
   const { identities, setIdentities } = useContext(IdentityContext)
   const { status } = useContext(BeeContext)
