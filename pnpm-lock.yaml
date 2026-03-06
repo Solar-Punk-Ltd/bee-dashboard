@@ -30,8 +30,8 @@ importers:
         specifier: ^2.2.8
         version: 2.2.10(@tanstack/react-query@5.90.21(react@19.2.4))(@types/react@19.2.14)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(viem@2.46.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.3.6))(wagmi@2.19.5(@tanstack/query-core@5.90.20)(@tanstack/react-query@5.90.21(react@19.2.4))(@types/react@19.2.14)(bufferutil@4.1.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(viem@2.46.3(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.3.6))(zod@4.3.6))
       '@solarpunkltd/file-manager-lib':
-        specifier: ^1.0.6
-        version: 1.0.6(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+        specifier: ^1.0.7
+        version: 1.0.7(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       '@upcoming/multichain-widget':
         specifier: ^0.10.4
         version: 0.10.4(@tanstack/query-core@5.90.20)(@types/react@19.2.14)(babel-plugin-macros@3.1.0)(bufferutil@4.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@4.3.6)
@@ -2494,8 +2494,8 @@ packages:
   '@solana/web3.js@1.98.4':
     resolution: {integrity: sha512-vv9lfnvjUsRiq//+j5pBdXig0IQdtzA0BRZ3bXEP4KaIyF1CcaydWqgyzQgfZMNIsWNWmG+AUHwPy4AHOD6gpw==}
 
-  '@solarpunkltd/file-manager-lib@1.0.6':
-    resolution: {integrity: sha512-P3GuXdTxswTbtfG7cKozd8RQOO/azflnY3JP1pTKiqhN9EtHqlUXTaR6zpbUUVGMoaU6g07epv4zLb9WRIZyLA==}
+  '@solarpunkltd/file-manager-lib@1.0.7':
+    resolution: {integrity: sha512-L/mE2F/4oL24PHUNcSET2TlvGpuVlm8AFedpBl/2O59ISrBvLzs6H2jep5LytgRdwaD+Hpot2ssGkWKgHnycrQ==}
     engines: {bee: 2.7.0, node: '>=24.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
 
   '@swc/helpers@0.5.19':
@@ -10463,7 +10463,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@solarpunkltd/file-manager-lib@1.0.6(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+  '@solarpunkltd/file-manager-lib@1.0.7(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@ethersphere/bee-js': 11.1.1(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       cafe-utility: 33.8.0
