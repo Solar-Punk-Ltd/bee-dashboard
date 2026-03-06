@@ -169,14 +169,22 @@ export function InitialModal({
   ])
 
   useEffect(() => {
+    let mounted = true
+
     const getStamps = async () => {
       const stamps = await getUsableStamps(beeApi)
 
-      safeSetState(isMountedRef, setUsableStamps)([...stamps])
+      if (mounted) {
+        setUsableStamps([...stamps])
+      }
     }
 
     if (beeApi) {
       getStamps()
+    }
+
+    return () => {
+      mounted = false
     }
   }, [beeApi])
 
