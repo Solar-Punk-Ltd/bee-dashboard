@@ -17,8 +17,8 @@ interface BulkOptions {
   setErrorMessage?: (error: string) => void
 }
 
-export function useBulkActions({ listToRender, setErrorMessage, trackDownload }: BulkOptions) {
-  const { fm, adminDrive, drives, refreshStamp, setShowError } = useContext(FMContext)
+export function useBulkActions({ listToRender, trackDownload, setErrorMessage }: BulkOptions) {
+  const { fm, adminDrive, currentDrive, drives, refreshStamp, setShowError } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -85,7 +85,7 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
-        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name
+        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name ?? currentDrive?.name
         const uuid = uuidV4()
 
         infoListWitIDs[i] = { uuid, info: fi }
@@ -94,13 +94,13 @@ export function useBulkActions({ listToRender, setErrorMessage, trackDownload }:
           name: fi.name,
           size: prettySize,
           expectedSize: expected,
-          driveName,
+          driveName: driveName ?? 'unknown',
         })
       }
 
       await startDownloadingQueue(fm, infoListWitIDs, trackers)
     },
-    [fm, trackDownload, drives],
+    [fm, currentDrive, trackDownload, drives],
   )
 
   const bulkTrash = useCallback(
