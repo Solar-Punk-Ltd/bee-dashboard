@@ -680,33 +680,29 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     if (runningRef.current) return
     runningRef.current = true
 
-    try {
-      while (uploadTaskQueueRef.current.length > 0) {
-        const task = uploadTaskQueueRef.current[0]
+    while (uploadTaskQueueRef.current.length > 0) {
+      const task = uploadTaskQueueRef.current[0]
 
-        if (!task) break
+      if (!task) break
 
-        const isCancelled = cancelledQueuedRef.current.has(task.uuid)
-
-        if (isCancelled) {
-          safeSetState(
-            isMountedRef,
-            setUploadItems,
-          )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
-          cancelledQueuedRef.current.delete(task.uuid)
-          uploadTaskQueueRef.current.shift()
-        } else {
-          await executeUploadTask(task)
-          uploadTaskQueueRef.current.shift()
-        }
+      if (cancelledQueuedRef.current.has(task.uuid)) {
+        safeSetState(
+          isMountedRef,
+          setUploadItems,
+        )(prev => updateTransferItems(prev, task.uuid, { status: TransferStatus.Cancelled }))
+        cancelledQueuedRef.current.delete(task.uuid)
+      } else {
+        await executeUploadTask(task)
       }
-    } finally {
-      runningRef.current = false
-      // TODO: why runUploadQueue is called again here?
 
-      if (uploadTaskQueueRef.current.length > 0) {
-        runUploadQueue()
-      }
+      uploadTaskQueueRef.current.shift()
+    }
+
+    runningRef.current = false
+
+    // Race guard: uploadFiles may have appended tasks and called runUploadQueue() again
+    if (uploadTaskQueueRef.current.length > 0) {
+      runUploadQueue()
     }
   }, [executeUploadTask])
 
