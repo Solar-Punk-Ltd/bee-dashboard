@@ -634,12 +634,14 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       const tasks: UploadTask[] = []
-      let fileSizeSum = 0
+      const inFlightSize = uploadTaskQueueRef.current.reduce((sum, t) => sum + t.file.size, 0)
+      const inFlightCount = uploadTaskQueueRef.current.length
+      let currentFileSizeSum = inFlightSize
 
       for (let i = 0; i < filesArr.length; i++) {
         const file = filesArr[i]
-        fileSizeSum += file.size
-        const fileCount = i + 1
+        currentFileSizeSum += file.size
+        const fileCount = inFlightCount + i + 1
 
         const { ok } = verifyDriveSpace({
           fm,
@@ -648,7 +650,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           useInfoSize: true,
           driveId: currentDrive.id.toString(),
           adminRedundancy: adminDrive?.redundancyLevel,
-          fileSize: fileSizeSum,
+          fileSize: currentFileSizeSum,
           fileCount,
           cb: err => {
             setErrorMessage?.(err + ' (' + truncateNameMiddle(file.name) + ')')
