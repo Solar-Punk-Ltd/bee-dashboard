@@ -1,4 +1,4 @@
-import { ReactElement, useLayoutEffect, useRef } from 'react'
+import { ReactElement } from 'react'
 import ArrowDownIcon from 'remixicon-react/ArrowDownSLineIcon'
 import CloseIcon from 'remixicon-react/CloseLineIcon'
 
@@ -44,8 +44,8 @@ export function FileProgressWindow({
   onRowClose,
   onCloseAll,
 }: FileProgressWindowProps): ReactElement | null {
-  const listRef = useRef<HTMLDivElement | null>(null)
-  const firstRowRef = useRef<HTMLDivElement | null>(null)
+  // const listRef = useRef<HTMLDivElement | null>(null)
+  // const firstRowRef = useRef<HTMLDivElement | null>(null)
   const count = items?.length ?? 0
   const rows: ProgressItem[] = items ?? []
 
@@ -73,16 +73,16 @@ export function FileProgressWindow({
       )
     })
 
-  useLayoutEffect(() => {
-    const rowEl = firstRowRef.current
-    const listEl = listRef.current
+  // useLayoutEffect(() => {
+  //   const rowEl = firstRowRef.current
+  //   const listEl = listRef.current
 
-    if (!rowEl || !listEl) return
+  //   if (!rowEl || !listEl) return
 
-    const rowH = rowEl.getBoundingClientRect().height
-    const safeRowH = rowH > 0 ? rowH : 72
-    listEl.style.maxHeight = `${safeRowH * 5}px`
-  }, [rows.length])
+  //   const rowH = rowEl.getBoundingClientRect().height
+  //   const safeRowH = rowH > 0 ? rowH : 72
+  //   listEl.style.maxHeight = `${safeRowH * 5}px`
+  // }, [rows.length])
 
   return (
     <div className="fm-file-progress-window">
@@ -113,7 +113,7 @@ export function FileProgressWindow({
           </button>
         </div>
       </div>
-      <div className="fm-file-progress-window-list" ref={listRef}>
+      <div className="fm-file-progress-window-list">
         {rows.map((item, idx) => {
           const pctNum = Number.isFinite(item.percent)
             ? Math.max(0, Math.min(100, Math.round(item.percent as number)))
@@ -140,11 +140,7 @@ export function FileProgressWindow({
           const centerDisplay = getCenterText() || '\u00A0'
 
           return (
-            <div
-              className="fm-file-progress-window-file-item"
-              key={item.uuid || `${item.name}-${idx}`}
-              ref={idx === 0 ? firstRowRef : undefined}
-            >
+            <div className="fm-file-progress-window-file-item" key={item.uuid || `${item.name}-${idx}`}>
               <div className="fm-file-progress-window-file-type-icon">
                 <GetIconElement size="14" name={item.name} color="black" />
               </div>
