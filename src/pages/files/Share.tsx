@@ -145,8 +145,10 @@ export function Share(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hash])
 
-  function errorMessage(err: unknown) {
-    return <span>Error: {err instanceof Error ? err.message : String(err)}</span>
+  function downloadFailedWithError(err: unknown) {
+    const msg = <span>Error: {err instanceof Error ? err.message : String(err)}</span>
+    enqueueSnackbar(msg, { variant: 'error' })
+    setDownloading(false)
   }
 
   async function onDownload() {
@@ -170,8 +172,7 @@ export function Share(): ReactElement {
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Failed to download file: ', err)
-        enqueueSnackbar(errorMessage(err), { variant: 'error' })
-        setDownloading(false)
+        downloadFailedWithError(err)
 
         return
       }
@@ -190,8 +191,7 @@ export function Share(): ReactElement {
         } catch (err) {
           // eslint-disable-next-line no-console
           console.error('Failed to download files: ', err)
-          enqueueSnackbar(errorMessage(err), { variant: 'error' })
-          setDownloading(false)
+          downloadFailedWithError(err)
 
           return
         }
@@ -203,8 +203,7 @@ export function Share(): ReactElement {
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Failed to compress file: ', err)
-        enqueueSnackbar(errorMessage(err), { variant: 'error' })
-        setDownloading(false)
+        downloadFailedWithError(err)
 
         return
       }
