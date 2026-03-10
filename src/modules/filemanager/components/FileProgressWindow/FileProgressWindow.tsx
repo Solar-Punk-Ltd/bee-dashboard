@@ -44,8 +44,6 @@ export function FileProgressWindow({
   onRowClose,
   onCloseAll,
 }: FileProgressWindowProps): ReactElement | null {
-  // const listRef = useRef<HTMLDivElement | null>(null)
-  // const firstRowRef = useRef<HTMLDivElement | null>(null)
   const count = items?.length ?? 0
   const rows: ProgressItem[] = items ?? []
 
@@ -72,17 +70,6 @@ export function FileProgressWindow({
         (typeof pct === 'number' && pct >= 100)
       )
     })
-
-  // useLayoutEffect(() => {
-  //   const rowEl = firstRowRef.current
-  //   const listEl = listRef.current
-
-  //   if (!rowEl || !listEl) return
-
-  //   const rowH = rowEl.getBoundingClientRect().height
-  //   const safeRowH = rowH > 0 ? rowH : 72
-  //   listEl.style.maxHeight = `${safeRowH * 5}px`
-  // }, [rows.length])
 
   return (
     <div className="fm-file-progress-window">
