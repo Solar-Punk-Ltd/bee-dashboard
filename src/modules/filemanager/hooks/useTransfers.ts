@@ -27,7 +27,7 @@ const ABORT_EVENT = 'abort'
 type ResolveResult = {
   cancelled: boolean
   finalName?: string
-  isReplace?: boolean
+  isReplace: boolean
   replaceTopic?: string
   replaceHistory?: string
 }
@@ -63,6 +63,18 @@ type UploadTask = {
   replaceHistory?: string
   driveId: string
   driveName: string
+}
+
+const isNameInvalid = (
+  finalName: string,
+  isReplace: boolean,
+  replaceHistory?: string,
+  replaceTopic?: string,
+): boolean => {
+  const invalidCombo = isReplace && (!replaceHistory || !replaceTopic)
+  const invalidName = !finalName || finalName.trim().length === 0
+
+  return invalidCombo || invalidName
 }
 
 const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
@@ -250,7 +262,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       })
 
       if (choice.action === ConflictAction.Cancel) {
-        return { cancelled: true }
+        return { cancelled: true, isReplace: false }
       }
 
       if (choice.action === ConflictAction.KeepBoth) {
@@ -574,10 +586,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       let { finalName, isReplace, replaceTopic, replaceHistory } = await resolveConflict(file.name, sameDrive, allTaken)
       finalName = finalName ?? ''
 
-      const invalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
-      const invalidName = !finalName || finalName.trim().length === 0
-
-      if (invalidCombo || invalidName) {
+      if (isNameInvalid(finalName, isReplace, replaceHistory, replaceTopic)) {
         return null
       }
 
@@ -590,10 +599,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         replaceHistory = retry.replaceHistory
       }
 
-      const retryInvalidCombo = Boolean(isReplace) && (!replaceHistory || !replaceTopic)
-      const retryInvalidName = !finalName || finalName.trim().length === 0
-
-      if (retryInvalidCombo || retryInvalidName) {
+      if (isNameInvalid(finalName, isReplace, replaceHistory, replaceTopic)) {
         return null
       }
 
