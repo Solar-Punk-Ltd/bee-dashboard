@@ -435,8 +435,7 @@ export const startDownloadingQueue = async (
           if (success) {
             const size = fh.infoWithId.info.customMetadata?.size
             const finalProgress = size ? Number(size) : 0
-            // TODO: analyze why completed is not set anywhere else?
-            tracker({ progress: finalProgress, isDownloading: false, state: DownloadState.Completed })
+            tracker({ progress: finalProgress, isDownloading: false })
 
             return
           }
