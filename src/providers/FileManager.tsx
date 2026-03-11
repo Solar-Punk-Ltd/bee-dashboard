@@ -86,6 +86,7 @@ const findDrives = (
 
 export function Provider({ children }: Props) {
   const initInProgressRef = useRef(false)
+  const beeInstanceRef = useRef<Bee | null>(null)
 
   const { apiUrl, beeApi } = useContext(SettingsContext)
 
@@ -129,8 +130,8 @@ export function Provider({ children }: Props) {
   }, [])
 
   const syncDrives = useCallback(
-    async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean): Promise<void> => {
-      const usableStamps = await getUsableStamps(beeApi)
+    async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean, beeInstance?: Bee): Promise<void> => {
+      const usableStamps = await getUsableStamps(beeInstance || beeApi)
 
       if (di) {
         const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
@@ -194,7 +195,7 @@ export function Provider({ children }: Props) {
 
   const syncDrivesPublic = useCallback(async () => {
     if (fm) {
-      await syncDrives(fm)
+      await syncDrives(fm, undefined, undefined, beeInstanceRef.current || undefined)
     }
   }, [fm, syncDrives])
 
@@ -232,6 +233,7 @@ export function Provider({ children }: Props) {
     setCurrentStamp(undefined)
 
     const bee = new Bee(apiUrl, { signer: pk })
+    beeInstanceRef.current = bee
     const manager = new FileManagerBase(bee)
 
     const handleInitialized = (success: boolean) => {
@@ -248,22 +250,22 @@ export function Provider({ children }: Props) {
         }
 
         setFm(manager)
-        syncDrives(manager)
+        syncDrives(manager, undefined, undefined, bee)
         syncFiles(manager)
       }
     }
 
     const handleDriveCreated = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo)
+      syncDrives(manager, driveInfo, undefined, bee)
     }
 
     const handleDriveDestroyed = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, true)
+      syncDrives(manager, driveInfo, true, bee)
       syncFiles(manager)
     }
 
     const handleDriveForgotten = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, true)
+      syncDrives(manager, driveInfo, true, bee)
       syncFiles(manager)
     }
 
@@ -341,7 +343,7 @@ export function Provider({ children }: Props) {
 
   useEffect(() => {
     if (fm && drives.length === 0 && !adminDrive) {
-      syncDrives(fm)
+      syncDrives(fm, undefined, undefined, beeInstanceRef.current || undefined)
     }
   }, [fm, drives.length, adminDrive, syncDrives])
 
