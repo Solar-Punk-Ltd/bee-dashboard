@@ -129,98 +129,98 @@ export function Provider({ children }: Props) {
     setFiles([...manager.fileInfoList])
   }, [])
 
-  const syncDrives = useCallback(
-    async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean, beeInstance?: Bee): Promise<void> => {
-      const usableStamps = await getUsableStamps(beeInstance || beeApi)
+  const syncDrives = useCallback(async (manager: FileManagerBase, di?: DriveInfo, remove?: boolean): Promise<void> => {
+    if (!beeInstanceRef.current) {
+      return
+    }
 
-      if (di) {
-        const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
+    const usableStamps = await getUsableStamps(beeInstanceRef.current)
 
-        if (isNotExpired) {
-          if (remove) {
-            setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+    if (di) {
+      const isNotExpired = usableStamps.some(s => s.batchID.toString() === di.batchId.toString())
 
-            return
-          }
-
-          if (di.isAdmin) {
-            setAdminDrive(di)
-
-            return
-          }
-
-          setDrives(prev => {
-            const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
-
-            if (existingIndex >= 0) {
-              const updated = [...prev]
-              updated[existingIndex] = di
-
-              return updated
-            }
-
-            return [...prev, di]
-          })
-
-          return
-        }
-
+      if (isNotExpired) {
         if (remove) {
-          setExpiredDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+          setDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
 
           return
         }
 
-        if (!di.isAdmin) {
-          setExpiredDrives(prev => {
-            const exists = prev.some(d => d.id.toString() === di.id.toString())
-
-            return exists ? prev : [...prev, di]
-          })
+        if (di.isAdmin) {
+          setAdminDrive(di)
 
           return
         }
 
-        // TODO: handle admin drive expiration!
+        setDrives(prev => {
+          const existingIndex = prev.findIndex(d => d.id.toString() === di.id.toString())
+
+          if (existingIndex >= 0) {
+            const updated = [...prev]
+            updated[existingIndex] = di
+
+            return updated
+          }
+
+          return [...prev, di]
+        })
+
         return
       }
 
-      const { adminDrive: tmpAdminDrive, userDrives, expiredDrives } = findDrives(manager.driveList, usableStamps)
-      setAdminDrive(tmpAdminDrive)
-      setDrives(userDrives)
-      setExpiredDrives(expiredDrives)
-    },
-    [beeApi],
-  )
+      if (remove) {
+        setExpiredDrives(prev => prev.filter(d => d.id.toString() !== di.id.toString()))
+
+        return
+      }
+
+      if (!di.isAdmin) {
+        setExpiredDrives(prev => {
+          const exists = prev.some(d => d.id.toString() === di.id.toString())
+
+          return exists ? prev : [...prev, di]
+        })
+
+        return
+      }
+
+      // TODO: handle admin drive expiration!
+      return
+    }
+
+    const { adminDrive: tmpAdminDrive, userDrives, expiredDrives } = findDrives(manager.driveList, usableStamps)
+    setAdminDrive(tmpAdminDrive)
+    setDrives(userDrives)
+    setExpiredDrives(expiredDrives)
+  }, [])
 
   const syncDrivesPublic = useCallback(async () => {
     if (fm) {
-      await syncDrives(fm, undefined, undefined, beeInstanceRef.current || undefined)
+      await syncDrives(fm)
     }
   }, [fm, syncDrives])
 
-  const refreshStamp = useCallback(
-    async (batchId: string): Promise<PostageBatch | undefined> => {
-      const usableStamps = await getUsableStamps(beeApi)
-      const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
+  const refreshStamp = useCallback(async (batchId: string): Promise<PostageBatch | undefined> => {
+    if (!beeInstanceRef.current) {
+      return
+    }
 
-      setCurrentStamp(prev => {
-        if (prev && prev.batchID.toString() === batchId && refreshedStamp) {
-          return refreshedStamp
-        }
+    const usableStamps = await getUsableStamps(beeInstanceRef.current)
+    const refreshedStamp = usableStamps.find(s => s.batchID.toString() === batchId)
 
-        return prev
-      })
+    setCurrentStamp(prev => {
+      if (prev && prev.batchID.toString() === batchId && refreshedStamp) {
+        return refreshedStamp
+      }
 
-      return refreshedStamp
-    },
-    [beeApi],
-  )
+      return prev
+    })
+
+    return refreshedStamp
+  }, [])
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
-    const pk = getSignerPk()
-
-    if (!apiUrl || !pk || initInProgressRef.current) return null
+    if (!apiUrl || !beeInstanceRef.current || initInProgressRef.current) return null
 
     initInProgressRef.current = true
 
@@ -232,9 +232,7 @@ export function Provider({ children }: Props) {
     setCurrentDrive(undefined)
     setCurrentStamp(undefined)
 
-    const bee = new Bee(apiUrl, { signer: pk })
-    beeInstanceRef.current = bee
-    const manager = new FileManagerBase(bee)
+    const manager = new FileManagerBase(beeInstanceRef.current)
 
     const handleInitialized = (success: boolean) => {
       setInitializationError(!success)
@@ -250,22 +248,22 @@ export function Provider({ children }: Props) {
         }
 
         setFm(manager)
-        syncDrives(manager, undefined, undefined, bee)
+        syncDrives(manager)
         syncFiles(manager)
       }
     }
 
     const handleDriveCreated = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, undefined, bee)
+      syncDrives(manager, driveInfo)
     }
 
     const handleDriveDestroyed = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, true, bee)
+      syncDrives(manager, driveInfo, true)
       syncFiles(manager)
     }
 
     const handleDriveForgotten = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, true, bee)
+      syncDrives(manager, driveInfo, true)
       syncFiles(manager)
     }
 
@@ -318,16 +316,26 @@ export function Provider({ children }: Props) {
 
     const manager = await init()
 
-    if (prevDriveId && manager) {
+    if (prevDriveId && manager && beeInstanceRef.current) {
       const refreshedDrive = manager.driveList.find(d => d.id.toString() === prevDriveId)
       setCurrentDrive(refreshedDrive)
 
-      const uStamps: PostageBatch[] = await getUsableStamps(beeApi)
+      const uStamps: PostageBatch[] = await getUsableStamps(beeInstanceRef.current)
       const isValidCurrentStamp = uStamps.find(s => s.batchID.toString() === prevStamp?.batchID.toString())
 
       setCurrentStamp(isValidCurrentStamp)
     }
-  }, [currentDrive?.id, currentStamp, init, beeApi])
+  }, [currentDrive?.id, currentStamp, init])
+
+  useEffect(() => {
+    if (beeApi && apiUrl && !beeInstanceRef.current) {
+      const pk = getSignerPk()
+
+      if (!pk) return
+
+      beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
+    }
+  }, [beeApi, apiUrl])
 
   useEffect(() => {
     const pk = getSignerPk()
@@ -343,7 +351,7 @@ export function Provider({ children }: Props) {
 
   useEffect(() => {
     if (fm && drives.length === 0 && !adminDrive) {
-      syncDrives(fm, undefined, undefined, beeInstanceRef.current || undefined)
+      syncDrives(fm)
     }
   }, [fm, drives.length, adminDrive, syncDrives])
 
