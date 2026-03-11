@@ -287,10 +287,10 @@ const downloadToBlob = async (
 
       if (!opened) {
         if (isOpenWindow && isPickerSupported()) {
-          const saved = await saveBlobWithPicker(blob, info, onDownloadProgress, signal)
+          const result = await saveBlobWithPicker(blob, info, onDownloadProgress, signal)
           URL.revokeObjectURL(url)
 
-          return { success: saved, cancelled: !saved }
+          return result
         }
 
         downloadFromUrl(url, info.name)
@@ -335,7 +335,7 @@ const saveBlobWithPicker = async (
   info: FileInfo,
   onDownloadProgress?: (progress: DownloadProgress) => void,
   signal?: AbortSignal,
-): Promise<boolean> => {
+): Promise<BlobDownloadResult> => {
   const infoWithId: FileInfoWithUUID = { uuid: '', info }
 
   try {
@@ -345,22 +345,30 @@ const saveBlobWithPicker = async (
 
     const fh = await getSingleFileHandle(infoWithId)
 
-    if (!fh || fh.cancelled || !fh.handle) {
-      return false
+    if (!fh || !fh.handle) {
+      return { success: false, cancelled: false }
+    }
+
+    if (fh.cancelled) {
+      return { success: false, cancelled: true }
     }
 
     await processStream(blob.stream(), fh.handle, onDownloadProgress, signal)
 
-    return true
+    return { success: true, cancelled: false }
   } catch (err: unknown) {
-    if (!isUserCancellation(err)) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to save blob using file picker: ', err)
+    if (isUserCancellation(err)) {
+      return { success: false, cancelled: true }
     }
 
-    return false
+    // eslint-disable-next-line no-console
+    console.error('Failed to save blob using file picker: ', err)
+
+    return { success: false, cancelled: false }
   }
 }
+
+const RevokeUrlTimeout = 1000
 
 const downloadFromUrl = (url: string, fileName: string): void => {
   const a = document.createElement('a')
@@ -368,7 +376,7 @@ const downloadFromUrl = (url: string, fileName: string): void => {
   a.download = fileName
   document.body.appendChild(a)
   a.click()
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+  window.setTimeout(() => window.URL.revokeObjectURL(url), RevokeUrlTimeout)
   document.body.removeChild(a)
 }
 
