@@ -88,7 +88,7 @@ export function Provider({ children }: Props) {
   const initInProgressRef = useRef(false)
   const beeInstanceRef = useRef<Bee | null>(null)
 
-  const { apiUrl, beeApi } = useContext(SettingsContext)
+  const { apiUrl } = useContext(SettingsContext)
 
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [shallReset, setShallReset] = useState<boolean>(false)
@@ -220,7 +220,9 @@ export function Provider({ children }: Props) {
   }, [])
 
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
-    if (!apiUrl || !beeInstanceRef.current || initInProgressRef.current) return null
+    const pk = getSignerPk()
+
+    if (!apiUrl || !pk || initInProgressRef.current) return null
 
     initInProgressRef.current = true
 
@@ -231,6 +233,10 @@ export function Provider({ children }: Props) {
     setInitializationError(false)
     setCurrentDrive(undefined)
     setCurrentStamp(undefined)
+
+    if (!beeInstanceRef.current) {
+      beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
+    }
 
     const manager = new FileManagerBase(beeInstanceRef.current)
 
@@ -328,14 +334,19 @@ export function Provider({ children }: Props) {
   }, [currentDrive?.id, currentStamp, init])
 
   useEffect(() => {
-    if (beeApi && apiUrl && !beeInstanceRef.current) {
+    if (apiUrl) {
       const pk = getSignerPk()
 
-      if (!pk) return
+      if (pk) {
+        beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
 
-      beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
+        if (fm) {
+          setFm(null)
+        }
+      }
     }
-  }, [beeApi, apiUrl])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiUrl])
 
   useEffect(() => {
     const pk = getSignerPk()
