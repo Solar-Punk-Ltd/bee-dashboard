@@ -334,31 +334,16 @@ export function Provider({ children }: Props) {
   }, [currentDrive?.id, currentStamp, init])
 
   useEffect(() => {
-    if (apiUrl) {
-      const pk = getSignerPk()
-
-      if (pk) {
-        beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
-
-        if (fm) {
-          setFm(null)
-        }
-      }
+    if (!apiUrl || initInProgressRef.current) {
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUrl])
-
-  useEffect(() => {
-    const pk = getSignerPk()
-
-    if (!pk || fm || initInProgressRef.current) return
 
     const initFromLocalState = async () => {
       await init()
     }
 
     initFromLocalState()
-  }, [fm, init])
+  }, [apiUrl, init])
 
   useEffect(() => {
     if (fm && drives.length === 0 && !adminDrive) {
