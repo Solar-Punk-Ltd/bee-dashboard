@@ -233,6 +233,7 @@ export function Provider({ children }: Props) {
     setInitializationError(false)
     setCurrentDrive(undefined)
     setCurrentStamp(undefined)
+    setShallReset(false)
 
     if (!beeInstanceRef.current) {
       beeInstanceRef.current = new Bee(apiUrl, { signer: pk })
@@ -244,6 +245,8 @@ export function Provider({ children }: Props) {
       setInitializationError(!success)
 
       if (success) {
+        setShallReset(false)
+
         if (manager.adminStamp && !manager.adminStamp.usable) {
           // eslint-disable-next-line no-console
           console.warn('Admin stamp exists but is not usable')

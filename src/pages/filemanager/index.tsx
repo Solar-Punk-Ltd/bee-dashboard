@@ -101,6 +101,29 @@ function ErrorModalBlock({ onClick, label }: { onClick: () => void; label: strin
   return <ErrorModal label={label} onClick={onClick} />
 }
 
+function handleInitialModalError(
+  setShowErrorModal: (v: boolean) => void,
+  setErrorMessage: (msg: string) => void,
+  flag: boolean,
+  error?: string,
+) {
+  setShowErrorModal(flag)
+
+  if (error) setErrorMessage(error)
+}
+
+function isBeeNodeReady(status: {
+  all: CheckState
+  apiConnection: { isEnabled: boolean; checkState: CheckState }
+  topology: { isEnabled: boolean; checkState: CheckState }
+}) {
+  if (!status.apiConnection.isEnabled) return false
+
+  if (status.all === CheckState.CONNECTING || status.all === CheckState.STARTING) return false
+
+  return status.apiConnection.checkState === CheckState.OK || status.apiConnection.checkState === CheckState.WARNING
+}
+
 function FileManagerMainContent(props: {
   fm: FileManagerBase | null
   showConnectionError: boolean
@@ -153,22 +176,211 @@ function FileManagerMainContent(props: {
   )
 }
 
+function renderInterimFileManagerContent(props: {
+  shouldShowPreLoading: boolean
+  shouldShowInitializationError: boolean
+  shouldShowResetModal: boolean
+  shouldShowInitialModal: boolean
+  shouldShowLoadingWithoutFm: boolean
+  shouldShowErrorModal: boolean
+  cacheHelpUrl: string
+  setShowResetModal: (v: boolean) => void
+  shallReset: boolean
+  setShowInitialModal: (v: boolean) => void
+  setShowErrorModal: (v: boolean) => void
+  setErrorMessage: (msg: string) => void
+  setIsCreationInProgress: (isCreating: boolean) => void
+  setHasPk: (v: boolean) => void
+}): ReactElement | null {
+  const {
+    shouldShowPreLoading,
+    shouldShowInitializationError,
+    shouldShowResetModal,
+    shouldShowInitialModal,
+    shouldShowLoadingWithoutFm,
+    shouldShowErrorModal,
+    cacheHelpUrl,
+    setShowResetModal,
+    shallReset,
+    setShowInitialModal,
+    setShowErrorModal,
+    setErrorMessage,
+    setIsCreationInProgress,
+    setHasPk,
+  } = props
+
+  if (shouldShowPreLoading) {
+    return <LoadingBlock />
+  }
+
+  if (shouldShowInitializationError) {
+    return (
+      <InitializationErrorBlock
+        onOk={() => {
+          removeSignerPk()
+          setHasPk(false)
+        }}
+      />
+    )
+  }
+
+  if (shouldShowResetModal) {
+    return <ResetModalBlock cacheHelpUrl={cacheHelpUrl} onConfirm={() => setShowResetModal(false)} />
+  }
+
+  if (shouldShowInitialModal) {
+    return (
+      <InitialModalBlock
+        resetState={shallReset}
+        handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
+        handleShowError={(flag: boolean, error?: string) =>
+          handleInitialModalError(setShowErrorModal, setErrorMessage, flag, error)
+        }
+        setIsCreationInProgress={(isCreating: boolean) => setIsCreationInProgress(isCreating)}
+      />
+    )
+  }
+
+  if (shouldShowLoadingWithoutFm) {
+    return <LoadingBlock />
+  }
+
+  if (shouldShowErrorModal) {
+    return (
+      <ErrorModalBlock
+        label={
+          'Error creating Admin Drive. Please try again. Possible causes include insufficient xDAI balance or a lost connection to the RPC.'
+        }
+        onClick={() => {
+          setShowErrorModal(false)
+          setShowInitialModal(true)
+          setErrorMessage('')
+        }}
+      />
+    )
+  }
+
+  return null
+}
+
+function renderFileManagerPageContent(props: {
+  isNodeReady: boolean
+  isPostSyncGracePeriod: boolean
+  initializationError: boolean
+  isLoading: boolean
+  shallReset: boolean
+  setHasPk: (v: boolean) => void
+  showResetModal: boolean
+  cacheHelpUrl: string
+  setShowResetModal: (v: boolean) => void
+  fm: FileManagerBase | null
+  adminDrive: DriveInfo | null
+  showErrorModal: boolean
+  isEmptyState: boolean
+  isInvalidState: boolean
+  setShowInitialModal: (v: boolean) => void
+  setShowErrorModal: (v: boolean) => void
+  setErrorMessage: (msg: string) => void
+  isFormbricksActive: boolean
+  showConnectionError: boolean
+  setShowConnectionError: (v: boolean) => void
+  errorMessage: string
+  loading: boolean
+  isCreationInProgress: boolean
+  setIsCreationInProgress: (isCreating: boolean) => void
+}): ReactElement {
+  const {
+    isNodeReady,
+    isPostSyncGracePeriod,
+    initializationError,
+    isLoading,
+    shallReset,
+    setHasPk,
+    showResetModal,
+    cacheHelpUrl,
+    setShowResetModal,
+    fm,
+    adminDrive,
+    showErrorModal,
+    isEmptyState,
+    isInvalidState,
+    setShowInitialModal,
+    setShowErrorModal,
+    setErrorMessage,
+    isFormbricksActive,
+    showConnectionError,
+    setShowConnectionError,
+    errorMessage,
+    loading,
+    isCreationInProgress,
+    setIsCreationInProgress,
+  } = props
+  const hasUsableManager = Boolean(fm?.adminStamp || adminDrive || fm?.driveList?.some(d => d.isAdmin))
+  const shouldShowLoadingBeforeNodeReady = !isNodeReady
+  const shouldShowInitializationError = Boolean(initializationError && fm && !isLoading && !shallReset)
+  const shouldShowResetModal =
+    isNodeReady && !isPostSyncGracePeriod && showResetModal && shallReset && !hasUsableManager && !isLoading
+  const shouldShowInitialModal =
+    isNodeReady && !isPostSyncGracePeriod && !showErrorModal && (isEmptyState || isInvalidState)
+  const shouldShowLoadingWithoutFm = !fm
+  const shouldShowErrorModal = showErrorModal
+
+  const interimContent = renderInterimFileManagerContent({
+    shouldShowPreLoading: shouldShowLoadingBeforeNodeReady || isPostSyncGracePeriod,
+    shouldShowInitializationError,
+    shouldShowResetModal,
+    shouldShowInitialModal,
+    shouldShowLoadingWithoutFm,
+    shouldShowErrorModal,
+    cacheHelpUrl,
+    setShowResetModal,
+    shallReset,
+    setShowInitialModal,
+    setShowErrorModal,
+    setErrorMessage,
+    setIsCreationInProgress,
+    setHasPk,
+  })
+
+  if (interimContent) {
+    return interimContent
+  }
+
+  return (
+    <FileManagerMainContent
+      fm={fm}
+      showConnectionError={showConnectionError}
+      setShowConnectionError={() => setShowConnectionError(false)}
+      isFormbricksActive={isFormbricksActive}
+      errorMessage={errorMessage}
+      setErrorMessage={setErrorMessage}
+      loading={loading}
+      adminDrive={adminDrive}
+      isCreationInProgress={isCreationInProgress}
+    />
+  )
+}
+
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
+  const wasNodeReadyRef = useRef(false)
   const [showInitialModal, setShowInitialModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [hasAdminDrive, setHasAdminDrive] = useState(false)
   const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [showResetModal, setShowResetModal] = useState<boolean>(false)
+  const [isPostSyncGracePeriod, setIsPostSyncGracePeriod] = useState<boolean>(false)
   const [isCreationInProgress, setIsCreationInProgress] = useState<boolean>(false)
   const [showConnectionError, setShowConnectionError] = useState<boolean>(false)
   const [cacheHelpUrl, setCacheHelpUrl] = useState<string>(cacheClearUrls[BrowserPlatform.Chrome])
 
   const { status } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
-  const { fm, shallReset, adminDrive, initializationError, init } = useContext(FMContext)
+  const { fm, shallReset, adminDrive, initializationError, init, syncDrives } = useContext(FMContext)
+
+  const isNodeReady = useMemo(() => isBeeNodeReady(status), [status])
+  const hasUsableManager = Boolean(fm?.adminStamp || adminDrive || fm?.driveList?.some(d => d.isAdmin))
 
   useEffect(() => {
     isMountedRef.current = true
@@ -191,6 +403,80 @@ export function FileManagerPage(): ReactElement {
   }, [status.apiConnection])
 
   useEffect(() => {
+    if (!isNodeReady) {
+      wasNodeReadyRef.current = false
+      setIsPostSyncGracePeriod(false)
+      setShowInitialModal(false)
+      setShowResetModal(false)
+
+      return
+    }
+
+    if (wasNodeReadyRef.current) {
+      setIsPostSyncGracePeriod(false)
+
+      return
+    }
+
+    wasNodeReadyRef.current = true
+
+    let isActive = true
+    setIsPostSyncGracePeriod(true)
+    const timeoutId = window.setTimeout(() => {
+      if (!isActive) {
+        return
+      }
+
+      void syncDrives()
+
+      if (isActive) {
+        setIsPostSyncGracePeriod(false)
+      }
+    }, 5000)
+
+    void syncDrives()
+
+    return () => {
+      isActive = false
+      window.clearTimeout(timeoutId)
+    }
+  }, [isNodeReady, syncDrives])
+
+  useEffect(() => {
+    if (!beeApi || !hasPk || !isNodeReady || fm || initializationError) {
+      return
+    }
+
+    let isActive = true
+
+    const ensureInitialized = async () => {
+      const maxAttempts = 3
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        if (!isActive) {
+          return
+        }
+
+        const manager = await init()
+
+        if (!isActive || manager) {
+          return
+        }
+
+        if (attempt < maxAttempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1500))
+        }
+      }
+    }
+
+    ensureInitialized()
+
+    return () => {
+      isActive = false
+    }
+  }, [beeApi, hasPk, isNodeReady, fm, initializationError, init])
+
+  useEffect(() => {
     if (!beeApi) {
       return
     }
@@ -201,10 +487,14 @@ export function FileManagerPage(): ReactElement {
       return
     }
 
-    setShowResetModal(shallReset)
+    setShowResetModal(Boolean(shallReset && !hasUsableManager && !isPostSyncGracePeriod))
 
-    if (shallReset) {
-      setShowInitialModal(true)
+    if (shallReset && !hasUsableManager) {
+      if (!isPostSyncGracePeriod) {
+        setShowInitialModal(true)
+      }
+
+      if (fm) setIsLoading(false)
 
       return
     }
@@ -216,18 +506,17 @@ export function FileManagerPage(): ReactElement {
     }
 
     if (fm) {
-      const hasAdminStamp = Boolean(fm.adminStamp)
-      const tmpHasAdminDrive = Boolean(adminDrive)
-      setHasAdminDrive(hasAdminStamp || tmpHasAdminDrive)
       setIsLoading(false)
 
-      setShowInitialModal(!(hasAdminStamp || tmpHasAdminDrive))
+      if (!isPostSyncGracePeriod) {
+        setShowInitialModal(!hasUsableManager)
+      }
 
       return
     }
 
     setIsLoading(true)
-  }, [fm, beeApi, hasPk, initializationError, adminDrive, shallReset])
+  }, [fm, beeApi, hasPk, initializationError, adminDrive, shallReset, hasUsableManager, isPostSyncGracePeriod])
 
   const handlePrivateKeySaved = useCallback(async () => {
     if (!isMountedRef.current) return
@@ -256,11 +545,11 @@ export function FileManagerPage(): ReactElement {
   }, [fm, adminDrive, init])
 
   const isEmptyState = useMemo(() => {
-    return showInitialModal && !isLoading && !hasAdminDrive && !isCreationInProgress
-  }, [showInitialModal, isLoading, hasAdminDrive, isCreationInProgress])
+    return showInitialModal && !isLoading && !hasUsableManager && !isCreationInProgress
+  }, [showInitialModal, isLoading, hasUsableManager, isCreationInProgress])
   const isInvalidState = useMemo(
-    () => shallReset && fm && !isCreationInProgress,
-    [shallReset, fm, isCreationInProgress],
+    () => Boolean(shallReset && fm && !isCreationInProgress && !hasUsableManager),
+    [shallReset, fm, isCreationInProgress, hasUsableManager],
   )
 
   const loading = !fm?.adminStamp || !adminDrive
@@ -271,66 +560,30 @@ export function FileManagerPage(): ReactElement {
     return <PrivateKeyModalBlock onSaved={handlePrivateKeySaved} />
   }
 
-  if (initializationError && !isLoading && !shallReset) {
-    return (
-      <InitializationErrorBlock
-        onOk={() => {
-          removeSignerPk()
-          setHasPk(false)
-        }}
-      />
-    )
-  }
-
-  if (showResetModal) {
-    return <ResetModalBlock cacheHelpUrl={cacheHelpUrl} onConfirm={() => setShowResetModal(false)} />
-  }
-
-  if (!showErrorModal && (isEmptyState || isInvalidState)) {
-    return (
-      <InitialModalBlock
-        resetState={shallReset}
-        handleVisibility={(isVisible: boolean) => setShowInitialModal(isVisible)}
-        handleShowError={(flag: boolean, error?: string) => {
-          setShowErrorModal(flag)
-
-          if (error) setErrorMessage(error)
-        }}
-        setIsCreationInProgress={(isCreating: boolean) => setIsCreationInProgress(isCreating)}
-      />
-    )
-  }
-
-  if (!fm) {
-    return <LoadingBlock />
-  }
-
-  if (showErrorModal) {
-    return (
-      <ErrorModalBlock
-        label={
-          'Error creating Admin Drive. Please try again. Possible causes include insufficient xDAI balance or a lost connection to the RPC.'
-        }
-        onClick={() => {
-          setShowErrorModal(false)
-          setShowInitialModal(true)
-          setErrorMessage('')
-        }}
-      />
-    )
-  }
-
-  return (
-    <FileManagerMainContent
-      fm={fm}
-      showConnectionError={showConnectionError}
-      setShowConnectionError={() => setShowConnectionError(false)}
-      isFormbricksActive={isFormbricksActive}
-      errorMessage={errorMessage}
-      setErrorMessage={setErrorMessage}
-      loading={loading}
-      adminDrive={adminDrive}
-      isCreationInProgress={isCreationInProgress}
-    />
-  )
+  return renderFileManagerPageContent({
+    isNodeReady,
+    isPostSyncGracePeriod,
+    initializationError,
+    isLoading,
+    shallReset,
+    setHasPk,
+    showResetModal,
+    cacheHelpUrl,
+    setShowResetModal,
+    fm,
+    adminDrive,
+    showErrorModal,
+    isEmptyState,
+    isInvalidState,
+    setShowInitialModal,
+    setShowErrorModal,
+    setErrorMessage,
+    isFormbricksActive,
+    showConnectionError,
+    setShowConnectionError,
+    errorMessage,
+    loading,
+    isCreationInProgress,
+    setIsCreationInProgress,
+  })
 }
