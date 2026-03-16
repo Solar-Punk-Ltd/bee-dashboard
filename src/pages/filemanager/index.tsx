@@ -121,7 +121,10 @@ function isBeeNodeReady(status: {
 
   if (status.all === CheckState.CONNECTING || status.all === CheckState.STARTING) return false
 
-  return status.apiConnection.checkState === CheckState.OK || status.apiConnection.checkState === CheckState.WARNING
+  const isReady =
+    status.apiConnection.checkState === CheckState.OK || status.apiConnection.checkState === CheckState.WARNING
+
+  return isReady
 }
 
 function FileManagerMainContent(props: {
@@ -236,7 +239,9 @@ function renderInterimFileManagerContent(props: {
         handleShowError={(flag: boolean, error?: string) =>
           handleInitialModalError(setShowErrorModal, setErrorMessage, flag, error)
         }
-        setIsCreationInProgress={(isCreating: boolean) => setIsCreationInProgress(isCreating)}
+        setIsCreationInProgress={(isCreating: boolean) => {
+          setIsCreationInProgress(isCreating)
+        }}
       />
     )
   }
@@ -263,21 +268,23 @@ function renderInterimFileManagerContent(props: {
   return null
 }
 
+// eslint-disable-next-line complexity
 function renderFileManagerPageContent(props: {
   isNodeReady: boolean
   isPostSyncGracePeriod: boolean
   initializationError: boolean
   isLoading: boolean
   shallReset: boolean
+  hasTriedResetRecovery: boolean
   setHasPk: (v: boolean) => void
   showResetModal: boolean
+  stampApiAvailable: boolean
   cacheHelpUrl: string
   setShowResetModal: (v: boolean) => void
   fm: FileManagerBase | null
   adminDrive: DriveInfo | null
   showErrorModal: boolean
   isEmptyState: boolean
-  isInvalidState: boolean
   setShowInitialModal: (v: boolean) => void
   setShowErrorModal: (v: boolean) => void
   setErrorMessage: (msg: string) => void
@@ -295,15 +302,16 @@ function renderFileManagerPageContent(props: {
     initializationError,
     isLoading,
     shallReset,
+    hasTriedResetRecovery,
     setHasPk,
     showResetModal,
+    stampApiAvailable,
     cacheHelpUrl,
     setShowResetModal,
     fm,
     adminDrive,
     showErrorModal,
     isEmptyState,
-    isInvalidState,
     setShowInitialModal,
     setShowErrorModal,
     setErrorMessage,
@@ -317,12 +325,22 @@ function renderFileManagerPageContent(props: {
   } = props
   const hasUsableManager = Boolean(fm?.adminStamp || adminDrive || fm?.driveList?.some(d => d.isAdmin))
   const shouldShowLoadingBeforeNodeReady = !isNodeReady
-  const shouldShowInitializationError = Boolean(initializationError && fm && !isLoading && !shallReset)
+  const shouldShowInitializationError = Boolean(
+    isNodeReady && !isPostSyncGracePeriod && initializationError && !isLoading && !shallReset && !hasUsableManager,
+  )
   const shouldShowResetModal =
-    isNodeReady && !isPostSyncGracePeriod && showResetModal && shallReset && !hasUsableManager && !isLoading
+    isNodeReady &&
+    !isPostSyncGracePeriod &&
+    stampApiAvailable &&
+    showResetModal &&
+    shallReset &&
+    hasTriedResetRecovery &&
+    !hasUsableManager &&
+    !isLoading
   const shouldShowInitialModal =
-    isNodeReady && !isPostSyncGracePeriod && !showErrorModal && (isEmptyState || isInvalidState)
-  const shouldShowLoadingWithoutFm = !fm
+    isNodeReady && !isPostSyncGracePeriod && !showErrorModal && !showConnectionError && isEmptyState
+  const shouldShowLoadingWithoutFm =
+    !fm || (!hasUsableManager && (isLoading || !stampApiAvailable || (shallReset && !hasTriedResetRecovery)))
   const shouldShowErrorModal = showErrorModal
 
   const interimContent = renderInterimFileManagerContent({
@@ -370,6 +388,7 @@ export function FileManagerPage(): ReactElement {
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [showResetModal, setShowResetModal] = useState<boolean>(false)
+  const [hasTriedResetRecovery, setHasTriedResetRecovery] = useState<boolean>(false)
   const [isPostSyncGracePeriod, setIsPostSyncGracePeriod] = useState<boolean>(false)
   const [isCreationInProgress, setIsCreationInProgress] = useState<boolean>(false)
   const [showConnectionError, setShowConnectionError] = useState<boolean>(false)
@@ -377,7 +396,7 @@ export function FileManagerPage(): ReactElement {
 
   const { status } = useContext(BeeContext)
   const { beeApi } = useContext(SettingsContext)
-  const { fm, shallReset, adminDrive, initializationError, init, syncDrives } = useContext(FMContext)
+  const { fm, shallReset, adminDrive, stampApiAvailable, initializationError, init, syncDrives } = useContext(FMContext)
 
   const isNodeReady = useMemo(() => isBeeNodeReady(status), [status])
   const hasUsableManager = Boolean(fm?.adminStamp || adminDrive || fm?.driveList?.some(d => d.isAdmin))
@@ -387,6 +406,7 @@ export function FileManagerPage(): ReactElement {
 
     const getBrowserPlatform = async () => {
       const browserPlatform = await detectBrowser()
+
       setCacheHelpUrl(cacheClearUrls[browserPlatform])
     }
 
@@ -399,6 +419,7 @@ export function FileManagerPage(): ReactElement {
 
   useEffect(() => {
     const isApiError = status.apiConnection.checkState !== CheckState.OK || !status.apiConnection.isEnabled
+
     setShowConnectionError(isApiError)
   }, [status.apiConnection])
 
@@ -443,39 +464,106 @@ export function FileManagerPage(): ReactElement {
   }, [isNodeReady, syncDrives])
 
   useEffect(() => {
-    if (!beeApi || !hasPk || !isNodeReady || fm || initializationError) {
+    if (!beeApi || !hasPk || !isNodeReady || fm || shallReset) {
+      return
+    }
+
+    let isActive = true
+    let attempt = 0
+    let retryTimerId: number | undefined
+
+    const ensureInitialized = async () => {
+      attempt += 1
+
+      if (!isActive) {
+        return
+      }
+
+      const manager = await init()
+
+      if (!isActive || manager) {
+        return
+      }
+
+      retryTimerId = window.setTimeout(() => {
+        void ensureInitialized()
+      }, 4000)
+    }
+
+    void ensureInitialized()
+
+    return () => {
+      isActive = false
+
+      if (retryTimerId !== undefined) {
+        window.clearTimeout(retryTimerId)
+      }
+    }
+  }, [beeApi, hasPk, isNodeReady, fm, shallReset, initializationError, init])
+
+  useEffect(() => {
+    const shouldRecover = isNodeReady && shallReset && !hasUsableManager
+
+    if (!shouldRecover) {
+      setHasTriedResetRecovery(false)
+    }
+
+    return undefined
+  }, [isNodeReady, shallReset, hasUsableManager])
+
+  useEffect(() => {
+    const shouldPollStampApi = isNodeReady && shallReset && !hasUsableManager && !stampApiAvailable
+
+    if (!shouldPollStampApi) {
+      return
+    }
+
+    void syncDrives()
+
+    const intervalId = window.setInterval(() => {
+      void syncDrives()
+    }, 3000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [isNodeReady, shallReset, hasUsableManager, stampApiAvailable, syncDrives])
+
+  useEffect(() => {
+    const shouldAttemptResetRecovery =
+      beeApi &&
+      hasPk &&
+      isNodeReady &&
+      fm &&
+      shallReset &&
+      !hasUsableManager &&
+      stampApiAvailable &&
+      !hasTriedResetRecovery
+
+    if (!shouldAttemptResetRecovery) {
       return
     }
 
     let isActive = true
 
-    const ensureInitialized = async () => {
-      const maxAttempts = 3
+    const attemptRecovery = async () => {
+      setHasTriedResetRecovery(true)
+      setIsLoading(true)
+      const manager = await init()
 
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        if (!isActive) {
-          return
-        }
-
-        const manager = await init()
-
-        if (!isActive || manager) {
-          return
-        }
-
-        if (attempt < maxAttempts - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1500))
-        }
+      if (!isActive) {
+        return
       }
     }
 
-    ensureInitialized()
+    void attemptRecovery()
 
     return () => {
       isActive = false
     }
-  }, [beeApi, hasPk, isNodeReady, fm, initializationError, init])
+  }, [beeApi, hasPk, isNodeReady, fm, shallReset, hasUsableManager, stampApiAvailable, hasTriedResetRecovery, init])
 
+  // eslint-disable-next-line complexity
   useEffect(() => {
     if (!beeApi) {
       return
@@ -487,14 +575,25 @@ export function FileManagerPage(): ReactElement {
       return
     }
 
-    setShowResetModal(Boolean(shallReset && !hasUsableManager && !isPostSyncGracePeriod))
+    setShowResetModal(
+      Boolean(shallReset && !hasUsableManager && !isPostSyncGracePeriod && stampApiAvailable && hasTriedResetRecovery),
+    )
 
     if (shallReset && !hasUsableManager) {
-      if (!isPostSyncGracePeriod) {
-        setShowInitialModal(true)
+      if (!stampApiAvailable || !hasTriedResetRecovery) {
+        setShowInitialModal(false)
+        setIsLoading(true)
+
+        return
       }
 
-      if (fm) setIsLoading(false)
+      if (!isPostSyncGracePeriod) {
+        setShowInitialModal(false)
+      }
+
+      if (fm) {
+        setIsLoading(false)
+      }
 
       return
     }
@@ -508,15 +607,31 @@ export function FileManagerPage(): ReactElement {
     if (fm) {
       setIsLoading(false)
 
+      const hasAnyDriveMetadata = Boolean(fm.driveList?.length)
+      const shouldSuggestInitialSetup =
+        !hasUsableManager && !shallReset && !initializationError && !hasAnyDriveMetadata && !showConnectionError
+
       if (!isPostSyncGracePeriod) {
-        setShowInitialModal(!hasUsableManager)
+        setShowInitialModal(shouldSuggestInitialSetup)
       }
 
       return
     }
 
     setIsLoading(true)
-  }, [fm, beeApi, hasPk, initializationError, adminDrive, shallReset, hasUsableManager, isPostSyncGracePeriod])
+  }, [
+    fm,
+    beeApi,
+    hasPk,
+    initializationError,
+    adminDrive,
+    shallReset,
+    hasUsableManager,
+    isPostSyncGracePeriod,
+    showConnectionError,
+    stampApiAvailable,
+    hasTriedResetRecovery,
+  ])
 
   const handlePrivateKeySaved = useCallback(async () => {
     if (!isMountedRef.current) return
@@ -545,12 +660,10 @@ export function FileManagerPage(): ReactElement {
   }, [fm, adminDrive, init])
 
   const isEmptyState = useMemo(() => {
-    return showInitialModal && !isLoading && !hasUsableManager && !isCreationInProgress
+    const value = showInitialModal && !isLoading && !hasUsableManager && !isCreationInProgress
+
+    return value
   }, [showInitialModal, isLoading, hasUsableManager, isCreationInProgress])
-  const isInvalidState = useMemo(
-    () => Boolean(shallReset && fm && !isCreationInProgress && !hasUsableManager),
-    [shallReset, fm, isCreationInProgress, hasUsableManager],
-  )
 
   const loading = !fm?.adminStamp || !adminDrive
 
@@ -566,15 +679,16 @@ export function FileManagerPage(): ReactElement {
     initializationError,
     isLoading,
     shallReset,
+    hasTriedResetRecovery,
     setHasPk,
     showResetModal,
+    stampApiAvailable,
     cacheHelpUrl,
     setShowResetModal,
     fm,
     adminDrive,
     showErrorModal,
     isEmptyState,
-    isInvalidState,
     setShowInitialModal,
     setShowErrorModal,
     setErrorMessage,
