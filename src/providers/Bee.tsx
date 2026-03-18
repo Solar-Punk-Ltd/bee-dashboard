@@ -29,7 +29,7 @@ import { useLatestBeeRelease } from '../hooks/apiHooks'
 
 import { Context as SettingsContext } from './Settings'
 
-const LAUNCH_GRACE_PERIOD = 15_000
+const LAUNCH_GRACE_PERIOD = 35_000
 const REFRESH_WHEN_OK = 30_000
 const REFRESH_WHEN_ERROR = 5_000
 const TIMEOUT = 3_000
@@ -116,15 +116,22 @@ interface Props {
   children: ReactNode
 }
 
-function getStatus(
-  nodeInfo: NodeInfo | null,
-  apiHealth: boolean,
-  topology: Topology | null,
-  chequebookAddress: ChequebookAddressResponse | null,
-  chequebookBalance: ChequebookBalanceResponse | null,
-  error: Error | null,
-  startedAt: number,
-): Status {
+interface StatusProps {
+  nodeInfo: NodeInfo | null
+  apiHealth: boolean
+  topology: Topology | null
+  isWarmingUp: boolean
+  chequebookAddress: ChequebookAddressResponse | null
+  chequebookBalance: ChequebookBalanceResponse | null
+  error: Error | null
+  startedAt: number
+}
+
+function getStatus(props: StatusProps): Status {
+  const { nodeInfo, apiHealth, topology, isWarmingUp, chequebookAddress, chequebookBalance, error, startedAt } = {
+    ...props,
+  }
+
   const status: Status = { ...initialValues.status }
 
   // API connection check
@@ -143,15 +150,17 @@ function getStatus(
 
     if (chequebookAddress?.chequebookAddress && chequebookBalance !== null) {
       status.chequebook.checkState = CheckState.OK
-    } else status.chequebook.checkState = CheckState.OK
+    } else {
+      status.chequebook.checkState = CheckState.WARNING
+    }
   }
 
-  status.all = determineOverallStatus(status, startedAt)
+  status.all = determineOverallStatus(status, isWarmingUp, startedAt)
 
   return status
 }
 
-function determineOverallStatus(status: Status, startedAt: number): CheckState {
+function determineOverallStatus(status: Status, isWarmingUp: boolean, startedAt: number): CheckState {
   const hasErrors = Object.values(status).some(
     ({ isEnabled, checkState }) => isEnabled && checkState === CheckState.ERROR,
   )
@@ -160,15 +169,19 @@ function determineOverallStatus(status: Status, startedAt: number): CheckState {
   )
   const isInGracePeriod = Date.now() - startedAt < LAUNCH_GRACE_PERIOD
 
-  if (hasErrors && isInGracePeriod) {
+  if (isWarmingUp || isInGracePeriod) {
     return CheckState.CONNECTING
-  } else if (hasErrors) {
-    return CheckState.ERROR
-  } else if (hasWarnings) {
-    return CheckState.WARNING
-  } else {
-    return CheckState.OK
   }
+
+  if (hasErrors) {
+    return CheckState.ERROR
+  }
+
+  if (hasWarnings) {
+    return CheckState.WARNING
+  }
+
+  return CheckState.OK
 }
 
 // This does not need to be exposed and works much better as variable than state variable which may trigger some unnecessary re-renders
@@ -179,6 +192,7 @@ export function Provider({ children }: Props): ReactElement {
 
   const [beeVersion, setBeeVersion] = useState<string | null>(null)
   const [apiHealth, setApiHealth] = useState<boolean>(false)
+  const [isWarmingUp, setIsWarmingUp] = useState<boolean>(true)
   const [nodeAddresses, setNodeAddresses] = useState<NodeAddresses | null>(null)
   const [nodeInfo, setNodeInfo] = useState<NodeInfo | null>(null)
   const [topology, setNodeTopology] = useState<Topology | null>(null)
@@ -191,7 +205,7 @@ export function Provider({ children }: Props): ReactElement {
   const [settlements, setSettlements] = useState<AllSettlements | null>(null)
   const [chainState, setChainState] = useState<ChainState | null>(null)
   const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null)
-  const [startedAt] = useState(() => Date.now())
+  const [startedAt, setStartedAt] = useState(() => Date.now())
 
   const { latestBeeRelease } = useLatestBeeRelease()
 
@@ -201,6 +215,15 @@ export function Provider({ children }: Props): ReactElement {
   const [frequency, setFrequency] = useState<number | null>(REFRESH_WHEN_OK)
 
   const frequencyRef = useRef<number | null>(frequency)
+
+  useEffect(() => {
+    if (isWarmingUp) return
+
+    setStartedAt(Date.now())
+    const timer = setTimeout(() => setStartedAt(0), LAUNCH_GRACE_PERIOD)
+
+    return () => clearTimeout(timer)
+  }, [isWarmingUp])
 
   const refresh = useCallback(async () => {
     // Don't want to refresh when already refreshing
@@ -229,6 +252,12 @@ export function Provider({ children }: Props): ReactElement {
             setBeeVersion(null)
             setApiHealth(false)
           }),
+
+        // Debug Status
+        beeApi
+          .getStatus({ timeout: TIMEOUT })
+          .then(response => setIsWarmingUp(response.isWarmingUp))
+          .catch(() => setIsWarmingUp(false)),
 
         // Node Addresses
         beeApi
@@ -322,8 +351,18 @@ export function Provider({ children }: Props): ReactElement {
   const stop = useCallback(() => setFrequency(null), [])
 
   const status = useMemo(
-    () => getStatus(nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt),
-    [nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt],
+    () =>
+      getStatus({
+        nodeInfo,
+        apiHealth,
+        topology,
+        isWarmingUp,
+        chequebookAddress,
+        chequebookBalance,
+        error,
+        startedAt,
+      }),
+    [nodeInfo, apiHealth, topology, chequebookAddress, chequebookBalance, error, startedAt, isWarmingUp],
   )
 
   useEffect(() => {
