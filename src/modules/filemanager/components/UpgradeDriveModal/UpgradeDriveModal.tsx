@@ -338,7 +338,7 @@ export function UpgradeDriveModal({
               const isStampValid = await validateStampStillExists(beeApi, stamp.batchID)
 
               if (!isStampValid) {
-                setErrorMessage?.('The admin drive has expired.')
+                setErrorMessage?.('The admin drive has expired. Please clear the browser cache and reload the page.')
                 setShowError(true)
                 onCancelClick()
 
