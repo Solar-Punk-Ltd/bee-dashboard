@@ -206,7 +206,7 @@ export function FileManagerPage(): ReactElement {
     }
   }, [isConnectionError])
 
-  const uiPhase = useMemo((): PageState => {
+  const pageState = useMemo((): PageState => {
     if (!isBeeReady && !initDone) return PageState.Connecting
 
     if (!hasPk) return PageState.NoPrivateKey
@@ -251,15 +251,15 @@ export function FileManagerPage(): ReactElement {
   const loading = !fm?.adminStamp || !adminDrive
   const isFormbricksActive = Boolean(fm && fm.adminStamp && adminDrive && !loading)
 
-  if (uiPhase === PageState.Connecting || uiPhase === PageState.Loading) {
+  if (pageState === PageState.Connecting || pageState === PageState.Loading) {
     return <LoadingBlock />
   }
 
-  if (uiPhase === PageState.NoPrivateKey) {
+  if (pageState === PageState.NoPrivateKey) {
     return <PrivateKeyModalBlock onSaved={handlePrivateKeySaved} />
   }
 
-  if (uiPhase === PageState.InitError) {
+  if (pageState === PageState.InitError) {
     return (
       <InitializationErrorBlock
         onOk={() => {
@@ -270,11 +270,11 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (uiPhase === PageState.Reset) {
+  if (pageState === PageState.Reset) {
     return <ResetModalBlock cacheHelpUrl={cacheHelpUrl} onConfirm={() => setResetAcknowledged(true)} />
   }
 
-  if (uiPhase === PageState.Initial) {
+  if (pageState === PageState.Initial) {
     return (
       <InitialModalBlock
         resetState={shallReset}
@@ -288,10 +288,11 @@ export function FileManagerPage(): ReactElement {
     )
   }
 
-  if (uiPhase === PageState.AdminError) {
+  if (pageState === PageState.AdminError) {
     return (
       <ErrorModalBlock
         label={
+          errorMessage ||
           'Error creating Admin Drive. Please try again. Possible causes include insufficient xDAI balance or a lost connection to the RPC.'
         }
         onClick={() => {
