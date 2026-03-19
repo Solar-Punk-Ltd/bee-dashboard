@@ -266,7 +266,6 @@ export function Provider({ children }: Props) {
           // eslint-disable-next-line no-console
           console.warn('Admin stamp exists but is not usable')
           setShallReset(true)
-          setInitializationError(true)
 
           return
         }
