@@ -184,6 +184,10 @@ function determineOverallStatus(status: Status, isWarmingUp: boolean, startedAt:
   return CheckState.OK
 }
 
+function getFulfilledValue<T>(result: PromiseSettledResult<T>): T | null {
+  return result.status === 'fulfilled' ? result.value : null
+}
+
 // This does not need to be exposed and works much better as variable than state variable which may trigger some unnecessary re-renders
 let isRefreshing = false
 
@@ -238,107 +242,63 @@ export function Provider({ children }: Props): ReactElement {
       return
     }
 
-    try {
-      isRefreshing = true
-      setError(null)
+    isRefreshing = true
 
-      const promises = [
-        // API health
-        beeApi
-          .getHealth({ timeout: TIMEOUT })
-          .then(response => setBeeVersion(response.version))
-          .then(() => setApiHealth(true))
-          .catch(() => {
-            setBeeVersion(null)
-            setApiHealth(false)
-          }),
+    const [
+      healthResult,
+      statusResult,
+      nodeAddressesResult,
+      nodeInfoResult,
+      topologyResult,
+      peersResult,
+      chequebookAddressResult,
+      peerChequesResult,
+      chainStateResult,
+      walletResult,
+      chequebookBalanceResult,
+      stakeResult,
+      peerBalancesResult,
+      settlementsResult,
+    ] = await Promise.allSettled([
+      beeApi.getHealth({ timeout: TIMEOUT }),
+      beeApi.getStatus({ timeout: TIMEOUT }),
+      beeApi.getNodeAddresses({ timeout: TIMEOUT }),
+      beeApi.getNodeInfo({ timeout: TIMEOUT }),
+      beeApi.getTopology({ timeout: TIMEOUT }),
+      beeApi.getPeers({ timeout: TIMEOUT }),
+      beeApi.getChequebookAddress({ timeout: TIMEOUT }),
+      beeApi.getLastCheques({ timeout: TIMEOUT }),
+      beeApi.getChainState({ timeout: TIMEOUT }),
+      beeApi.getWalletBalance({ timeout: TIMEOUT }),
+      beeApi.getChequebookBalance({ timeout: TIMEOUT }),
+      beeApi.getStake({ timeout: TIMEOUT }),
+      beeApi.getAllBalances({ timeout: TIMEOUT }),
+      beeApi.getAllSettlements(),
+    ])
 
-        // Debug Status
-        beeApi
-          .getStatus({ timeout: TIMEOUT })
-          .then(response => setIsWarmingUp(response.isWarmingUp))
-          .catch(() => setIsWarmingUp(false)),
+    // All setters called synchronously — React 18 batches them into one render.
+    const health = getFulfilledValue(healthResult)
+    setBeeVersion(health?.version ?? null)
+    setApiHealth(Boolean(health))
 
-        // Node Addresses
-        beeApi
-          .getNodeAddresses({ timeout: TIMEOUT })
-          .then(setNodeAddresses)
-          .catch(() => setNodeAddresses(null)),
-
-        // NodeInfo
-        beeApi
-          .getNodeInfo({ timeout: TIMEOUT })
-          .then(setNodeInfo)
-          .catch(() => setNodeInfo(null)),
-
-        // Network Topology
-        beeApi
-          .getTopology({ timeout: TIMEOUT })
-          .then(setNodeTopology)
-          .catch(() => setNodeTopology(null)),
-
-        // Peers
-        beeApi
-          .getPeers({ timeout: TIMEOUT })
-          .then(setPeers)
-          .catch(() => setPeers(null)),
-
-        // Chequebook address
-        beeApi
-          .getChequebookAddress({ timeout: TIMEOUT })
-          .then(setChequebookAddress)
-          .catch(() => setChequebookAddress(null)),
-
-        // Cheques
-        beeApi
-          .getLastCheques({ timeout: TIMEOUT })
-          .then(setPeerCheques)
-          .catch(() => setPeerCheques(null)),
-
-        // Chain state
-        beeApi
-          .getChainState({ timeout: TIMEOUT })
-          .then(setChainState)
-          .catch(() => setChainState(null)),
-
-        // Wallet
-        beeApi
-          .getWalletBalance({ timeout: TIMEOUT })
-          .then(setWalletBalance)
-          .catch(() => setWalletBalance(null)),
-
-        // Chequebook balance
-        beeApi
-          .getChequebookBalance({ timeout: TIMEOUT })
-          .then(setChequebookBalance)
-          .catch(() => setChequebookBalance(null)),
-
-        beeApi
-          .getStake({ timeout: TIMEOUT })
-          .then(stake => setStake(stake))
-          .catch(() => setStake(null)),
-
-        // Peer balances
-        beeApi
-          .getAllBalances({ timeout: TIMEOUT })
-          .then(x => setPeerBalances(x.balances))
-          .catch(() => setPeerBalances(null)),
-
-        // Settlements
-        beeApi
-          .getAllSettlements()
-          .then(setSettlements)
-          .catch(() => setSettlements(null)),
-      ]
-
-      await Promise.allSettled(promises)
-    } catch (e) {
-      setError(e as Error)
-    }
-
+    setIsWarmingUp(getFulfilledValue(statusResult)?.isWarmingUp ?? false)
+    setNodeAddresses(getFulfilledValue(nodeAddressesResult))
+    setNodeInfo(getFulfilledValue(nodeInfoResult))
+    setNodeTopology(getFulfilledValue(topologyResult))
+    setPeers(getFulfilledValue(peersResult))
+    setChequebookAddress(getFulfilledValue(chequebookAddressResult))
+    setPeerCheques(getFulfilledValue(peerChequesResult))
+    setChainState(getFulfilledValue(chainStateResult))
+    setWalletBalance(getFulfilledValue(walletResult))
+    setChequebookBalance(getFulfilledValue(chequebookBalanceResult))
+    setStake(getFulfilledValue(stakeResult))
+    setPeerBalances(getFulfilledValue(peerBalancesResult)?.balances ?? null)
+    setSettlements(getFulfilledValue(settlementsResult))
+    setError(null)
     setIsLoading(false)
-    isRefreshing = false
     setLastUpdate(Date.now())
+
+    isRefreshing = false
   }, [beeApi])
 
   const start = useCallback(

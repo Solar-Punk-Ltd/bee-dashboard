@@ -91,7 +91,7 @@ const findDrives = (
 
 export function Provider({ children }: Props) {
   const initInProgressRef = useRef<boolean>(false)
-  const isBeeApiInitilaized = useRef<boolean>(false)
+  const isBeeApiInitialized = useRef<boolean>(false)
 
   const { status } = useContext(BeeContext)
   const { apiUrl } = useContext(SettingsContext)
@@ -364,7 +364,7 @@ export function Provider({ children }: Props) {
     const pk = getSignerPk()
 
     if (!currentApiUrl || !pk) {
-      isBeeApiInitilaized.current = false
+      isBeeApiInitialized.current = false
       setBeeInstance(null)
 
       return
@@ -374,7 +374,7 @@ export function Provider({ children }: Props) {
       return
     }
 
-    if (isBeeApiInitilaized.current) {
+    if (isBeeApiInitialized.current) {
       return
     }
 
@@ -382,12 +382,12 @@ export function Provider({ children }: Props) {
       return
     }
 
-    isBeeApiInitilaized.current = true
+    isBeeApiInitialized.current = true
     setBeeInstance(new Bee(currentApiUrl, { signer: pk }))
   }, [status.all, status.apiConnection, pkSaved])
 
   useEffect(() => {
-    isBeeApiInitilaized.current = false
+    isBeeApiInitialized.current = false
     setBeeInstance(null)
     setInitDone(false)
     initInProgressRef.current = false
