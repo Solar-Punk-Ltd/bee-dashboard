@@ -113,7 +113,6 @@ export function UpgradeDriveModal({
       encryption: boolean,
       erasureCodeLevel: RedundancyLevel,
       isCapacityExtensionSet: boolean,
-      isDurationExtensionSet: boolean,
     ) => {
       let cost: BZZ | undefined
 
@@ -136,26 +135,15 @@ export function UpgradeDriveModal({
         setIsBalanceSufficient(true)
       }
 
-      const bothExtensions = isCapacityExtensionSet && isDurationExtensionSet
-      const capacityOnly = isCapacityExtensionSet && !isDurationExtensionSet
-      const durationOnly = !isCapacityExtensionSet && isDurationExtensionSet
-      const noExtensions = !isCapacityExtensionSet && !isDurationExtensionSet
-
-      if (bothExtensions) {
+      if (isCapacityExtensionSet) {
         setCapacityExtensionCost('')
         setDurationExtensionCost('')
-      } else if (capacityOnly) {
-        setCapacityExtensionCost(costText)
-        setDurationExtensionCost('0')
-      } else if (durationOnly) {
-        setCapacityExtensionCost('0')
-        setDurationExtensionCost(costText)
       } else {
         setCapacityExtensionCost('0')
-        setDurationExtensionCost('0')
+        setDurationExtensionCost(costText)
       }
 
-      setExtensionCost(noExtensions ? '0' : costText)
+      setExtensionCost(costText)
     },
     [beeApi, walletBalance, isMountedRef, setErrorMessage, setShowError],
   )
@@ -193,7 +181,6 @@ export function UpgradeDriveModal({
   useEffect(() => {
     const fetchExtensionCost = () => {
       const isCapacitySet = capacityIndex > 0
-      const isDurationSet = true
       const extendDuration = Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate())
 
       handleCostCalculation(
@@ -204,7 +191,6 @@ export function UpgradeDriveModal({
         false,
         defaultErasureCodeLevel,
         isCapacitySet,
-        isDurationSet,
       )
     }
 
