@@ -62,7 +62,7 @@ export function UpgradeDriveModal({
   const [capacityIndex, setCapacityIndex] = useState(0)
   const [durationExtensionCost, setDurationExtensionCost] = useState('')
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
-  const [validityEndDate, setValidityEndDate] = useState(new Date())
+  const [validityEndDate, setValidityEndDate] = useState(() => getExpiryDateByLifetime(0, stamp.duration.toEndDate()))
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const [extensionCost, setExtensionCost] = useState('0')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -193,9 +193,8 @@ export function UpgradeDriveModal({
   useEffect(() => {
     const fetchExtensionCost = () => {
       const isCapacitySet = capacityIndex > 0
-      const isDurationSet = lifetimeIndex >= 0
-      const extendDuration =
-        lifetimeIndex >= 0 ? Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate()) : Duration.ZERO
+      const isDurationSet = true
+      const extendDuration = Duration.fromEndDate(validityEndDate, stamp.duration.toEndDate())
 
       handleCostCalculation(
         stamp.batchID,
@@ -210,7 +209,7 @@ export function UpgradeDriveModal({
     }
 
     fetchExtensionCost()
-  }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, lifetimeIndex, stamp.batchID, stamp.duration])
+  }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, stamp.batchID, stamp.duration])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
