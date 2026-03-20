@@ -11,7 +11,7 @@ import {
 } from '@ethersphere/bee-js'
 import { Warning } from '@mui/icons-material'
 import { DriveInfo } from '@solarpunkltd/file-manager-lib'
-import { ReactElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import DatabaseIcon from 'remixicon-react/Database2LineIcon'
@@ -62,7 +62,10 @@ export function UpgradeDriveModal({
   const [capacityIndex, setCapacityIndex] = useState(0)
   const [durationExtensionCost, setDurationExtensionCost] = useState('')
   const [lifetimeIndex, setLifetimeIndex] = useState(0)
-  const [validityEndDate, setValidityEndDate] = useState(() => getExpiryDateByLifetime(0, stamp.duration.toEndDate()))
+  const validityEndDate = useMemo(
+    () => getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()),
+    [lifetimeIndex, stamp.duration],
+  )
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const [extensionCost, setExtensionCost] = useState('0')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -196,10 +199,6 @@ export function UpgradeDriveModal({
 
     fetchExtensionCost()
   }, [capacity, validityEndDate, capacityIndex, handleCostCalculation, stamp.batchID, stamp.duration])
-
-  useEffect(() => {
-    setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex, stamp.duration.toEndDate()))
-  }, [lifetimeIndex, stamp.duration])
 
   const batchIdStr = stamp.batchID.toString()
   const shortBatchId = batchIdStr.length > 12 ? `${batchIdStr.slice(0, 4)}...${batchIdStr.slice(-4)}` : batchIdStr
