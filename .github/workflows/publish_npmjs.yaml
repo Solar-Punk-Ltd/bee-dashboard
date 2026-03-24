@@ -1,5 +1,6 @@
 name: Publish on npm
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
@@ -35,4 +36,4 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm publish --provenance --access public
+      - run: pnpm publish --provenance --access public --no-git-checks

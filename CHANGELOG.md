@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.34.0](https://github.com/ethersphere/bee-dashboard/compare/v0.33.5...v0.34.0) (2026-03-20)
+
+### Features
+
+* add image opening functionality to DownloadActionBar ([3ff645c](https://github.com/ethersphere/bee-dashboard/commit/3ff645cab1b4e9fba0c42ed99e7c3fac7b0ed0ca))
+* the dashboard sidebar should be collapsible ([fa8a26e](https://github.com/ethersphere/bee-dashboard/commit/fa8a26e80d83d5c794a9d572cf716f0cb484e642))
+* sync and update with all changes from fork ([519c411](https://github.com/ethersphere/bee-dashboard/commit/519c411db0b37f3d4004366ca267013e2268f8eb))
+
+
+### Bug Fixes
+
+* add error handling and ui notifications for download failures ([b58f01c](https://github.com/ethersphere/bee-dashboard/commit/b58f01cc2b5535ba0ad347d03ae4102e18f637f0))
+* buy stamp values display ([3031d54](https://github.com/ethersphere/bee-dashboard/commit/3031d54272d51da020d3a3cd7154b969c60e8669))
+* cannot forget expired drives ([7e05a56](https://github.com/ethersphere/bee-dashboard/commit/7e05a56073a2be306a1394bf5b2e798a1a457c74))
+* Correct misleading update warning message for desktop version ([bc2c0ad](https://github.com/ethersphere/bee-dashboard/commit/bc2c0addbb685454fbae61d317f2e920d507c07c))
+* dockerfile build and use compose ([76bf221](https://github.com/ethersphere/bee-dashboard/commit/76bf2211ca75f44255e5696d58072e639a9cd2b0))
+* download and upload files ([e8e01c0](https://github.com/ethersphere/bee-dashboard/commit/e8e01c054a867447e07a71960d45f9cb36926e61))
+* filemanager state handling ([855a017](https://github.com/ethersphere/bee-dashboard/commit/855a0170334fb36d8ff119ce96f8c9bdb4294d58))
+* reflect file rename immediately ([a56a5c3](https://github.com/ethersphere/bee-dashboard/commit/a56a5c3ed8554cf81afc7c6401ca2dc65a8e898d))
+* rpc: ensure 0x prefix for recipient in sendBzzTransaction and add tests ([fff94d9](https://github.com/ethersphere/bee-dashboard/commit/fff94d907157d0cd4f6e490c450cdc58cefeec31))
+* sidebar: use swarm-desktop GitHub link when running in desktop mode ([7382da8](https://github.com/ethersphere/bee-dashboard/commit/7382da8595e86230c03dab93aec726cd02cc91ec))
+* cost values correcting [a7e4205](https://github.com/ethersphere/bee-dashboard/commit/a7e42053ae99990c5e9e782e8fe14326f155730c))
+* modals are partially cut off in File Manager on Windows (Chrome) ([220618f](https://github.com/ethersphere/bee-dashboard/commit/220618f19bc95b92a0521dc62eb8f5414dfdcbba))
+* misleading update warning (Desktop vs Dashboard) ([55e7879](https://github.com/ethersphere/bee-dashboard/commit/55e78798492e715ef9aa92262f5aa874aec240b0))
+* expired admin drive upgrading handling ([e1fdd52](https://github.com/ethersphere/bee-dashboard/commit/e1fdd52676653c65beba06283f07e470d7ee4668))
+* in case of a synced bee node the Purchase stamp and create drive button is inactive ([e00918b](https://github.com/ethersphere/bee-dashboard/commit/e00918b192f9a916d72df7ed6790eddf908397d3))
+* newly created drive sometimes appears under “Expired Drives” in Chrome until page refresh and sometimes you have to delete cache in order to appear. ([3c4d618](https://github.com/ethersphere/bee-dashboard/commit/3c4d618cc85b2836a2f794b7da79f4da12205869))
+* admin drive stucks in "in progress" state and the already existing admin drives are not listed on the initial modal ([ad8c8f1](https://github.com/ethersphere/bee-dashboard/commit/ad8c8f18eb5dabbf64e8059f0fcfe98a68b97eea))
+* update documentation message for file access clarification ([ae63615](https://github.com/ethersphere/bee-dashboard/commit/ae63615c7ca26896c1114c16dc6a921aa267bc0d))
+* upload history text align ([3031d54](https://github.com/ethersphere/bee-dashboard/commit/3031d54272d51da020d3a3cd7154b969c60e8669))
+* upload and drive size error ([8992c18](https://github.com/ethersphere/bee-dashboard/commit/8992c189fd0300b0ee28d44a109c47b633174c06))
+* use upload and download abort signals ([308ec3d](https://github.com/ethersphere/bee-dashboard/commit/308ec3dcc0ff3806777b89dc99fef669c993bcf7))
+* use uploadFile for single files to support long filenames and reafactor for linter ([db52e44](https://github.com/ethersphere/bee-dashboard/commit/db52e4471a9519a0aca8a6fd2702a242e03d2a06))
+* withdraw and deposit buttons style ([3031d54](https://github.com/ethersphere/bee-dashboard/commit/3031d54272d51da020d3a3cd7154b969c60e8669))
+
+
 ## [0.33.5](https://github.com/ethersphere/bee-dashboard/compare/v0.33.4...v0.33.5) (2026-02-17)
 
 
