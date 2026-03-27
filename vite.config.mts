@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import dts from 'vite-plugin-dts'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
+const APP_NAME = 'App'
 const DEFAULT_VITE_DEV_PORT = 3002
 
 export default defineConfig(({ mode }) => {
@@ -14,9 +15,9 @@ export default defineConfig(({ mode }) => {
     return {
       build: {
         lib: {
-          entry: path.resolve(__dirname, 'src/App.tsx'),
+          entry: path.resolve(__dirname, `src/${APP_NAME}.tsx`),
           name: 'beeDashboard',
-          fileName: format => `App.${format === 'es' ? 'js' : 'cjs.js'}`,
+          fileName: format => `${APP_NAME}.${format === 'es' ? 'js' : 'cjs.js'}`,
           formats: ['es', 'cjs'],
         },
         sourcemap: !isProd,
@@ -31,7 +32,7 @@ export default defineConfig(({ mode }) => {
             },
             assetFileNames: (assetInfo: any) => {
               if (assetInfo.originalFileNames?.includes('style.css') || assetInfo.names?.includes('bee-dashboard.css'))
-                return 'App.css'
+                return `${APP_NAME}.css`
               return assetInfo.names?.[0] || 'asset'
             },
           },
@@ -75,7 +76,7 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       // include: [],
-      // exclude: [], // add libs for local development, if needed, e.g.: @solarpunkltd/file-manager-lib
+      exclude: ['@solarpunkltd/file-manager-widget'], // add libs for local development, if needed, e.g.: @solarpunkltd/file-manager-widget
     },
     build: {
       outDir: 'build',
