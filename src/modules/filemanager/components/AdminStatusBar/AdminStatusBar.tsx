@@ -183,7 +183,7 @@ export function AdminStatusBar({
     <>
       {statusVerb} admin drive — please do not reload the page.
       <br />
-      This may take a minute.
+      This may take a few minutes.
     </>
   )
 

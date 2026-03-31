@@ -308,7 +308,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
         <div className="fm-sidebar-drive-creation">
           Creating drive — please do not reload the page.
           <br />
-          This may take a minute.
+          This may take a few minutes.
         </div>
       )}
     </div>
