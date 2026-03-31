@@ -16,7 +16,7 @@ import { ROUTES } from '../../routes'
 import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/localStorage'
 import { loadManifest } from '../../utils/manifest'
 
-import { AssetPreview } from './AssetPreview'
+import { AssetPreview, getType } from './AssetPreview'
 import { AssetSummary } from './AssetSummary'
 import { AssetSyncing } from './AssetSyncing'
 import { DownloadActionBar } from './DownloadActionBar'
@@ -46,15 +46,17 @@ export function Share(): ReactElement {
     const count = Object.keys(entries).length
     const isVideo = Boolean(indexDocument && /.*\.(mp4|webm|ogv)$/i.test(indexDocument))
     const isAudio = Boolean(indexDocument && /.*\.(mp3|ogg|oga|wav|webm|m4a|aac|flac)$/i.test(indexDocument))
-    const isImage = Boolean(indexDocument && /.*\.(jpg|jpeg|png|gif|webp|svg)$/i.test(indexDocument))
+    const isImage = Boolean(indexDocument && /.*\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(indexDocument))
 
     if (isImage || isVideo || isAudio) {
       setPreview(`${apiUrl}/bzz/${hash}`)
     }
 
+    const type = getType()
+
     setMetadata({
       hash,
-      type: count > 1 ? 'folder' : 'unknown',
+      type: count > 1 ? 'folder' : type,
       name: indexDocument || hash || '',
       count,
       isWebsite: Boolean(indexDocument && /.*\.html?$/i.test(indexDocument)),
