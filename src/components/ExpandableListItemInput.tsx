@@ -18,6 +18,12 @@ const useStyles = makeStyles()(theme => ({
     marginBottom: theme.spacing(0.25),
     borderLeft: `${theme.spacing(0.25)}px solid rgba(0,0,0,0)`,
     wordBreak: 'break-word',
+    '&:hover': {
+      backgroundColor: theme.palette.background.paper,
+    },
+    '&:focus-within': {
+      backgroundColor: theme.palette.background.paper,
+    },
   },
   headerOpen: {
     borderLeft: `${theme.spacing(0.25)}px solid ${theme.palette.primary.main}`,
