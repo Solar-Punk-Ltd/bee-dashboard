@@ -127,7 +127,7 @@ export default function UpdateFeed(): ReactElement {
               label="Feed"
             />
           ) : (
-            <Typography>You need to createn an identiy first to be able to update its feed.</Typography>
+            <Typography>You need to create an identiy first to be able to update its feed.</Typography>
           )}
         </Grid>
       </Box>

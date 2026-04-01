@@ -52,11 +52,9 @@ export function Share(): ReactElement {
       setPreview(`${apiUrl}/bzz/${hash}`)
     }
 
-    const type = getType()
-
     setMetadata({
       hash,
-      type: count > 1 ? 'folder' : type,
+      type: count > 1 ? 'folder' : getType(),
       name: indexDocument || hash || '',
       count,
       isWebsite: Boolean(indexDocument && /.*\.html?$/i.test(indexDocument)),
