@@ -1,4 +1,4 @@
-import { Duration, PostageBatchOptions, Size, Utils } from '@ethersphere/bee-js'
+import { Duration, PostageBatchOptions, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import { Box, Button, Grid, Slider, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
@@ -54,6 +54,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   const [labelInput, setLabelInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [buttonValue, setButtonValue] = useState(4)
+  const [sliderValue, setSliderValue] = useState(30)
 
   const getBatchValue = (value: number) => {
     return (
@@ -76,6 +77,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     }
     const amountValue = Utils.getAmountForDuration(Duration.fromDays(newValue), 26500, 5)
     setAmountInput(amountValue)
+    setSliderValue(newValue)
   }
 
   const { enqueueSnackbar } = useSnackbar()
@@ -106,15 +108,15 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
       }
 
       setSubmitting(true)
-      const amount = BigInt(amountInput)
-      const depth = depthInput
-      const options: PostageBatchOptions = {
-        waitForUsable: false,
-        label: labelInput || undefined,
-        immutableFlag: true,
-      }
 
-      await beeApi.createPostageBatch(amount.toString(), depth, options)
+      await beeApi.buyStorage(
+        Size.fromGigabytes(buttonValue),
+        Duration.fromDays(sliderValue),
+        { label: labelInput, immutableFlag: true },
+        undefined,
+        false,
+        RedundancyLevel.OFF,
+      )
       await refresh()
       onFinished()
     } catch (e) {
@@ -127,7 +129,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
 
   function handleBatchSize(gigabytes: number) {
     setButtonValue(gigabytes)
-    const capacity = Utils.getDepthForSize(Size.fromGigabytes(gigabytes))
+    const capacity = Utils.getDepthForSize(Size.fromGigabytes(gigabytes), false, RedundancyLevel.OFF)
     setDepthInput(capacity)
   }
 

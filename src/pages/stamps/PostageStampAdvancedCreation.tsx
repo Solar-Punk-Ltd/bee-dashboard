@@ -1,4 +1,4 @@
-import { PostageBatchOptions, Utils } from '@ethersphere/bee-js'
+import { PostageBatchOptions, RedundancyLevel, Utils } from '@ethersphere/bee-js'
 import { Box, Grid, IconButton, Typography } from '@mui/material'
 import BigNumber from 'bignumber.js'
 import { useSnackbar } from 'notistack'
@@ -178,7 +178,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
     }
 
     const theoreticalMaximumVolume = getHumanReadableFileSize(Utils.getStampTheoreticalBytes(depth))
-    const effectiveVolume = getHumanReadableFileSize(Utils.getStampEffectiveBytes(depth))
+    const effectiveVolume = getHumanReadableFileSize(Utils.getStampEffectiveBytes(depth, false, RedundancyLevel.OFF))
 
     return (
       <Grid container alignItems="center" className={classes.stampVolumeWrapper}>
@@ -242,7 +242,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       <Box mb={2}>
         <SwarmSelect
           label="Immutable"
-          value="No"
+          value={immutable ? 'Yes' : 'No'}
           onChange={event => setImmutable(event.target.value === 'Yes')}
           options={[
             { value: 'Yes', label: 'Yes' },
