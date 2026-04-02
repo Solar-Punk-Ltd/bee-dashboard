@@ -13,6 +13,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { secondsToTimeString } from '../../utils'
+import { validateDepthInput } from '../../utils/stamp'
 
 interface Props {
   onFinished: () => void
@@ -55,6 +56,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   const [labelInput, setLabelInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [buttonValue, setButtonValue] = useState(4)
+  const [depthError, setDepthError] = useState<string>('')
   const [sliderValue, setSliderValue] = useState(30)
 
   const pricePerBlockDefault = 24000
@@ -133,7 +135,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   function handleBatchSize(gigabytes: number) {
     setButtonValue(gigabytes)
     const capacity = Utils.getDepthForSize(Size.fromGigabytes(gigabytes), false, RedundancyLevel.OFF)
-    setDepthInput(capacity)
+    validateDepthInput(String(capacity), setDepthError, (v: string) => setDepthInput(Number(v)))
   }
 
   return (
@@ -167,6 +169,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
           {getBatchValue(32)}
           {getBatchValue(256)}
         </Box>
+        {depthError && <Typography>{depthError}</Typography>}
       </Box>
       <Box mb={1}>
         <Typography variant="h2">Data persistence</Typography>
@@ -206,7 +209,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
       <Grid container justifyContent="space-between" alignItems="center">
         <Grid>
           <SwarmButton
-            disabled={submitting || !depthInput || !amountInput}
+            disabled={submitting || !depthInput || Boolean(depthError) || !amountInput}
             onClick={submit}
             iconType={Check}
             loading={submitting}
