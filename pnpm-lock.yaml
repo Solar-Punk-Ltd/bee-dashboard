@@ -17,18 +17,15 @@ importers:
       '@ethersphere/bee-js':
         specifier: ^11.1.1
         version: 11.1.1
-      '@formbricks/js':
-        specifier: ^4.3.0
-        version: 4.3.0
       '@mui/icons-material':
         specifier: ^7.3.7
         version: 7.3.8(@mui/material@7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@mui/material':
         specifier: ^7.3.7
         version: 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@solarpunkltd/file-manager-lib':
-        specifier: ^1.0.8
-        version: 1.0.8
+      '@solarpunkltd/file-manager-widget':
+        specifier: link:../file-manager-widget
+        version: link:../file-manager-widget
       axios:
         specifier: ^0.30.2
         version: 0.30.2(debug@4.4.3)
@@ -1260,9 +1257,6 @@ packages:
     resolution: {integrity: sha512-s2IpuVpy74cJyhj5yugO3+c9eR/r9TZsVJABk2iHWtTVkoA1qZdvgUjzV0w962o1gXrmYdxX4NOmlyIEpY11iQ==}
     engines: {bee: 2.4.0-390a402e, beeApiVersion: 7.2.0}
 
-  '@formbricks/js@4.3.0':
-    resolution: {integrity: sha512-IR1SAdHsthC3js7O3BjW14EbpAy/u3/8R0Jekzrkglt+b0LGFrFL/vUcK6IypG4HbopTlDcpU9A45i1YPJ8jrA==}
-
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1832,10 +1826,6 @@ packages:
 
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
-
-  '@solarpunkltd/file-manager-lib@1.0.8':
-    resolution: {integrity: sha512-i1W5HCeGnbXUrFzLQIUqX1QVYN2kMjzQV/5rqDrIxCc/mdhTkS3iDNEezx/vvXPAY0YW2d3w39PKZvItaSG0Jw==}
-    engines: {bee: 2.7.0, node: '>=24.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -5159,9 +5149,6 @@ packages:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
 
-  std-env@3.10.0:
-    resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
-
   stop-iteration-iterator@1.1.0:
     resolution: {integrity: sha512-eLoXW/DHyl62zxY4SCaIgnRhuMr6ri4juEYARS8E6sCEqzKpOiE521Ucofdx+KnDZl5xmvGYaaKCk5FEOxJCoQ==}
     engines: {node: '>= 0.4'}
@@ -6922,8 +6909,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@formbricks/js@4.3.0': {}
-
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -7538,16 +7523,6 @@ snapshots:
   '@sinonjs/fake-timers@13.0.5':
     dependencies:
       '@sinonjs/commons': 3.0.1
-
-  '@solarpunkltd/file-manager-lib@1.0.8':
-    dependencies:
-      '@ethersphere/bee-js': 11.1.1
-      cafe-utility: 33.8.0
-      std-env: 3.10.0
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -11526,8 +11501,6 @@ snapshots:
       escape-string-regexp: 2.0.0
 
   statuses@2.0.2: {}
-
-  std-env@3.10.0: {}
 
   stop-iteration-iterator@1.1.0:
     dependencies:
