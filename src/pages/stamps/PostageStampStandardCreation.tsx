@@ -1,4 +1,4 @@
-import { Duration, PostageBatchOptions, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
 import { Box, Button, Grid, Slider, Typography } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useState } from 'react'
@@ -8,6 +8,7 @@ import { makeStyles } from 'tss-react/mui'
 
 import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmTextInput } from '../../components/SwarmTextInput'
+import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
@@ -48,13 +49,16 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   const { classes } = useStyles()
   const { refresh } = useContext(StampsContext)
   const { beeApi } = useContext(SettingsContext)
-
+  const { chainState } = useContext(BeeContext)
   const [depthInput, setDepthInput] = useState<number>(Utils.getDepthForSize(Size.fromGigabytes(4)))
   const [amountInput, setAmountInput] = useState<bigint>(Utils.getAmountForDuration(Duration.fromDays(30), 26500, 5))
   const [labelInput, setLabelInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [buttonValue, setButtonValue] = useState(4)
   const [sliderValue, setSliderValue] = useState(30)
+
+  const pricePerBlockDefault = 24000
+  const currentPrice = chainState?.currentPrice ?? pricePerBlockDefault
 
   const getBatchValue = (value: number) => {
     return (
@@ -75,7 +79,8 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     if (typeof newValue !== 'number') {
       return
     }
-    const amountValue = Utils.getAmountForDuration(Duration.fromDays(newValue), 26500, 5)
+    const amountValue = Utils.getAmountForDuration(Duration.fromDays(newValue), currentPrice, 5)
+
     setAmountInput(amountValue)
     setSliderValue(newValue)
   }
@@ -83,11 +88,9 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   const { enqueueSnackbar } = useSnackbar()
 
   function getTtl(amount: bigint): string {
-    const pricePerBlock = 24000
-
     return `${secondsToTimeString(
-      Utils.getStampDuration(amount, pricePerBlock, 5).toSeconds(),
-    )} (with price of ${pricePerBlock} PLUR per block)`
+      Utils.getStampDuration(amount, currentPrice, 5).toSeconds(),
+    )} (with price of ${currentPrice} PLUR per block)`
   }
 
   function getPrice(depth: number, amount: bigint): string {
@@ -185,11 +188,12 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
           <Grid container justifyContent="space-between">
             <Typography>Corresponding TTL (Time to live)</Typography>
             <Typography>{amountInput ? getTtl(amountInput) : '-'}</Typography>
+            <Typography>{amountInput ? getTtl(amountInput) : '-'}</Typography>
           </Grid>
         </Box>
         <Box display="flex" justifyContent={'right'} mt={0.5}>
           <Typography style={{ fontSize: '10px', color: 'rgba(0, 0, 0, 0.26)' }}>
-            Current price of 24000 PLUR per block
+            Current price of {currentPrice} PLUR per block
           </Typography>
         </Box>
       </Box>
