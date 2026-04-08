@@ -182,6 +182,7 @@ function FileManagerMainContent(props: {
 
 enum PageState {
   Connecting = 'connecting', // still warming up — show nothing / loader
+  UltraLightNode = 'ultra-light-node', // ultra-light node — file manager not available
   NoPrivateKey = 'no-pk', // private key not set
   Loading = 'loading', // bee ready, pk present, FM init in progress
   Reset = 'reset', // STATE_INVALID emitted and user has not yet acknowledged
@@ -241,6 +242,8 @@ export function FileManagerPage(): ReactElement {
 
     if (!isBeeReady && !initDone) return PageState.Connecting
 
+    if (nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT) return PageState.UltraLightNode
+
     if (!hasPk) return PageState.NoPrivateKey
 
     if (!initDone) return PageState.Loading
@@ -272,6 +275,7 @@ export function FileManagerPage(): ReactElement {
     adminDrive,
     isCreationInProgress,
     chainState,
+    nodeInfo?.beeMode,
   ])
 
   const handlePrivateKeySaved = useCallback(() => {
@@ -286,9 +290,8 @@ export function FileManagerPage(): ReactElement {
 
   const loading = !fm?.adminStamp || !adminDrive
   const isFormbricksActive = Boolean(fm && fm.adminStamp && adminDrive && !loading)
-  const isUltraLightNode = nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT
 
-  if (isUltraLightNode) {
+  if (pageState === PageState.UltraLightNode) {
     return <UltraLightNodeErrorBlock />
   }
 
