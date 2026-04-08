@@ -1,3 +1,4 @@
+import { BeeModes } from '@ethersphere/bee-js'
 import { DriveInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -38,6 +39,18 @@ function InitializationErrorBlock({ onOk }: { onOk: () => void }) {
           <div style={{ minWidth: '120px' }}>
             <Button label={'OK'} variant="primary" disabled={false} onClick={onOk} />
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UltraLightNodeErrorBlock() {
+  return (
+    <div className="fm-main">
+      <div className="fm-loading">
+        <div className="fm-loading-title">
+          File Manager is not available with an Ultra-light node. Please upgrade to a Light node to continue.
         </div>
       </div>
     </div>
@@ -189,7 +202,7 @@ export function FileManagerPage(): ReactElement {
   const [connectionErrorDismissed, setConnectionErrorDismissed] = useState<boolean>(false)
   const [cacheHelpUrl, setCacheHelpUrl] = useState<string>(cacheClearUrls[BrowserPlatform.Chrome])
 
-  const { status, chainState } = useContext(BeeContext)
+  const { status, chainState, nodeInfo } = useContext(BeeContext)
   const { fm, initDone, shallReset, adminDrive, initializationError, notifyPkSaved } = useContext(FMContext)
 
   useEffect(() => {
@@ -273,6 +286,11 @@ export function FileManagerPage(): ReactElement {
 
   const loading = !fm?.adminStamp || !adminDrive
   const isFormbricksActive = Boolean(fm && fm.adminStamp && adminDrive && !loading)
+  const isUltraLightNode = nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT
+
+  if (isUltraLightNode) {
+    return <UltraLightNodeErrorBlock />
+  }
 
   if (pageState === PageState.Connecting || pageState === PageState.Loading) {
     return <LoadingBlock />
