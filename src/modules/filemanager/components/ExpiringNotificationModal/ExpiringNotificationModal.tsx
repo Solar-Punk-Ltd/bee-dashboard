@@ -83,7 +83,7 @@ export function ExpiringNotificationModal({
                 onUpgradeClick={async (stamp, drive) => {
                   const isStampValid = await validateStampStillExists(bee, stamp.batchID)
 
-                  if (isStampValid) {
+                  if (!isStampValid) {
                     setErrorMessage?.(
                       `Drive ${drive.name} has expired. Please clear the browser cache and reload the page.`,
                     )
