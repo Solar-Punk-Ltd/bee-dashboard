@@ -44,7 +44,12 @@ export default function Index(): ReactElement | null {
   }, [giftWallets, rpcProvider])
 
   if (!giftWalletFees) {
-    return null
+    return (
+      <>
+        <HistoryHeader>Invite to Swarm...</HistoryHeader>
+        <Typography>Gift wallet fees are unavailable. Please check your Swarm Desktop configuration.</Typography>
+      </>
+    )
   }
 
   const GIFT_WALLET_FUND_DAI_AMOUNT = DAI.fromWei(giftWalletFees.dai)
