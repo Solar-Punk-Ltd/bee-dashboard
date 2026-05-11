@@ -39,6 +39,7 @@ export function Share(): ReactElement {
   const [notFound, setNotFound] = useState(false)
   const [preview, setPreview] = useState<string | undefined>(undefined)
   const [metadata, setMetadata] = useState<Metadata | undefined>()
+  const [rawBytesData, setRawBytesData] = useState<Uint8Array | null>(null)
 
   const isMountedRef = useRef(true)
 
@@ -105,12 +106,32 @@ export function Share(): ReactElement {
         applyFallbackMetadata(entries, indexDocument)
       }
     } catch {
-      if (!isMountedRef.current) return
+      if (!beeApi) return
 
-      setNotFound(true)
-      enqueueSnackbar('The specified hash does not contain valid content.', { variant: 'error' })
+      try {
+        const data = await beeApi.downloadData(hash)
 
-      return
+        if (!isMountedRef.current) return
+
+        setRawBytesData(data.toUint8Array())
+        setSwarmEntries({ [hash]: hash })
+        setIndexDocument(null)
+        setMetadata({
+          hash,
+          type: 'application/octet-stream',
+          name: hash,
+          count: 1,
+          isWebsite: false,
+          isVideo: false,
+          isAudio: false,
+          isImage: false,
+        })
+      } catch {
+        if (!isMountedRef.current) return
+
+        setNotFound(true)
+        enqueueSnackbar('The specified hash does not contain valid content.', { variant: 'error' })
+      }
     }
   }
 
@@ -181,6 +202,16 @@ export function Share(): ReactElement {
 
     putHistory(LocalStorageKeys.downloadHistory, hash, determineHistoryName(hash, indexDocument))
     setDownloading(true)
+
+    if (rawBytesData) {
+      const arrayBuffer = new ArrayBuffer(rawBytesData.length)
+      new Uint8Array(arrayBuffer).set(rawBytesData)
+      const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' })
+      saveAs(blob, hash)
+      setDownloading(false)
+
+      return
+    }
 
     if (Object.keys(swarmEntries).length === 1) {
       const singleFileName = Object.keys(swarmEntries)[0]

@@ -56,19 +56,26 @@ export function Download(): ReactElement {
       )
       setUploadOrigin(defaultUploadOrigin)
       navigate(ROUTES.HASH.replace(':hash', identifier))
-    } catch (error: unknown) {
-      let message = typeof error === 'object' && error !== null && Reflect.get(error, 'message')
+    } catch {
+      try {
+        await beeApi.downloadData(identifier)
+        putHistory(LocalStorageKeys.downloadHistory, identifier, identifier)
+        setUploadOrigin(defaultUploadOrigin)
+        navigate(ROUTES.HASH.replace(':hash', identifier))
+      } catch (error: unknown) {
+        let message = typeof error === 'object' && error !== null && Reflect.get(error, 'message')
 
-      if (message.includes('path address not found')) {
-        message = 'The specified hash does not have an index document set.'
-      }
+        if (message.includes('path address not found')) {
+          message = 'The specified hash does not have an index document set.'
+        }
 
-      if (message.includes('Not Found: Not Found')) {
-        message = 'The specified hash was not found.'
+        if (message.includes('Not Found: Not Found')) {
+          message = 'The specified hash was not found.'
+        }
+        // eslint-disable-next-line no-console
+        console.error(error)
+        enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
       }
-      // eslint-disable-next-line no-console
-      console.error(error)
-      enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
     } finally {
       setLoading(false)
     }
