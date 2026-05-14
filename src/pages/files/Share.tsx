@@ -13,6 +13,7 @@ import { META_FILE_NAME } from '../../constants'
 import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
+import { tryCatch } from '../../utils/common'
 import { determineHistoryName, LocalStorageKeys, putHistory } from '../../utils/localStorage'
 import { loadManifest } from '../../utils/manifest'
 
@@ -70,10 +71,7 @@ export function Share(): ReactElement {
       return
     }
 
-    let manifest = null
-    try {
-      manifest = await loadManifest(beeApi, hash)
-    } catch {}
+    const [manifest] = await tryCatch(() => loadManifest(beeApi, hash))
 
     if (manifest) {
       const entries = manifest.collectAndMap()
@@ -90,10 +88,7 @@ export function Share(): ReactElement {
 
       setIndexDocument(indexDocument)
 
-      let remoteMetadata = null
-      try {
-        remoteMetadata = await beeApi.downloadFile(hash, META_FILE_NAME)
-      } catch {}
+      const [remoteMetadata] = await tryCatch(() => beeApi.downloadFile(hash, META_FILE_NAME))
 
       if (!isMountedRef.current) return
 
@@ -115,10 +110,7 @@ export function Share(): ReactElement {
       return
     }
 
-    let data: Awaited<ReturnType<typeof beeApi.downloadData>> | null = null
-    try {
-      data = await beeApi.downloadData(hash)
-    } catch {}
+    const [data] = await tryCatch(() => beeApi.downloadData(hash))
 
     if (!isMountedRef.current) return
 
