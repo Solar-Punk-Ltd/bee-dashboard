@@ -70,8 +70,12 @@ export function Share(): ReactElement {
       return
     }
 
+    let manifest = null
     try {
-      const manifest = await loadManifest(beeApi, hash)
+      manifest = await loadManifest(beeApi, hash)
+    } catch {}
+
+    if (manifest) {
       const entries = manifest.collectAndMap()
       delete entries[META_FILE_NAME]
 
@@ -80,16 +84,20 @@ export function Share(): ReactElement {
       setSwarmEntries(entries)
 
       const docsMetadata = manifest.getDocsMetadata()
-
-      // needed in catch block, shadows the outer variable
       const indexDocument = docsMetadata.indexDocument
 
       if (!isMountedRef.current) return
 
       setIndexDocument(indexDocument)
 
+      let remoteMetadata = null
       try {
-        const remoteMetadata = await beeApi.downloadFile(hash, META_FILE_NAME)
+        remoteMetadata = await beeApi.downloadFile(hash, META_FILE_NAME)
+      } catch {}
+
+      if (!isMountedRef.current) return
+
+      if (remoteMetadata) {
         const formattedMetadata = remoteMetadata.data.toJSON() as Metadata
 
         if (formattedMetadata.isVideo || formattedMetadata.isAudio || formattedMetadata.isImage) {
@@ -100,38 +108,37 @@ export function Share(): ReactElement {
         if (!isMountedRef.current) return
 
         setMetadata({ ...formattedMetadata, hash })
-      } catch {
-        // if metadata is not available or invalid go with the default one
-        if (!isMountedRef.current) return
+      } else {
         applyFallbackMetadata(entries, indexDocument)
       }
-    } catch {
-      if (!beeApi) return
 
-      try {
-        const data = await beeApi.downloadData(hash)
+      return
+    }
 
-        if (!isMountedRef.current) return
+    let data: Awaited<ReturnType<typeof beeApi.downloadData>> | null = null
+    try {
+      data = await beeApi.downloadData(hash)
+    } catch {}
 
-        setRawBytesData(data.toUint8Array())
-        setSwarmEntries({ [hash]: hash })
-        setIndexDocument(null)
-        setMetadata({
-          hash,
-          type: 'application/octet-stream',
-          name: hash,
-          count: 1,
-          isWebsite: false,
-          isVideo: false,
-          isAudio: false,
-          isImage: false,
-        })
-      } catch {
-        if (!isMountedRef.current) return
+    if (!isMountedRef.current) return
 
-        setNotFound(true)
-        enqueueSnackbar('The specified hash does not contain valid content.', { variant: 'error' })
-      }
+    if (data) {
+      setRawBytesData(data.toUint8Array())
+      setSwarmEntries({ [hash]: hash })
+      setIndexDocument(null)
+      setMetadata({
+        hash,
+        type: 'application/octet-stream',
+        name: hash,
+        count: 1,
+        isWebsite: false,
+        isVideo: false,
+        isAudio: false,
+        isImage: false,
+      })
+    } else {
+      setNotFound(true)
+      enqueueSnackbar('The specified hash does not contain valid content.', { variant: 'error' })
     }
   }
 

@@ -45,10 +45,13 @@ export function Download(): ReactElement {
 
     setLoading(true)
 
+    let manifest = null
     try {
-      const manifest = await loadManifest(beeApi, identifier)
-      const rootMetadata = manifest.getDocsMetadata()
+      manifest = await loadManifest(beeApi, identifier)
+    } catch {}
 
+    if (manifest) {
+      const rootMetadata = manifest.getDocsMetadata()
       putHistory(
         LocalStorageKeys.downloadHistory,
         identifier,
@@ -56,29 +59,38 @@ export function Download(): ReactElement {
       )
       setUploadOrigin(defaultUploadOrigin)
       navigate(ROUTES.HASH.replace(':hash', identifier))
-    } catch {
-      try {
-        await beeApi.downloadData(identifier)
-        putHistory(LocalStorageKeys.downloadHistory, identifier, identifier)
-        setUploadOrigin(defaultUploadOrigin)
-        navigate(ROUTES.HASH.replace(':hash', identifier))
-      } catch (error: unknown) {
-        let message = typeof error === 'object' && error !== null && Reflect.get(error, 'message')
-
-        if (message.includes('path address not found')) {
-          message = 'The specified hash does not have an index document set.'
-        }
-
-        if (message.includes('Not Found: Not Found')) {
-          message = 'The specified hash was not found.'
-        }
-        // eslint-disable-next-line no-console
-        console.error(error)
-        enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
-      }
-    } finally {
       setLoading(false)
+
+      return
     }
+
+    let rawBytesError: unknown = null
+    try {
+      await beeApi.downloadData(identifier)
+    } catch (error) {
+      rawBytesError = error
+    }
+
+    if (!rawBytesError) {
+      putHistory(LocalStorageKeys.downloadHistory, identifier, identifier)
+      setUploadOrigin(defaultUploadOrigin)
+      navigate(ROUTES.HASH.replace(':hash', identifier))
+    } else {
+      let message = typeof rawBytesError === 'object' && rawBytesError !== null && Reflect.get(rawBytesError, 'message')
+
+      if (message.includes('path address not found')) {
+        message = 'The specified hash does not have an index document set.'
+      }
+
+      if (message.includes('Not Found: Not Found')) {
+        message = 'The specified hash was not found.'
+      }
+      // eslint-disable-next-line no-console
+      console.error(rawBytesError)
+      enqueueSnackbar(<span>Error: {message || 'Unknown'}</span>, { variant: 'error' })
+    }
+
+    setLoading(false)
   }
 
   return (
