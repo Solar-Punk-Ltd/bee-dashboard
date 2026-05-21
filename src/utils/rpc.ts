@@ -57,11 +57,11 @@ export async function estimateNativeTransferTransactionCost(
 
   const gasLimit = BigInt(21000)
   const feeData = await signer.provider.getFeeData()
-  const gasPrice = feeData.gasPrice || BigInt(0)
+  const effectiveGasPrice = feeData.maxFeePerGas ?? feeData.gasPrice ?? BigInt(0)
 
   return {
-    gasPrice: DAI.fromWei(gasPrice.toString()),
-    totalCost: DAI.fromWei((gasPrice * gasLimit).toString()),
+    gasPrice: DAI.fromWei(effectiveGasPrice.toString()),
+    totalCost: DAI.fromWei((effectiveGasPrice * gasLimit).toString()),
   }
 }
 
@@ -82,14 +82,20 @@ export async function sendNativeTransaction(
   }
 
   const feedData = await signer.provider.getFeeData()
-  const gasPrice = externalGasPrice ?? DAI.fromWei(feedData.gasPrice?.toString() || '0')
-  const transaction = await signer.sendTransaction({
+  const txBase = {
     to: to.toChecksum(),
     value: BigInt(value.toWeiString()),
-    gasPrice: BigInt(gasPrice.toWeiString()),
     gasLimit: BigInt(21000),
-    type: 0,
-  })
+  }
+  const transaction = await signer.sendTransaction(
+    feedData.maxFeePerGas && feedData.maxPriorityFeePerGas
+      ? { ...txBase, maxFeePerGas: feedData.maxFeePerGas, maxPriorityFeePerGas: feedData.maxPriorityFeePerGas, type: 2 }
+      : {
+          ...txBase,
+          gasPrice: BigInt((externalGasPrice ?? DAI.fromWei(feedData.gasPrice?.toString() || '0')).toWeiString()),
+          type: 0,
+        },
+  )
   const receipt = await transaction.wait(1)
 
   if (!receipt) {
@@ -115,9 +121,12 @@ export async function sendBzzTransaction(
   }
 
   const feeData = await signer.provider.getFeeData()
-  const gasPrice = feeData.gasPrice || BigInt(0)
   const bzz = new Contract(BZZ_TOKEN_ADDRESS, bzzABI, signer)
-  const transaction = await bzz.transfer(to.toChecksum(), value.toPLURBigInt(), { gasPrice })
+  const txOverrides =
+    feeData.maxFeePerGas && feeData.maxPriorityFeePerGas
+      ? { maxFeePerGas: feeData.maxFeePerGas, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas, type: 2 }
+      : { gasPrice: feeData.gasPrice || BigInt(0) }
+  const transaction = await bzz.transfer(to.toChecksum(), value.toPLURBigInt(), txOverrides)
   const receipt = await transaction.wait(1)
 
   if (!receipt) {
