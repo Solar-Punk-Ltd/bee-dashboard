@@ -62,23 +62,17 @@ export function FeedSubpage(): ReactElement {
     setOpening(true)
 
     try {
-      const file = await beeApi.downloadFile(feedHash).catch(() => null)
+      const file = await beeApi.downloadFile(feedHash)
 
-      if (file?.contentType?.includes('text/html')) {
+      if (file.contentType?.includes('text/html')) {
         window.open(`${apiUrl}/bzz/${feedHash}/`, '_blank', 'noopener,noreferrer')
-
-        return
-      }
-
-      if (file) {
+      } else {
         const blob = new Blob([file.data.toUint8Array().buffer as ArrayBuffer], {
           type: file.contentType || 'application/octet-stream',
         })
         saveAs(blob, file.name || feedHash)
-
-        return
       }
-
+    } catch {
       const result = await beeApi
         .makeFeedReader(NULL_TOPIC, address)
         .downloadReference()
@@ -86,11 +80,9 @@ export function FeedSubpage(): ReactElement {
 
       if (result) {
         navigate(ROUTES.HASH.replace(':hash', result.reference.toHex()))
-
-        return
+      } else {
+        window.open(`${apiUrl}/bzz/${feedHash}/`, '_blank', 'noopener,noreferrer')
       }
-
-      window.open(`${apiUrl}/bzz/${feedHash}/`, '_blank', 'noopener,noreferrer')
     } finally {
       setOpening(false)
     }
