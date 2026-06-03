@@ -1,0 +1,70 @@
+import { BeeResponseError, BZZ, DAI, WalletBalance } from '@ethersphere/bee-js'
+
+import { extractBeeApiErrorMessage, getStampFundsShortageMessage } from '@/utils/bee-error'
+
+function makeWalletBalance(bzz: string, dai: string): WalletBalance {
+  return {
+    bzzBalance: BZZ.fromDecimalString(bzz),
+    nativeTokenBalance: DAI.fromDecimalString(dai),
+    chainID: 100,
+    chequebookContractAddress: '0x0',
+    walletAddress: '0x0',
+  }
+}
+
+describe('extractBeeApiErrorMessage', () => {
+  it('should return the Bee node message from the response body', () => {
+    const error = new BeeResponseError(
+      'post',
+      '/stamps/1/17',
+      'Request failed with status code 400',
+      { code: 400, message: 'out of funds' },
+      400,
+      'Bad Request',
+    )
+
+    expect(extractBeeApiErrorMessage(error)).toBe('out of funds')
+  })
+
+  it('should fall back to the error message when there is no response body', () => {
+    const error = new BeeResponseError('post', '/stamps/1/17', 'Network Error', undefined, undefined, undefined)
+
+    expect(extractBeeApiErrorMessage(error)).toBe('Network Error')
+  })
+
+  it('should handle plain errors', () => {
+    expect(extractBeeApiErrorMessage(new Error('boom'))).toBe('boom')
+  })
+
+  it('should handle non-error values', () => {
+    expect(extractBeeApiErrorMessage('boom')).toBe('boom')
+  })
+})
+
+describe('getStampFundsShortageMessage', () => {
+  it('should report insufficient xBZZ with concrete amounts', () => {
+    const cost = BZZ.fromDecimalString('0.6144')
+    const message = getStampFundsShortageMessage(cost, makeWalletBalance('0.05', '1'))
+
+    expect(message).toContain('Insufficient xBZZ balance')
+    expect(message).toContain('0.6144')
+    expect(message).toContain('0.05')
+  })
+
+  it('should report missing xDAI for gas fees', () => {
+    const cost = BZZ.fromDecimalString('0.1')
+    const message = getStampFundsShortageMessage(cost, makeWalletBalance('1', '0'))
+
+    expect(message).toContain('no xDAI')
+  })
+
+  it('should return null when the balance is sufficient', () => {
+    const cost = BZZ.fromDecimalString('0.1')
+
+    expect(getStampFundsShortageMessage(cost, makeWalletBalance('1', '1'))).toBeNull()
+  })
+
+  it('should return null when the balance is unknown', () => {
+    expect(getStampFundsShortageMessage(BZZ.fromDecimalString('1'), null)).toBeNull()
+  })
+})

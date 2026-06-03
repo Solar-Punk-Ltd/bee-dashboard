@@ -41,6 +41,7 @@
     "lint:fix": "pnpm run lint --fix",
     "check:types": "tsc --project tsconfig.lib.json",
     "update-map-data": "node ./utils/update-map-data.js",
+    "mock:bee": "node ./utils/mock-bee-proxy.js",
     "init:husky": "pnpm husky install"
   },
   "peerDependencies": {

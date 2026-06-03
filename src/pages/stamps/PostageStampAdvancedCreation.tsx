@@ -17,6 +17,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { secondsToTimeString } from '../../utils'
+import { extractBeeApiErrorMessage, getStampFundsShortageMessage } from '../../utils/bee-error'
 import { getHumanReadableFileSize } from '../../utils/file'
 import { validateDepthInput } from '../../utils/stamp'
 
@@ -49,7 +50,7 @@ const useStyles = makeStyles()(() => ({
 
 export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElement {
   const { classes } = useStyles()
-  const { chainState } = useContext(BeeContext)
+  const { chainState, walletBalance } = useContext(BeeContext)
   const { refresh } = useContext(StampsContext)
   const { beeApi } = useContext(SettingsContext)
 
@@ -102,9 +103,18 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
     let success = false
 
     try {
-      setSubmitting(true)
       const amount = BigInt(amountInput)
       const depth = Number.parseInt(depthInput)
+
+      const fundsShortage = getStampFundsShortageMessage(Utils.getStampCost(depth, amount), walletBalance)
+
+      if (fundsShortage) {
+        enqueueSnackbar(fundsShortage, { variant: 'error' })
+
+        return
+      }
+
+      setSubmitting(true)
       const options: PostageBatchOptions = {
         waitForUsable: false,
         label: labelInput || undefined,
@@ -117,7 +127,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e)
-      enqueueSnackbar(`Error: ${(e as Error).message}`, { variant: 'error' })
+      enqueueSnackbar(`Failed to buy postage stamp: ${extractBeeApiErrorMessage(e)}`, { variant: 'error' })
     } finally {
       setSubmitting(false)
     }
