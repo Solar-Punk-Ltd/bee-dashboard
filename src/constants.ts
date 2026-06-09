@@ -1,6 +1,7 @@
 export const META_FILE_NAME = 'metadata'
 export const PREVIEW_DIMENSIONS = { maxWidth: 250, maxHeight: 175 }
 export const BZZ_LINK_DOMAIN = 'bzz.link'
+export const SWARM_GATEWAY_URL = 'https://api.gateway.ethswarm.org'
 export const BLOCKCHAIN_EXPLORER_URL = 'https://blockscout.com/xdai/mainnet'
 export const BEE_DOCS_HOST = 'https://docs.ethswarm.org/docs/'
 export const BEE_DISCORD_HOST = 'https://discord.gg/eKr9XPv7'

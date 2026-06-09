@@ -8,8 +8,9 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { HistoryHeader } from '../../components/HistoryHeader'
 import { Loading } from '../../components/Loading'
+import QRCodeModal from '../../components/QRCodeModal'
 import TroubleshootConnectionCard from '../../components/TroubleshootConnectionCard'
-import { META_FILE_NAME } from '../../constants'
+import { META_FILE_NAME, SWARM_GATEWAY_URL } from '../../constants'
 import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { ROUTES } from '../../routes'
@@ -41,6 +42,7 @@ export function Share(): ReactElement {
   const [preview, setPreview] = useState<string | undefined>(undefined)
   const [metadata, setMetadata] = useState<Metadata | undefined>()
   const [rawBytesData, setRawBytesData] = useState<Uint8Array | null>(null)
+  const [gatewayContentType, setGatewayContentType] = useState<string | undefined>(undefined)
 
   const isMountedRef = useRef(true)
 
@@ -80,6 +82,15 @@ export function Share(): ReactElement {
       if (!isMountedRef.current) return
 
       setSwarmEntries(entries)
+
+      // For a single-file upload, capture the Content-Type Bee will serve — this is what a
+      // gateway link resolves to. Websites (many files) are handled via their index document.
+      const filePaths = Object.keys(entries)
+
+      if (filePaths.length === 1) {
+        const fileNode = manifest.collect().find(node => node.fullPathString === filePaths[0])
+        setGatewayContentType(fileNode?.metadata?.['Content-Type'])
+      }
 
       const docsMetadata = manifest.getDocsMetadata()
       const indexDocument = docsMetadata.indexDocument
@@ -266,6 +277,15 @@ export function Share(): ReactElement {
     setDownloading(false)
   }
 
+  // Offer a gateway QR wherever the page offers an "Open" action: a website, or a single
+  // image whose stored Content-Type really is an image (so scanning opens it inline at the
+  // gateway instead of forcing a download). gatewayContentType is only set for single files.
+  const isWebsite = Boolean(metadata?.isWebsite)
+  const isImage = Boolean(gatewayContentType?.startsWith('image/'))
+  const canShowGatewayQr = isWebsite || isImage
+  // A website resolves through its index document, so the gateway link needs a trailing slash.
+  const gatewayUrl = `${SWARM_GATEWAY_URL}/bzz/${hash}${isWebsite ? '/' : ''}`
+
   if (!status.all) return <TroubleshootConnectionCard />
 
   if (loading) {
@@ -289,6 +309,12 @@ export function Share(): ReactElement {
       <Box mb={4}>
         <AssetSummary isWebsite={metadata?.isWebsite} reference={hash} />
       </Box>
+      {canShowGatewayQr && (
+        <Box mb={4} display="flex" alignItems="center">
+          <Typography variant="body2">Scan to open via gateway</Typography>
+          <QRCodeModal value={gatewayUrl} label="Gateway link" />
+        </Box>
+      )}
       {fromUpload && (
         <Box mb={4}>
           <AssetSyncing reference={hash} />
