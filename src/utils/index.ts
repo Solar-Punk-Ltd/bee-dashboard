@@ -207,3 +207,19 @@ export function shortenText(text: string, length = 20, separator = '[…]'): str
 
   return `${text.slice(0, length)}${separator}${text.slice(-length)}`
 }
+
+export function publicUrl(url: string): string {
+  let publicUrl: string = url
+
+  const isLocal = ['localhost', '127.0.0.1', '::1'].includes(new URL(url).hostname)
+
+  if (isLocal) {
+    publicUrl = Object.assign(new URL(url), {
+      protocol: 'https:',
+      host: 'api.gateway.ethswarm.org',
+      port: '',
+    }).toString()
+  }
+
+  return publicUrl
+}

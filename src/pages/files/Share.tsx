@@ -21,8 +21,11 @@ import { AssetPreview, getType } from './AssetPreview'
 import { AssetSummary } from './AssetSummary'
 import { AssetSyncing } from './AssetSyncing'
 import { DownloadActionBar } from './DownloadActionBar'
+import { GatewayQRCode } from '@/components/GatewayQRCode'
 
 export function Share(): ReactElement {
+  const SWARM_GATEWAY_URL = 'https://api.gateway.ethswarm.org'
+
   const { apiUrl, beeApi } = useContext(SettingsContext)
   const { status } = useContext(BeeContext)
 
@@ -41,6 +44,7 @@ export function Share(): ReactElement {
   const [preview, setPreview] = useState<string | undefined>(undefined)
   const [metadata, setMetadata] = useState<Metadata | undefined>()
   const [rawBytesData, setRawBytesData] = useState<Uint8Array | null>(null)
+  const [gatewayContentType, setGatewayContentType] = useState<string | undefined>(undefined)
 
   const isMountedRef = useRef(true)
 
@@ -80,6 +84,13 @@ export function Share(): ReactElement {
       if (!isMountedRef.current) return
 
       setSwarmEntries(entries)
+
+      const filePaths = Object.keys(entries)
+
+      if (filePaths.length === 1) {
+        const fileNode = manifest.collect().find(node => node.fullPathString === filePaths[0])
+        setGatewayContentType(fileNode?.metadata?.['Content-Type'])
+      }
 
       const docsMetadata = manifest.getDocsMetadata()
       const indexDocument = docsMetadata.indexDocument
@@ -266,6 +277,9 @@ export function Share(): ReactElement {
     setDownloading(false)
   }
 
+  const isWebsite = Boolean(metadata?.isWebsite)
+  const gatewayUrl = `${SWARM_GATEWAY_URL}/bzz/${hash}${isWebsite ? '/' : ''}`
+
   if (!status.all) return <TroubleshootConnectionCard />
 
   if (loading) {
@@ -303,6 +317,7 @@ export function Share(): ReactElement {
         isImage={Boolean(metadata?.isImage)}
         loading={downloading}
       />
+      <GatewayQRCode value={gatewayUrl}/>
     </>
   )
 }
