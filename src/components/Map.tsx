@@ -1,7 +1,7 @@
 import type { Peer } from '@ethersphere/bee-js'
+import { CircularProgress } from '@mui/material'
 import DottedMap, { DottedMapWithoutCountriesLib } from 'dotted-map/without-countries'
 import { CSSProperties, ReactElement, useContext, useEffect, useState } from 'react'
-import { CircularProgress } from '@mui/material'
 
 import mapData from '../assets/data/map-data.json'
 import nodesDb from '../assets/data/nodes-db.json'
@@ -108,7 +108,7 @@ export default function Card({ style, error }: Props): ReactElement {
             position: 'absolute',
             inset: 0,
             m: 'auto',
-            opacity: 0.25
+            opacity: 0.25,
           }}
         />
       )}
