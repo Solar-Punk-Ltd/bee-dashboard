@@ -102,16 +102,14 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
   }
 
   async function submit() {
+    // This is really just a typeguard, the validation pretty much guarantees these will have the right values
+    if (!depthInput || !amountInput || !beeApi) {
+      return
+    }
+
+    let success = false
+
     try {
-      // This is really just a typeguard, the validation pretty much guarantees these will have the right values
-      if (!depthInput || !amountInput) {
-        return
-      }
-
-      if (!beeApi) {
-        return
-      }
-
       setSubmitting(true)
 
       await beeApi.buyStorage(
@@ -123,13 +121,19 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
         RedundancyLevel.OFF,
       )
       await refresh()
-      onFinished()
+      success = true
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e)
       enqueueSnackbar(`Error: ${(e as Error).message}`, { variant: 'error' })
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
+
+    if (success) {
+      enqueueSnackbar('Postage stamp purchased, it will become usable after network confirmation', { variant: 'success' })
+      onFinished()
+    }
   }
 
   function handleBatchSize(gigabytes: number) {
