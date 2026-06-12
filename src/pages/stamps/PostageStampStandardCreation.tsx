@@ -13,7 +13,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { secondsToTimeString } from '../../utils'
-import { extractBeeApiErrorMessage, getStampFundsShortageMessage } from '../../utils/bee-error'
+import { extractBeeApiErrorMessage, notifyStampFundsShortage } from '../../utils/bee-error'
 import { validateDepthInput } from '../../utils/stamp'
 
 interface Props {
@@ -111,11 +111,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     let success = false
 
     try {
-      const fundsShortage = getStampFundsShortageMessage(Utils.getStampCost(depthInput, amountInput), walletBalance)
-
-      if (fundsShortage) {
-        enqueueSnackbar(fundsShortage, { variant: 'error' })
-
+      if (notifyStampFundsShortage(Utils.getStampCost(depthInput, amountInput), walletBalance, enqueueSnackbar)) {
         return
       }
 

@@ -1,4 +1,5 @@
 import { BeeResponseError, BZZ, DAI, WalletBalance } from '@ethersphere/bee-js'
+import { ProviderContext } from 'notistack'
 
 /**
  * Extracts the most meaningful, human-readable reason from an error thrown by the Bee API.
@@ -50,4 +51,25 @@ export function getStampFundsShortageMessage(cost: BZZ, walletBalance: WalletBal
   }
 
   return null
+}
+
+/**
+ * Shows an error snackbar when the node's wallet cannot cover a stamp purchase.
+ *
+ * @returns true when the purchase should be aborted
+ */
+export function notifyStampFundsShortage(
+  cost: BZZ,
+  walletBalance: WalletBalance | null,
+  enqueueSnackbar: ProviderContext['enqueueSnackbar'],
+): boolean {
+  const fundsShortage = getStampFundsShortageMessage(cost, walletBalance)
+
+  if (fundsShortage) {
+    enqueueSnackbar(fundsShortage, { variant: 'error' })
+
+    return true
+  }
+
+  return false
 }

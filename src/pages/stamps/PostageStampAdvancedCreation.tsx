@@ -17,7 +17,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as StampsContext } from '../../providers/Stamps'
 import { ROUTES } from '../../routes'
 import { secondsToTimeString } from '../../utils'
-import { extractBeeApiErrorMessage, getStampFundsShortageMessage } from '../../utils/bee-error'
+import { extractBeeApiErrorMessage, notifyStampFundsShortage } from '../../utils/bee-error'
 import { getHumanReadableFileSize } from '../../utils/file'
 import { validateDepthInput } from '../../utils/stamp'
 
@@ -106,11 +106,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
       const amount = BigInt(amountInput)
       const depth = Number.parseInt(depthInput)
 
-      const fundsShortage = getStampFundsShortageMessage(Utils.getStampCost(depth, amount), walletBalance)
-
-      if (fundsShortage) {
-        enqueueSnackbar(fundsShortage, { variant: 'error' })
-
+      if (notifyStampFundsShortage(Utils.getStampCost(depth, amount), walletBalance, enqueueSnackbar)) {
         return
       }
 

@@ -1,6 +1,6 @@
 import { BeeResponseError, BZZ, DAI, WalletBalance } from '@ethersphere/bee-js'
 
-import { extractBeeApiErrorMessage, getStampFundsShortageMessage } from '@/utils/bee-error'
+import { extractBeeApiErrorMessage, getStampFundsShortageMessage, notifyStampFundsShortage } from '@/utils/bee-error'
 
 function makeWalletBalance(bzz: string, dai: string): WalletBalance {
   return {
@@ -79,5 +79,27 @@ describe('getStampFundsShortageMessage', () => {
 
   it('should return null when the balance is unknown', () => {
     expect(getStampFundsShortageMessage(BZZ.fromDecimalString('1'), null)).toBeNull()
+  })
+})
+
+describe('notifyStampFundsShortage', () => {
+  it('should show an error snackbar and return true on shortage', () => {
+    const enqueueSnackbar = jest.fn()
+    const aborted = notifyStampFundsShortage(
+      BZZ.fromDecimalString('1'),
+      makeWalletBalance('0.05', '1'),
+      enqueueSnackbar,
+    )
+
+    expect(aborted).toBe(true)
+    expect(enqueueSnackbar).toHaveBeenCalledWith(expect.stringContaining('Not enough xBZZ'), { variant: 'error' })
+  })
+
+  it('should not notify and return false when the balance is sufficient', () => {
+    const enqueueSnackbar = jest.fn()
+    const aborted = notifyStampFundsShortage(BZZ.fromDecimalString('0.1'), makeWalletBalance('1', '1'), enqueueSnackbar)
+
+    expect(aborted).toBe(false)
+    expect(enqueueSnackbar).not.toHaveBeenCalled()
   })
 })
