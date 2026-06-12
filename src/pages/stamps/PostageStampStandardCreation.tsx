@@ -115,7 +115,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
       await beeApi.buyStorage(
         Size.fromGigabytes(buttonValue),
         Duration.fromDays(sliderValue),
-        { label: labelInput, immutableFlag: true },
+        { label: labelInput, immutableFlag: true, waitForUsable: false },
         undefined,
         false,
         RedundancyLevel.OFF,
@@ -131,7 +131,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
     }
 
     if (success) {
-      enqueueSnackbar('Postage stamp purchased, it will become usable after network confirmation', { variant: 'success' })
+      enqueueSnackbar('Purchase initiated. Wait a few seconds, stamp will appear soon.', { variant: 'success' })
       onFinished()
     }
   }

@@ -1,4 +1,4 @@
-import { Box, Chip, Grid, Typography } from '@mui/material'
+import { Box, Chip, Grid, LinearProgress, Typography } from '@mui/material'
 import { ReactElement } from 'react'
 
 import { Capacity } from '../../components/Capacity'
@@ -20,6 +20,7 @@ export function PostageStamp({ stamp, shorten }: Props): ReactElement {
         {!stamp.usable && <Chip label="Pending" size="small" />}
         <Capacity width="100px" usage={stamp.usage} />
       </Grid>
+      {!stamp.usable && <LinearProgress sx={{ mt: 1 }} />}
     </Box>
   )
 }
