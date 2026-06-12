@@ -59,7 +59,7 @@ describe('getStampFundsShortageMessage', () => {
     const cost = BZZ.fromDecimalString('0.6144')
     const message = getStampFundsShortageMessage(cost, makeWalletBalance('0.05', '1'))
 
-    expect(message).toContain('Insufficient xBZZ balance')
+    expect(message).toContain('Not enough xBZZ')
     expect(message).toContain('0.6144')
     expect(message).toContain('0.05')
   })
@@ -68,7 +68,7 @@ describe('getStampFundsShortageMessage', () => {
     const cost = BZZ.fromDecimalString('0.1')
     const message = getStampFundsShortageMessage(cost, makeWalletBalance('1', '0'))
 
-    expect(message).toContain('no xDAI')
+    expect(message).toContain('No xDAI')
   })
 
   it('should return null when the balance is sufficient', () => {

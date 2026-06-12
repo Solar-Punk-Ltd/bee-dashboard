@@ -39,14 +39,14 @@ export function getStampFundsShortageMessage(cost: BZZ, walletBalance: WalletBal
 
   if (cost.gt(walletBalance.bzzBalance)) {
     return (
-      `Insufficient xBZZ balance: this stamp costs ${cost.toSignificantDigits(4)} xBZZ, ` +
-      `but your node's wallet only has ${walletBalance.bzzBalance.toSignificantDigits(4)} xBZZ. ` +
+      `Not enough xBZZ: need ${cost.toSignificantDigits(4)}, ` +
+      `have ${walletBalance.bzzBalance.toSignificantDigits(4)}. ` +
       'Add funds under Account > Wallet.'
     )
   }
 
   if (DAI.fromDecimalString('0').eq(walletBalance.nativeTokenBalance)) {
-    return "Your node's wallet has no xDAI to pay for gas fees. Add funds under Account > Wallet."
+    return 'No xDAI to pay for gas fees. Add funds under Account > Wallet.'
   }
 
   return null
