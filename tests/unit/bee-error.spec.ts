@@ -26,6 +26,19 @@ describe('extractBeeApiErrorMessage', () => {
     expect(extractBeeApiErrorMessage(error)).toBe('out of funds')
   })
 
+  it('should return a plain-text response body as-is', () => {
+    const error = new BeeResponseError(
+      'post',
+      '/stamps/1/17',
+      'Request failed with status code 402',
+      'out of funds',
+      402,
+      'Payment Required',
+    )
+
+    expect(extractBeeApiErrorMessage(error)).toBe('out of funds')
+  })
+
   it('should fall back to the error message when there is no response body', () => {
     const error = new BeeResponseError('post', '/stamps/1/17', 'Network Error', undefined, undefined, undefined)
 

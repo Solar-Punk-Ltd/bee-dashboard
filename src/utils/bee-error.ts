@@ -9,7 +9,11 @@ import { BeeResponseError, BZZ, DAI, WalletBalance } from '@ethersphere/bee-js'
  */
 export function extractBeeApiErrorMessage(error: unknown): string {
   if (error instanceof BeeResponseError) {
-    const body = error.responseBody as { message?: unknown } | undefined
+    const body = error.responseBody as { message?: unknown } | string | undefined
+
+    if (typeof body === 'string' && body) {
+      return body
+    }
 
     if (body && typeof body === 'object' && typeof body.message === 'string' && body.message) {
       return body.message
