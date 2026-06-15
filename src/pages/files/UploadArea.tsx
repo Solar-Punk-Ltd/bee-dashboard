@@ -150,6 +150,10 @@ export function UploadArea({ uploadOrigin, showHelp }: Props): ReactElement {
         <DocumentationText>
           You can click the buttons above or simply drag and drop to add a file or folder. To upload a website to Swarm,
           make sure that your folder contains an “index.html” file.
+          <br />
+          <br />
+          Files uploaded here are public and unencrypted — anyone with the reference can download them. Use the File
+          Manager&apos;s encrypted drive for private storage.
         </DocumentationText>
       )}
       {!isUploadEnabled && (
