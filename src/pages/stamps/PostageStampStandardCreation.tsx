@@ -154,7 +154,7 @@ export function PostageStampStandardCreation({ onFinished }: Props): ReactElemen
           A postage stamp batch containes postage stamps that will give you the right to upload data to the Swarm
           network. If you&apos;re not familiar with this, please read&nbsp;
           <a
-            href="https://medium.com/ethereum-swarm/how-to-upload-data-to-the-swarm-network-c0766c3ae381"
+            href="https://docs.ethswarm.org/docs/desktop/postage-stamps/"
             target="_blank"
             rel="noreferrer"
           >
