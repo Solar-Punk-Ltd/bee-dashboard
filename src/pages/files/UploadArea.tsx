@@ -3,7 +3,7 @@ import { Box, Tooltip } from '@mui/material'
 import { useSnackbar } from 'notistack'
 import { ReactElement, useContext, useRef, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import PlusCircle from 'remixicon-react/AddCircleLineIcon'
 import FilePlus from 'remixicon-react/FileAddLineIcon'
 import FolderPlus from 'remixicon-react/FolderAddLineIcon'
@@ -156,6 +156,10 @@ export function UploadArea({ uploadOrigin, showHelp }: Props): ReactElement {
           <strong>Add Folder</strong> — Upload a directory as a collection. No index.html required. <br />
           <strong>Add Website</strong> — Upload a folder as a website. Requires an index.html in your folder. <br />
           You can also drag and drop files or folders directly onto this area.
+          <br />
+          <br />
+          Files uploaded here are public and unencrypted — anyone with the reference can download them. Use the{' '}
+          <Link to={ROUTES.FILEMANAGER}>File Manager&apos;s encrypted drive</Link> for private storage.
         </DocumentationText>
       )}
       {!isUploadEnabled && (
