@@ -155,7 +155,7 @@ export function UploadArea({ uploadOrigin, showHelp }: Props): ReactElement {
           <strong>Add File</strong> — Upload a single file. <br />
           <strong>Add Folder</strong> — Upload a directory as a collection. No index.html required. <br />
           <strong>Add Website</strong> — Upload a folder as a website. Requires an index.html in your folder. <br />
-          *You can also drag and drop files or folders directly onto this area.
+          You can also drag and drop files or folders directly onto this area.
         </DocumentationText>
       )}
       {!isUploadEnabled && (
