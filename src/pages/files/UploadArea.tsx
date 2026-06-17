@@ -136,7 +136,7 @@ export function UploadArea({ uploadOrigin, showHelp }: Props): ReactElement {
               <SwarmButton className={classes.button} onClick={onUploadFileClick} iconType={FilePlus}>
                 Add File
               </SwarmButton>
-              <Tooltip title="Upload any folder as a Swarm collection. No index file required." arrow>
+              <Tooltip title="Upload any folder as a Swarm collection. No index.html file required." arrow>
                 <SwarmButton className={classes.button} onClick={onUploadFolderClick} iconType={FolderPlus}>
                   Add Folder
                 </SwarmButton>
