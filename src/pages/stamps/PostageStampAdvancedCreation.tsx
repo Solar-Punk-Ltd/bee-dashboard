@@ -195,11 +195,7 @@ export function PostageStampAdvancedCreation({ onFinished }: Props): ReactElemen
         <Typography>
           To upload data to Swarm network, you will need to purchase a postage stamp. If you&apos;re not familiar with
           this, please read{' '}
-          <a
-            href="https://docs.ethswarm.org/docs/desktop/postage-stamps/"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a href="https://docs.ethswarm.org/docs/desktop/postage-stamps/" target="_blank" rel="noreferrer">
             this guide
           </a>
           .
