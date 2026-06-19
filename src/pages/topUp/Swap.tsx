@@ -19,6 +19,7 @@ import { Context as SettingsContext } from '../../providers/Settings'
 import { Context as BalanceProvider } from '../../providers/WalletBalance'
 import { ROUTES } from '../../routes'
 import { sleepMs } from '../../utils'
+import { extractBeeApiErrorMessage } from '../../utils/bee-error'
 import {
   getBzzPriceAsDai,
   getDesktopConfiguration,
@@ -26,7 +27,6 @@ import {
   restartBeeNode,
   upgradeToLightNode,
 } from '../../utils/desktop'
-import { extractBeeApiErrorMessage } from '../../utils/bee-error'
 import { isSwapError, SwapError, wrapWithSwapError } from '../../utils/errors'
 import { LocalStorageKeys } from '../../utils/localStorage'
 import { RPC } from '../../utils/rpc'
@@ -201,7 +201,9 @@ export function Swap({ header }: Props): ReactElement {
         }
       } else {
         // we have an unexpected error
-        enqueueSnackbar(`${GENERIC_SWAP_FAILED_ERROR_MESSAGE} ${extractBeeApiErrorMessage(error)}`, { variant: 'error' })
+        enqueueSnackbar(`${GENERIC_SWAP_FAILED_ERROR_MESSAGE} ${extractBeeApiErrorMessage(error)}`, {
+          variant: 'error',
+        })
         // eslint-disable-next-line no-console
         console.error(error)
       }

@@ -10,8 +10,8 @@ import { useSnackbar } from 'notistack'
 import React, { ReactElement, ReactNode, useState } from 'react'
 import { makeStyles } from 'tss-react/mui'
 
-import { extractBeeApiErrorMessage } from '../utils/bee-error'
 import { CheckState } from '../providers/Bee'
+import { extractBeeApiErrorMessage } from '../utils/bee-error'
 
 const useStyles = makeStyles()(theme => ({
   buttonSelected: {
