@@ -10,6 +10,7 @@ import { useSnackbar } from 'notistack'
 import React, { ReactElement, ReactNode, useState } from 'react'
 import { makeStyles } from 'tss-react/mui'
 
+import { extractBeeApiErrorMessage } from '../utils/bee-error'
 import { CheckState } from '../providers/Bee'
 
 const useStyles = makeStyles()(theme => ({
@@ -80,7 +81,9 @@ export default function StampExtensionModal({ type, icon, bee, stamp, status }: 
         await bee.topUpBatch(stamp.batchID, amount)
         enqueueSnackbar(`Successfully topped up stamp, your changes will appear soon`, { variant: 'success' })
       } catch (error) {
-        enqueueSnackbar(`Failed to topup stamp: ${error || 'Unknown reason'}`, { variant: 'error' })
+        // eslint-disable-next-line no-console
+        console.error(error)
+        enqueueSnackbar(`Failed to topup stamp: ${extractBeeApiErrorMessage(error)}`, { variant: 'error' })
       }
 
       return
@@ -113,7 +116,9 @@ export default function StampExtensionModal({ type, icon, bee, stamp, status }: 
         await bee.diluteBatch(stamp.batchID, newDepth)
         enqueueSnackbar(`Successfully diluted stamp, your changes will appear soon`, { variant: 'success' })
       } catch (error) {
-        enqueueSnackbar(`Failed to dilute stamp: ${error || 'Unknown reason'}`, { variant: 'error' })
+        // eslint-disable-next-line no-console
+        console.error(error)
+        enqueueSnackbar(`Failed to dilute stamp: ${extractBeeApiErrorMessage(error)}`, { variant: 'error' })
       }
 
       return
