@@ -20,7 +20,6 @@ import React, { ReactElement, ReactNode, useContext, useEffect, useState } from 
 import { makeStyles } from 'tss-react/mui'
 
 import { CheckState, Context as BeeContext } from '../providers/Bee'
-import { extractBeeApiErrorMessage } from '../utils/bee-error'
 import { preciseTimeString } from '../utils'
 import { getHumanReadableFileSize } from '../utils/file'
 
