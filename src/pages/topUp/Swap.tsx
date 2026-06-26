@@ -23,6 +23,7 @@ import {
   getBzzPriceAsDai,
   getDesktopConfiguration,
   performSwap,
+  resolveBlockchainRpcEndpoint,
   restartBeeNode,
   upgradeToLightNode,
 } from '../../utils/desktop'
@@ -162,12 +163,14 @@ export function Swap({ header }: Props): ReactElement {
       )
     }
 
-    if (!desktopConfiguration['blockchain-rpc-endpoint']) {
+    const blockchainRpcEndpoint = resolveBlockchainRpcEndpoint(desktopConfiguration)
+
+    if (!blockchainRpcEndpoint) {
       throw new SwapError('Blockchain RPC endpoint is not configured in Swarm Desktop')
     }
     await wrapWithSwapError(
-      RPC.getNetworkChainId(desktopConfiguration['blockchain-rpc-endpoint']),
-      `Blockchain RPC endpoint not reachable at ${desktopConfiguration['blockchain-rpc-endpoint']}`,
+      RPC.getNetworkChainId(blockchainRpcEndpoint),
+      `Blockchain RPC endpoint not reachable at ${blockchainRpcEndpoint}`,
     )
     await wrapWithSwapError(sendSwapRequest(daiToSwap), GENERIC_SWAP_FAILED_ERROR_MESSAGE)
   }
