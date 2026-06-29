@@ -7,9 +7,14 @@ import { ethAddressString, newGnosisProvider, newGnosisProviderForValidation } f
 
 async function getNetworkChainId(url: string): Promise<bigint> {
   const provider = newGnosisProviderForValidation(url)
-  const network = await provider.getNetwork()
 
-  return network.chainId
+  try {
+    const network = await provider.getNetwork()
+
+    return network.chainId
+  } catch (error) {
+    throw new Error(`RPC endpoint not reachable at ${url}`, { cause: error })
+  }
 }
 
 async function eth_getBalance(address: EthAddress | string, provider: JsonRpcProvider): Promise<DAI> {
@@ -133,7 +138,13 @@ export async function sendBzzTransaction(
 
 async function makeReadySigner(privateKey: PrivateKey, jsonRpcProviderUrl: string) {
   const provider = newGnosisProvider(jsonRpcProviderUrl)
-  await provider.getNetwork()
+
+  try {
+    await provider.getNetwork()
+  } catch (error) {
+    throw new Error(`RPC endpoint not reachable at ${jsonRpcProviderUrl}`, { cause: error })
+  }
+
   const signer = new Wallet(privateKey.toString(), provider)
 
   return signer
