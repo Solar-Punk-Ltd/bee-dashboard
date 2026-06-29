@@ -4,7 +4,7 @@ import { createContext, ReactElement, ReactNode, useCallback, useEffect, useMemo
 
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
-import { newGnosisProvider } from '../utils/chain'
+import { newGnosisProvider, newGnosisProviderForValidation } from '../utils/chain'
 import { LocalStorageKeys } from '../utils/localStorage'
 
 interface ContextInterface {
@@ -111,6 +111,17 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     setRpcProviderUrl(daemonRpcUrl)
     setRpcProvider(newGnosisProvider(daemonRpcUrl))
   }, [isDesktop, config])
+
+  useEffect(() => {
+    newGnosisProviderForValidation(propsProviderUrl)
+      .getNetwork()
+      .catch(() => {
+        if (propsProviderUrl !== DEFAULT_RPC_URL) {
+          setRpcProviderUrl(DEFAULT_RPC_URL)
+          setRpcProvider(newGnosisProvider(DEFAULT_RPC_URL))
+        }
+      })
+  }, [])
 
   const updateApiUrl = useCallback((url: string) => {
     const userProvidedUrl = makeHttpUrl(url)

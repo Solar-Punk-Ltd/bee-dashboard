@@ -145,9 +145,7 @@ async function makeReadySigner(privateKey: PrivateKey, jsonRpcProviderUrl: strin
     throw new Error(`RPC endpoint not reachable at ${jsonRpcProviderUrl}`, { cause: error })
   }
 
-  const signer = new Wallet(privateKey.toString(), provider)
-
-  return signer
+  return new Wallet(privateKey.toString(), provider)
 }
 
 export interface Rpc {
