@@ -23,6 +23,7 @@ interface ContextInterface {
   ensResolver: string | null
   setApiUrl: (url: string) => void
   setAndPersistJsonRpcProvider: (url: string) => void
+  setEnsResolver: (url: string) => void
   isLoading: boolean
   error: Error | null
 }
@@ -42,6 +43,7 @@ const initialValues: ContextInterface = {
   dataDir: null,
   configFile: null,
   ensResolver: null,
+  setEnsResolver: () => {},
   isLoading: true,
   error: null,
 }
@@ -75,6 +77,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   const [desktopApiKey, setDesktopApiKey] = useState<string>(initialValues.desktopApiKey)
   const [rpcProviderUrl, setRpcProviderUrl] = useState(propsProviderUrl)
   const [rpcProvider, setRpcProvider] = useState(newGnosisProvider(propsProviderUrl))
+  const [ensResolver, setEnsResolverState] = useState<string | null>(initialValues.ensResolver)
 
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
 
@@ -112,6 +115,12 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     setRpcProvider(newGnosisProvider(daemonRpcUrl))
   }, [isDesktop, config])
 
+  useEffect(() => {
+    if (!isDesktop || !config?.['resolver-options']) return
+
+    setEnsResolverState(config['resolver-options'])
+  }, [isDesktop, config])
+
   const updateApiUrl = useCallback((url: string) => {
     const userProvidedUrl = makeHttpUrl(url)
 
@@ -130,6 +139,10 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     setRpcProvider(newGnosisProvider(providerUrl))
   }, [])
 
+  const setEnsResolver = useCallback((url: string) => {
+    setEnsResolverState(url)
+  }, [])
+
   const contextValue = useMemo(
     () => ({
       apiUrl,
@@ -145,8 +158,9 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
       cors: config?.['cors-allowed-origins'] ?? null,
       dataDir: config?.['data-dir'] ?? null,
       configFile: config?.['config-file-path'] ?? null,
-      ensResolver: config?.['resolver-options'] ?? null,
+      ensResolver,
       setAndPersistJsonRpcProvider,
+      setEnsResolver,
       isLoading,
       error,
     }),
@@ -162,7 +176,9 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
       rpcProvider,
       rpcProviderUrl,
       config,
+      ensResolver,
       setAndPersistJsonRpcProvider,
+      setEnsResolver,
       isLoading,
       error,
     ],
