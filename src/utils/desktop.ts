@@ -39,6 +39,12 @@ export async function setJsonRpcInDesktop(desktopUrl: string, value: string): Pr
   })
 }
 
+export async function setEnsResolverInDesktop(desktopUrl: string, value: string): Promise<void> {
+  await updateDesktopConfiguration(desktopUrl, {
+    'resolver-options': value,
+  })
+}
+
 export function getDesktopConfiguration(desktopUrl: string): Promise<BeeConfig> {
   return getJson(`${desktopUrl}/config`)
 }
