@@ -61,9 +61,9 @@ export default function SettingsPage(): ReactElement {
 
   async function handleSetEnsResolverUrl(value: string) {
     try {
+      await setEnsResolverInDesktop(desktopUrl, value)
       setEnsResolver(value)
 
-      await setEnsResolverInDesktop(desktopUrl, value)
       const snackKey = enqueueSnackbar('ENS resolver successfully changed, restarting Bee node...', {
         variant: 'success',
       })
