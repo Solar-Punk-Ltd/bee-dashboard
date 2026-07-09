@@ -1,5 +1,5 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileRecord } from '@solarpunkltd/file-manager-lib'
 import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -13,7 +13,7 @@ import { Context as SettingsContext } from './Settings'
 interface ContextInterface {
   fm: FileManagerBase | null
   initDone: boolean
-  files: FileInfo[]
+  files: FileRecord[]
   currentDrive?: DriveInfo
   currentStamp?: PostageBatch
   drives: DriveInfo[]
@@ -103,7 +103,7 @@ export function Provider({ children }: Props) {
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [initDone, setInitDone] = useState<boolean>(false)
   const [shallReset, setShallReset] = useState<boolean>(false)
-  const [files, setFiles] = useState<FileInfo[]>([])
+  const [files, setFiles] = useState<FileRecord[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [expiredDrives, setExpiredDrives] = useState<DriveInfo[]>([])
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
@@ -115,7 +115,7 @@ export function Provider({ children }: Props) {
 
   const notifyPkSaved = useCallback(() => setPkSaved(v => !v), [])
 
-  const syncFiles = useCallback((manager: FileManagerBase, fi?: FileInfo, remove?: boolean): void => {
+  const syncFiles = useCallback((manager: FileManagerBase, fi?: FileRecord, remove?: boolean): void => {
     if (fi) {
       if (remove) {
         setFiles(prev => prev.filter(f => f.topic.toString() !== fi.topic.toString()))
@@ -305,20 +305,20 @@ export function Provider({ children }: Props) {
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
-    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileInfo }) => {
+    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileRecord }) => {
       syncFiles(manager, fileInfo)
       window.dispatchEvent(new CustomEvent(FILE_MANAGER_EVENTS.FILE_UPLOADED, { detail: { fileInfo } }))
     })
-    manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, ({ restored }: { restored: FileInfo }) =>
+    manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, ({ restored }: { restored: FileRecord }) =>
       syncFiles(manager, restored),
     )
-    manager.emitter.on(FileManagerEvents.FILE_TRASHED, ({ fileInfo }: { fileInfo: FileInfo }) =>
+    manager.emitter.on(FileManagerEvents.FILE_TRASHED, ({ fileInfo }: { fileInfo: FileRecord }) =>
       syncFiles(manager, fileInfo),
     )
-    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, ({ fileInfo }: { fileInfo: FileInfo }) =>
+    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, ({ fileInfo }: { fileInfo: FileRecord }) =>
       syncFiles(manager, fileInfo),
     )
-    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, ({ fileInfo }: { fileInfo: FileInfo }) =>
+    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, ({ fileInfo }: { fileInfo: FileRecord }) =>
       syncFiles(manager, fileInfo, true),
     )
 

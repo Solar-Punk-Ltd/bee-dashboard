@@ -1,4 +1,4 @@
-import type { FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileRecord } from '@solarpunkltd/file-manager-lib'
 import { useEffect, useMemo, useState } from 'react'
 
 import { LocalStorageKeys } from '../../../utils/localStorage'
@@ -38,7 +38,7 @@ const coerceNumber = (v: unknown): number => {
   return 0
 }
 
-const getSize = (fi: FileInfo): number => {
+const getSize = (fi: FileRecord): number => {
   const cm = (fi.customMetadata ?? {}) as Record<string, unknown>
 
   if (cm && Object.prototype.hasOwnProperty.call(cm, 'size')) {
@@ -48,16 +48,16 @@ const getSize = (fi: FileInfo): number => {
   return coerceNumber((fi as unknown as { size?: number | string }).size)
 }
 
-const getTs = (fi: FileInfo): number => coerceNumber((fi as unknown as { timestamp?: number | string }).timestamp)
+const getTs = (fi: FileRecord): number => coerceNumber((fi as unknown as { timestamp?: number | string }).timestamp)
 
 const isValidState = (s: Partial<SortState>): s is SortState =>
   Object.values(SortKey).includes(s.key as SortKey) && Object.values(SortDir).includes(s.dir as SortDir)
 
 export function useSorting(
-  items: FileInfo[],
+  items: FileRecord[],
   opts: Options = {},
 ): {
-  sorted: FileInfo[]
+  sorted: FileRecord[]
   sort: SortState
   toggle: (key: SortKey) => void
   reset: () => void
@@ -100,14 +100,14 @@ export function useSorting(
 
   const reset = (): void => setSort(defaultState)
 
-  const sorted = useMemo<FileInfo[]>(() => {
+  const sorted = useMemo<FileRecord[]>(() => {
     const arr = [...items]
     const mul = sort.dir === SortDir.Asc ? 1 : -1
 
     arr.sort((a, b) => {
       if (sort.key === SortKey.Name) {
-        const an = (a.name ?? '').toLocaleLowerCase()
-        const bn = (b.name ?? '').toLocaleLowerCase()
+        const an = (a.path ?? '').toLocaleLowerCase()
+        const bn = (b.path ?? '').toLocaleLowerCase()
 
         if (an < bn) return -1 * mul
 

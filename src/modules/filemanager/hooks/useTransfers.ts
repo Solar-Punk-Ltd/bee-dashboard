@@ -1,4 +1,4 @@
-import type { DriveInfo, FileInfo, FileInfoOptions, UploadProgress } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileInfoOptions, FileRecord, UploadProgress } from '@solarpunkltd/file-manager-lib'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Context as FMContext } from '../../../providers/FileManager'
@@ -85,7 +85,7 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?: FileInfo): UploadMeta => {
+const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?: FileRecord): UploadMeta => {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -249,13 +249,13 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
   )
 
   const collectSameDrive = useCallback(
-    (id: string): FileInfo[] => files.filter(fi => fi.driveId.toString() === id),
+    (id: string): FileRecord[] => files.filter(fi => fi.driveId.toString() === id),
     [files],
   )
 
   const resolveConflict = useCallback(
-    async (originalName: string, sameDrive: FileInfo[], allTakenNames: Set<string>): Promise<ResolveResult> => {
-      const taken = sameDrive.filter(fi => fi.name === originalName)
+    async (originalName: string, sameDrive: FileRecord[], allTakenNames: Set<string>): Promise<ResolveResult> => {
+      const taken = sameDrive.filter(fi => fi.path === originalName)
 
       if (!taken.length && !allTakenNames.has(originalName)) {
         return { cancelled: false, finalName: originalName, isReplace: false }
@@ -385,7 +385,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       const existingFile = task.isReplace ? files.find(f => f.topic.toString() === task.replaceTopic) : undefined
 
       const info: FileInfoOptions = {
-        name: task.finalName,
+        path: task.finalName,
         files: [task.file],
         customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file], undefined, existingFile)),
         topic: task.isReplace ? task.replaceTopic : undefined,
@@ -561,7 +561,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
     const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name))
     const sameDrive = collectSameDrive(currentDrive.id.toString())
-    const onDiskNames = new Set<string>(sameDrive.map((fi: FileInfo) => fi.name))
+    const onDiskNames = new Set<string>(sameDrive.map((fi: FileRecord) => fi.path))
     const reserved = new Set<string>()
 
     const allTaken = new Set<string>([
@@ -876,7 +876,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       if (!fileInfo) return
 
       setUploadItems(prev => {
-        const item = prev.find(it => it.name === fileInfo.name && it.status === TransferStatus.Uploading)
+        const item = prev.find(it => it.name === fileInfo.path && it.status === TransferStatus.Uploading)
 
         if (!item) return prev
 

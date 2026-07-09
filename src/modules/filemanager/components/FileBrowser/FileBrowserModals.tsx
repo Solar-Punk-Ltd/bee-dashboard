@@ -1,4 +1,4 @@
-import type { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { ReactElement } from 'react'
 
 import { TOOLTIPS } from '../../constants/tooltips'
@@ -10,7 +10,7 @@ import { Tooltip } from '../Tooltip/Tooltip'
 
 interface FileBrowserModalsProps {
   showDeleteModal: boolean
-  selectedFiles: FileInfo[]
+  selectedFiles: FileRecord[]
   fileCountText: string
   currentDrive: DriveInfo | null
   confirmBulkForget: boolean
@@ -59,7 +59,7 @@ export function FileBrowserModals({
     <>
       {showDeleteModal && (
         <DeleteFileModal
-          names={selectedFiles.map(f => f.name)}
+          names={selectedFiles.map(f => f.path)}
           currentDriveName={currentDrive?.name}
           onCancelClick={onDeleteCancel}
           onProceed={onDeleteProceed}

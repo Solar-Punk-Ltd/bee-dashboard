@@ -2,7 +2,8 @@
 
 ## Introduction
 
-The File Manager module is a decentralized file storage interface built on top of Ethereum Swarm. It provides a complete file management system that leverages Swarm's postage stamp mechanism for incentivized storage and retrieval.
+The File Manager module is a decentralized file storage interface built on top of Ethereum Swarm. It provides a complete
+file management system that leverages Swarm's postage stamp mechanism for incentivized storage and retrieval.
 
 ### Table of Contents
 
@@ -25,6 +26,7 @@ The File Manager module is a decentralized file storage interface built on top o
 ### What is File Manager?
 
 File Manager allows users to:
+
 - Create and manage multiple isolated storage containers (drives)
 - Upload, download, and organize files with folder support
 - Configure security levels (redundancy levels) using erasure coding
@@ -49,6 +51,7 @@ File Manager is built around several key principles:
 ### Drives
 
 **Drives** are isolated storage containers that hold files and folders. Each drive:
+
 - Has a unique ID derived from its creation topic on Swarm
 - Is associated with a specific postage batch
 - Has configurable initial capacity and desired lifetime (inherited from batch)
@@ -56,6 +59,7 @@ File Manager is built around several key principles:
 - Maintains its own file list and metadata
 
 **Admin Drive** is a special drive that:
+
 - Is created once per File Manager instance
 - Stores the list of all user drives
 - Must be initialized before any other operations
@@ -63,6 +67,7 @@ File Manager is built around several key principles:
 - Cannot be deleted (only reset)
 
 **User Drives** are regular drives that:
+
 - Store user files and folders
 - Can be created, upgraded, or destroyed
 - Appear in the sidebar for navigation
@@ -71,6 +76,7 @@ File Manager is built around several key principles:
 ### Postage Stamps
 
 **Postage Stamps** (or batches) are blockchain-based payment mechanisms for Swarm storage:
+
 - Purchased with BZZ tokens (Swarm's native token)
 - Have a **batchID** (unique identifier)
 - Define **initial capacity** (storage space) and **desired lifetime** (time-to-live)
@@ -78,6 +84,7 @@ File Manager is built around several key principles:
 - Can have optional labels for identification
 
 **Postage Batch Validation** is critical:
+
 - Before creating drives
 - Before uploading files
 - During admin drive initialization
@@ -85,7 +92,8 @@ File Manager is built around several key principles:
 
 ### File Info
 
-**FileInfo** objects represent files in File Manager:
+**FileRecord** objects represent files in File Manager:
+
 - Stored as metadata on Swarm (not in local storage)
 - Contains: name, size, mime type, timestamps, drive association
 - Has a **topic** (unique identifier derived from path and parent)
@@ -95,6 +103,7 @@ File Manager is built around several key principles:
 ### Erasure Coding
 
 **Erasure coding** provides data redundancy:
+
 - **OFF**: No redundancy (1x storage)
 - **MEDIUM**: Moderate redundancy (~2x storage)
 - **STRONG**: High redundancy (~3x storage)
@@ -122,17 +131,21 @@ The File Manager follows a layered architecture:
 
 File Manager uses **React Context** for state management with three separate contexts:
 
-1. **FileManagerProvider** - Core FM state: drives, files, admin drive, current drive. Manages FM instance lifecycle and event listeners.
+1. **FileManagerProvider** - Core FM state: drives, files, admin drive, current drive. Manages FM instance lifecycle and
+   event listeners.
 
 2. **ViewProvider** - UI view preferences (grid/list) and current item being viewed (drive name or search results).
 
-3. **SearchProvider** - Search query and scope (all drives, selected drive), filter options (include active, include trashed).
+3. **SearchProvider** - Search query and scope (all drives, selected drive), filter options (include active, include
+   trashed).
 
-This separation ensures that updates in one context don't unnecessarily trigger re-renders in components that only depend on other contexts.
+This separation ensures that updates in one context don't unnecessarily trigger re-renders in components that only
+depend on other contexts.
 
 ### Component Hierarchy
 
 The component structure follows a strict hierarchy:
+
 - **FileManagerPage** - Orchestrates initialization flow
 - **Providers** - Wrap entire tree (FileManager → View → Search)
 - **Header** - Top navigation
@@ -149,13 +162,18 @@ The component structure follows a strict hierarchy:
 
 The File Manager module is organized into logical sections:
 
-**Components Directory** - All React UI components, each in its own folder with associated styles and tests. Major components include FileBrowser (main interface), Sidebar (drive navigation), various modals for operations, and reusable elements like buttons and dropdowns.
+**Components Directory** - All React UI components, each in its own folder with associated styles and tests. Major
+components include FileBrowser (main interface), Sidebar (drive navigation), various modals for operations, and reusable
+elements like buttons and dropdowns.
 
-**Hooks Directory** - Custom React hooks for specific functionality. Key hooks include useTransfers (upload/download management), useFileFiltering (search and filtering), useBulkActions (bulk operations), and useSorting (column sorting).
+**Hooks Directory** - Custom React hooks for specific functionality. Key hooks include useTransfers (upload/download
+management), useFileFiltering (search and filtering), useBulkActions (bulk operations), and useSorting (column sorting).
 
-**Utils Directory** - Pure utility functions. Includes Bee API wrappers for stamp validation and drive operations, common helpers for formatting, download logic, and UI utilities.
+**Utils Directory** - Pure utility functions. Includes Bee API wrappers for stamp validation and drive operations,
+common helpers for formatting, download logic, and UI utilities.
 
-**Constants Directory** - Configuration constants for erasure code levels, postage batch desired lifetimes, tooltips, and transfer statuses.
+**Constants Directory** - Configuration constants for erasure code levels, postage batch desired lifetimes, tooltips,
+and transfer statuses.
 
 ---
 
@@ -173,19 +191,26 @@ The File Manager module is organized into logical sections:
 
 **First Launch - Private Key Generation**
 
-When a user first visits File Manager, they must provide or generate a private key. This key is stored in browser local storage and is critical - loss of the key means permanent data loss with no recovery option.
+When a user first visits File Manager, they must provide or generate a private key. This key is stored in browser local
+storage and is critical - loss of the key means permanent data loss with no recovery option.
 
 **One-Time Admin Drive Creation**
 
-After the private key is set, the system checks for an admin drive. If none exists, the InitialModal appears automatically. The user selects initial capacity and desired lifetime, then purchases a postage batch with BZZ tokens. The system creates the admin drive which stores all user drive metadata.
+After the private key is set, the system checks for an admin drive. If none exists, the InitialModal appears
+automatically. The user selects initial capacity and desired lifetime, then purchases a postage batch with BZZ tokens.
+The system creates the admin drive which stores all user drive metadata.
 
 **Creating User Drives**
 
-Once the admin drive exists, users can create user drives from the sidebar. They enter a drive name (max 40 characters), select initial capacity, desired lifetime, and security level (erasure coding). The system displays the BZZ cost and creates the drive upon confirmation.
+Once the admin drive exists, users can create user drives from the sidebar. They enter a drive name (max 40 characters),
+select initial capacity, desired lifetime, and security level (erasure coding). The system displays the BZZ cost and
+creates the drive upon confirmation.
 
 **Uploading Files**
 
-Users select a drive from the sidebar, then drag-and-drop files or click "Upload File(s)". They choose an active postage batch, and the system monitors progress with ETA calculations. Files are uploaded with automatic conflict resolution if names already exist.
+Users select a drive from the sidebar, then drag-and-drop files or click "Upload File(s)". They choose an active postage
+batch, and the system monitors progress with ETA calculations. Files are uploaded with automatic conflict resolution if
+names already exist.
 
 ---
 
@@ -195,11 +220,14 @@ Users select a drive from the sidebar, then drag-and-drop files or click "Upload
 
 The FileManager Provider is the core state management solution. It manages:
 
-**Core State**: The FileManagerBase instance, all files across drives, user drives with valid postage batches, expired drives, admin drive, currently selected drive, and currently selected postage batch.
+**Core State**: The FileManagerBase instance, all files across drives, user drives with valid postage batches, expired
+drives, admin drive, currently selected drive, and currently selected postage batch.
 
-**Error States**: Initialization errors, error modal visibility, and reset requirements when admin postage batch is invalid.
+**Error States**: Initialization errors, error modal visibility, and reset requirements when admin postage batch is
+invalid.
 
-**Synchronization**: Real-time updates through event listeners that respond to drive and file changes from the FileManagerBase library.
+**Synchronization**: Real-time updates through event listeners that respond to drive and file changes from the
+FileManagerBase library.
 
 ### Initialization Sequence
 
@@ -209,11 +237,14 @@ The provider handles a complex initialization:
 
 2. **Bee Instance Creation** - Creates Bee client with the private key as signer, then creates FileManagerBase instance.
 
-3. **Event Listener Registration** - Registers handlers for all file manager events (drive created, file uploaded, file trashed, etc.).
+3. **Event Listener Registration** - Registers handlers for all file manager events (drive created, file uploaded, file
+   trashed, etc.).
 
-4. **Admin Postage Batch Validation** - If admin postage batch exists, validates it's still usable. Invalid batches trigger reset flow.
+4. **Admin Postage Batch Validation** - If admin postage batch exists, validates it's still usable. Invalid batches
+   trigger reset flow.
 
-5. **State Synchronization** - Categorizes drives into admin, user, and expired based on postage batch validity. Populates file list.
+5. **State Synchronization** - Categorizes drives into admin, user, and expired based on postage batch validity.
+   Populates file list.
 
 ### Drive Categorization
 
@@ -223,17 +254,22 @@ The system continuously categorizes drives based on postage batch validity:
 
 **User Drives** - Drives with valid, usable postage batches appear in main drive list for normal operations.
 
-**Expired Drives** - Drives whose postage batches expired but data still exists on Swarm. Appear in collapsed section, cannot be modified but can be viewed.
+**Expired Drives** - Drives whose postage batches expired but data still exists on Swarm. Appear in collapsed section,
+cannot be modified but can be viewed.
 
 ### State Synchronization Methods
 
-**Sync Files** - Updates the files array when files are uploaded, trashed, restored, or forgotten. Can update entire list or individual files incrementally.
+**Sync Files** - Updates the files array when files are uploaded, trashed, restored, or forgotten. Can update entire
+list or individual files incrementally.
 
-**Sync Drives** - Updates drive arrays (user, expired, admin) when drives are created, upgraded, or destroyed. Fetches current postage batch validity and recategorizes.
+**Sync Drives** - Updates drive arrays (user, expired, admin) when drives are created, upgraded, or destroyed. Fetches
+current postage batch validity and recategorizes.
 
-**Resync** - Full state refresh that re-initializes FM instance and restores previous selections if still valid. Used after major operations or manual refresh.
+**Resync** - Full state refresh that re-initializes FM instance and restores previous selections if still valid. Used
+after major operations or manual refresh.
 
-**Refresh Postage Batch** - Updates a specific postage batch's information without full resync. Used after uploads to update capacity.
+**Refresh Postage Batch** - Updates a specific postage batch's information without full resync. Used after uploads to
+update capacity.
 
 ### Event Flow
 
@@ -256,15 +292,21 @@ This event-driven architecture keeps UI and Swarm state perfectly synchronized.
 
 The upload system handles complex scenarios:
 
-**Conflict Detection** - Before upload, checks if file name already exists in target drive. Offers three resolution options: Cancel (skip file), Keep Both (rename with suffix like "file (1).txt"), or Replace (overwrite with new version).
+**Conflict Detection** - Before upload, checks if file name already exists in target drive. Offers three resolution
+options: Cancel (skip file), Keep Both (rename with suffix like "file (1).txt"), or Replace (overwrite with new
+version).
 
-**Queue Processing** - Uploads are queued and processed with maximum 10 concurrent uploads. This prevents overwhelming the network while maintaining good throughput.
+**Queue Processing** - Uploads are queued and processed with maximum 10 concurrent uploads. This prevents overwhelming
+the network while maintaining good throughput.
 
-**Progress Tracking** - Each upload shows percentage complete, data transferred, elapsed time, and ETA. ETA uses smoothing algorithm to prevent wild fluctuations from network speed variations.
+**Progress Tracking** - Each upload shows percentage complete, data transferred, elapsed time, and ETA. ETA uses
+smoothing algorithm to prevent wild fluctuations from network speed variations.
 
-**Postage Batch Validation** - Before each upload, validates the selected postage batch is still usable. Verifies sufficient capacity remains for the file size considering erasure coding overhead.
+**Postage Batch Validation** - Before each upload, validates the selected postage batch is still usable. Verifies
+sufficient capacity remains for the file size considering erasure coding overhead.
 
-**Cancellation** - Users can cancel in-progress uploads. The system uses abort controllers to cleanly terminate HTTP requests and update transfer status.
+**Cancellation** - Users can cancel in-progress uploads. The system uses abort controllers to cleanly terminate HTTP
+requests and update transfer status.
 
 ### Download Management
 
@@ -286,7 +328,8 @@ The filtering system supports multiple criteria:
 
 **Trash Status** - Include active files only, trashed files only, or both.
 
-**State Preservation** - When entering search mode, current filter settings are saved. Clearing search restores previous settings automatically.
+**State Preservation** - When entering search mode, current filter settings are saved. Clearing search restores previous
+settings automatically.
 
 ### Sorting
 
@@ -320,7 +363,8 @@ Files support full version history:
 
 **Restore Version** - Roll back to any previous version, which becomes the new current version.
 
-**Storage Impact** - Each version consumes postage batch capacity, old versions can be forgotten but space continues to be occupied.
+**Storage Impact** - Each version consumes postage batch capacity, old versions can be forgotten but space continues to
+be occupied.
 
 ### Drag and Drop
 
@@ -339,22 +383,26 @@ Full drag-and-drop support for file uploads:
 ### Initial Setup
 
 **User Opens /file-manager**
+
 - System checks for private key in local storage
 - If no key: Shows PrivateKeyModal for user to enter or generate key
 - If has key: Initializes FileManager
 
 **FileManager Initialization**
+
 - Creates Bee instance with user's private key
 - Creates FileManagerBase instance
 - Registers event listeners for all FM events
 - Reads admin state from Swarm
 
 **Admin Drive Validation**
+
 - If admin postage batch exists and valid: Loads drives and files, shows FileBrowser
 - If admin postage batch exists but invalid: Sets reset flag, shows InitialModal in reset mode
 - If no admin postage batch (first time): Shows InitialModal for first-time setup
 
 **Creating Admin Drive**
+
 - User selects desired lifetime and security level (erasure coding)
 - System calculates cost in BZZ tokens
 - User confirms and purchases postage batch (blockchain transaction)
@@ -364,16 +412,19 @@ Full drag-and-drop support for file uploads:
 ### Creating User Drive
 
 **User Initiates Creation**
+
 - Clicks "Create New Drive" button in Sidebar
 - CreateDriveModal appears
 
 **Drive Configuration**
+
 - User enters drive name (validated: max 40 chars)
 - Selects initial capacity from dropdown
 - Selects desired lifetime from dropdown
 - Chooses security level (erasure coding: OFF, MEDIUM, STRONG, INSANE, PARANOID)
 
 **Cost Calculation**
+
 - System fetches current BZZ cost based on capacity, desired lifetime, and redundancy level
 - Displays total cost to user
 - Validates user has sufficient BZZ balance
@@ -381,6 +432,7 @@ Full drag-and-drop support for file uploads:
 - If sufficient: Enables Create button
 
 **Drive Creation**
+
 - User clicks Create
 - System shows creation progress indicator
 - Purchases new postage batch (blockchain transaction, waits for confirmation)
@@ -393,10 +445,12 @@ Full drag-and-drop support for file uploads:
 ### Uploading Files
 
 **File Selection**
+
 - User drags files onto browser OR clicks "Upload file(s)" button
 - System receives file list
 
 **Conflict Resolution (per file)**
+
 - Checks if file.name already exists in current drive
 - If no conflict: Proceeds with original name
 - If conflict: Shows UploadConflictModal with options:
@@ -405,6 +459,7 @@ Full drag-and-drop support for file uploads:
   - Replace: Overwrite existing file, creating new version
 
 **Queue Processing**
+
 - All files added to upload queue with resolved names
 - Queue processes maximum 10 files concurrently
 - For each file in batch:
@@ -413,11 +468,12 @@ Full drag-and-drop support for file uploads:
   - Creates transfer tracking item (shows in UI)
   - Executes upload with progress callbacks to Swarm
   - Updates progress (percentage, ETA, elapsed time)
-  - On completion: Marks transfer Done, refreshes postage batch capacity 
+  - On completion: Marks transfer Done, refreshes postage batch capacity
   - On error: Marks transfer Error, shows error message
 - Next batch starts when previous completes
 
 **Event Synchronization**
+
 - FM library emits FILE_UPLOADED event
 - Provider's sync method adds/updates file in state
 - UI automatically updates to show new file
@@ -425,15 +481,18 @@ Full drag-and-drop support for file uploads:
 ### Destroying Drive
 
 **User Initiates Destruction**
+
 - Clicks menu button on Drive Item in Sidebar
 - Selects "Destroy Drive" from context menu
 - DestroyDriveModal appears with confirmation prompt
 
 **Confirmation**
+
 - User reads warning about permanent deletion
 - User clicks "Destroy" button
 
 **Destruction Process**
+
 - Modal closes
 - Progress overlay appears (spinner with "Destroying drive..." text)
 - Overlay is clickable to expand to full progress modal
@@ -449,15 +508,18 @@ Full drag-and-drop support for file uploads:
 ### Downloading Files
 
 **User Initiates Download**
+
 - User right-clicks file
 - Selects "Download" from menu
 
 **Download Tracking**
+
 - System creates download transfer item in UI
 - Transfer item shows: file name, size, progress percentage
 - Download panel appears at bottom of screen
 
 **Download Execution**
+
 - System retrieves file from Swarm using file's topic
 - Uses browser's native download API to save file
 - Progress callbacks update UI in real-time:
@@ -467,18 +529,21 @@ Full drag-and-drop support for file uploads:
   - Elapsed time
 
 **Background Processing**
+
 - Downloads execute in background
 - User can continue browsing File Manager
 - Multiple downloads can run simultaneously
 - Each download tracks independently
 
 **Completion**
+
 - On success: Browser saves file to user's downloads folder
 - Transfer item marked as "Done"
 - User can dismiss completed downloads
 - On error: Shows error message, allows retry
 
 **Cancellation**
+
 - User clicks cancel button on transfer item
 - System aborts HTTP request using AbortController
 - Transfer item marked as "Cancelled"
@@ -487,12 +552,14 @@ Full drag-and-drop support for file uploads:
 ### Search Operation
 
 **Entering Search**
+
 - User types in search box
 - SearchContext captures query
 - System saves current scope and filter settings
 - Sets inSearch flag to true
 
 **Filtering Execution**
+
 - useFileFiltering hook processes files array:
   - Filters by trash status (active/trashed based on checkboxes)
   - Filters by drive scope (selected drive vs all drives)
@@ -500,16 +567,19 @@ Full drag-and-drop support for file uploads:
 - Returns filtered array
 
 **Sorting Application**
+
 - useSorting hook processes filtered array
 - Applies current sort key and direction
 - Returns sorted array
 
 **Display**
+
 - FileBrowserContent renders sorted list
 - If searching all drives: Shows drive name column
 - If no results: Shows "No files found" message
 
 **Exiting Search**
+
 - User clears search box (empty query)
 - System restores saved scope and filter settings
 - Sets inSearch flag to false
@@ -523,13 +593,16 @@ Full drag-and-drop support for file uploads:
 
 File Manager follows strict component hierarchy to manage complexity:
 
-**Page Level** - FileManagerPage orchestrates the entire module, handling initialization states and conditional rendering.
+**Page Level** - FileManagerPage orchestrates the entire module, handling initialization states and conditional
+rendering.
 
-**Provider Level** - Three nested contexts (FileManager → View → Search) wrap the component tree, each managing separate concerns.
+**Provider Level** - Three nested contexts (FileManager → View → Search) wrap the component tree, each managing separate
+concerns.
 
 **Layout Level** - Header, AdminStatusBar, Sidebar, and FileBrowser form the main layout structure.
 
-**Feature Level** - Major features like FileBrowser contain sub-components for specific areas (TopBar, Header, Content, Modals, Overlays).
+**Feature Level** - Major features like FileBrowser contain sub-components for specific areas (TopBar, Header, Content,
+Modals, Overlays).
 
 **Primitive Level** - Reusable elements like buttons, dropdowns, tooltips, progress bars used throughout.
 
@@ -557,9 +630,11 @@ Each component has a single, clear responsibility:
 
 **Status**: Not fully handled (TODO in code).
 
-**Current Behavior**: When admin drive postage batch expires, entire FM enters invalid state. User must reset and create new admin drive. Previous user drives remain accessible if their postage batches are valid.
+**Current Behavior**: When admin drive postage batch expires, entire FM enters invalid state. User must reset and create
+new admin drive. Previous user drives remain accessible if their postage batches are valid.
 
-**Desired Behavior**: System detects admin postage batch expiration before it happens, shows warning with "Extend Batch" button, seamlessly extends admin postage batch without requiring reset.
+**Desired Behavior**: System detects admin postage batch expiration before it happens, shows warning with "Extend Batch"
+button, seamlessly extends admin postage batch without requiring reset.
 
 ### Drive Name Length
 
@@ -575,19 +650,23 @@ Each component has a single, clear responsibility:
 
 **Current Behavior**: CreateDriveModal always purchases new postage batch for each drive.
 
-**Desired Behavior**: Dropdown to select from existing usable postage batches (like InitialModal has), allowing users to reuse batches with remaining capacity.
+**Desired Behavior**: Dropdown to select from existing usable postage batches (like InitialModal has), allowing users to
+reuse batches with remaining capacity.
 
-**Impact**: Users must purchase separate postage batch for each drive, even if existing batches have sufficient capacity for multiple drives.
+**Impact**: Users must purchase separate postage batch for each drive, even if existing batches have sufficient capacity
+for multiple drives.
 
 ### Postage Batch Capacity Calculation
 
 **Issue**: Capacity calculation depends on erasure coding level.
 
-**Problem**: Frontend calculates approximate capacity based on redundancy multiplier. Actual capacity depends on how Bee node distributes chunks across Swarm network.
+**Problem**: Frontend calculates approximate capacity based on redundancy multiplier. Actual capacity depends on how Bee
+node distributes chunks across Swarm network.
 
 **Current**: Approximate calculation usually close enough for practical use.
 
-**Ideal**: Bee node provides exact remaining capacity calculation accounting for actual chunk distribution and erasure coding overhead.
+**Ideal**: Bee node provides exact remaining capacity calculation accounting for actual chunk distribution and erasure
+coding overhead.
 
 ### Ultra-Light Nodes
 
@@ -601,5 +680,5 @@ Each component has a single, clear responsibility:
 
 ---
 
-
-*This documentation provides a comprehensive functional overview of the File Manager module. For implementation details, refer to the source code in `src/modules/filemanager/` and `src/providers/FileManager.tsx`.*
+_This documentation provides a comprehensive functional overview of the File Manager module. For implementation details,
+refer to the source code in `src/modules/filemanager/` and `src/providers/FileManager.tsx`._

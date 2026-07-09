@@ -1,4 +1,4 @@
-import { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileRecord } from '@solarpunkltd/file-manager-lib'
 import { memo, useCallback, useContext, useState } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import DownloadIcon from 'remixicon-react/Download2LineIcon'
@@ -20,10 +20,10 @@ import './VersionList.scss'
 import '../../../styles/global.scss'
 
 interface VersionListProps {
-  versions: FileInfo[]
-  headFi: FileInfo
+  versions: FileRecord[]
+  headFi: FileRecord
   onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
-  restoreVersion: (fi: FileInfo) => Promise<void>
+  restoreVersion: (fi: FileRecord) => Promise<void>
 }
 
 function formatMaybeIso(s?: string): string | undefined {
@@ -33,7 +33,7 @@ function formatMaybeIso(s?: string): string | undefined {
   return isNaN(d.getTime()) ? undefined : d.toLocaleString()
 }
 
-type LifecycleMetaConf = { className: string; label: (fi: FileInfo) => string }
+type LifecycleMetaConf = { className: string; label: (fi: FileRecord) => string }
 const LIFECYCLE_META: Record<ActionTag, LifecycleMetaConf> = {
   trashed: { className: 'vh-tag--trashed', label: () => capitalizeFirstLetter(ActionTag.Trashed) },
   recovered: { className: 'vh-tag--recovered', label: () => capitalizeFirstLetter(ActionTag.Recovered) },
@@ -47,24 +47,24 @@ const LIFECYCLE_META: Record<ActionTag, LifecycleMetaConf> = {
   },
 }
 
-function readLifecycleRaw(fi: FileInfo): string {
+function readLifecycleRaw(fi: FileRecord): string {
   return (fi.customMetadata?.lifecycle || '').trim().toLowerCase()
 }
 
-function hasSecondaryTrashOrRecovered(fi: FileInfo): boolean {
+function hasSecondaryTrashOrRecovered(fi: FileRecord): boolean {
   if (readLifecycleRaw(fi) !== ActionTag.Restored) return false
   const src = (fi.customMetadata?.restoredFromLifecycle || '').trim().toLowerCase()
 
   return src === ActionTag.Trashed || src === ActionTag.Recovered
 }
 
-function isMinimizable(fi: FileInfo): boolean {
+function isMinimizable(fi: FileRecord): boolean {
   const raw = readLifecycleRaw(fi)
 
   return raw === ActionTag.Trashed || raw === ActionTag.Recovered || hasSecondaryTrashOrRecovered(fi)
 }
 
-function getPrimaryLifecycle(fi: FileInfo) {
+function getPrimaryLifecycle(fi: FileRecord) {
   const raw = readLifecycleRaw(fi) as keyof typeof LIFECYCLE_META
   const conf = LIFECYCLE_META[raw as ActionTag] as LifecycleMetaConf | undefined
   const label = conf?.label(fi)
@@ -76,7 +76,7 @@ function getPrimaryLifecycle(fi: FileInfo) {
   return { label, cls, at }
 }
 
-function getSecondaryLifecycleIfRestored(fi: FileInfo) {
+function getSecondaryLifecycleIfRestored(fi: FileRecord) {
   const raw = readLifecycleRaw(fi)
 
   if (raw !== ActionTag.Restored) return { label: undefined, cls: undefined, at: undefined }
@@ -95,11 +95,11 @@ function getSecondaryLifecycleIfRestored(fi: FileInfo) {
 }
 
 type VersionRowProps = {
-  item: FileInfo
-  headFi: FileInfo
+  item: FileRecord
+  headFi: FileRecord
   isCurrent: boolean
-  fmDownload: (fi: FileInfo) => void
-  onRestore: (fi: FileInfo) => void
+  fmDownload: (fi: FileRecord) => void
+  onRestore: (fi: FileRecord) => void
   collapsed: boolean
   onToggle: () => void
 }
@@ -246,11 +246,11 @@ function MinimizedRow({
 
 type RowFullProps = {
   idx: bigint
-  item: FileInfo
-  headFi: FileInfo
+  item: FileRecord
+  headFi: FileRecord
   isCurrent: boolean
-  fmDownload: (fi: FileInfo) => void
-  onRestore: (fi: FileInfo) => void
+  fmDownload: (fi: FileRecord) => void
+  onRestore: (fi: FileRecord) => void
   collapsed: boolean
   onToggle: () => void
   modified: string
@@ -280,7 +280,7 @@ const RowFull = memo(
     secClass,
     secAt,
   }: RowFullProps) => {
-    const willRename = headFi.name !== item.name
+    const willRename = headFi.path !== item.path
 
     return (
       <div className={`fm-modal-white-section vh-row ${collapsed ? 'is-collapsed' : ''}`}>
@@ -313,14 +313,14 @@ const RowFull = memo(
           )}
 
           {!collapsed && willRename && !isCurrent && (
-            <div className="vh-rename" title={`Restoring will rename: “${headFi.name}” → “${item.name}”`}>
+            <div className="vh-rename" title={`Restoring will rename: “${headFi.path}” → “${item.path}”`}>
               Restoring will rename{' '}
-              <b className="vh-name" title={headFi.name}>
-                {truncateNameMiddle(headFi.name)}
+              <b className="vh-name" title={headFi.path}>
+                {truncateNameMiddle(headFi.path)}
               </b>{' '}
               →{' '}
-              <b className="vh-name" title={item.name}>
-                {truncateNameMiddle(item.name)}
+              <b className="vh-name" title={item.path}>
+                {truncateNameMiddle(item.path)}
               </b>
             </div>
           )}
@@ -345,7 +345,7 @@ const RowFull = memo(
 RowFull.displayName = 'RowFull'
 
 const VersionRow = memo(({ item, headFi, isCurrent, fmDownload, onRestore, collapsed, onToggle }: VersionRowProps) => {
-  const idx = indexStrToBigint(item.version)
+  const idx = indexStrToBigint(item.version?.toString())
 
   if (idx === undefined) return null
 
@@ -398,10 +398,10 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
   const { fm, drives, currentDrive } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [confirmRestore, setConfirmRestore] = useState<FileInfo | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<FileRecord | null>(null)
 
   const toggle = useCallback(
-    (key: string, fi: FileInfo) => {
+    (key: string, fi: FileRecord) => {
       setExpanded(prev => {
         const next = { ...prev }
         const hasValue = Object.prototype.hasOwnProperty.call(next, key)
@@ -409,7 +409,7 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
         if (hasValue) {
           next[key] = !next[key]
         } else {
-          const isCurrent = indexStrToBigint(fi.version) === indexStrToBigint(headFi.version)
+          const isCurrent = indexStrToBigint(fi.version?.toString()) === indexStrToBigint(headFi.version?.toString())
           const defaultCollapsed = !isCurrent
 
           next[key] = defaultCollapsed
@@ -422,7 +422,7 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
   )
 
   const handleDownload = useCallback(
-    async (fileInfo: FileInfo) => {
+    async (fileInfo: FileRecord) => {
       handleCloseContext()
 
       if (!fm || !beeApi) return
@@ -438,7 +438,7 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
         [
           onDownload({
             uuid,
-            name: fileInfo.name,
+            name: fileInfo.path,
             size: formatBytes(rawSize),
             expectedSize,
             driveName: driveName ?? 'unknown',
@@ -449,7 +449,7 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
     [handleCloseContext, fm, beeApi, onDownload, drives, currentDrive],
   )
 
-  const handleRestoreClick = useCallback((fileInfo: FileInfo) => {
+  const handleRestoreClick = useCallback((fileInfo: FileRecord) => {
     setConfirmRestore(fileInfo)
   }, [])
 
@@ -458,14 +458,14 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
   return (
     <div className="fm-version-history-list">
       {versions.map(item => {
-        const idx = indexStrToBigint(item.version)
+        const idx = indexStrToBigint(item.version?.toString())
 
         if (idx === undefined) return null
 
         const key = `${item.topic.toString()}:${idx.toString()}`
         const hasExplicit = Object.prototype.hasOwnProperty.call(expanded, key)
 
-        const isCurrent = indexStrToBigint(headFi.version) === idx
+        const isCurrent = indexStrToBigint(headFi.version?.toString()) === idx
         const defaultCollapsed = !isCurrent
 
         const collapsed = hasExplicit ? !expanded[key] : defaultCollapsed
@@ -494,8 +494,8 @@ export function VersionsList({ versions, headFi, restoreVersion, onDownload }: V
           }
           message={
             <>
-              This will restore <b title={confirmRestore.name}>{truncateNameMiddle(confirmRestore.name)}</b> to version{' '}
-              {indexStrToBigint(confirmRestore.version)?.toString()}.
+              This will restore <b title={confirmRestore.path}>{truncateNameMiddle(confirmRestore.path)}</b> to version{' '}
+              {indexStrToBigint(confirmRestore.version?.toString())?.toString()}.
             </>
           }
           confirmLabel="Restore"

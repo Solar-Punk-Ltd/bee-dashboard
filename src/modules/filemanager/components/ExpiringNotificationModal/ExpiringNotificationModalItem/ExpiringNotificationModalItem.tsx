@@ -1,6 +1,6 @@
 import { PostageBatch } from '@ethersphere/bee-js'
 import { Warning } from '@mui/icons-material'
-import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { ReactElement } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import DriveIcon from 'remixicon-react/HardDrive2LineIcon'
@@ -14,7 +14,7 @@ import '../../../styles/global.scss'
 interface ExpiringNotificationModalItemProps {
   stamp: PostageBatch
   drives: DriveInfo[]
-  files: FileInfo[]
+  files: FileRecord[]
   currentPage: number
   index: number
   onUpgradeClick: (stamp: PostageBatch, drive: DriveInfo) => void

@@ -3,8 +3,8 @@ import {
   DriveInfo,
   estimateDriveListMetadataSize,
   estimateFileInfoMetadataSize,
-  FileInfo,
   FileManagerBase,
+  FileRecord,
 } from '@solarpunkltd/file-manager-lib'
 import React from 'react'
 
@@ -277,7 +277,7 @@ export interface StampCapacityMetrics {
 
 export const calculateStampCapacityMetrics = (
   stamp: PostageBatch,
-  files: FileInfo[],
+  files: FileRecord[],
   redundancyLevel?: RedundancyLevel,
   useReportedOnly?: boolean,
 ): StampCapacityMetrics => {
@@ -362,7 +362,7 @@ export const verifyDriveSpace = (
   }
 
   const drives = [...fm.driveList]
-  let filesPerDrives: FileInfo[] = []
+  let filesPerDrives: FileRecord[] = []
 
   // new drivelist state size calc.
   if (isRemove) {

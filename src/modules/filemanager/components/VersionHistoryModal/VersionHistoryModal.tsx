@@ -1,5 +1,5 @@
 import { FeedIndex } from '@ethersphere/bee-js'
-import { FileInfo } from '@solarpunkltd/file-manager-lib'
+import { FileRecord } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
@@ -22,13 +22,13 @@ import '../../styles/global.scss'
 const VERSION_HISTORY_PAGE_SIZE = 5
 
 type RenameConfirmState = {
-  version: FileInfo
+  version: FileRecord
   headName: string
   targetName: string
 }
 
 interface VersionHistoryModalProps {
-  fileInfo: FileInfo
+  fileInfo: FileRecord
   onCancelClick: () => void
   onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
 }
@@ -39,7 +39,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body
 
-  const [allVersions, setAllVersions] = useState<FileInfo[]>([])
+  const [allVersions, setAllVersions] = useState<FileRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [conflictWarning, setConflictWarning] = useState<string | null>(null)
@@ -49,7 +49,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
   const [currentPage, setCurrentPage] = useState(0)
 
   const currentVersion = useMemo(() => {
-    return indexStrToBigint(fileInfo.version) ?? BigInt(0)
+    return indexStrToBigint(fileInfo.version?.toString()) ?? BigInt(0)
   }, [fileInfo])
 
   const totalPages = Math.max(1, Math.ceil(totalVersionsCount / VERSION_HISTORY_PAGE_SIZE))
@@ -87,7 +87,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
 
       const startVersion = currentVersion - BigInt(page * VERSION_HISTORY_PAGE_SIZE)
       const endVersion = startVersion - BigInt(VERSION_HISTORY_PAGE_SIZE - 1)
-      const versions: FileInfo[] = []
+      const versions: FileRecord[] = []
 
       for (let i = startVersion; i >= BigInt(0) && i >= endVersion; i--) {
         try {
@@ -178,11 +178,11 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
   )
 
   const doRestore = useCallback(
-    async (versionFi: FileInfo): Promise<void> => {
+    async (versionFi: FileRecord): Promise<void> => {
       if (!fm || !currentDrive || !currentStamp) return
 
       try {
-        const restoredFrom = indexStrToBigint(versionFi.version)
+        const restoredFrom = indexStrToBigint(versionFi.version?.toString())
 
         const srcLifecycleRaw = (versionFi.customMetadata?.lifecycle || '').trim().toLowerCase()
         const srcLifecycle: ActionTag | undefined =
@@ -194,7 +194,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           versionFi.customMetadata?.lifecycleAt ||
           (versionFi.timestamp ? new Date(versionFi.timestamp).toISOString() : undefined)
 
-        const withMeta: FileInfo = {
+        const withMeta: FileRecord = {
           ...versionFi,
           customMetadata: {
             ...(versionFi.customMetadata ?? {}),
@@ -230,17 +230,17 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
   )
 
   const restoreVersion = useCallback(
-    async (versionFi: FileInfo): Promise<void> => {
+    async (versionFi: FileRecord): Promise<void> => {
       if (!fm) return
 
-      const targetName = versionFi.name
-      const headName = fileInfo.name
+      const targetName = versionFi.path
+      const headName = fileInfo.path
 
       const sameDrive = files.filter(fi => {
         return fi.driveId === versionFi.driveId.toString()
       })
 
-      const nameConflicts = sameDrive.filter(fi => fi.name === targetName)
+      const nameConflicts = sameDrive.filter(fi => fi.path === targetName)
       const otherHistoryConflicts = nameConflicts.filter(fi => fi.topic.toString() !== fileInfo.topic.toString())
 
       if (targetName !== headName && otherHistoryConflicts.length === 0) {
@@ -250,14 +250,14 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
       }
 
       if (otherHistoryConflicts.length > 0) {
-        const taken = new Set<string>(sameDrive.map(fi => fi.name))
+        const taken = new Set<string>(sameDrive.map(fi => fi.path))
         const forbidMsg =
           'Replace is not available because another file with that name belongs to a different history. Please choose “Keep both” and enter a different name.'
         const res = await promptUniqueName(targetName, taken, forbidMsg, 8)
 
         if (res.cancelled || !res.name) return
 
-        versionFi.name = res.name
+        versionFi.path = res.name
       }
 
       await doRestore(versionFi)
@@ -274,16 +274,16 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           <span className="fm-main-font-color">
             <>
               Version history –{' '}
-              <span className="vh-title" title={fileInfo.name}>
-                {truncateNameMiddle(fileInfo.name)}
+              <span className="vh-title" title={fileInfo.path}>
+                {truncateNameMiddle(fileInfo.path)}
               </span>
               {fileInfo && (
                 <span
                   className="vh-title-sub"
-                  title={`Version v${(indexStrToBigint(fileInfo.version) ?? 0).toString()}`}
+                  title={`Version v${(indexStrToBigint(fileInfo.version?.toString()) ?? 0).toString()}`}
                 >
                   {' '}
-                  (version v{(indexStrToBigint(fileInfo.version) ?? 0).toString()})
+                  (version v{(indexStrToBigint(fileInfo.version?.toString()) ?? 0).toString()})
                 </span>
               )}
             </>

@@ -1,4 +1,4 @@
-import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { memo, ReactElement, useCallback } from 'react'
 
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
@@ -6,14 +6,14 @@ import { getFileId } from '../../../utils/common'
 import { FileItem } from '../FileItem/FileItem'
 
 interface FileBrowserContentProps {
-  listToRender: FileInfo[]
+  listToRender: FileRecord[]
   drives: DriveInfo[]
   currentDrive: DriveInfo | null
   view: ViewType
   isSearchMode: boolean
   trackDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   selectedIds?: Set<string>
-  onToggleSelected?: (fi: FileInfo, checked: boolean) => void
+  onToggleSelected?: (fi: FileRecord, checked: boolean) => void
   bulkSelectedCount?: number
   onBulk: {
     download?: () => void
@@ -59,14 +59,14 @@ function FileBrowserContentInner({
   }, [drives, currentDrive, view])
 
   const renderFileList = useCallback(
-    (filesToRender: FileInfo[], showDriveColumn = false): ReactElement[] => {
+    (filesToRender: FileRecord[], showDriveColumn = false): ReactElement[] => {
       return filesToRender
         .map(fi => {
           const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
 
           return drive ? { fi, driveName: drive.name } : null
         })
-        .filter((item): item is { fi: FileInfo; driveName: string } => item !== null)
+        .filter((item): item is { fi: FileRecord; driveName: string } => item !== null)
         .map(({ fi, driveName }) => {
           const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
 

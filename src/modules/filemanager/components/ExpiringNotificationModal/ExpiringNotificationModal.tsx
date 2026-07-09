@@ -1,5 +1,5 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import AlertIcon from 'remixicon-react/AlertLineIcon'
@@ -20,7 +20,7 @@ interface ExpiringNotificationModalProps {
   bee: Bee
   stamps: PostageBatch[]
   drives: DriveInfo[]
-  files: FileInfo[]
+  files: FileRecord[]
   onCancelClick: () => void
   setErrorMessage?: (error: string) => void
   setShowError: (show: boolean) => void

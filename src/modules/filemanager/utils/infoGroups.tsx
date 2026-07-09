@@ -1,5 +1,5 @@
 import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
-import { FileInfo, FileManagerBase, FileStatus } from '@solarpunkltd/file-manager-lib'
+import { FileManagerBase, FileRecord, FileStatus } from '@solarpunkltd/file-manager-lib'
 import type { ReactElement } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
@@ -55,7 +55,7 @@ const fmtDate = (ts?: number) => {
   }
 }
 
-async function getCreatedTs(fm: FileManagerBase, fi: FileInfo): Promise<number | undefined> {
+async function getCreatedTs(fm: FileManagerBase, fi: FileRecord): Promise<number | undefined> {
   try {
     const v0 = await fm.getVersion(fi, FEED_INDEX_ZERO.toString())
 
@@ -77,7 +77,7 @@ function extractGranteeCount(r: GetGranteesResult): number {
   return 0
 }
 
-export async function getGranteeCount(fm: FileManagerBase, fi: FileInfo): Promise<number | undefined> {
+export async function getGranteeCount(fm: FileManagerBase, fi: FileRecord): Promise<number | undefined> {
   try {
     const result = await fm.getGrantees(fi)
 
@@ -88,7 +88,7 @@ export async function getGranteeCount(fm: FileManagerBase, fi: FileInfo): Promis
 }
 
 function buildGeneralGroup(
-  fi: FileInfo,
+  fi: FileRecord,
   mime?: string,
   size?: number | string,
   path?: string,
@@ -108,7 +108,11 @@ function buildGeneralGroup(
         value: truncateMiddle(fi.file.reference.toString()),
         raw: fi.file.reference.toString(),
       },
-      { key: 'ver', label: 'Versions', value: ((indexStrToBigint(fi.version) ?? BigInt(0)) + BigInt(1)).toString() },
+      {
+        key: 'ver',
+        label: 'Versions',
+        value: ((indexStrToBigint(fi.version?.toString()) ?? BigInt(0)) + BigInt(1)).toString(),
+      },
       { key: 'status', label: 'Status', value: !fi.status ? FileStatus.Active : fi.status },
     ],
   }
@@ -126,7 +130,7 @@ function buildDatesGroup(createdTs?: number, modifiedTs?: number, expires?: stri
   }
 }
 
-function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGroup {
+function buildAccessGroup(fi: FileRecord, granteeCount?: number): FilePropertyGroup {
   return {
     title: 'Access & Permissions',
     icon: <AccessIcon size="14px" color="rgb(237, 129, 49)" />,
@@ -165,7 +169,7 @@ function buildAccessGroup(fi: FileInfo, granteeCount?: number): FilePropertyGrou
   }
 }
 
-function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch): FilePropertyGroup {
+function buildStorageGroup(fi: FileRecord, driveName: string, stamp?: PostageBatch): FilePropertyGroup {
   const stampValue = stamp
     ? truncateNameMiddle(stamp.label, 35, 10, 10) + ' (' + truncateMiddle(fi.batchId.toString(), 4, 4) + ')'
     : truncateMiddle(fi.batchId.toString())
@@ -193,7 +197,7 @@ function buildStorageGroup(fi: FileInfo, driveName: string, stamp?: PostageBatch
 
 export async function buildGetInfoGroups(
   fm: FileManagerBase,
-  fi: FileInfo,
+  fi: FileRecord,
   driveName: string,
   stamp?: PostageBatch,
 ): Promise<FilePropertyGroup[]> {

@@ -1,4 +1,4 @@
-import { FileInfo, FileManager } from '@solarpunkltd/file-manager-lib'
+import { FileManager, FileRecord } from '@solarpunkltd/file-manager-lib'
 
 import { guessMime, VIEWERS } from '../../../utils/file'
 import { DownloadProgress, DownloadState } from '../constants/transfers'
@@ -135,7 +135,7 @@ const streamToBlob = async (
 
 export interface FileInfoWithUUID {
   uuid: string
-  info: FileInfo
+  info: FileRecord
 }
 
 interface FileInfoWithHandle {
@@ -151,14 +151,14 @@ const isUserCancellation = (error: unknown): boolean => {
 }
 
 const getSingleFileHandle = async (infoWithId: FileInfoWithUUID): Promise<FileInfoWithHandle | undefined> => {
-  const { mime, ext } = guessMime(infoWithId.info.name, infoWithId.info.customMetadata)
+  const { mime, ext } = guessMime(infoWithId.info.path, infoWithId.info.customMetadata)
 
   const pickerOptions: {
     suggestedName: string
     startIn: string
     types?: Array<{ accept: Record<string, string[]> }>
   } = {
-    suggestedName: infoWithId.info.name,
+    suggestedName: infoWithId.info.path,
     startIn: DefaultDownloadFolder,
   }
 
@@ -205,14 +205,14 @@ const getMultipleFileHandles = async (
     for (const infoWithId of infoWithIdList) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fileHandle = (await (dirHandle as any).getFileHandle(infoWithId.info.name, {
+        const fileHandle = (await (dirHandle as any).getFileHandle(infoWithId.info.path, {
           create: true,
         })) as FileSystemFileHandle
 
         handles.push({ infoWithId, handle: fileHandle })
       } catch (error: unknown) {
         // eslint-disable-next-line no-console
-        console.error(`Failed to create file handle for ${infoWithId.info.name}:`, error)
+        console.error(`Failed to create file handle for ${infoWithId.info.path}:`, error)
         handles.push({ infoWithId, cancelled: true })
       }
     }
@@ -264,14 +264,14 @@ interface BlobDownloadResult {
 
 const downloadToBlob = async (
   streams: ReadableStream<Uint8Array>[],
-  info: FileInfo,
+  info: FileRecord,
   onDownloadProgress?: (progress: DownloadProgress) => void,
   isOpenWindow?: boolean,
   signal?: AbortSignal,
 ): Promise<BlobDownloadResult> => {
   try {
     for (const stream of streams) {
-      const { mime } = guessMime(info.name, info.customMetadata)
+      const { mime } = guessMime(info.path, info.customMetadata)
       const blob = await streamToBlob(stream, mime, onDownloadProgress, signal)
 
       if (!blob) {
@@ -282,7 +282,7 @@ const downloadToBlob = async (
       let opened = false
 
       if (isOpenWindow) {
-        opened = openNewWindow(info.name, mime, url)
+        opened = openNewWindow(info.path, mime, url)
       }
 
       if (!opened) {
@@ -293,7 +293,7 @@ const downloadToBlob = async (
           return result
         }
 
-        downloadFromUrl(url, info.name)
+        downloadFromUrl(url, info.path)
       }
     }
 
@@ -332,7 +332,7 @@ const openNewWindow = (name: string, mime: string, url: string): boolean => {
 
 const saveBlobWithPicker = async (
   blob: Blob,
-  info: FileInfo,
+  info: FileRecord,
   onDownloadProgress?: (progress: DownloadProgress) => void,
   signal?: AbortSignal,
 ): Promise<BlobDownloadResult> => {
@@ -410,13 +410,21 @@ export const startDownloadingQueue = async (
             return
           }
 
-          const dataStreams = (await fm.download(fh.infoWithId.info, undefined, undefined, {
-            signal,
-          })) as ReadableStream<Uint8Array>[]
+          const drive = fm.driveList.find(d => d.id.toString() === fh.infoWithId.info.driveId.toString())
 
-          if (!dataStreams || dataStreams.length === 0) {
+          if (!drive) {
+            tracker({ progress: 0, isDownloading: false, state: DownloadState.Error })
+
+            return
+          }
+
+          const downloadResulst = await fm.download(drive, [fh.infoWithId.info.path], undefined, {
+            signal,
+          })
+
+          if (!downloadResulst || downloadResulst.length === 0) {
             // eslint-disable-next-line no-console
-            console.error(`No data streams returned for ${fh.infoWithId.info.name}`)
+            console.error(`No data streams returned for ${fh.infoWithId.info.path}`)
             tracker({ progress: 0, isDownloading: false, state: DownloadState.Error })
 
             return
@@ -425,9 +433,11 @@ export const startDownloadingQueue = async (
           let success = false
           let userCancelled = false
 
+          const streamResults = downloadResulst.map(ds => ds.result as ReadableStream<Uint8Array>)
+
           if (isOpenWindow || !fh.handle) {
             const { success: saved, cancelled } = await downloadToBlob(
-              dataStreams,
+              streamResults,
               fh.infoWithId.info,
               tracker,
               isOpenWindow,
@@ -437,7 +447,7 @@ export const startDownloadingQueue = async (
             success = saved
             userCancelled = cancelled
           } else {
-            success = await downloadToDisk(dataStreams, fh.handle, tracker, signal)
+            success = await downloadToDisk(streamResults, fh.handle, tracker, signal)
           }
 
           if (success) {

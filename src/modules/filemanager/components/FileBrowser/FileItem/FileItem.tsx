@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo, FileInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import React, {
   ReactElement,
   useCallback,
@@ -59,12 +59,12 @@ const MenuItem = ({
 )
 
 interface FileItemProps {
-  fileInfo: FileInfo
+  fileInfo: FileRecord
   onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   showDriveColumn?: boolean
   driveName: string
   selected?: boolean
-  onToggleSelected?: (fi: FileInfo, checked: boolean) => void
+  onToggleSelected?: (fi: FileRecord, checked: boolean) => void
   bulkSelectedCount?: number
   onBulk: {
     download?: () => void
@@ -158,7 +158,7 @@ export function FileItem({
     const sameDrive = files.filter(fi => fi.batchId.toString() === wanted)
     const out = new Set<string>()
     sameDrive.forEach(fi => {
-      if (fi.topic.toString() !== fileInfo.topic.toString()) out.add(fi.name)
+      if (fi.topic.toString() !== fileInfo.topic.toString()) out.add(fi.path)
     })
 
     return out
@@ -180,7 +180,7 @@ export function FileItem({
         [
           onDownload({
             uuid,
-            name: latestFileInfo.name,
+            name: latestFileInfo.path,
             size: formatBytes(rawSize),
             expectedSize,
             driveName,
@@ -252,7 +252,7 @@ export function FileItem({
         await fm.upload(
           currentDrive,
           {
-            name: newName,
+            path: newName,
             topic: latestFileInfo.topic,
             file: {
               reference: latestFileInfo.file.reference,
@@ -268,7 +268,7 @@ export function FileItem({
 
         refreshStamp(driveStamp.batchID.toString())
       } catch {
-        setErrorMessage?.(`Error renaming file ${latestFileInfo.name}`)
+        setErrorMessage?.(`Error renaming file ${latestFileInfo.path}`)
         setShowError(true)
       }
     },
@@ -483,8 +483,8 @@ export function FileItem({
       </div>
 
       <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
-        <GetIconElement name={fileInfo.name} metadata={fileInfo.customMetadata} />
-        {truncateNameMiddle(fileInfo.name)}
+        <GetIconElement name={fileInfo.path} metadata={fileInfo.customMetadata} />
+        {truncateNameMiddle(fileInfo.path)}
       </div>
 
       {showDriveColumn && (
@@ -514,7 +514,7 @@ export function FileItem({
 
       {showGetInfoModal && infoGroups && (
         <GetInfoModal
-          name={fileInfo.name}
+          name={fileInfo.path}
           properties={infoGroups}
           onCancelClick={() => {
             setShowGetInfoModal(false)
@@ -534,7 +534,7 @@ export function FileItem({
 
       {showDeleteModal && (
         <DeleteFileModal
-          name={fileInfo.name}
+          name={fileInfo.path}
           currentDriveName={currentDrive.name}
           onCancelClick={() => {
             setShowDeleteModal(false)
@@ -561,10 +561,10 @@ export function FileItem({
 
       {showRenameModal && (
         <RenameFileModal
-          currentName={fileInfo.name}
+          currentName={fileInfo.path}
           takenNames={(() => {
             const sameDrive = files.filter(fi => fi.driveId.toString() === currentDrive.id.toString())
-            const names = sameDrive.map(fi => fi.name).filter(n => n && n !== fileInfo.name)
+            const names = sameDrive.map(fi => fi.path).filter(n => n && n !== fileInfo.path)
 
             return new Set(names)
           })()}
@@ -592,7 +592,7 @@ export function FileItem({
           }
           message={
             <>
-              This removes <b title={fileInfo.name}>{fileInfo.name}</b> from your view.
+              This removes <b title={fileInfo.path}>{fileInfo.path}</b> from your view.
               <br />
               The data remains on Swarm until the drive expires.
             </>
@@ -620,7 +620,7 @@ export function FileItem({
           }
           message={
             <>
-              This will restore <b title={fileInfo.name}>{fileInfo.name}</b> from trash.
+              This will restore <b title={fileInfo.path}>{fileInfo.path}</b> from trash.
             </>
           }
           confirmLabel="Restore"
