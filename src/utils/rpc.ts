@@ -5,11 +5,17 @@ import { Contract, FeeData, JsonRpcProvider, TransactionReceipt, TransactionResp
 import { BZZ_TOKEN_ADDRESS, bzzABI } from './bzzAbi'
 import { ethAddressString, newGnosisProvider, newGnosisProviderForValidation } from './chain'
 
+const chainIdCache = new Map<string, bigint>()
+
 async function getNetworkChainId(url: string): Promise<bigint> {
+  const cached = chainIdCache.get(url)
+
+  if (cached !== undefined) return cached
   const provider = newGnosisProviderForValidation(url)
 
   try {
     const network = await provider.getNetwork()
+    chainIdCache.set(url, network.chainId)
 
     return network.chainId
   } catch (error) {
@@ -126,7 +132,10 @@ export async function sendBzzTransaction(
 
   const feeData = await signer.provider.getFeeData()
   const bzz = new Contract(BZZ_TOKEN_ADDRESS, bzzABI, signer)
-  const transaction = await bzz.transfer(to.toChecksum(), value.toPLURBigInt(), resolveFeeOverrides(feeData))
+  const transaction = await bzz.transfer(to.toChecksum(), value.toPLURBigInt(), {
+    ...resolveFeeOverrides(feeData),
+    gasLimit: BigInt(100_000),
+  })
   const receipt = await transaction.wait(1)
 
   if (!receipt) {
