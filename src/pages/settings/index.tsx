@@ -7,7 +7,6 @@ import ExpandableListItemInput from '../../components/ExpandableListItemInput'
 import { Context as BeeContext } from '../../providers/Bee'
 import { Context as SettingsContext } from '../../providers/Settings'
 import { extractBeeApiErrorMessage } from '../../utils/bee-error'
-import { newGnosisProviderForValidation } from '../../utils/chain'
 import { getDesktopConfiguration, restartBeeNode, setJsonRpcInDesktop } from '../../utils/desktop'
 
 export default function SettingsPage(): ReactElement {
@@ -29,16 +28,6 @@ export default function SettingsPage(): ReactElement {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar()
 
   async function handleSetRpcUrl(value: string) {
-    try {
-      await newGnosisProviderForValidation(value).getNetwork()
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-      enqueueSnackbar(`Failed to connect to RPC endpoint. ${extractBeeApiErrorMessage(e)}`, { variant: 'error' })
-
-      return
-    }
-
     try {
       setAndPersistJsonRpcProvider(value)
 
