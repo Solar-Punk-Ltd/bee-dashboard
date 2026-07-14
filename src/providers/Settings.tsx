@@ -1,6 +1,6 @@
 import { Bee } from '@ethersphere/bee-js'
 import { JsonRpcProvider } from 'ethers'
-import { createContext, ReactElement, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { createContext, ReactElement, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DEFAULT_BEE_API_HOST, DEFAULT_RPC_URL } from '../constants'
 import { useGetBeeConfig } from '../hooks/apiHooks'
@@ -79,6 +79,11 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
   const [rpcProviderUrl, setRpcProviderUrl] = useState(propsProviderUrl)
   const [rpcProvider, setRpcProvider] = useState(newGnosisProvider(propsProviderUrl))
   const [ensResolver, setEnsResolverState] = useState<string | null>(initialValues.ensResolver)
+  const rpcProviderUrlRef = useRef(rpcProviderUrl)
+
+  useEffect(() => {
+    rpcProviderUrlRef.current = rpcProviderUrl
+  }, [rpcProviderUrl])
 
   const { config, isLoading, error } = useGetBeeConfig(desktopUrl)
 
@@ -121,7 +126,7 @@ export function Provider({ children, ...propsSettings }: Props): ReactElement {
     newGnosisProviderForValidation(propsProviderUrl)
       .getNetwork()
       .catch(() => {
-        if (propsProviderUrl !== DEFAULT_RPC_URL) {
+        if (propsProviderUrl !== DEFAULT_RPC_URL && rpcProviderUrlRef.current === propsProviderUrl) {
           setRpcProviderUrl(DEFAULT_RPC_URL)
           setRpcProvider(newGnosisProvider(DEFAULT_RPC_URL))
         }
