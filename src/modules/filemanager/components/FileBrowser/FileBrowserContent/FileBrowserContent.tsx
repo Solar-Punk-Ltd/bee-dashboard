@@ -1,4 +1,4 @@
-import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord, FolderInfo } from '@solarpunkltd/file-manager-lib'
 import { memo, ReactElement, useCallback } from 'react'
 
 import { ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
@@ -15,6 +15,7 @@ export type FileSystemItem = {
 
 interface FileBrowserContentProps {
   listToRender: FileRecord[]
+  folders: FolderInfo[]
   drives: DriveInfo[]
   currentDrive: DriveInfo | null
   view: ViewType
@@ -35,6 +36,7 @@ interface FileBrowserContentProps {
 
 function FileBrowserContentInner({
   listToRender,
+  folders,
   drives,
   currentDrive,
   view,
@@ -108,9 +110,6 @@ function FileBrowserContentInner({
         return filesToRender.map(fi => renderFileItem(fi)).filter((el): el is ReactElement => el !== null)
       }
 
-      // Folder view is path-based: render the direct children of the current folder path. Files render
-      // as full FileItems (context menu / Get Info / metadata); deeper sub-paths collapse into a single
-      // navigable folder row (double-click to descend). currentPath comes from the breadcrumb (viewFolders).
       const currentPath = viewFolders.map(f => f.folderName).join('/')
       const prefix = currentPath ? currentPath + '/' : ''
 
@@ -121,13 +120,21 @@ function FileBrowserContentInner({
         if (prefix && !fi.path.startsWith(prefix)) return
 
         const rest = prefix ? fi.path.slice(prefix.length) : fi.path
-        const slash = rest.indexOf('/')
 
-        if (slash === -1) {
+        if (rest.indexOf('/') === -1) {
           fileChildren.push({ fi, displayName: rest })
-        } else {
-          folderNames.add(rest.slice(0, slash))
         }
+      })
+
+      folders.forEach(folder => {
+        if (prefix && !folder.path.startsWith(prefix)) return
+
+        const rest = prefix ? folder.path.slice(prefix.length) : folder.path
+
+        if (!rest) return
+
+        const slash = rest.indexOf('/')
+        folderNames.add(slash === -1 ? rest : rest.slice(0, slash))
       })
 
       const folderRows = Array.from(folderNames).map(folderName => (
@@ -150,6 +157,7 @@ function FileBrowserContentInner({
     [
       trackDownload,
       drives,
+      folders,
       selectedIds,
       onToggleSelected,
       bulkSelectedCount,

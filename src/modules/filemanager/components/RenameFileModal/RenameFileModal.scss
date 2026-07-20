@@ -84,7 +84,8 @@
   }
 }
 
-.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input {
+.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input,
+.fm-rename-modal .fm-modal-white-section input#fm-new-folder-input.fm-input {
   background: #fff !important;
   border: 1px solid #e5e7eb !important;
   color: #111 !important;
@@ -92,6 +93,7 @@
   caret-color: #111 !important;
 }
 
-.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input::placeholder {
+.fm-rename-modal .fm-modal-white-section input#fm-rename-input.fm-input::placeholder,
+.fm-rename-modal .fm-modal-white-section input#fm-new-folder-input.fm-input::placeholder {
   color: rgba(0, 0, 0, 0.5) !important;
 }

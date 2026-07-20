@@ -1,7 +1,7 @@
 import type { DriveInfo, FileRecord, UpdateItem, UploadItem } from '@solarpunkltd/file-manager-lib'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { ItemType } from '../../../pages/filemanager/ViewContext'
+import { ItemType, useView } from '../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { uuidV4 } from '../../../utils'
@@ -85,6 +85,11 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
 
   return out
 }
+
+// Parent folder path of a full drive-relative path ('' for a drive-root entry).
+const parentOf = (path: string): string => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')
+// Bare filename (last segment) of a full path.
+const baseOf = (path: string): string => path.split('/').pop() ?? path
 
 const buildUploadMeta = (
   files: File[] | FileList,
@@ -203,7 +208,11 @@ interface TransferProps {
 export function useTransfers({ setErrorMessage }: TransferProps) {
   const { fm, adminDrive, currentDrive, currentStamp, files, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
+  const { viewFolders } = useView()
   const [openConflict, conflictPortal] = useUploadConflictDialog()
+
+  // Current folder path within the drive manifest (empty string = drive root). Uploads land here.
+  const currentPath = viewFolders.map(f => f.folderName).join('/')
 
   const isMountedRef = useRef<boolean>(true)
   const uploadAbortsRef = useRef<AbortManager>(new AbortManager())
@@ -261,7 +270,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
   const resolveConflict = useCallback(
     async (originalName: string, sameDrive: FileRecord[], allTakenNames: Set<string>): Promise<ResolveResult> => {
-      const taken = sameDrive.filter(fi => fi.path === originalName)
+      // A file "already exists" only if it sits in the CURRENT folder under the same name — compare
+      // against the full target path (currentPath + name), not the bare filename against every path.
+      const fullTarget = currentPath ? `${currentPath}/${originalName}` : originalName
+      const taken = sameDrive.filter(fi => fi.path === fullTarget)
 
       if (!taken.length && !allTakenNames.has(originalName)) {
         return { cancelled: false, finalName: originalName, isReplace: false }
@@ -296,7 +308,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         replaceHistory: existing?.content.historyRef.toString(),
       }
     },
-    [openConflict],
+    [openConflict, currentPath],
   )
 
   const executeUploadTask = useCallback(
@@ -349,7 +361,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           ])
         } else {
           const item: UploadItem = {
-            path: task.finalName,
+            path: currentPath ? `${currentPath}/${task.finalName}` : task.finalName,
             file: task.file,
             customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file])),
           }
@@ -399,7 +411,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
       }
     },
-    [fm, files, setShowError, setErrorMessage],
+    [fm, files, currentPath, setShowError, setErrorMessage],
   )
 
   const trackDownload = useCallback((props: TrackDownloadProps) => {
@@ -503,7 +515,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
     const progressNames = new Set<string>(uploadItems.filter(u => u.driveName === currentDrive.name).map(u => u.name))
     const sameDrive = collectSameDrive(currentDrive.id.toString())
-    const onDiskNames = new Set<string>(sameDrive.map((fi: FileRecord) => fi.path))
+    // Names taken IN THE CURRENT FOLDER only (basenames of siblings) — used for conflict detection and
+    // "keep both" copy-name suggestions. A same-named file in another folder is not a conflict here.
+    const onDiskNames = new Set<string>(
+      sameDrive.filter((fi: FileRecord) => parentOf(fi.path) === currentPath).map((fi: FileRecord) => baseOf(fi.path)),
+    )
     const reserved = new Set<string>()
 
     const allTaken = new Set<string>([
@@ -517,7 +533,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       reserved,
       sameDrive,
     }
-  }, [currentDrive, collectSameDrive, uploadItems])
+  }, [currentDrive, collectSameDrive, uploadItems, currentPath])
 
   const createUploadTask = useCallback(
     async (file: File, drive: DriveInfo): Promise<UploadTask | null> => {
@@ -794,7 +810,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       })
 
       try {
-        const result = await fm.uploadFiles(currentDrive.id, items, '', undefined, { signal })
+        const result = await fm.uploadFiles(currentDrive.id, items, currentPath, undefined, { signal })
         const failedCount = result.failed?.length ?? 0
 
         safeSetState(
@@ -838,7 +854,17 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
       }
     },
-    [fm, currentDrive, currentStamp, adminDrive, ensureQueuedRow, setErrorMessage, setShowError, refreshStamp],
+    [
+      fm,
+      currentDrive,
+      currentStamp,
+      adminDrive,
+      currentPath,
+      ensureQueuedRow,
+      setErrorMessage,
+      setShowError,
+      refreshStamp,
+    ],
   )
 
   const uploadFiles = useCallback(

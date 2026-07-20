@@ -24,7 +24,7 @@ export function SubItem({ name, path, type, onDoubleClick }: SubItemProps): Reac
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const [showGetInfoModal, setShowGetInfoModal] = useState(false)
   const [infoGroups, setInfoGroups] = useState<FilePropertyGroup[] | null>(null)
-
+  // TODO: review this, inefficient
   const openGetInfo = async (): Promise<void> => {
     handleCloseContext()
 

@@ -30,6 +30,7 @@ import { computeContextMenuPosition } from '../../utils/ui'
 import { ProgressDestroyModal } from '../DestroyDriveModal/DestroyDriveModal'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
 import { FileProgressNotification } from '../FileProgressNotification/FileProgressNotification'
+import { NewFolderModal } from '../NewFolderModal/NewFolderModal'
 import { NotificationBar } from '../NotificationBar/NotificationBar'
 
 import { FileBrowserContent } from './FileBrowserContent/FileBrowserContent'
@@ -127,6 +128,7 @@ type FileBrowserContextMenuBlockProps = {
   doRefresh: () => void
   onContextUploadFile: () => void
   onContextUploadFolder: () => void
+  onContextCreateFolder: () => void
   setConfirmBulkRestore: (b: boolean) => void
   setShowBulkDeleteModal: (b: boolean) => void
   setShowDestroyDriveModal: (b: boolean) => void
@@ -144,6 +146,7 @@ function FileBrowserContextMenuBlock({
   doRefresh,
   onContextUploadFile,
   onContextUploadFolder,
+  onContextCreateFolder,
   setConfirmBulkRestore,
   setShowBulkDeleteModal,
   setShowDestroyDriveModal,
@@ -172,6 +175,7 @@ function FileBrowserContextMenuBlock({
         onBulkRestore={() => setConfirmBulkRestore(true)}
         onBulkDelete={() => setShowBulkDeleteModal(true)}
         onUploadFolder={() => onContextUploadFolder()}
+        onCreateFolder={() => onContextCreateFolder()}
         onBulkDestroy={() => setShowDestroyDriveModal(true)}
         onBulkForget={() => bulk.forget(bulk.selectedFiles)}
       />
@@ -181,9 +185,10 @@ function FileBrowserContextMenuBlock({
 
 export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
-  const { view, setActualItemView } = useView()
+  const { view, setActualItemView, viewFolders } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, adminDrive, currentDrive, resync, drives, fm, showError, setShowError } = useContext(FMContext)
+  const { files, folders, adminDrive, currentDrive, resync, reloadCurrentDrive, drives, fm, showError, setShowError } =
+    useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -215,8 +220,12 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const [confirmBulkForget, setConfirmBulkForget] = useState(false)
   const [confirmBulkRestore, setConfirmBulkRestore] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false)
   const [pendingCancelUpload, setPendingCancelUpload] = useState<string | null>(null)
   const [pendingCancelDownload, setPendingCancelDownload] = useState<string | null>(null)
+
+  // Current folder path within the drive manifest (empty string = drive root).
+  const currentPath = viewFolders.map(f => f.folderName).join('/')
 
   const q = query.trim().toLowerCase()
   const isSearchMode = q.length > 0
@@ -493,7 +502,47 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     [bulk],
   )
 
-  async function selectFolder() {
+  const createFolder = useCallback(() => {
+    if (!currentDrive || !fm) {
+      return
+    }
+
+    handleCloseContext()
+    setShowNewFolderModal(true)
+  }, [currentDrive, handleCloseContext, fm])
+
+  // Names already used in the current folder (basenames of direct children) — prevents duplicates.
+  const currentFolderNames = useMemo(() => {
+    const prefix = currentPath ? `${currentPath}/` : ''
+
+    return new Set(
+      files
+        .filter(f => f.driveId.toString() === currentDrive?.id.toString())
+        .filter(f => f.path.startsWith(prefix) && !f.path.slice(prefix.length).includes('/'))
+        .map(f => f.path.slice(prefix.length)),
+    )
+  }, [files, currentDrive, currentPath])
+
+  const doCreateFolder = useCallback(
+    async (name: string) => {
+      if (!currentDrive || !fm) {
+        return
+      }
+
+      try {
+        await fm.createFolder(currentDrive.id, currentPath || '/', name)
+        setShowNewFolderModal(false)
+        await reloadCurrentDrive()
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        setShowError(true)
+        setErrorMessage?.(errorMessage)
+      }
+    },
+    [currentDrive, fm, currentPath, reloadCurrentDrive, setErrorMessage, setShowError],
+  )
+
+  const selectFolder = useCallback(async () => {
     if (!currentDrive) {
       return
     }
@@ -570,11 +619,20 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
         setErrorMessage?.(errorMessage)
       }
     }
-  }
+  }, [currentDrive, handleCloseContext, setErrorMessage, setShowError, uploadFiles])
 
   return (
     <>
       {conflictPortal}
+
+      {showNewFolderModal && currentDrive && (
+        <NewFolderModal
+          parentLabel={currentPath || currentDrive.name}
+          takenNames={currentFolderNames}
+          onCancelClick={() => setShowNewFolderModal(false)}
+          onProceed={doCreateFolder}
+        />
+      )}
 
       <input type="file" ref={bulk.fileInputRef} style={{ display: 'none' }} onChange={onFileSelected} multiple />
 
@@ -614,6 +672,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={stableSorted}
+              folders={isSearchMode ? [] : folders}
               drives={drives}
               currentDrive={currentDrive || null}
               view={view}
@@ -646,8 +705,9 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               bulk={bulk}
               adminStamp={fm?.adminStamp}
               doRefresh={doRefresh}
-              onContextUploadFolder={selectFolder}
               onContextUploadFile={onContextUploadFile}
+              onContextUploadFolder={selectFolder}
+              onContextCreateFolder={createFolder}
               setConfirmBulkRestore={setConfirmBulkRestore}
               setShowBulkDeleteModal={setShowBulkDeleteModal}
               setShowDestroyDriveModal={setShowDestroyDriveModal}

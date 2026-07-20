@@ -1,6 +1,13 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
-import type { FileRecord } from '@solarpunkltd/file-manager-lib'
-import { DriveInfo, FileManagerBase, FileManagerEvents, ListDepth } from '@solarpunkltd/file-manager-lib'
+import type { FileRecord, FolderInfo } from '@solarpunkltd/file-manager-lib'
+import {
+  DriveInfo,
+  FileManagerBase,
+  FileManagerEvents,
+  FileStatus,
+  ListDepth,
+  NodeType,
+} from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
@@ -14,6 +21,7 @@ interface ContextInterface {
   fm: FileManagerBase | null
   initDone: boolean
   files: FileRecord[]
+  folders: FolderInfo[]
   currentDrive?: DriveInfo
   currentStamp?: PostageBatch
   drives: DriveInfo[]
@@ -25,6 +33,7 @@ interface ContextInterface {
   setCurrentDrive: (d: DriveInfo | undefined) => void
   setCurrentStamp: (s: PostageBatch | undefined) => void
   resync: () => Promise<void>
+  reloadCurrentDrive: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
   notifyPkSaved: () => void
   setShowError: (show: boolean) => void
@@ -37,6 +46,7 @@ const initialValues: ContextInterface = {
   fm: null,
   initDone: false,
   files: [],
+  folders: [],
   currentDrive: undefined,
   currentStamp: undefined,
   drives: [],
@@ -48,6 +58,7 @@ const initialValues: ContextInterface = {
   setCurrentDrive: () => {},
   setCurrentStamp: () => {},
   resync: async () => {},
+  reloadCurrentDrive: async () => {},
   // eslint-disable-next-line require-await
   init: async () => null,
   notifyPkSaved: () => {},
@@ -106,6 +117,7 @@ export function Provider({ children }: Props) {
   const [initDone, setInitDone] = useState<boolean>(false)
   const [shallReset, setShallReset] = useState<boolean>(false)
   const [files, setFiles] = useState<FileRecord[]>([])
+  const [folders, setFolders] = useState<FolderInfo[]>([])
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [expiredDrives, setExpiredDrives] = useState<DriveInfo[]>([])
   const [adminDrive, setAdminDrive] = useState<DriveInfo | null>(null)
@@ -257,6 +269,7 @@ export function Provider({ children }: Props) {
     setFm(null)
     setInitDone(false)
     setFiles([])
+    setFolders([])
     setDrives([])
     setAdminDrive(null)
     setInitializationError(false)
@@ -299,9 +312,15 @@ export function Provider({ children }: Props) {
       syncFiles(manager)
     }
 
+    const handleFolderCreated = ({ folderInfo }: { folderInfo: FolderInfo }) => {
+      const normalized: FolderInfo = { ...folderInfo, path: folderInfo.path.replace(/^\/+/, '') }
+      setFolders(prev => (prev.some(f => f.topic === normalized.topic) ? prev : [...prev, normalized]))
+    }
+
     const handleResetState = (isInvalid: boolean) => {
       setShallReset(isInvalid)
       setFiles([])
+      setFolders([])
       setDrives([])
       setExpiredDrives([])
       setAdminDrive(null)
@@ -314,6 +333,7 @@ export function Provider({ children }: Props) {
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
+    manager.emitter.on(FileManagerEvents.FOLDER_CREATED, handleFolderCreated)
     manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ record }: { record: FileRecord }) => {
       syncFiles(manager, record)
       window.dispatchEvent(new CustomEvent(FILE_MANAGER_EVENTS.FILE_UPLOADED, { detail: { fileInfo: record } }))
@@ -372,11 +392,15 @@ export function Provider({ children }: Props) {
       setCurrentStamp(isValidCurrentStamp)
     }
   }, [beeInstance, currentDrive?.id, currentStamp, init])
+  // TODO: do not load deep only the first depth whenever the user enters a drive root or folder
+  const reloadCurrentDrive = useCallback(async (): Promise<void> => {
+    if (!fm || !currentDrive) return
 
-  // Whenever the current drive changes, hydrate its files into `files`. listFolder populates the
-  // lib's fileInfoList lazily (Deep so nested folder files are included for the folder tree view);
-  // without pushing that into state, listFolder results never reach the UI and the browser keeps
-  // showing a stale/empty list.
+    const entries = await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
+    setFiles([...fm.fileInfoList])
+    setFolders(entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== FileStatus.Trashed))
+  }, [fm, currentDrive])
+
   useEffect(() => {
     if (!fm || !currentDrive) return
 
@@ -384,10 +408,13 @@ export function Provider({ children }: Props) {
 
     void (async () => {
       try {
-        await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
+        const entries = await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
 
         if (!cancelled) {
           setFiles([...fm.fileInfoList])
+          setFolders(
+            entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== FileStatus.Trashed),
+          )
         }
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -464,6 +491,7 @@ export function Provider({ children }: Props) {
       fm,
       initDone,
       files,
+      folders,
       currentDrive,
       currentStamp,
       drives,
@@ -475,6 +503,7 @@ export function Provider({ children }: Props) {
       setCurrentDrive,
       setCurrentStamp,
       resync,
+      reloadCurrentDrive,
       init,
       notifyPkSaved,
       setShowError,
@@ -486,6 +515,7 @@ export function Provider({ children }: Props) {
       fm,
       initDone,
       files,
+      folders,
       currentDrive,
       currentStamp,
       drives,
@@ -497,6 +527,7 @@ export function Provider({ children }: Props) {
       setCurrentDrive,
       setCurrentStamp,
       resync,
+      reloadCurrentDrive,
       init,
       notifyPkSaved,
       setShowError,

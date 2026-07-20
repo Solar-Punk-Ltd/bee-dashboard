@@ -277,7 +277,10 @@ export async function buildGetInfoGroups(
   const cm = fi.customMetadata as KnownCustomMeta | undefined
   const size = cm?.size
   const mime = cm?.mime
-  const path = cm?.path || driveName // TODO: set exact subpath
+  // Location = the folder that holds the file, derived from the record's real path (authoritative),
+  // not customMetadata.path (which single-file uploads don't set). Root files show just the drive name.
+  const parentPath = fi.path.includes('/') ? fi.path.slice(0, fi.path.lastIndexOf('/')) : ''
+  const path = parentPath ? `${driveName}/${parentPath}` : driveName
   const fileCount = cm?.fileCount
   const expires = cm?.expiresAt || stamp?.duration.toEndDate().toLocaleDateString()
 
