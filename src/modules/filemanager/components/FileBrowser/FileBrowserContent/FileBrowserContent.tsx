@@ -1,9 +1,17 @@
 import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { memo, ReactElement, useCallback } from 'react'
 
+import { ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { getFileId } from '../../../utils/common'
 import { FileItem } from '../FileItem/FileItem'
+
+import { SubItem } from './SubItem'
+
+export type FileSystemItem = {
+  path: string
+  ref: string
+}
 
 interface FileBrowserContentProps {
   listToRender: FileRecord[]
@@ -38,6 +46,8 @@ function FileBrowserContentInner({
   onBulk,
   setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
+  const { setFolderView, viewFolders, setViewFolders } = useView()
+
   const renderEmptyState = useCallback((): ReactElement => {
     if (drives.length === 0) {
       return <div className="fm-drop-hint">Create a drive to start using the file manager</div>
@@ -58,35 +68,96 @@ function FileBrowserContentInner({
     return <div className="fm-drop-hint">Drag &amp; drop files here into &quot;{currentDrive?.name}&quot;</div>
   }, [drives, currentDrive, view])
 
-  const renderFileList = useCallback(
-    (filesToRender: FileRecord[], showDriveColumn = false): ReactElement[] => {
-      return filesToRender
-        .map(fi => {
-          const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
-
-          return drive ? { fi, driveName: drive.name } : null
-        })
-        .filter((item): item is { fi: FileRecord; driveName: string } => item !== null)
-        .map(({ fi, driveName }) => {
-          const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
-
-          return (
-            <FileItem
-              key={key}
-              fileInfo={fi}
-              onDownload={trackDownload}
-              showDriveColumn={showDriveColumn}
-              driveName={driveName}
-              selected={Boolean(selectedIds?.has(getFileId(fi)))}
-              onToggleSelected={onToggleSelected}
-              bulkSelectedCount={bulkSelectedCount}
-              onBulk={onBulk}
-              setErrorMessage={setErrorMessage}
-            />
-          )
-        })
+  const enterFolder = useCallback(
+    (folderName: string) => {
+      setFolderView(true)
+      setViewFolders([...viewFolders, { folderName }])
     },
-    [trackDownload, drives, selectedIds, onToggleSelected, bulkSelectedCount, onBulk, setErrorMessage],
+    [setFolderView, setViewFolders, viewFolders],
+  )
+
+  const renderFileList = useCallback(
+    (filesToRender: FileRecord[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
+      const renderFileItem = (fi: FileRecord, displayName?: string): ReactElement | null => {
+        const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
+
+        if (!drive) return null
+
+        const key = `${getFileId(fi)}::${fi.version ?? ''}::${showDriveColumn ? 'search' : 'normal'}`
+
+        return (
+          <FileItem
+            key={key}
+            fileInfo={fi}
+            displayName={displayName}
+            onDownload={trackDownload}
+            showDriveColumn={showDriveColumn}
+            driveName={drive.name}
+            selected={Boolean(selectedIds?.has(getFileId(fi)))}
+            onToggleSelected={onToggleSelected}
+            bulkSelectedCount={bulkSelectedCount}
+            onBulk={onBulk}
+            setErrorMessage={setErrorMessage}
+            folderItemDoubleClick={() => undefined}
+          />
+        )
+      }
+
+      // Search results stay flat (full paths, possibly across drives).
+      if (showDriveColumn) {
+        return filesToRender.map(fi => renderFileItem(fi)).filter((el): el is ReactElement => el !== null)
+      }
+
+      // Folder view is path-based: render the direct children of the current folder path. Files render
+      // as full FileItems (context menu / Get Info / metadata); deeper sub-paths collapse into a single
+      // navigable folder row (double-click to descend). currentPath comes from the breadcrumb (viewFolders).
+      const currentPath = viewFolders.map(f => f.folderName).join('/')
+      const prefix = currentPath ? currentPath + '/' : ''
+
+      const fileChildren: { fi: FileRecord; displayName: string }[] = []
+      const folderNames = new Set<string>()
+
+      filesToRender.forEach(fi => {
+        if (prefix && !fi.path.startsWith(prefix)) return
+
+        const rest = prefix ? fi.path.slice(prefix.length) : fi.path
+        const slash = rest.indexOf('/')
+
+        if (slash === -1) {
+          fileChildren.push({ fi, displayName: rest })
+        } else {
+          folderNames.add(rest.slice(0, slash))
+        }
+      })
+
+      const folderRows = Array.from(folderNames).map(folderName => (
+        <SubItem
+          key={`folder::${prefix}${folderName}`}
+          name={folderName}
+          path={`${prefix}${folderName}`}
+          type={ItemType.Folder}
+          onDoubleClick={() => enterFolder(folderName)}
+        />
+      ))
+
+      const fileRows = fileChildren
+        .map(({ fi, displayName }) => renderFileItem(fi, displayName))
+        .filter((el): el is ReactElement => el !== null)
+
+      return [...folderRows, ...fileRows]
+    },
+
+    [
+      trackDownload,
+      drives,
+      selectedIds,
+      onToggleSelected,
+      bulkSelectedCount,
+      onBulk,
+      setErrorMessage,
+      viewFolders,
+      enterFolder,
+    ],
   )
 
   if (drives.length === 0) {

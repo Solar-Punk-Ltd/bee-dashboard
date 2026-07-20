@@ -12,11 +12,17 @@ interface GetInfoModalProps {
   name: string
   properties: FilePropertyGroup[]
   onCancelClick: () => void
+  title?: string
 }
 
 const COPY_TIMEOUT_MS = 2000
 
-export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalProps): ReactElement {
+export function GetInfoModal({
+  name,
+  onCancelClick,
+  properties,
+  title = 'File Information',
+}: GetInfoModalProps): ReactElement {
   const modalRoot = document.querySelector('.fm-main') || document.body
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
@@ -52,7 +58,10 @@ export function GetInfoModal({ name, onCancelClick, properties }: GetInfoModalPr
     <div className="fm-modal-container">
       <div className="fm-modal-window fm-get-info-modal">
         <div className="fm-modal-window-header">
-          <InfoIcon /> <span className="fm-main-font-color">File Information - {name}</span>
+          <InfoIcon />{' '}
+          <span className="fm-main-font-color">
+            {title} - {name}
+          </span>
         </div>
 
         <div className="fm-modal-window-body fm-get-info-body">

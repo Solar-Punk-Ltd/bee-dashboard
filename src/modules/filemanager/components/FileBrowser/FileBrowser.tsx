@@ -13,7 +13,7 @@ import React, {
 import { createPortal } from 'react-dom'
 
 import { useSearch } from '../../../../pages/filemanager/SearchContext'
-import { useView } from '../../../../pages/filemanager/ViewContext'
+import { ItemType, useView } from '../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../../providers/Settings'
 import { FileAction, FileTransferType, TransferStatus, ViewType } from '../../constants/transfers'
@@ -25,6 +25,7 @@ import { SortDir, SortKey, useSorting } from '../../hooks/useSorting'
 import { useTransfers } from '../../hooks/useTransfers'
 import { handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Dir, getFileId, Point, safeSetState } from '../../utils/common'
+import { isDirectoryPickerSupported } from '../../utils/fileOperations'
 import { computeContextMenuPosition } from '../../utils/ui'
 import { ProgressDestroyModal } from '../DestroyDriveModal/DestroyDriveModal'
 import { ErrorModal } from '../ErrorModal/ErrorModal'
@@ -125,6 +126,7 @@ type FileBrowserContextMenuBlockProps = {
   adminStamp: PostageBatch | undefined
   doRefresh: () => void
   onContextUploadFile: () => void
+  onContextUploadFolder: () => void
   setConfirmBulkRestore: (b: boolean) => void
   setShowBulkDeleteModal: (b: boolean) => void
   setShowDestroyDriveModal: (b: boolean) => void
@@ -141,6 +143,7 @@ function FileBrowserContextMenuBlock({
   adminStamp,
   doRefresh,
   onContextUploadFile,
+  onContextUploadFolder,
   setConfirmBulkRestore,
   setShowBulkDeleteModal,
   setShowDestroyDriveModal,
@@ -168,6 +171,7 @@ function FileBrowserContextMenuBlock({
         onBulkDownload={() => bulk.download(bulk.selectedFiles)}
         onBulkRestore={() => setConfirmBulkRestore(true)}
         onBulkDelete={() => setShowBulkDeleteModal(true)}
+        onUploadFolder={() => onContextUploadFolder()}
         onBulkDestroy={() => setShowDestroyDriveModal(true)}
         onBulkForget={() => bulk.forget(bulk.selectedFiles)}
       />
@@ -489,6 +493,85 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     [bulk],
   )
 
+  async function selectFolder() {
+    if (!currentDrive) {
+      return
+    }
+
+    if (!isDirectoryPickerSupported()) {
+      return
+    }
+
+    handleCloseContext()
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dirHandle = await (window as any).showDirectoryPicker()
+      const dataTransfer = new DataTransfer()
+      const metadataMap = new Map()
+
+      const queue: Array<{ handle: FileSystemHandle; path: string }> = []
+
+      for await (const [, handle] of dirHandle.entries()) {
+        queue.push({ handle, path: `${dirHandle.name}/` })
+      }
+
+      while (queue.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { handle, path } = queue.shift()!
+
+        if (handle.kind === 'file') {
+          const file = await (handle as FileSystemFileHandle).getFile()
+
+          const createdFile = new File([file], `${path}${file.name}`, { type: file.type })
+          dataTransfer.items.add(createdFile)
+          metadataMap.set(createdFile, { name: file.name, itemType: ItemType.File, path: `${path}${file.name}` })
+
+          // eslint-disable-next-line no-continue
+          continue
+        }
+
+        if (handle.kind === 'directory') {
+          const dirHandle = handle as FileSystemDirectoryHandle
+
+          const folderFileItem = new File([], `${path}${dirHandle.name}/`, { type: ItemType.Folder })
+          metadataMap.set(folderFileItem, {
+            name: dirHandle.name,
+            itemType: ItemType.Folder,
+            path: `${path}${folderFileItem.name}`,
+          })
+          dataTransfer.items.add(folderFileItem)
+
+          for await (const [, childHandle] of dirHandle.entries()) {
+            queue.push({ handle: childHandle, path: `${path}${dirHandle.name}/` })
+          }
+
+          // eslint-disable-next-line no-continue
+          continue
+        }
+
+        throw new Error(`Unsupported file system handle kind: ${handle.kind}`)
+      }
+
+      const fileList = dataTransfer.files
+
+      if (fileList.length === 0) {
+        return
+      }
+
+      if (fileList && fileList.length) await uploadFiles(fileList, true, dirHandle.name)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      // TODO: detect user cancel via isUserCancellation from download
+      const errName = (err as { name?: string })?.name
+
+      if (errName !== 'AbortError') {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        setShowError(true)
+        setErrorMessage?.(errorMessage)
+      }
+    }
+  }
+
   return (
     <>
       {conflictPortal}
@@ -563,6 +646,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               bulk={bulk}
               adminStamp={fm?.adminStamp}
               doRefresh={doRefresh}
+              onContextUploadFolder={selectFolder}
               onContextUploadFile={onContextUploadFile}
               setConfirmBulkRestore={setConfirmBulkRestore}
               setShowBulkDeleteModal={setShowBulkDeleteModal}

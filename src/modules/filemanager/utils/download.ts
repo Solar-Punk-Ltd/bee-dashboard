@@ -417,12 +417,10 @@ export const startDownloadingQueue = async (
 
             return
           }
+          // TODO: do not pass fileinfo one-by-one as a one element array -> gather all the trackers and trigger async download with all the files
+          const downloadResults = await fm.downloadFiles([fh.infoWithId.info], undefined, { signal })
 
-          const downloadResulst = await fm.download(drive, [fh.infoWithId.info.path], undefined, {
-            signal,
-          })
-
-          if (!downloadResulst || downloadResulst.length === 0) {
+          if (!downloadResults || downloadResults.length === 0) {
             // eslint-disable-next-line no-console
             console.error(`No data streams returned for ${fh.infoWithId.info.path}`)
             tracker({ progress: 0, isDownloading: false, state: DownloadState.Error })
@@ -433,7 +431,7 @@ export const startDownloadingQueue = async (
           let success = false
           let userCancelled = false
 
-          const streamResults = downloadResulst.map(ds => ds.result as ReadableStream<Uint8Array>)
+          const streamResults = downloadResults.map(ds => ds.result)
 
           if (isOpenWindow || !fh.handle) {
             const { success: saved, cancelled } = await downloadToBlob(

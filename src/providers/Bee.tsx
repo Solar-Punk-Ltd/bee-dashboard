@@ -29,7 +29,7 @@ import { useLatestBeeRelease } from '../hooks/apiHooks'
 
 import { Context as SettingsContext } from './Settings'
 
-const LAUNCH_GRACE_PERIOD = 35_000
+const LAUNCH_GRACE_PERIOD = 15_000
 const REFRESH_WHEN_OK = 30_000
 const REFRESH_WHEN_ERROR = 5_000
 const TIMEOUT = 3_000

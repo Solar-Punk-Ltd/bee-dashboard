@@ -1,6 +1,6 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
 import type { FileRecord } from '@solarpunkltd/file-manager-lib'
-import { DriveInfo, FileManagerBase, FileManagerEvents } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileManagerBase, FileManagerEvents, ListDepth } from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { FILE_MANAGER_EVENTS } from '../modules/filemanager/constants/common'
@@ -29,6 +29,7 @@ interface ContextInterface {
   notifyPkSaved: () => void
   setShowError: (show: boolean) => void
   syncDrives: () => Promise<void>
+  syncFiles: () => Promise<void>
   refreshStamp: (batchId: string) => Promise<PostageBatch | undefined>
 }
 
@@ -52,6 +53,7 @@ const initialValues: ContextInterface = {
   notifyPkSaved: () => {},
   setShowError: () => {},
   syncDrives: async () => {},
+  syncFiles: async () => {},
   // eslint-disable-next-line require-await
   refreshStamp: async () => undefined,
 }
@@ -216,6 +218,13 @@ export function Provider({ children }: Props) {
     }
   }, [fm, syncDrives])
 
+  // eslint-disable-next-line require-await
+  const syncFilesPublic = useCallback(async () => {
+    if (fm) {
+      syncFiles(fm)
+    }
+  }, [fm, syncFiles])
+
   const refreshStamp = useCallback(
     async (batchId: string): Promise<PostageBatch | undefined> => {
       if (!beeInstance) {
@@ -305,21 +314,32 @@ export function Provider({ children }: Props) {
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
     manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
-    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ fileInfo }: { fileInfo: FileRecord }) => {
-      syncFiles(manager, fileInfo)
-      window.dispatchEvent(new CustomEvent(FILE_MANAGER_EVENTS.FILE_UPLOADED, { detail: { fileInfo } }))
+    manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ record }: { record: FileRecord }) => {
+      syncFiles(manager, record)
+      window.dispatchEvent(new CustomEvent(FILE_MANAGER_EVENTS.FILE_UPLOADED, { detail: { fileInfo: record } }))
+    })
+    manager.emitter.on(FileManagerEvents.FILE_UPDATED, ({ record }: { record: FileRecord }) =>
+      syncFiles(manager, record),
+    )
+    manager.emitter.on(FileManagerEvents.FILE_MOVED, ({ toPath }: { fromPath: string; toPath: string }) => {
+      // move() rewrites the record's path in-place in fileInfoList (topic is unchanged) — upsert it by topic.
+      const moved = manager.fileInfoList.find(f => f.path === toPath)
+
+      if (moved) {
+        syncFiles(manager, moved)
+      }
     })
     manager.emitter.on(FileManagerEvents.FILE_VERSION_RESTORED, ({ restored }: { restored: FileRecord }) =>
       syncFiles(manager, restored),
     )
-    manager.emitter.on(FileManagerEvents.FILE_TRASHED, ({ fileInfo }: { fileInfo: FileRecord }) =>
-      syncFiles(manager, fileInfo),
+    manager.emitter.on(FileManagerEvents.FILE_TRASHED, ({ record }: { record: FileRecord }) =>
+      syncFiles(manager, record),
     )
-    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, ({ fileInfo }: { fileInfo: FileRecord }) =>
-      syncFiles(manager, fileInfo),
+    manager.emitter.on(FileManagerEvents.FILE_RECOVERED, ({ record }: { record: FileRecord }) =>
+      syncFiles(manager, record),
     )
-    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, ({ fileInfo }: { fileInfo: FileRecord }) =>
-      syncFiles(manager, fileInfo, true),
+    manager.emitter.on(FileManagerEvents.FILE_FORGOTTEN, ({ record }: { record: FileRecord }) =>
+      syncFiles(manager, record, true),
     )
 
     try {
@@ -343,6 +363,7 @@ export function Provider({ children }: Props) {
 
     if (prevDriveId && manager && beeInstance) {
       const refreshedDrive = manager.driveList.find(d => d.id.toString() === prevDriveId)
+      // setCurrentDrive triggers the drive-load effect below, which lists the drive and fills `files`.
       setCurrentDrive(refreshedDrive)
 
       const uStamps: PostageBatch[] = await getUsableStamps(beeInstance)
@@ -351,6 +372,34 @@ export function Provider({ children }: Props) {
       setCurrentStamp(isValidCurrentStamp)
     }
   }, [beeInstance, currentDrive?.id, currentStamp, init])
+
+  // Whenever the current drive changes, hydrate its files into `files`. listFolder populates the
+  // lib's fileInfoList lazily (Deep so nested folder files are included for the folder tree view);
+  // without pushing that into state, listFolder results never reach the UI and the browser keeps
+  // showing a stale/empty list.
+  useEffect(() => {
+    if (!fm || !currentDrive) return
+
+    let cancelled = false
+
+    void (async () => {
+      try {
+        await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
+
+        if (!cancelled) {
+          setFiles([...fm.fileInfoList])
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load drive files', e)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fm, currentDrive?.id])
 
   useEffect(() => {
     apiUrlRef.current = apiUrl
@@ -431,6 +480,7 @@ export function Provider({ children }: Props) {
       setShowError,
       syncDrives: syncDrivesPublic,
       refreshStamp,
+      syncFiles: syncFilesPublic,
     }),
     [
       fm,
@@ -452,6 +502,7 @@ export function Provider({ children }: Props) {
       setShowError,
       syncDrivesPublic,
       refreshStamp,
+      syncFilesPublic,
     ],
   )
 

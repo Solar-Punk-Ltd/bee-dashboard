@@ -1,6 +1,7 @@
-import type { DriveInfo, FileInfoOptions, FileRecord, UploadProgress } from '@solarpunkltd/file-manager-lib'
+import type { DriveInfo, FileRecord, UpdateItem, UploadItem } from '@solarpunkltd/file-manager-lib'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
+import { ItemType } from '../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { uuidV4 } from '../../../utils'
@@ -52,7 +53,7 @@ type ETAState = {
   lastEta?: number
 }
 
-type UploadMeta = Record<string, string | number>
+type UploadMeta = Record<string, string | number | File[]>
 
 type UploadTask = {
   uuid: string
@@ -85,7 +86,12 @@ const normalizeCustomMetadata = (meta: UploadMeta): Record<string, string> => {
   return out
 }
 
-const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?: FileRecord): UploadMeta => {
+const buildUploadMeta = (
+  files: File[] | FileList,
+  path?: string,
+  existingFile?: FileRecord,
+  isFolder = false,
+): UploadMeta => {
   const arr = Array.from(files as File[])
   const totalSize = arr.reduce((acc, f) => acc + (f.size || 0), 0)
   const primary = arr[0]
@@ -93,12 +99,12 @@ const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?:
   const previousAccumulated = existingFile
     ? Number(existingFile.customMetadata?.accumulatedSize || existingFile.customMetadata?.size || 0)
     : 0
-  const accumulatedSize = previousAccumulated + totalSize
+  const accumulatedSize = previousAccumulated + files.length
 
   const meta: UploadMeta = {
     size: String(totalSize),
     fileCount: String(arr.length),
-    mime: primary?.type || 'application/octet-stream',
+    mime: isFolder ? ItemType.Folder : primary?.type || 'application/octet-stream',
     accumulatedSize: String(accumulatedSize),
   }
 
@@ -109,7 +115,7 @@ const buildUploadMeta = (files: File[] | FileList, path?: string, existingFile?:
 
 const calculateETA = (
   etaState: ETAState,
-  progress: UploadProgress,
+  progress: { processed: number; total: number },
   startedAt: number,
   now: number,
 ): { etaSec?: number; updatedState: ETAState } => {
@@ -287,89 +293,10 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         finalName: originalName,
         isReplace: true,
         replaceTopic: existing?.topic.toString(),
-        replaceHistory: existing?.file.historyRef.toString(),
+        replaceHistory: existing?.content.historyRef.toString(),
       }
     },
     [openConflict],
-  )
-
-  const trackUpload = useCallback(
-    (
-      uuid: string,
-      name: string,
-      size?: string,
-      kind: FileTransferType = FileTransferType.Upload,
-      driveName?: string,
-    ) => {
-      if (!isMountedRef.current) {
-        return () => {
-          // no-op
-        }
-      }
-
-      const startedAt = Date.now()
-
-      let etaState: ETAState = {
-        lastTs: startedAt,
-        lastProcessed: 0,
-        lastEta: undefined,
-      }
-
-      setUploadItems(prev => {
-        const existing = prev.find(p => p.uuid === uuid)
-        const actualDriveName = existing?.driveName || driveName
-
-        const idx = prev.findIndex(p => p.uuid === uuid)
-        const base = createTransferItem(uuid, name, size, kind, actualDriveName, TransferStatus.Uploading)
-
-        if (idx === -1) return [...prev, base]
-        const copy = [...prev]
-        copy[idx] = base
-
-        return copy
-      })
-
-      const onProgress = (progress: UploadProgress) => {
-        const signal = uploadAbortsRef.current.getSignal(uuid)
-
-        if (cancelledUploadingRef.current.has(uuid) || !isMountedRef.current || signal?.aborted) return
-
-        if (progress.total > 0) {
-          const now = Date.now()
-          const chunkPercentage = Math.floor((progress.processed / progress.total) * 100)
-
-          const { etaSec, updatedState } = calculateETA(etaState, progress, startedAt, now)
-          etaState = updatedState
-
-          const isComplete = progress.processed >= progress.total
-
-          setUploadItems(prev => {
-            const existing = prev.find(it => it.uuid === uuid && it.status === TransferStatus.Uploading)
-
-            if (!existing || existing.status === TransferStatus.Done) return prev
-
-            if (isComplete) {
-              return updateTransferItems(prev, uuid, {
-                percent: 100,
-                status: TransferStatus.Done,
-                kind,
-                etaSec: 0,
-                elapsedSec: Math.round((now - startedAt) / 1000),
-              })
-            }
-
-            return updateTransferItems(prev, uuid, {
-              percent: Math.max(existing.percent, chunkPercentage),
-              kind,
-              etaSec,
-            })
-          })
-        }
-      }
-
-      return onProgress
-    },
-    [],
   )
 
   const executeUploadTask = useCallback(
@@ -382,14 +309,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         return
       }
 
-      const existingFile = task.isReplace ? files.find(f => f.topic.toString() === task.replaceTopic) : undefined
-
-      const info: FileInfoOptions = {
-        path: task.finalName,
-        files: [task.file],
-        customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file], undefined, existingFile)),
-        topic: task.isReplace ? task.replaceTopic : undefined,
-      }
+      const startedAt = Date.now()
 
       safeSetState(
         isMountedRef,
@@ -398,7 +318,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         updateTransferItems(prev, task.uuid, {
           status: TransferStatus.Uploading,
           kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
-          startedAt: Date.now(),
+          startedAt,
         }),
       )
 
@@ -412,22 +332,44 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           throw new Error('Upload cancelled')
         }
 
-        const onUploadProgress = trackUpload(
-          task.uuid,
-          task.finalName,
-          task.prettySize,
-          task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
-          taskDrive.name,
-        )
+        if (task.isReplace) {
+          // Replace = new content for an existing file's topic → updateFile keeps its version history
+          // (a plain uploadFile would mint a new topic and duplicate the file).
+          const existingRecord = files.find(f => f.topic.toString() === task.replaceTopic)
 
-        const uploadPromise = fm.upload(
-          taskDrive,
-          { ...info, onUploadProgress },
-          { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
-          { signal },
-        )
+          if (!existingRecord) {
+            throw new Error('The file to replace was not found')
+          }
 
-        await Promise.race([uploadPromise, checkCancellation])
+          const changes: UpdateItem = { item: { file: task.file } }
+
+          await Promise.race([
+            fm.updateFile(taskDrive.id, existingRecord, changes, undefined, { signal }),
+            checkCancellation,
+          ])
+        } else {
+          const item: UploadItem = {
+            path: task.finalName,
+            file: task.file,
+            customMetadata: normalizeCustomMetadata(buildUploadMeta([task.file])),
+          }
+
+          await Promise.race([fm.uploadFile(taskDrive.id, item, undefined, { signal }), checkCancellation])
+        }
+
+        // The new lib no longer streams byte progress, so completion is marked here on resolve.
+        safeSetState(
+          isMountedRef,
+          setUploadItems,
+        )(prev =>
+          updateTransferItems(prev, task.uuid, {
+            percent: 100,
+            status: TransferStatus.Done,
+            kind: task.isReplace ? FileTransferType.Update : FileTransferType.Upload,
+            etaSec: 0,
+            elapsedSec: Math.round((Date.now() - startedAt) / 1000),
+          }),
+        )
       } catch (error) {
         const wasCancelled = cancelledUploadingRef.current.has(task.uuid) || signal?.aborted
 
@@ -457,7 +399,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         }
       }
     },
-    [fm, files, trackUpload, setShowError, setErrorMessage],
+    [fm, files, setShowError, setErrorMessage],
   )
 
   const trackDownload = useCallback((props: TrackDownloadProps) => {
@@ -779,9 +721,135 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     [fm, currentStamp, currentDrive, beeApi, setShowError, setErrorMessage],
   )
 
+  const uploadFolder = useCallback(
+    async (picked: File[], folderName?: string): Promise<void> => {
+      if (!fm || !currentDrive) {
+        setErrorMessage?.('File manager is not ready or no drive is selected.')
+        setShowError(true)
+
+        return
+      }
+
+      if (!currentStamp || !currentStamp.usable) {
+        setErrorMessage?.('Stamp is not usable.')
+        setShowError(true)
+
+        return
+      }
+
+      // Directory markers are empty File([]) entries (type ItemType.Folder / trailing-slash name).
+      // The lib rebuilds the folder hierarchy from each file's relative path, so only real files are sent.
+      const realFiles = picked.filter(f => f.type !== ItemType.Folder && !f.name.endsWith('/'))
+
+      if (!realFiles.length) {
+        setErrorMessage?.('The selected folder has no files to upload.')
+        setShowError(true)
+
+        return
+      }
+
+      const totalSize = realFiles.reduce((sum, f) => sum + (f.size || 0), 0)
+
+      const { ok } = verifyDriveSpace({
+        fm,
+        redundancyLevel: currentDrive.redundancyLevel,
+        stamp: currentStamp,
+        useInfoSize: true,
+        driveId: currentDrive.id.toString(),
+        adminRedundancy: adminDrive?.redundancyLevel,
+        fileSize: totalSize,
+        fileCount: realFiles.length,
+        cb: err => {
+          setErrorMessage?.(err)
+          setShowError(true)
+        },
+      })
+
+      if (!ok) {
+        return
+      }
+
+      const uuid = uuidV4()
+      const displayName = folderName ?? 'folder'
+      const startedAt = Date.now()
+
+      ensureQueuedRow(uuid, displayName, FileTransferType.Upload, formatBytes(totalSize) ?? '0', currentDrive.name)
+      safeSetState(
+        isMountedRef,
+        setUploadItems,
+      )(prev => updateTransferItems(prev, uuid, { status: TransferStatus.Uploading, startedAt }))
+
+      uploadAbortsRef.current.create(uuid)
+      const signal = uploadAbortsRef.current.getSignal(uuid)
+
+      // Each File's name is its path relative to the picked folder, e.g. "myFolder/sub/a.txt".
+      const items: UploadItem[] = realFiles.map(f => {
+        const relativePath = f.name.replace(/^\/+/, '')
+
+        return {
+          path: relativePath,
+          file: f,
+          customMetadata: normalizeCustomMetadata(buildUploadMeta([f], relativePath)),
+        }
+      })
+
+      try {
+        const result = await fm.uploadFiles(currentDrive.id, items, '', undefined, { signal })
+        const failedCount = result.failed?.length ?? 0
+
+        safeSetState(
+          isMountedRef,
+          setUploadItems,
+        )(prev =>
+          updateTransferItems(prev, uuid, {
+            percent: 100,
+            status: failedCount ? TransferStatus.Error : TransferStatus.Done,
+            etaSec: 0,
+            elapsedSec: Math.round((Date.now() - startedAt) / 1000),
+          }),
+        )
+
+        if (failedCount) {
+          setErrorMessage?.(`${failedCount} of ${items.length} file(s) failed to upload.`)
+          setShowError(true)
+        }
+      } catch (error) {
+        const wasCancelled = signal?.aborted
+
+        if (!wasCancelled) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          setErrorMessage?.(`Folder upload failed: ${errorMsg}`)
+          setShowError(true)
+        }
+
+        safeSetState(
+          isMountedRef,
+          setUploadItems,
+        )(prev =>
+          updateTransferItems(prev, uuid, {
+            status: wasCancelled ? TransferStatus.Cancelled : TransferStatus.Error,
+          }),
+        )
+      } finally {
+        uploadAbortsRef.current.abort(uuid)
+
+        if (currentStamp) {
+          await refreshStamp(currentStamp.batchID.toString())
+        }
+      }
+    },
+    [fm, currentDrive, currentStamp, adminDrive, ensureQueuedRow, setErrorMessage, setShowError, refreshStamp],
+  )
+
   const uploadFiles = useCallback(
-    async (picked: FileList | File[]): Promise<void> => {
+    async (picked: FileList | File[], isFolder = false, folderName?: string): Promise<void> => {
       const filesArr = Array.from(picked)
+
+      if (isFolder) {
+        await uploadFolder(filesArr, folderName)
+
+        return
+      }
 
       if (!(await verifyUploadConditions(filesArr))) {
         return
@@ -791,7 +859,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       uploadTaskQueueRef.current = uploadTaskQueueRef.current.concat(tasks)
       runUploadQueue()
     },
-    [verifyUploadConditions, preflight, runUploadQueue],
+    [uploadFolder, verifyUploadConditions, preflight, runUploadQueue],
   )
 
   const cancelOrDismissUpload = useCallback(

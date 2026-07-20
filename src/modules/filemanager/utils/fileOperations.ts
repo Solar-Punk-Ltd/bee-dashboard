@@ -14,7 +14,7 @@ export enum FileOperation {
 
 interface FileOperationOptions {
   fm: FileManagerBase
-  file: FileRecord
+  fi: FileRecord
   redundancyLevel: RedundancyLevel
   driveId: string
   stamp: PostageBatch
@@ -27,7 +27,7 @@ interface FileOperationOptions {
 
 export async function performFileOperation({
   fm,
-  file,
+  fi,
   redundancyLevel,
   driveId,
   stamp,
@@ -50,7 +50,7 @@ export async function performFileOperation({
       driveId,
       fileSize: 0,
       cb: err => {
-        onError?.(err || `Could not ${operation} file due to insufficient space: ${file.path}`)
+        onError?.(err || `Could not ${operation} file due to insufficient space: ${fi.path}`)
       },
     })
 
@@ -58,18 +58,18 @@ export async function performFileOperation({
 
     const lifecycleTag = operation === FileOperation.Trash ? ActionTag.Trashed : ActionTag.Recovered
     const withMeta: FileRecord = {
-      ...file,
+      ...fi,
       customMetadata: {
-        ...(file.customMetadata ?? {}),
+        ...(fi.customMetadata ?? {}),
         lifecycle: capitalizeFirstLetter(lifecycleTag),
         lifecycleAt: new Date().toISOString(),
       },
     }
 
-    const drive = fm.driveList.find(d => d.id.toString() === file.driveId.toString())
+    const drive = fm.driveList.find(d => d.id.toString() === fi.driveId.toString())
 
     if (!drive) {
-      throw new Error(`Drive for ${file.path} not found`)
+      throw new Error(`Drive for ${fi.path} not found`)
     }
 
     switch (operation) {
@@ -80,7 +80,7 @@ export async function performFileOperation({
         await fm.recoverFile(withMeta)
         break
       case FileOperation.Forget:
-        await fm.forget(drive, file.path)
+        await fm.forget(drive.id, fi.path)
         break
       default:
         throw new Error(`Unknown operation: ${operation}`)
@@ -90,7 +90,7 @@ export async function performFileOperation({
 
     return true
   } catch (error) {
-    onError?.(error instanceof Error ? error.message : `Failed to ${operation} file: ${file.path}`)
+    onError?.(error instanceof Error ? error.message : `Failed to ${operation} file: ${fi.path}`)
 
     return false
   }
@@ -118,14 +118,14 @@ export async function performBulkFileOperation({
   if (!fm || !files?.length) return
 
   for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    const defaultErrorMsg = `Could not ${operation} file due to insufficient space: ${file.path}`
+    const fi = files[i]
+    const defaultErrorMsg = `Could not ${operation} file due to insufficient space: ${fi.path}`
 
     try {
-      const currentStamp = stamps.find(s => s.batchID.toString() === file.batchId.toString())
+      const currentStamp = stamps.find(s => s.batchID.toString() === fi.batchId.toString())
 
       if (!currentStamp && operation !== FileOperation.Forget) {
-        onError?.(`Stamp not found for file: ${file.path}`)
+        onError?.(`Stamp not found for file: ${fi.path}`)
 
         return
       }
@@ -134,9 +134,9 @@ export async function performBulkFileOperation({
 
       const success = await performFileOperation({
         fm,
-        file,
-        redundancyLevel: file.redundancyLevel || 0,
-        driveId: file.driveId,
+        fi,
+        redundancyLevel: fi.redundancyLevel || 0,
+        driveId: fi.driveId,
         stamp: currentStamp,
         adminStamp,
         operation,
@@ -148,7 +148,7 @@ export async function performBulkFileOperation({
         throw new Error(defaultErrorMsg)
       }
 
-      onFileComplete?.(file, i)
+      onFileComplete?.(fi, i)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err)
       onError?.(errorMsg || defaultErrorMsg)

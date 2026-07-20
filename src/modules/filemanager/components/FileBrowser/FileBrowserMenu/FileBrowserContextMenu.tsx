@@ -13,6 +13,7 @@ interface FileBrowserContextMenuProps {
   selectedFilesCount: number
   onRefresh: () => void
   onUploadFile: () => void
+  onUploadFolder: () => void
   onBulkDownload: () => void
   onBulkRestore: () => void
   onBulkDelete: () => void
@@ -27,6 +28,7 @@ export function FileBrowserContextMenu({
   selectedFilesCount,
   onRefresh,
   onUploadFile,
+  onUploadFolder,
   onBulkDownload,
   onBulkRestore,
   onBulkDelete,
@@ -87,7 +89,7 @@ export function FileBrowserContextMenu({
 
   return (
     <ContextMenu>
-      <div className="fm-context-item" style={{ display: 'none' }}>
+      <div className="fm-context-item" onClick={onUploadFolder}>
         New folder
       </div>
       <div className="fm-context-item" onClick={onUploadFile}>

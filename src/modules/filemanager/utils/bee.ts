@@ -240,7 +240,7 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
     })
 
     if (!isDestroy) {
-      await fm.forgetDrive(drive)
+      await fm.forgetDrive(drive.id)
       onSuccess?.()
 
       return
@@ -253,13 +253,13 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
     if (!driveStamp || ttlDays <= 2) {
       // eslint-disable-next-line no-console
       console.warn(`Stamp not found or TTL ${ttlDays} <= 2 days, skipping drive destruction: forgetting the drive.`)
-      await fm.forgetDrive(drive)
+      await fm.forgetDrive(drive.id)
       onSuccess?.()
 
       return
     }
 
-    await fm.destroyDrive(drive, driveStamp)
+    await fm.destroyDrive(drive.id)
     onSuccess?.()
   } catch (e) {
     onError?.(e)

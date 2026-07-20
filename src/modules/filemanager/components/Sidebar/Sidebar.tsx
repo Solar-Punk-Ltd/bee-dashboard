@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, ListDepth } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import Add from 'remixicon-react/AddLineIcon'
 import ArrowDown from 'remixicon-react/ArrowDownSLineIcon'
@@ -42,7 +42,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
   const [isExpiredOpen, setIsExpiredOpen] = useState(false)
 
   const { beeApi } = useContext(SettingsContext)
-  const { setView, view } = useView()
+  const { setView, view, setViewFolders, setFolderView } = useView()
   const {
     fm,
     currentDrive,
@@ -96,7 +96,17 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     if (!currentDrive) {
       const firstDrive = drives[0]
       setCurrentDrive(firstDrive)
+
+      if (firstDrive) {
+        const initFolderList = async () => {
+          await fm.listFolder(firstDrive.id, '/', ListDepth.Shallow)
+        }
+
+        initFolderList()
+      }
       setView(ViewType.File)
+      setViewFolders([])
+      setFolderView(false)
     }
 
     if (currentDrive && usableStamps.length > 0) {
@@ -106,7 +116,18 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
         setCurrentStamp(correspondingStamp)
       }
     }
-  }, [fm, drives, currentDrive, usableStamps, setCurrentDrive, setCurrentStamp, setView, beeApi])
+  }, [
+    fm,
+    drives,
+    currentDrive,
+    usableStamps,
+    setCurrentDrive,
+    setCurrentStamp,
+    setView,
+    setViewFolders,
+    setFolderView,
+    beeApi,
+  ])
 
   const handleCreateNewDrive = () => {
     if (isDriveCreationInProgress) {
@@ -213,6 +234,15 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setCurrentDrive(d)
                     setCurrentStamp(stamp)
                     setView(ViewType.File)
+                    setViewFolders([])
+                    setFolderView(false)
+
+                    if (fm) {
+                      const initFolderList = async () => {
+                        await fm.listFolder(d.id, '/', ListDepth.Shallow)
+                      }
+                      initFolderList()
+                    }
                   }}
                 >
                   <DriveItem drive={d} stamp={stamp} isSelected={isSelected} setErrorMessage={setErrorMessage} />
@@ -246,13 +276,30 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     onClick={() => {
                       setCurrentDrive(d)
                       setView(ViewType.Expired)
+
+                      if (fm) {
+                        const initFolderList = async () => {
+                          await fm.listFolder(d.id, '/', ListDepth.Shallow)
+                        }
+                        initFolderList()
+                      }
                     }}
                   >
                     <ExpiredDriveItem
                       drive={d}
                       onForgot={async () => {
                         await syncDrives()
-                        setCurrentDrive(drives.length > 0 ? drives[0] : undefined)
+
+                        const firstDrive = drives.length > 0 ? drives[0] : undefined
+                        setCurrentDrive(firstDrive)
+
+                        if (firstDrive && fm) {
+                          const initFolderList = async () => {
+                            await fm.listFolder(firstDrive.id, '/', ListDepth.Shallow)
+                          }
+                          initFolderList()
+                        }
+
                         setView(ViewType.File)
                       }}
                       setErrorMessage={setErrorMessage}
@@ -293,6 +340,13 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setCurrentDrive(d)
                     setCurrentStamp(stamp)
                     setView(ViewType.Trash)
+
+                    if (fm) {
+                      const initFolderList = async () => {
+                        await fm.listFolder(d.id, '/', ListDepth.Shallow)
+                      }
+                      initFolderList()
+                    }
                   }}
                   title={`${d.name} Trash`}
                 >

@@ -68,7 +68,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
 
     const keyOf = (fi: FileRecord): string => {
       if (nameCount[fi.path] > 1) return `N:${fi.path}`
-      const hist = fi.file.historyRef.toString()
+      const hist = fi.content.historyRef.toString()
 
       if (hist) return `H:${hist}`
       const t = fi.topic.toString()
@@ -123,7 +123,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
 
     const keyOf = (fi: FileRecord): string => {
-      const hist = fi.file.historyRef.toString()
+      const hist = fi.content.historyRef.toString()
 
       if (hist) return `H:${hist}`
       const t = fi.topic.toString()

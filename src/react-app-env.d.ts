@@ -37,3 +37,9 @@ interface Metadata extends SwarmMetadata {
 }
 
 type FilePath = File & { path?: string; fullPath?: string }
+
+interface FileSystemDirectoryHandle {
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>
+  keys(): AsyncIterableIterator<string>
+  values(): AsyncIterableIterator<FileSystemHandle>
+}

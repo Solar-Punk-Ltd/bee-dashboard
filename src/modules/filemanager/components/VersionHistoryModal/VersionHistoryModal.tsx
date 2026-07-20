@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { FeedIndex } from '@ethersphere/bee-js'
 import { FileRecord } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
@@ -91,10 +92,9 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
 
       for (let i = startVersion; i >= BigInt(0) && i >= endVersion; i--) {
         try {
-          const version = await fm.getVersion(fileInfo, FeedIndex.fromBigInt(i).toString())
+          const version = await fm.getFileVersion(fileInfo, FeedIndex.fromBigInt(i).toString())
           versions.push(version)
         } catch (e) {
-          // eslint-disable-next-line no-console
           console.warn(`Failed to get version: ${i}, err: ${e}`)
         }
       }
@@ -217,7 +217,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           },
         })
 
-        await fm.restoreVersion(withMeta)
+        await fm.restoreFileVersion(withMeta)
 
         refreshStamp(versionFi.batchId.toString())
         onCancelClick()

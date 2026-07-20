@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo, FileRecord, ListDepth } from '@solarpunkltd/file-manager-lib'
 import React, {
   ReactElement,
   useCallback,
@@ -11,7 +11,7 @@ import React, {
   useState,
 } from 'react'
 
-import { useView } from '../../../../../pages/filemanager/ViewContext'
+import { ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../../../providers/Settings'
 import { uuidV4 } from '../../../../../utils'
@@ -34,6 +34,7 @@ import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
 import { RenameFileModal } from '../../RenameFileModal/RenameFileModal'
 import { Tooltip } from '../../Tooltip/Tooltip'
 import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryModal'
+import { FileSystemItem } from '../FileBrowserContent/FileBrowserContent'
 
 import './FileItem.scss'
 
@@ -60,6 +61,7 @@ const MenuItem = ({
 
 interface FileItemProps {
   fileInfo: FileRecord
+  displayName?: string
   onDownload: (props: TrackDownloadProps) => (dp: DownloadProgress) => void
   showDriveColumn?: boolean
   driveName: string
@@ -74,10 +76,12 @@ interface FileItemProps {
     delete?: () => void
   }
   setErrorMessage?: (error: string) => void
+  folderItemDoubleClick: (folderFileItems: FileSystemItem[] | null, fileName: string) => void
 }
 
 export function FileItem({
   fileInfo,
+  displayName,
   onDownload,
   showDriveColumn,
   driveName,
@@ -86,6 +90,7 @@ export function FileItem({
   bulkSelectedCount,
   onBulk,
   setErrorMessage,
+  folderItemDoubleClick,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, adminDrive, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
@@ -116,6 +121,20 @@ export function FileItem({
   const latestFileInfo = useMemo(() => {
     return files.find(f => f.topic.toString() === fileInfo.topic.toString()) ?? fileInfo
   }, [files, fileInfo])
+
+  const handleOpenFolder = useCallback(async (): Promise<FileSystemItem[] | undefined> => {
+    if (!fm || !currentDrive) return
+
+    const list = await fm.listFolder(currentDrive.id, fileInfo.path, ListDepth.Shallow)
+
+    const result: FileSystemItem[] = list.map(node => ({
+      path: node.path,
+      ref: 'content' in node ? node.content.reference : (node.manifestRef?.reference ?? ''),
+    }))
+
+    return result
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fm, fileInfo, driveName])
 
   useEffect(() => {
     isMountedRef.current = true
@@ -164,6 +183,21 @@ export function FileItem({
     return out
   }, [files, currentDrive, fileInfo.topic])
 
+  const handleOpen = async (isNewWindow?: boolean) => {
+    handleCloseContext()
+
+    if (!fm || !beeApi) return
+
+    if (fileInfo?.customMetadata?.mime === ItemType.Folder) {
+      const fileDatas = await handleOpenFolder()
+      folderItemDoubleClick(fileDatas ? fileDatas : null, fileInfo.path)
+
+      return
+    }
+
+    handleDownload(isNewWindow)
+  }
+
   const handleDownload = useCallback(
     async (isNewWindow?: boolean) => {
       if (!fm || !beeApi) return
@@ -198,7 +232,7 @@ export function FileItem({
 
       await performFileOperation({
         fm,
-        file: latestFileInfo,
+        fi: latestFileInfo,
         redundancyLevel: currentDrive.redundancyLevel,
         driveId: currentDrive.id.toString(),
         stamp: driveStamp,
@@ -248,23 +282,11 @@ export function FileItem({
             throw new Error(err)
           },
         })
+        const fromPath = latestFileInfo.path
+        const lastSlash = fromPath.lastIndexOf('/')
+        const toPath = (lastSlash >= 0 ? fromPath.substring(0, lastSlash + 1) : '') + newName
 
-        await fm.upload(
-          currentDrive,
-          {
-            path: newName,
-            topic: latestFileInfo.topic,
-            file: {
-              reference: latestFileInfo.file.reference,
-              historyRef: latestFileInfo.file.historyRef,
-            },
-            customMetadata: latestFileInfo.customMetadata,
-            files: [],
-          },
-          {
-            actHistoryAddress: latestFileInfo.file.historyRef,
-          },
-        )
+        await fm.move(fromPath, toPath, currentDrive.id)
 
         refreshStamp(driveStamp.batchID.toString())
       } catch {
@@ -482,9 +504,9 @@ export function FileItem({
         />
       </div>
 
-      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleDownload(true)}>
+      <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleOpen(true)}>
         <GetIconElement name={fileInfo.path} metadata={fileInfo.customMetadata} />
-        {truncateNameMiddle(fileInfo.path)}
+        {truncateNameMiddle(displayName ?? fileInfo.path)}
       </div>
 
       {showDriveColumn && (

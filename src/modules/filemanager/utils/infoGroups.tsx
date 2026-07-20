@@ -1,5 +1,5 @@
 import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
-import { FileManagerBase, FileRecord, FileStatus } from '@solarpunkltd/file-manager-lib'
+import { FileManagerBase, FileRecord, FileStatus, FolderInfo } from '@solarpunkltd/file-manager-lib'
 import type { ReactElement } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
@@ -57,7 +57,7 @@ const fmtDate = (ts?: number) => {
 
 async function getCreatedTs(fm: FileManagerBase, fi: FileRecord): Promise<number | undefined> {
   try {
-    const v0 = await fm.getVersion(fi, FEED_INDEX_ZERO.toString())
+    const v0 = await fm.getFileVersion(fi, FEED_INDEX_ZERO.toString())
 
     return v0.timestamp
   } catch {
@@ -105,8 +105,8 @@ function buildGeneralGroup(
       {
         key: 'hash',
         label: 'Swarm hash',
-        value: truncateMiddle(fi.file.reference.toString()),
-        raw: fi.file.reference.toString(),
+        value: truncateMiddle(fi.content.reference.toString()),
+        raw: fi.content.reference.toString(),
       },
       {
         key: 'ver',
@@ -162,8 +162,8 @@ function buildAccessGroup(fi: FileRecord, granteeCount?: number): FilePropertyGr
       {
         key: 'historyRef',
         label: 'ACT History',
-        value: truncateMiddle(fi.file.historyRef.toString()),
-        raw: fi.file.historyRef.toString(),
+        value: truncateMiddle(fi.content.historyRef.toString()),
+        raw: fi.content.historyRef.toString(),
       },
     ],
   }
@@ -193,6 +193,79 @@ function buildStorageGroup(fi: FileRecord, driveName: string, stamp?: PostageBat
       { key: 'redundancy', label: 'Redundancy', value: redundancyLabel },
     ],
   }
+}
+
+export function buildFolderInfoGroups(
+  folder: FolderInfo,
+  driveName: string,
+  itemCount: number,
+  stamp?: PostageBatch,
+): FilePropertyGroup[] {
+  const manifestRef = folder.manifestRef?.reference?.toString()
+  const historyRef = folder.manifestRef?.historyRef?.toString()
+
+  const stampValue = stamp
+    ? truncateNameMiddle(stamp.label, 35, 10, 10) + ' (' + truncateMiddle(folder.batchId.toString(), 4, 4) + ')'
+    : truncateMiddle(folder.batchId.toString())
+
+  const redundancyLabel =
+    folder.redundancyLevel !== undefined
+      ? (erasureCodeMarks.find(mark => mark.value === folder.redundancyLevel)?.label ??
+        folder.redundancyLevel.toString())
+      : dash
+
+  return [
+    {
+      title: 'General',
+      icon: <GeneralIcon size="14px" color="rgb(237, 129, 49)" />,
+      properties: [
+        { key: 'type', label: 'Type', value: 'Folder' },
+        { key: 'count', label: 'Items', value: `${itemCount}` },
+        { key: 'path', label: 'Location', value: truncateNameMiddle(folder.path || dash, 35, 10, 10) },
+        {
+          key: 'manifest',
+          label: 'Manifest hash',
+          value: manifestRef ? truncateMiddle(manifestRef) : dash,
+          raw: manifestRef,
+        },
+        {
+          key: 'ver',
+          label: 'Versions',
+          value: ((indexStrToBigint(folder.version?.toString()) ?? BigInt(0)) + BigInt(1)).toString(),
+        },
+        { key: 'status', label: 'Status', value: !folder.status ? FileStatus.Active : folder.status },
+      ],
+    },
+    {
+      title: 'Access & Permissions',
+      icon: <AccessIcon size="14px" color="rgb(237, 129, 49)" />,
+      properties: [
+        { key: 'owner', label: 'Owner', value: truncateMiddle(folder.owner.toString()), raw: folder.owner.toString() },
+        {
+          key: 'actpub',
+          label: 'ACT Publisher',
+          value: truncateMiddle(folder.actPublisher.toString()),
+          raw: folder.actPublisher.toString(),
+        },
+        { key: 'topic', label: 'Topic', value: truncateMiddle(folder.topic.toString()), raw: folder.topic.toString() },
+        {
+          key: 'historyRef',
+          label: 'ACT History',
+          value: historyRef ? truncateMiddle(historyRef) : dash,
+          raw: historyRef,
+        },
+      ],
+    },
+    {
+      title: 'Storage',
+      icon: <HardDriveIcon size="14px" color="rgb(237, 129, 49)" />,
+      properties: [
+        { key: 'batch', label: 'Batch ID', value: stampValue, raw: folder.batchId.toString() },
+        { key: 'drive', label: 'Drive', value: truncateNameMiddle(driveName, 35, 10, 10) },
+        { key: 'redundancy', label: 'Redundancy', value: redundancyLabel },
+      ],
+    },
+  ]
 }
 
 export async function buildGetInfoGroups(
