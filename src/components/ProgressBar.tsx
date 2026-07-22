@@ -7,9 +7,12 @@ interface Props {
   linearProgressProps?: LinearProgressProps
   value: number
   indeterminate?: boolean
+  label?: string
 }
 
-export function LinearProgressWithLabel({ indeterminate, value, linearProgressProps }: Props): ReactElement {
+export function LinearProgressWithLabel({ indeterminate, value, linearProgressProps, label }: Props): ReactElement {
+  const displayLabel = label ?? (indeterminate ? 'Syncing...' : `${Math.round(value)}%`)
+
   return (
     <Box display="flex" alignItems="center">
       <Box width="100%" mr={1}>
@@ -21,7 +24,7 @@ export function LinearProgressWithLabel({ indeterminate, value, linearProgressPr
       </Box>
       <Box minWidth={35}>
         <Typography variant="body2" color="textSecondary">
-          {indeterminate ? 'Syncing...' : `${Math.round(value)}%`}
+          {displayLabel}
         </Typography>
       </Box>
     </Box>

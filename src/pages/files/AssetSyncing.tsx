@@ -74,7 +74,11 @@ export function AssetSyncing({ reference }: Props): ReactElement {
         </DocumentationText>
       </Box>
       <Box mb={4}>
-        <LinearProgressWithLabel value={syncProgress} indeterminate={syncProgress < 100 && !probeFailed} />
+        <LinearProgressWithLabel
+          value={syncProgress}
+          indeterminate={syncProgress < 100 && !probeFailed}
+          label={probeFailed ? 'Unknown' : undefined}
+        />
       </Box>
       {probeFailed && (
         <Box mb={2}>
