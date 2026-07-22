@@ -19,6 +19,9 @@ export function AssetSyncing({ reference }: Props): ReactElement {
   const [probeFailed, setProbeFailed] = useState<boolean>(false)
 
   useEffect(() => {
+    setSyncProgress(0)
+    setProbeFailed(false)
+
     if (!beeApi || !reference) return
 
     let isMounted = true
