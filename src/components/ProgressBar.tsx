@@ -9,15 +9,19 @@ interface Props {
   indeterminate?: boolean
 }
 
-export function LinearProgressWithLabel({ indeterminate, ...props }: Props): ReactElement {
+export function LinearProgressWithLabel({ indeterminate, value, linearProgressProps }: Props): ReactElement {
   return (
     <Box display="flex" alignItems="center">
       <Box width="100%" mr={1}>
-        <LinearProgress variant={indeterminate ? 'indeterminate' : 'determinate'} {...props} />
+        <LinearProgress
+          {...linearProgressProps}
+          variant={indeterminate ? 'indeterminate' : 'determinate'}
+          value={value}
+        />
       </Box>
       <Box minWidth={35}>
         <Typography variant="body2" color="textSecondary">
-          {indeterminate ? 'Syncing...' : `${Math.round(props.value)}%`}
+          {indeterminate ? 'Syncing...' : `${Math.round(value)}%`}
         </Typography>
       </Box>
     </Box>
