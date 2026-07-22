@@ -26,6 +26,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
 
     let isMounted = true
     let retryTimer: ReturnType<typeof setTimeout> | null = null
+    let currentAbortController: AbortController | null = null
 
     // deferred: false already guarantees the upload was pushed to and acknowledged by the
     // network before the upload call resolved. This is just a cheap local sanity check
@@ -35,6 +36,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
       // hung request never resolves or rejects, and neither the retry nor the failure state
       // would ever trigger.
       const abortController = new AbortController()
+      currentAbortController = abortController
       const abortTimer = setTimeout(() => abortController.abort(), PROBE_TIMEOUT_MS)
 
       try {
@@ -42,9 +44,13 @@ export function AssetSyncing({ reference }: Props): ReactElement {
 
         if (isMounted) setSyncProgress(100)
       } catch {
+        // Bail out entirely once unmounted/reference changed, so a rejection from an
+        // in-flight first attempt can't schedule an unnecessary extra retry request.
+        if (!isMounted) return
+
         if (!isRetry) {
           retryTimer = setTimeout(() => check(true), PROBE_RETRY_DELAY_MS)
-        } else if (isMounted) {
+        } else {
           setProbeFailed(true)
         }
       } finally {
@@ -56,6 +62,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
 
     return () => {
       isMounted = false
+      currentAbortController?.abort()
 
       if (retryTimer) {
         clearTimeout(retryTimer)
