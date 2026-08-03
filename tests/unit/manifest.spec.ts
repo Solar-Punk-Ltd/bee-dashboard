@@ -26,7 +26,7 @@ describe('loadManifest', () => {
 
   beforeEach(() => {
     downloadData = jest.fn().mockResolvedValue({ toUint8Array: () => new Uint8Array([1, 2, 3]) })
-    beeApi = { downloadData } as unknown as Bee
+    beeApi = { data: { download: downloadData } } as unknown as Bee
 
     // Both unmarshal paths return our fake node so we can assert *which* one ran
     // without exercising real chunk parsing.

@@ -4,4 +4,6 @@ allowBuilds:
   puppeteer: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - '@ethersphere/bee-js@12.3.1'
+  - '@ethersphere/bee-js@13.0.0-upcoming.gcfb9756'
+overrides:
+  '@solarpunkltd/file-manager-lib': link:../file-manager-lib
