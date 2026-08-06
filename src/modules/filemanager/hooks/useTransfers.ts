@@ -608,8 +608,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         currentFileSizeSum += file.size
         const fileCount = inFlightCount + i + 1
 
-        const { ok } = verifyDriveSpace({
+        const { ok } = await verifyDriveSpace({
           fm,
+          bee: beeApi,
           redundancyLevel: currentDrive.redundancyLevel,
           stamp: currentStamp,
           useInfoSize: true,
@@ -638,7 +639,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       return tasks
     },
-    [fm, currentDrive, currentStamp, adminDrive, createUploadTask, setErrorMessage, setShowError],
+    [fm, beeApi, currentDrive, currentStamp, adminDrive, createUploadTask, setErrorMessage, setShowError],
   )
 
   const runUploadQueue = useCallback(async () => {
@@ -766,10 +767,11 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
 
       const totalSize = realFiles.reduce((sum, f) => sum + (f.size || 0), 0)
 
-      const { ok } = verifyDriveSpace({
+      const { ok } = await verifyDriveSpace({
         fm,
         redundancyLevel: currentDrive.redundancyLevel,
         stamp: currentStamp,
+        bee: beeApi,
         useInfoSize: true,
         driveId: currentDrive.id.toString(),
         adminRedundancy: adminDrive?.redundancyLevel,
@@ -856,6 +858,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     },
     [
       fm,
+      beeApi,
       currentDrive,
       currentStamp,
       adminDrive,

@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import HistoryIcon from 'remixicon-react/HistoryLineIcon'
 
 import { Context as FMContext } from '../../../../providers/FileManager'
+import { Context as SettingsContext } from '../../../../providers/Settings'
 import { TOOLTIPS } from '../../constants/tooltips'
 import { ActionTag, DownloadProgress, TrackDownloadProps } from '../../constants/transfers'
 import { ConflictAction, useUploadConflictDialog } from '../../hooks/useUploadConflictDialog'
@@ -36,6 +37,7 @@ interface VersionHistoryModalProps {
 
 export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: VersionHistoryModalProps): ReactElement {
   const { fm, files, currentDrive, currentStamp, refreshStamp } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
 
   const [openConflict, conflictPortal] = useUploadConflictDialog()
   const modalRoot = document.querySelector('.fm-main') || document.body
@@ -206,8 +208,9 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
           },
         }
 
-        verifyDriveSpace({
+        await verifyDriveSpace({
           fm,
+          bee: beeApi,
           redundancyLevel: currentDrive.redundancyLevel,
           stamp: currentStamp,
           useInfoSize: true,
@@ -226,7 +229,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
         setError(msg)
       }
     },
-    [fm, currentStamp, currentDrive, refreshStamp, onCancelClick],
+    [fm, beeApi, currentStamp, currentDrive, refreshStamp, onCancelClick],
   )
 
   const restoreVersion = useCallback(

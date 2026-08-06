@@ -1,4 +1,4 @@
-import type { PostageBatch, RedundancyLevel } from '@ethersphere/bee-js'
+import type { Bee, PostageBatch, RedundancyLevel } from '@ethersphere/bee-js'
 import type { DriveInfo, FileManagerBase, FileRecord } from '@solarpunkltd/file-manager-lib'
 
 import { ActionTag } from '../constants/transfers'
@@ -14,6 +14,7 @@ export enum FileOperation {
 
 interface FileOperationOptions {
   fm: FileManagerBase
+  bee: Bee | null
   fi: FileRecord
   redundancyLevel: RedundancyLevel
   driveId: string
@@ -27,6 +28,7 @@ interface FileOperationOptions {
 
 export async function performFileOperation({
   fm,
+  bee,
   fi,
   redundancyLevel,
   driveId,
@@ -41,8 +43,9 @@ export async function performFileOperation({
     const isForget = operation === FileOperation.Forget
     const verifyStamp = isForget ? adminStamp || stamp : stamp
 
-    const { ok } = verifyDriveSpace({
+    const { ok } = await verifyDriveSpace({
       fm,
+      bee,
       redundancyLevel,
       stamp: verifyStamp,
       useInfoSize: !isForget,
@@ -98,6 +101,7 @@ export async function performFileOperation({
 
 export async function performBulkFileOperation({
   fm,
+  bee,
   files,
   operation,
   stamps,
@@ -107,6 +111,7 @@ export async function performBulkFileOperation({
   onFileComplete,
 }: {
   fm: FileManagerBase
+  bee: Bee | null
   files: FileRecord[]
   operation: FileOperation
   stamps: PostageBatch[]
@@ -134,6 +139,7 @@ export async function performBulkFileOperation({
 
       const success = await performFileOperation({
         fm,
+        bee,
         fi,
         redundancyLevel: fi.redundancyLevel || 0,
         driveId: fi.driveId,

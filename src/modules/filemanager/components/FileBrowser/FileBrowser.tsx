@@ -23,7 +23,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop'
 import { useFileFiltering } from '../../hooks/useFileFiltering'
 import { SortDir, SortKey, useSorting } from '../../hooks/useSorting'
 import { useTransfers } from '../../hooks/useTransfers'
-import { handleDestroyAndForgetDrive } from '../../utils/bee'
+import { getUsableStamps, handleDestroyAndForgetDrive } from '../../utils/bee'
 import { Dir, getFileId, Point, safeSetState } from '../../utils/common'
 import { isDirectoryPickerSupported } from '../../utils/fileOperations'
 import { computeContextMenuPosition } from '../../utils/ui'
@@ -124,7 +124,7 @@ type FileBrowserContextMenuBlockProps = {
   drives: DriveInfo[]
   view: ViewType
   bulk: BulkActionsResult
-  adminStamp: PostageBatch | undefined
+  adminStamp: PostageBatch | null
   doRefresh: () => void
   onContextUploadFile: () => void
   onContextUploadFolder: () => void
@@ -223,6 +223,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const [showNewFolderModal, setShowNewFolderModal] = useState(false)
   const [pendingCancelUpload, setPendingCancelUpload] = useState<string | null>(null)
   const [pendingCancelDownload, setPendingCancelDownload] = useState<string | null>(null)
+  const [fmAdminStamp, setFmAdminStamp] = useState<PostageBatch | null>(null)
 
   // Current folder path within the drive manifest (empty string = drive root).
   const currentPath = viewFolders.map(f => f.folderName).join('/')
@@ -451,6 +452,25 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
       setShowError(false)
     }
   }, [setShowError])
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    const getFmAdminStamp = async () => {
+      if (!beeApi || !fm) {
+        return
+      }
+
+      const stamps = await getUsableStamps(beeApi)
+      const adminStamp = stamps.find(s => s.batchID.toString() === fm.adminStamp?.batchId)
+
+      if (adminStamp && isMountedRef.current) {
+        setFmAdminStamp(adminStamp)
+      }
+    }
+
+    getFmAdminStamp()
+  }, [fm, beeApi])
 
   useEffect(() => {
     let title = currentDrive?.name || ''
@@ -703,7 +723,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
               drives={drives}
               view={view}
               bulk={bulk}
-              adminStamp={fm?.adminStamp}
+              adminStamp={fmAdminStamp}
               doRefresh={doRefresh}
               onContextUploadFile={onContextUploadFile}
               onContextUploadFolder={selectFolder}

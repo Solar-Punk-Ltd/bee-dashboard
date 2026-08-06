@@ -15,8 +15,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
       '@ethersphere/bee-js':
-        specifier: file:../bee-js
-        version: file:../bee-js
+        specifier: npm:@solarpunkltd/bee-js@0.0.0-fmv2.1
+        version: '@solarpunkltd/bee-js@0.0.0-fmv2.1'
       '@formbricks/js':
         specifier: ^4.3.0
         version: 4.3.0
@@ -1256,10 +1256,6 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ethersphere/bee-js@file:../bee-js':
-    resolution: {directory: ../bee-js, type: directory}
-    engines: {bee: 2.8.1-7cf53193, beeApiVersion: 8.1.0}
-
   '@formbricks/js@4.3.0':
     resolution: {integrity: sha512-IR1SAdHsthC3js7O3BjW14EbpAy/u3/8R0Jekzrkglt+b0LGFrFL/vUcK6IypG4HbopTlDcpU9A45i1YPJ8jrA==}
 
@@ -1832,6 +1828,10 @@ packages:
 
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
+
+  '@solarpunkltd/bee-js@0.0.0-fmv2.1':
+    resolution: {integrity: sha512-j+XYzHW0AtGfkv1YYO5QfLZ49u0dIZ95lXbg21V//qteDL0oB6xH++Gl4Q+NRVJS8050WV1cOA8DtNUdvhwJ4A==}
+    engines: {bee: 2.8.1-7cf53193, beeApiVersion: 8.1.0}
 
   '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
     resolution: {directory: ../file-manager-lib, type: directory}
@@ -6942,19 +6942,6 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@ethersphere/bee-js@file:../bee-js':
-    dependencies:
-      cafe-utility: 34.0.0
-      debug: 4.4.3
-      isomorphic-ws: 5.0.0(ws@8.21.0)
-      semver: 7.7.4
-      ws: 8.21.0
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
   '@formbricks/js@4.3.0': {}
 
   '@humanfs/core@0.19.1': {}
@@ -7572,9 +7559,22 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@solarpunkltd/bee-js@0.0.0-fmv2.1':
+    dependencies:
+      cafe-utility: 34.0.0
+      debug: 4.4.3
+      isomorphic-ws: 5.0.0(ws@8.21.0)
+      semver: 7.7.4
+      ws: 8.21.0
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
     dependencies:
-      '@ethersphere/bee-js': file:../bee-js
+      '@ethersphere/bee-js': '@solarpunkltd/bee-js@0.0.0-fmv2.1'
       cafe-utility: 36.2.0
       std-env: 3.10.0
     transitivePeerDependencies:

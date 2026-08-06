@@ -228,15 +228,22 @@ export function FileItem({
 
   const handleFileAction = useCallback(
     async (operation: FileOperation) => {
-      if (!fm || !driveStamp || !currentDrive) return
+      if (!fm || !driveStamp || !currentDrive || !beeApi) return
+
+      const stamps = await getUsableStamps(beeApi)
+      const adminStamp = stamps.find(s => s.batchID.toString() === fm.adminStamp?.batchId)
+
+      if (!adminStamp) {
+        throw new Error('Fm admin stamp not found')
+      }
 
       await performFileOperation({
         fm,
+        bee: beeApi,
         fi: latestFileInfo,
         redundancyLevel: currentDrive.redundancyLevel,
         driveId: currentDrive.id.toString(),
         stamp: driveStamp,
-        adminStamp: fm.adminStamp,
         adminRedundancy: adminDrive?.redundancyLevel,
         operation,
         onError: err => {
@@ -244,7 +251,7 @@ export function FileItem({
           setShowError(true)
         },
         onSuccess: () => {
-          const stampToRefresh = operation === FileOperation.Forget ? fm.adminStamp : driveStamp
+          const stampToRefresh = operation === FileOperation.Forget ? adminStamp : driveStamp
 
           if (stampToRefresh) {
             refreshStamp(stampToRefresh.batchID.toString())
@@ -252,7 +259,7 @@ export function FileItem({
         },
       })
     },
-    [fm, driveStamp, adminDrive, currentDrive, latestFileInfo, refreshStamp, setErrorMessage, setShowError],
+    [fm, beeApi, driveStamp, adminDrive, currentDrive, latestFileInfo, refreshStamp, setErrorMessage, setShowError],
   )
 
   const showDestroyDrive = useCallback(() => {
@@ -262,7 +269,7 @@ export function FileItem({
 
   const doRename = useCallback(
     async (newName: string) => {
-      if (!fm || !driveStamp || !currentDrive) {
+      if (!fm || !driveStamp || !currentDrive || !beeApi) {
         setErrorMessage?.('Invalid FM or Current Drive')
         setShowError(true)
 
@@ -272,10 +279,11 @@ export function FileItem({
       if (takenNames.has(newName)) throw new Error('name-taken')
 
       try {
-        verifyDriveSpace({
+        await verifyDriveSpace({
           fm,
           redundancyLevel: currentDrive.redundancyLevel,
           stamp: driveStamp,
+          bee: beeApi,
           useInfoSize: true,
           driveId: currentDrive.id.toString(),
           cb: err => {
@@ -295,7 +303,7 @@ export function FileItem({
       }
     },
 
-    [fm, driveStamp, currentDrive, latestFileInfo, takenNames, refreshStamp, setErrorMessage, setShowError],
+    [fm, beeApi, driveStamp, currentDrive, latestFileInfo, takenNames, refreshStamp, setErrorMessage, setShowError],
   )
 
   const renderContextMenuItems = useCallback(() => {

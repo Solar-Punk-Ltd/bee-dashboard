@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo, estimateDriveListMetadataSize } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -32,7 +32,7 @@ export function AdminStatusBar({
   isCreationInProgress,
   setErrorMessage,
 }: AdminStatusBarProps): ReactElement {
-  const { drives, setShowError, refreshStamp } = useContext(FMContext)
+  const { setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
   const [isUpgradeDriveModalOpen, setIsUpgradeDriveModalOpen] = useState(false)
@@ -155,21 +155,19 @@ export function AdminStatusBar({
       }
     }
 
-    const estimatedDlSizeBytes = estimateDriveListMetadataSize(drives) * drives.length
     const {
       capacityPct: reportedPct,
       usedBytes: reportedUsedBytes,
       stampSizeBytes,
     } = calculateStampCapacityMetrics(actualStamp, [], adminDrive?.redundancyLevel)
-    const actualUsedSizeBytes = Math.max(reportedUsedBytes, estimatedDlSizeBytes)
-    const actualPct = Math.max(reportedPct, (actualUsedSizeBytes / stampSizeBytes) * 100)
+    const actualPct = Math.max(reportedPct, (reportedUsedBytes / stampSizeBytes) * 100)
 
     return {
       capacityPct: actualPct,
-      usedSize: getHumanReadableFileSize(actualUsedSizeBytes),
+      usedSize: getHumanReadableFileSize(reportedUsedBytes),
       totalSize: getHumanReadableFileSize(stampSizeBytes),
     }
-  }, [actualStamp, adminDrive, drives])
+  }, [actualStamp, adminDrive])
 
   const expiresAt = useMemo(
     () => (actualStamp ? actualStamp.duration.toEndDate().toLocaleDateString() : '—'),

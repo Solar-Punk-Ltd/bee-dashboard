@@ -1,5 +1,5 @@
-import { GetGranteesResult, PostageBatch } from '@ethersphere/bee-js'
-import { FileManagerBase, FileRecord, FileStatus, FolderInfo } from '@solarpunkltd/file-manager-lib'
+import { PostageBatch } from '@ethersphere/bee-js'
+import { FileManagerBase, FileRecord, FolderInfo, NodeStatus } from '@solarpunkltd/file-manager-lib'
 import type { ReactElement } from 'react'
 import CalendarIcon from 'remixicon-react/CalendarLineIcon'
 import GeneralIcon from 'remixicon-react/FileTextLineIcon'
@@ -65,28 +65,6 @@ async function getCreatedTs(fm: FileManagerBase, fi: FileRecord): Promise<number
   }
 }
 
-function extractGranteeCount(r: GetGranteesResult): number {
-  const obj = r as unknown as Record<string, unknown>
-  const pk = obj.publicKeys
-
-  if (Array.isArray(pk)) return pk.length
-  const gs = obj.grantees
-
-  if (Array.isArray(gs)) return gs.length
-
-  return 0
-}
-
-export async function getGranteeCount(fm: FileManagerBase, fi: FileRecord): Promise<number | undefined> {
-  try {
-    const result = await fm.getGrantees(fi)
-
-    return extractGranteeCount(result)
-  } catch {
-    return undefined
-  }
-}
-
 function buildGeneralGroup(
   fi: FileRecord,
   mime?: string,
@@ -113,7 +91,7 @@ function buildGeneralGroup(
         label: 'Versions',
         value: ((indexStrToBigint(fi.version?.toString()) ?? BigInt(0)) + BigInt(1)).toString(),
       },
-      { key: 'status', label: 'Status', value: !fi.status ? FileStatus.Active : fi.status },
+      { key: 'status', label: 'Status', value: !fi.status ? NodeStatus.Active : fi.status },
     ],
   }
 }
@@ -141,7 +119,7 @@ function buildAccessGroup(fi: FileRecord, granteeCount?: number): FilePropertyGr
         value: truncateMiddle(fi.owner.toString()),
         raw: fi.owner.toString(),
       },
-      { key: 'shared', label: 'Sharing', value: fi.shared ? 'Shared' : 'Private' },
+      { key: 'shared', label: 'Sharing', value: 'Private' },
       {
         key: 'grantees',
         label: 'Grantees',
@@ -228,12 +206,7 @@ export function buildFolderInfoGroups(
           value: manifestRef ? truncateMiddle(manifestRef) : dash,
           raw: manifestRef,
         },
-        {
-          key: 'ver',
-          label: 'Versions',
-          value: ((indexStrToBigint(folder.version?.toString()) ?? BigInt(0)) + BigInt(1)).toString(),
-        },
-        { key: 'status', label: 'Status', value: !folder.status ? FileStatus.Active : folder.status },
+        { key: 'status', label: 'Status', value: !folder.status ? NodeStatus.Active : folder.status },
       ],
     },
     {
@@ -284,12 +257,12 @@ export async function buildGetInfoGroups(
   const fileCount = cm?.fileCount
   const expires = cm?.expiresAt || stamp?.duration.toEndDate().toLocaleDateString()
 
-  const [createdTs, granteeCount] = await Promise.all([getCreatedTs(fm, fi), getGranteeCount(fm, fi)])
+  const createdTs = await getCreatedTs(fm, fi)
 
   return [
     buildGeneralGroup(fi, mime, size, path, fileCount),
     buildDatesGroup(createdTs, fi.timestamp, expires),
-    buildAccessGroup(fi, granteeCount),
+    buildAccessGroup(fi, 0),
     buildStorageGroup(fi, driveName, stamp),
   ]
 }

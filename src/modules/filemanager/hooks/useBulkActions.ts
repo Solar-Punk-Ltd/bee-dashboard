@@ -138,10 +138,11 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
 
   const trash = useCallback(
     async (list: FileRecord[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !list?.length || !beeApi) return
 
       await performBulkFileOperation({
         fm,
+        bee: beeApi,
         files: list,
         operation: FileOperation.Trash,
         stamps: driveStamps || [],
@@ -156,15 +157,16 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
 
       clearAll()
     },
-    [fm, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
+    [fm, beeApi, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
   )
 
   const restore = useCallback(
     async (list: FileRecord[]) => {
-      if (!fm || !list?.length) return
+      if (!fm || !list?.length || !beeApi) return
 
       await performBulkFileOperation({
         fm,
+        bee: beeApi,
         files: list,
         operation: FileOperation.Recover,
         stamps: driveStamps || [],
@@ -179,19 +181,19 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
 
       clearAll()
     },
-    [fm, driveStamps, refreshStamp, clearAll, setErrorMessage, setShowError],
+    [fm, beeApi, driveStamps, refreshStamp, clearAll, setErrorMessage, setShowError],
   )
 
   const forget = useCallback(
     async (list: FileRecord[]) => {
-      if (!fm || !fm.adminStamp || !adminDrive || !list?.length) return
+      if (!fm || !fm.adminStamp || !adminDrive || !list?.length || !beeApi) return
 
       await performBulkFileOperation({
         fm,
+        bee: beeApi,
         files: list,
         operation: FileOperation.Forget,
         stamps: driveStamps || [],
-        adminStamp: fm.adminStamp,
         adminDrive: adminDrive || undefined,
         onError: error => {
           setErrorMessage?.(error)
@@ -199,14 +201,14 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
         },
         onFileComplete: () => {
           if (fm.adminStamp) {
-            refreshStamp(fm.adminStamp.batchID.toString())
+            refreshStamp(fm.adminStamp.batchId)
           }
         },
       })
 
       clearAll()
     },
-    [fm, adminDrive, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
+    [fm, beeApi, adminDrive, driveStamps, clearAll, refreshStamp, setErrorMessage, setShowError],
   )
 
   return useMemo<BulkActionsResult>(

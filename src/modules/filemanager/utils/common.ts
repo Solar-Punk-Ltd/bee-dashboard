@@ -1,5 +1,5 @@
 import { Bytes, PrivateKey } from '@ethersphere/bee-js'
-import { FileRecord, FileStatus } from '@solarpunkltd/file-manager-lib'
+import { FileRecord, NodeStatus } from '@solarpunkltd/file-manager-lib'
 import React from 'react'
 
 import { LocalStorageKeys } from '../../../utils/localStorage'
@@ -73,7 +73,7 @@ export const formatBytes = (v?: string | number | File[]): string | undefined =>
   return `${val.toFixed(1)} ${units[i]}`
 }
 
-export const isTrashed = (fi: FileRecord): boolean => fi.status === FileStatus.Trashed
+export const isTrashed = (fi: FileRecord): boolean => fi.status === NodeStatus.Trashed
 
 export type Point = { x: number; y: number }
 export enum Dir {

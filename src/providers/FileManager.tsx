@@ -1,11 +1,12 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
-import type { FileRecord, FolderInfo } from '@solarpunkltd/file-manager-lib'
+import type { FileRecord, FolderInfo, SwarmClient } from '@solarpunkltd/file-manager-lib'
 import {
+  BeeClient,
   DriveInfo,
   FileManagerBase,
   FileManagerEvents,
-  FileStatus,
   ListDepth,
+  NodeStatus,
   NodeType,
 } from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
@@ -77,7 +78,7 @@ interface Props {
 }
 
 const findDrives = (
-  allDrives: DriveInfo[],
+  allDrives: readonly DriveInfo[],
   usableStamps: PostageBatch[],
 ): { adminDrive: DriveInfo | null; userDrives: DriveInfo[]; expiredDrives: DriveInfo[] } => {
   let adminDrive: DriveInfo | null = null
@@ -153,7 +154,7 @@ export function Provider({ children }: Props) {
       return
     }
 
-    setFiles([...manager.fileInfoList])
+    setFiles([...manager.recordList])
   }, [])
 
   const syncDrives = useCallback(
@@ -277,7 +278,8 @@ export function Provider({ children }: Props) {
     setCurrentStamp(undefined)
     setShallReset(false)
 
-    const manager = new FileManagerBase(beeInstance)
+    const client: SwarmClient = new BeeClient(beeInstance, pk)
+    const manager = new FileManagerBase(client)
 
     const handleInitialized = (success: boolean) => {
       setInitializationError(!success)
@@ -342,8 +344,8 @@ export function Provider({ children }: Props) {
       syncFiles(manager, record),
     )
     manager.emitter.on(FileManagerEvents.FILE_MOVED, ({ toPath }: { fromPath: string; toPath: string }) => {
-      // move() rewrites the record's path in-place in fileInfoList (topic is unchanged) — upsert it by topic.
-      const moved = manager.fileInfoList.find(f => f.path === toPath)
+      // move() rewrites the record's path in-place in recordList (topic is unchanged) — upsert it by topic.
+      const moved = manager.recordList.find(f => f.path === toPath)
 
       if (moved) {
         syncFiles(manager, moved)
@@ -397,8 +399,8 @@ export function Provider({ children }: Props) {
     if (!fm || !currentDrive) return
 
     const entries = await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
-    setFiles([...fm.fileInfoList])
-    setFolders(entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== FileStatus.Trashed))
+    setFiles([...fm.recordList])
+    setFolders(entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== NodeStatus.Trashed))
   }, [fm, currentDrive])
 
   useEffect(() => {
@@ -411,9 +413,9 @@ export function Provider({ children }: Props) {
         const entries = await fm.listFolder(currentDrive.id, '/', ListDepth.Deep)
 
         if (!cancelled) {
-          setFiles([...fm.fileInfoList])
+          setFiles([...fm.recordList])
           setFolders(
-            entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== FileStatus.Trashed),
+            entries.filter((e): e is FolderInfo => e.type === NodeType.Folder && e.status !== NodeStatus.Trashed),
           )
         }
       } catch (e) {

@@ -1,4 +1,4 @@
-import { BeeModes } from '@ethersphere/bee-js'
+import { BeeModes, PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -12,10 +12,12 @@ import { Header } from '../../modules/filemanager/components/Header/Header'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
 import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
+import { getUsableStamps } from '../../modules/filemanager/utils/bee'
 import { getSignerPk, removeSignerPk } from '../../modules/filemanager/utils/common'
 import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { Context as FMContext } from '../../providers/FileManager'
 import { BrowserPlatform, cacheClearUrls, detectBrowser } from '../../providers/Platform'
+import { Context as SettingsContext } from '../../providers/Settings'
 
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
@@ -130,6 +132,7 @@ function ErrorModalBlock({ onClick, label }: { onClick: () => void; label: strin
 
 function FileManagerMainContent(props: {
   fm: FileManagerBase | null
+  adminStamp: PostageBatch | null
   showConnectionError: boolean
   setShowConnectionError: (v: boolean) => void
   isFormbricksActive: boolean
@@ -141,6 +144,7 @@ function FileManagerMainContent(props: {
 }) {
   const {
     fm,
+    adminStamp,
     showConnectionError,
     setShowConnectionError,
     isFormbricksActive,
@@ -168,7 +172,7 @@ function FileManagerMainContent(props: {
             <FileBrowser errorMessage={errorMessage} setErrorMessage={setErrorMessage} />
           </div>
           <AdminStatusBar
-            adminStamp={fm?.adminStamp || null}
+            adminStamp={adminStamp}
             adminDrive={adminDrive}
             loading={loading}
             isCreationInProgress={isCreationInProgress}
@@ -202,9 +206,11 @@ export function FileManagerPage(): ReactElement {
   const [isCreationInProgress, setIsCreationInProgress] = useState<boolean>(false)
   const [connectionErrorDismissed, setConnectionErrorDismissed] = useState<boolean>(false)
   const [cacheHelpUrl, setCacheHelpUrl] = useState<string>(cacheClearUrls[BrowserPlatform.Chrome])
+  const [fmAdminStamp, setFmAdminStamp] = useState<PostageBatch | null>(null)
 
   const { status, chainState, nodeInfo } = useContext(BeeContext)
   const { fm, initDone, shallReset, adminDrive, initializationError, notifyPkSaved } = useContext(FMContext)
+  const { beeApi } = useContext(SettingsContext)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -220,6 +226,25 @@ export function FileManagerPage(): ReactElement {
       isMountedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    const getFmAdminStamp = async () => {
+      if (!beeApi || !fm) {
+        return
+      }
+
+      const stamps = await getUsableStamps(beeApi)
+      const adminStamp = stamps.find(s => s.batchID.toString() === fm.adminStamp?.batchId)
+
+      if (adminStamp && isMountedRef.current) {
+        setFmAdminStamp(adminStamp)
+      }
+    }
+
+    getFmAdminStamp()
+  }, [fm, beeApi])
 
   const { isBeeReady, isConnectionError } = useMemo(() => {
     const isConnecting = status.all === CheckState.CONNECTING
@@ -357,6 +382,7 @@ export function FileManagerPage(): ReactElement {
   return (
     <FileManagerMainContent
       fm={fm}
+      adminStamp={fmAdminStamp}
       showConnectionError={isConnectionError && !connectionErrorDismissed}
       setShowConnectionError={(show: boolean) => setConnectionErrorDismissed(!show)}
       isFormbricksActive={isFormbricksActive}
