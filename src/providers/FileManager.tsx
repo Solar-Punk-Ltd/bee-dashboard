@@ -1,7 +1,6 @@
 import { Bee, PostageBatch } from '@ethersphere/bee-js'
-import type { FileRecord, FolderInfo, SwarmClient } from '@solarpunkltd/file-manager-lib'
+import type { FileRecord, FolderInfo } from '@solarpunkltd/file-manager-lib'
 import {
-  BeeClient,
   DriveInfo,
   FileManagerBase,
   FileManagerEvents,
@@ -17,6 +16,7 @@ import { getSignerPk } from '../modules/filemanager/utils/common'
 
 import { CheckState, Context as BeeContext } from './Bee'
 import { Context as SettingsContext } from './Settings'
+import { Context as SwarmIdProvider } from './SwarmId'
 
 interface ContextInterface {
   fm: FileManagerBase | null
@@ -36,7 +36,6 @@ interface ContextInterface {
   resync: () => Promise<void>
   reloadCurrentDrive: () => Promise<void>
   init: () => Promise<FileManagerBase | null>
-  notifyPkSaved: () => void
   setShowError: (show: boolean) => void
   syncDrives: () => Promise<void>
   syncFiles: () => Promise<void>
@@ -62,7 +61,6 @@ const initialValues: ContextInterface = {
   reloadCurrentDrive: async () => {},
   // eslint-disable-next-line require-await
   init: async () => null,
-  notifyPkSaved: () => {},
   setShowError: () => {},
   syncDrives: async () => {},
   syncFiles: async () => {},
@@ -109,10 +107,10 @@ export function Provider({ children }: Props) {
 
   const { status } = useContext(BeeContext)
   const { apiUrl } = useContext(SettingsContext)
+  const { swarmClient } = useContext(SwarmIdProvider)
 
   const apiUrlRef = useRef<string>(apiUrl)
 
-  const [pkSaved, setPkSaved] = useState<boolean>(false)
   const [beeInstance, setBeeInstance] = useState<Bee | null>(null)
   const [fm, setFm] = useState<FileManagerBase | null>(null)
   const [initDone, setInitDone] = useState<boolean>(false)
@@ -127,8 +125,6 @@ export function Provider({ children }: Props) {
 
   const [initializationError, setInitializationError] = useState<boolean>(false)
   const [showError, setShowError] = useState<boolean>(false)
-
-  const notifyPkSaved = useCallback(() => setPkSaved(v => !v), [])
 
   const syncFiles = useCallback((manager: FileManagerBase, fi?: FileRecord, remove?: boolean): void => {
     if (fi) {
@@ -263,7 +259,7 @@ export function Provider({ children }: Props) {
   const init = useCallback(async (): Promise<FileManagerBase | null> => {
     const pk = getSignerPk()
 
-    if (!beeInstance || !pk || initInProgressRef.current) return null
+    if (!beeInstance || !pk || initInProgressRef.current || !swarmClient) return null
 
     initInProgressRef.current = true
 
@@ -278,8 +274,7 @@ export function Provider({ children }: Props) {
     setCurrentStamp(undefined)
     setShallReset(false)
 
-    const client: SwarmClient = new BeeClient(beeInstance, pk)
-    const manager = new FileManagerBase(client)
+    const manager = new FileManagerBase(swarmClient)
 
     const handleInitialized = (success: boolean) => {
       setInitializationError(!success)
@@ -375,7 +370,7 @@ export function Provider({ children }: Props) {
     } finally {
       initInProgressRef.current = false
     }
-  }, [beeInstance, syncDrives, syncFiles])
+  }, [beeInstance, swarmClient, syncDrives, syncFiles])
 
   const resync = useCallback(async (): Promise<void> => {
     const prevDriveId = currentDrive?.id.toString()
@@ -461,7 +456,7 @@ export function Provider({ children }: Props) {
 
     isBeeApiInitialized.current = true
     setBeeInstance(new Bee(currentApiUrl, { signer: pk }))
-  }, [status.all, status.apiConnection, pkSaved])
+  }, [status.all, status.apiConnection, swarmClient])
 
   useEffect(() => {
     isBeeApiInitialized.current = false
@@ -469,6 +464,24 @@ export function Provider({ children }: Props) {
     setInitDone(false)
     initInProgressRef.current = false
   }, [apiUrl])
+
+  useEffect(() => {
+    if (swarmClient) {
+      return
+    }
+
+    setFm(null)
+    setInitDone(false)
+    setFiles([])
+    setFolders([])
+    setDrives([])
+    setExpiredDrives([])
+    setAdminDrive(null)
+    setCurrentDrive(undefined)
+    setCurrentStamp(undefined)
+    setInitializationError(false)
+    setShallReset(false)
+  }, [swarmClient])
 
   useEffect(() => {
     if (!beeInstance || initInProgressRef.current) {
@@ -507,7 +520,6 @@ export function Provider({ children }: Props) {
       resync,
       reloadCurrentDrive,
       init,
-      notifyPkSaved,
       setShowError,
       syncDrives: syncDrivesPublic,
       refreshStamp,
@@ -531,7 +543,6 @@ export function Provider({ children }: Props) {
       resync,
       reloadCurrentDrive,
       init,
-      notifyPkSaved,
       setShowError,
       syncDrivesPublic,
       refreshStamp,

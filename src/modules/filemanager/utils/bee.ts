@@ -139,19 +139,19 @@ export const handleCreateDrive = async (options: CreateDriveOptions): Promise<vo
     return
   }
 
-  const stamps = await getUsableStamps(beeApi)
-  const adminStamp = stamps.find(s => s.batchID.toString() === fm.adminStamp?.batchId)
-
-  if (!adminStamp) {
-    onError?.('Drive stamp not found')
-
-    return
-  }
-
   try {
     let batchId: BatchId
 
     if (!existingBatch) {
+      const stamps = await getUsableStamps(beeApi)
+      const adminStamp = stamps.find(s => s.batchID.toString() === fm.adminStamp?.batchId)
+
+      if (!adminStamp) {
+        onError?.('Drive stamp not found')
+
+        return
+      }
+
       if (!isAdmin) {
         if (!fm.adminStamp) {
           // eslint-disable-next-line no-console

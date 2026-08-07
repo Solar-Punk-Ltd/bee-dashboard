@@ -12,6 +12,7 @@ import { Provider as FileManagerProvider } from './providers/FileManager'
 import { Provider as PlatformProvider } from './providers/Platform'
 import { Provider as SettingsProvider } from './providers/Settings'
 import { Provider as StampsProvider } from './providers/Stamps'
+import { Provider as SwarmIdProvider } from './providers/SwarmId'
 import { Provider as TopUpProvider } from './providers/TopUp'
 import { Provider as BalanceProvider } from './providers/WalletBalance'
 import BaseRouter from './routes'
@@ -54,22 +55,27 @@ const App = ({
               <BalanceProvider>
                 <StampsProvider>
                   <FileProvider>
-                    <FileManagerProvider>
-                      <FeedsProvider>
-                        <PlatformProvider>
-                          <SnackbarProvider preventDuplicate anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}>
-                            <Router>
-                              <>
-                                <CssBaseline />
-                                <Dashboard errorReporting={errorReporting}>
-                                  <BaseRouter />
-                                </Dashboard>
-                              </>
-                            </Router>
-                          </SnackbarProvider>
-                        </PlatformProvider>
-                      </FeedsProvider>
-                    </FileManagerProvider>
+                    <SwarmIdProvider>
+                      <FileManagerProvider>
+                        <FeedsProvider>
+                          <PlatformProvider>
+                            <SnackbarProvider
+                              preventDuplicate
+                              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            >
+                              <Router>
+                                <>
+                                  <CssBaseline />
+                                  <Dashboard errorReporting={errorReporting}>
+                                    <BaseRouter />
+                                  </Dashboard>
+                                </>
+                              </Router>
+                            </SnackbarProvider>
+                          </PlatformProvider>
+                        </FeedsProvider>
+                      </FileManagerProvider>
+                    </SwarmIdProvider>
                   </FileProvider>
                 </StampsProvider>
               </BalanceProvider>

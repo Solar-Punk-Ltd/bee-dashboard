@@ -1,6 +1,7 @@
 import { BeeModes, PostageBatch } from '@ethersphere/bee-js'
 import { DriveInfo, FileManagerBase } from '@solarpunkltd/file-manager-lib'
-import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { ReactElement, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { AdminStatusBar } from '../../modules/filemanager/components/AdminStatusBar/AdminStatusBar'
 import { Button } from '../../modules/filemanager/components/Button/Button'
@@ -10,24 +11,31 @@ import { FileBrowser } from '../../modules/filemanager/components/FileBrowser/Fi
 import { FormbricksIntegration } from '../../modules/filemanager/components/FormbricksIntegration/FormbricksIntegration'
 import { Header } from '../../modules/filemanager/components/Header/Header'
 import { InitialModal } from '../../modules/filemanager/components/InitialModal/InitialModal'
-import { PrivateKeyModal } from '../../modules/filemanager/components/PrivateKeyModal/PrivateKeyModal'
 import { Sidebar } from '../../modules/filemanager/components/Sidebar/Sidebar'
 import { getUsableStamps } from '../../modules/filemanager/utils/bee'
-import { getSignerPk, removeSignerPk } from '../../modules/filemanager/utils/common'
 import { CheckState, Context as BeeContext } from '../../providers/Bee'
 import { Context as FMContext } from '../../providers/FileManager'
 import { BrowserPlatform, cacheClearUrls, detectBrowser } from '../../providers/Platform'
 import { Context as SettingsContext } from '../../providers/Settings'
+import { Context as SwarmIdContext, SwarmConnectionStatus } from '../../providers/SwarmId'
+import { ROUTES } from '../../routes'
 
 import { SearchProvider } from './SearchContext'
 import { ViewProvider } from './ViewContext'
 
 import './FileManager.scss'
 
-function PrivateKeyModalBlock({ onSaved }: { onSaved: () => void }) {
+function SwarmClientRequiredBlock({ error }: { error: Error | null }) {
   return (
     <div className="fm-main">
-      <PrivateKeyModal onSaved={onSaved} />
+      <div className="fm-loading">
+        <div className="fm-loading-title">No Swarm connection</div>
+        <div className="fm-loading-subtitle">
+          {error ? error.message : 'The File Manager needs a connected Swarm backend before it can load.'}
+          <br />
+          Set your identity key and connect on the <Link to={ROUTES.SWARM_ID}>Swarm ID</Link> page.
+        </div>
+      </div>
     </div>
   )
 }
@@ -187,8 +195,8 @@ function FileManagerMainContent(props: {
 enum PageState {
   Connecting = 'connecting', // still warming up — show nothing / loader
   UltraLightNode = 'ultra-light-node', // ultra-light node — file manager not available
-  NoPrivateKey = 'no-pk', // private key not set
-  Loading = 'loading', // bee ready, pk present, FM init in progress
+  NoSwarmClient = 'no-swarm-client', // no SwarmClient yet — the Swarm ID page owns key + connection
+  Loading = 'loading', // bee ready, client present, FM init in progress
   Reset = 'reset', // STATE_INVALID emitted and user has not yet acknowledged
   InitError = 'init-error', // FM init completed with an error (non-reset case)
   ChainSyncing = 'chain-syncing', // bee node is still syncing postage batch state from chain
@@ -199,7 +207,6 @@ enum PageState {
 
 export function FileManagerPage(): ReactElement {
   const isMountedRef = useRef(true)
-  const [hasPk, setHasPk] = useState<boolean>(getSignerPk() !== undefined)
   const [showAdminErrorModal, setAdminShowErrorModal] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [resetAcknowledged, setResetAcknowledged] = useState<boolean>(false)
@@ -209,8 +216,14 @@ export function FileManagerPage(): ReactElement {
   const [fmAdminStamp, setFmAdminStamp] = useState<PostageBatch | null>(null)
 
   const { status, chainState, nodeInfo } = useContext(BeeContext)
-  const { fm, initDone, shallReset, adminDrive, initializationError, notifyPkSaved } = useContext(FMContext)
+  const { fm, initDone, shallReset, adminDrive, initializationError } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
+  const {
+    swarmClient,
+    status: swarmStatus,
+    error: swarmError,
+    disconnect: swarmDisconnect,
+  } = useContext(SwarmIdContext)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -269,7 +282,7 @@ export function FileManagerPage(): ReactElement {
 
     if (nodeInfo?.beeMode === BeeModes.ULTRA_LIGHT) return PageState.UltraLightNode
 
-    if (!hasPk) return PageState.NoPrivateKey
+    if (!swarmClient && swarmStatus !== SwarmConnectionStatus.Connecting) return PageState.NoSwarmClient
 
     if (!initDone) return PageState.Loading
 
@@ -290,7 +303,8 @@ export function FileManagerPage(): ReactElement {
     return PageState.Ready
   }, [
     isBeeReady,
-    hasPk,
+    swarmClient,
+    swarmStatus,
     initDone,
     shallReset,
     resetAcknowledged,
@@ -302,16 +316,6 @@ export function FileManagerPage(): ReactElement {
     chainState,
     nodeInfo?.beeMode,
   ])
-
-  const handlePrivateKeySaved = useCallback(() => {
-    if (!isMountedRef.current) return
-
-    setHasPk(true)
-
-    if (fm) return
-
-    notifyPkSaved()
-  }, [fm, notifyPkSaved])
 
   const loading = !fm?.adminStamp || !adminDrive
   const isFormbricksActive = Boolean(fm && fm.adminStamp && adminDrive && !loading)
@@ -328,19 +332,12 @@ export function FileManagerPage(): ReactElement {
     return <ChainSyncingBlock />
   }
 
-  if (pageState === PageState.NoPrivateKey) {
-    return <PrivateKeyModalBlock onSaved={handlePrivateKeySaved} />
+  if (pageState === PageState.NoSwarmClient) {
+    return <SwarmClientRequiredBlock error={swarmError} />
   }
 
   if (pageState === PageState.InitError) {
-    return (
-      <InitializationErrorBlock
-        onOk={() => {
-          removeSignerPk()
-          setHasPk(false)
-        }}
-      />
-    )
+    return <InitializationErrorBlock onOk={() => void swarmDisconnect()} />
   }
 
   if (pageState === PageState.Reset) {

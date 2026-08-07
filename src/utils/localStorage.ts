@@ -8,6 +8,7 @@ export const LocalStorageKeys = {
   fmSurveyTriggered: 'fm_survey_triggered_v1',
   fmSortKey: 'fm.sort.v1',
   fmPrivateKey: 'privateKey',
+  swarmBackend: 'swarm_backend_v2',
   feeds: 'feeds',
   depositWallet: 'deposit-wallet',
   giftWallets: 'gift-wallets',

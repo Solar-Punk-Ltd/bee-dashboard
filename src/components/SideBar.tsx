@@ -11,6 +11,7 @@ import HomeIcon from 'remixicon-react/Home3LineIcon'
 import MenuFoldIcon from 'remixicon-react/MenuFoldLineIcon'
 import MenuUnfoldIcon from 'remixicon-react/MenuUnfoldLineIcon'
 import SettingsIcon from 'remixicon-react/Settings2LineIcon'
+import SwarmIdIcon from 'remixicon-react/ShieldUserLineIcon'
 import AccountIcon from 'remixicon-react/Wallet3LineIcon'
 import { makeStyles } from 'tss-react/mui'
 
@@ -146,6 +147,11 @@ export default function SideBar(): ReactElement {
       path: ROUTES.ACCOUNT_WALLET,
       icon: AccountIcon,
       pathMatcherSubstring: '/account/',
+    },
+    {
+      label: 'Swarm ID',
+      path: ROUTES.SWARM_ID,
+      icon: SwarmIdIcon,
     },
     {
       label: 'Settings',

@@ -26,9 +26,12 @@ importers:
       '@mui/material':
         specifier: ^7.3.7
         version: 7.3.8(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@snaha/swarm-id':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@solarpunkltd/file-manager-lib':
         specifier: file:../file-manager-lib
-        version: file:../file-manager-lib
+        version: file:../file-manager-lib(@snaha/swarm-id@0.2.0)
       axios:
         specifier: ^1.16.1
         version: 1.16.1(debug@4.4.3)
@@ -1256,6 +1259,10 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@ethersphere/bee-js@11.2.0':
+    resolution: {integrity: sha512-Cn1NCy6/g+LzTXBWxFftT7OWfCj4CXGK5lo3VHVp0v3erytFqoBQkKLZ1TiwE4En5/voN7GCe5kjy3El8l8lRA==}
+    engines: {bee: 2.4.0-390a402e, beeApiVersion: 7.2.0}
+
   '@formbricks/js@4.3.0':
     resolution: {integrity: sha512-IR1SAdHsthC3js7O3BjW14EbpAy/u3/8R0Jekzrkglt+b0LGFrFL/vUcK6IypG4HbopTlDcpU9A45i1YPJ8jrA==}
 
@@ -1829,6 +1836,10 @@ packages:
   '@sinonjs/fake-timers@13.0.5':
     resolution: {integrity: sha512-36/hTbH2uaWuGVERyC6da9YwGWnzUZXuPro/F2LfsdOsLnCojz/iSH8MxUt/FD2S5XBSVPhmArFUXcpCQ2Hkiw==}
 
+  '@snaha/swarm-id@0.2.0':
+    resolution: {integrity: sha512-iTKjmLDO3cQYJY56+zaJNSrTSCMAjckCgxW/+KqMf/0v1+W/p6VKvFc2PbeNEq3UgrNhzeMmwxfU7GkgXt8nPg==}
+    engines: {node: '>=22', pnpm: 11.x}
+
   '@solarpunkltd/bee-js@0.0.0-fmv2.1':
     resolution: {integrity: sha512-j+XYzHW0AtGfkv1YYO5QfLZ49u0dIZ95lXbg21V//qteDL0oB6xH++Gl4Q+NRVJS8050WV1cOA8DtNUdvhwJ4A==}
     engines: {bee: 2.8.1-7cf53193, beeApiVersion: 8.1.0}
@@ -1836,6 +1847,11 @@ packages:
   '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
     resolution: {directory: ../file-manager-lib, type: directory}
     engines: {bee: 2.8.0, node: '>=22.13.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
+    peerDependencies:
+      '@snaha/swarm-id': ^0.2.0
+    peerDependenciesMeta:
+      '@snaha/swarm-id':
+        optional: true
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -2421,6 +2437,9 @@ packages:
     resolution: {integrity: sha512-BASOg+YwO2C+346x3LZOeoovTIoTrRqEsqMa6fmfAV0P+U9mFr9NsyOEpiYvFjbc64NMrSswhV50WdXzdb/Z5A==}
     engines: {node: '>=4'}
 
+  axios@0.30.3:
+    resolution: {integrity: sha512-5/tmEb6TmE/ax3mdXBc/Mi6YdPGxQsv+0p5YlciXWt3PHIn0VamqCXhRMtScnwY3lbgSXLneOuXAKUhgmSRpwg==}
+
   axios@1.16.1:
     resolution: {integrity: sha512-caYkukvroVPO8KrzuJEb50Hm07KwfBZPEC3VeFHTsqWHvKTsy54hjJz9BS/cdaypROE2rH6xvm9mHX4fgWkr3A==}
 
@@ -2629,6 +2648,12 @@ packages:
   bytes@3.1.2:
     resolution: {integrity: sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==}
     engines: {node: '>= 0.8'}
+
+  cafe-utility@33.11.0:
+    resolution: {integrity: sha512-u9rAbHL+v39iSzKYU7g50XGRUyjGe7SIMwdphzl50H4XQXuB0j0L50VOi72LSxva3Ubq/K87nFwVDV/GPoUJ6w==}
+
+  cafe-utility@33.3.2:
+    resolution: {integrity: sha512-7hn8OrmKsJ4pASe0Y9/k+DIABZcK1jkviLyQq6VM+uJQF4jMT0E+vCVkTsMyIrYDFJ21ne1HGZVP9NwDASr7jA==}
 
   cafe-utility@34.0.0:
     resolution: {integrity: sha512-4gxiVyngFbRa1G10+DIDUjk/Qu8OMxgK5bnNXMj4y80Tc+RLdZlk+pE7scgediQS2cxn8L+3XauS8tE62EfsTg==}
@@ -3965,6 +3990,11 @@ packages:
   isomorphic-timers-promises@1.0.1:
     resolution: {integrity: sha512-u4sej9B1LPSxTGKB/HiuzvEQnXH0ECYkSVQU39koSwmFAxhlEAFl9RdTvLv4TOTQUgBS5O3O5fwUxk6byBZ+IQ==}
     engines: {node: '>=10'}
+
+  isomorphic-ws@4.0.1:
+    resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
+    peerDependencies:
+      ws: '*'
 
   isomorphic-ws@5.0.0:
     resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
@@ -5745,6 +5775,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.1.13:
+    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
+
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
@@ -6942,6 +6975,19 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@ethersphere/bee-js@11.2.0':
+    dependencies:
+      axios: 0.30.3(debug@4.4.3)
+      cafe-utility: 33.11.0
+      debug: 4.4.3
+      isomorphic-ws: 4.0.1(ws@8.21.0)
+      semver: 7.7.4
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   '@formbricks/js@4.3.0': {}
 
   '@humanfs/core@0.19.1': {}
@@ -7559,6 +7605,16 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  '@snaha/swarm-id@0.2.0':
+    dependencies:
+      '@ethersphere/bee-js': 11.2.0
+      cafe-utility: 33.3.2
+      zod: 4.1.13
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   '@solarpunkltd/bee-js@0.0.0-fmv2.1':
     dependencies:
       cafe-utility: 34.0.0
@@ -7572,11 +7628,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
+  '@solarpunkltd/file-manager-lib@file:../file-manager-lib(@snaha/swarm-id@0.2.0)':
     dependencies:
       '@ethersphere/bee-js': '@solarpunkltd/bee-js@0.0.0-fmv2.1'
       cafe-utility: 36.2.0
       std-env: 3.10.0
+    optionalDependencies:
+      '@snaha/swarm-id': 0.2.0
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -8230,6 +8288,14 @@ snapshots:
 
   axe-core@4.11.1: {}
 
+  axios@0.30.3(debug@4.4.3):
+    dependencies:
+      follow-redirects: 1.16.0(debug@4.4.3)
+      form-data: 4.0.5
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
   axios@1.16.1(debug@4.4.3):
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3)
@@ -8502,6 +8568,10 @@ snapshots:
   bytes@3.0.0: {}
 
   bytes@3.1.2: {}
+
+  cafe-utility@33.11.0: {}
+
+  cafe-utility@33.3.2: {}
 
   cafe-utility@34.0.0: {}
 
@@ -10033,6 +10103,10 @@ snapshots:
   isexe@2.0.0: {}
 
   isomorphic-timers-promises@1.0.1: {}
+
+  isomorphic-ws@4.0.1(ws@8.21.0):
+    dependencies:
+      ws: 8.21.0
 
   isomorphic-ws@5.0.0(ws@8.21.0):
     dependencies:
@@ -12186,6 +12260,8 @@ snapshots:
       zod: 4.3.6
 
   zod@3.25.76: {}
+
+  zod@4.1.13: {}
 
   zod@4.3.6: {}
 

@@ -22,6 +22,7 @@ import Settings from './pages/settings'
 import { CreatePostageStampPage } from './pages/stamps/CreatePostageStampAdvancedPage'
 import { CreatePostageStampBasicPage } from './pages/stamps/CreatePostageStampStandardPage'
 import Status from './pages/status'
+import SwarmIdPage from './pages/swarmId'
 import TopUp from './pages/topUp'
 import { BankCardTopUpIndex } from './pages/topUp/BankCardTopUpIndex'
 import { CryptoTopUpIndex } from './pages/topUp/CryptoTopUpIndex'
@@ -40,6 +41,7 @@ export enum ROUTES {
   HASH = '/files/hash/:hash',
   SETTINGS = '/settings',
   STATUS = '/status',
+  SWARM_ID = '/swarm-id',
   TOP_UP = '/account/wallet/top-up',
   TOP_UP_CRYPTO = '/account/wallet/top-up/crypto',
   TOP_UP_CRYPTO_SWAP = '/account/wallet/top-up/crypto/swap',
@@ -81,6 +83,7 @@ const BaseRouter = (): ReactElement => {
       <Route path={ROUTES.HASH} element={<Share />} />
       <Route path={ROUTES.SETTINGS} element={<Settings />} />
       <Route path={ROUTES.STATUS} element={<Status />} />
+      <Route path={ROUTES.SWARM_ID} element={<SwarmIdPage />} />
       <Route path={ROUTES.INFO} element={<Info />} />
       <Route path={ROUTES.TOP_UP} element={<TopUp />} />
       <Route path={ROUTES.TOP_UP_CRYPTO} element={<CryptoTopUpIndex />} />

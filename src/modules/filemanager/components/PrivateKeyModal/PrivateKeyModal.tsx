@@ -11,7 +11,7 @@ import { Tooltip } from '../Tooltip/Tooltip'
 
 import './PrivateKeyModal.scss'
 
-type Props = { onSaved: () => void }
+type Props = { onSaved: () => void; onCancel?: () => void }
 
 const generateNewPrivateKey = (): string => {
   const id = uuidV4()
@@ -20,7 +20,7 @@ const generateNewPrivateKey = (): string => {
   return signer.toHex()
 }
 
-export function PrivateKeyModal({ onSaved }: Props): ReactElement {
+export function PrivateKeyModal({ onSaved, onCancel }: Props): ReactElement {
   const [value, setValue] = useState(generateNewPrivateKey())
   const [confirmValue, setConfirmValue] = useState('')
   const [showError, setShowError] = useState(false)
@@ -169,6 +169,7 @@ export function PrivateKeyModal({ onSaved }: Props): ReactElement {
         </div>
 
         <div className="fm-modal-window-footer">
+          {onCancel && <Button label="Cancel" variant="secondary" onClick={onCancel} />}
           <Button
             label="Save"
             variant="primary"

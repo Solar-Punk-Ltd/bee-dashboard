@@ -60,6 +60,7 @@
     "@formbricks/js": "^4.3.0",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
+    "@snaha/swarm-id": "^0.2.0",
     "@solarpunkltd/file-manager-lib": "file:../file-manager-lib",
     "axios": "^1.16.1",
     "bignumber.js": "^9.3.1",
