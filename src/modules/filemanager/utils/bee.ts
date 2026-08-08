@@ -394,7 +394,7 @@ export const verifyDriveSpace = async (
 
   if (!adminStamp) {
     // eslint-disable-next-line no-console
-    console.warn('Bee api is null')
+    console.warn('Fm Admin stamp is null')
 
     return { remainingBytes: 0, totalSizeBytes: 0, ok: false }
   }

@@ -143,15 +143,15 @@ export default function SideBar(): ReactElement {
       pathMatcherSubstring: '/filemanager',
     },
     {
+      label: 'Swarm ID',
+      path: ROUTES.SWARM_ID,
+      icon: SwarmIdIcon,
+    },
+    {
       label: 'Account',
       path: ROUTES.ACCOUNT_WALLET,
       icon: AccountIcon,
       pathMatcherSubstring: '/account/',
-    },
-    {
-      label: 'Swarm ID',
-      path: ROUTES.SWARM_ID,
-      icon: SwarmIdIcon,
     },
     {
       label: 'Settings',

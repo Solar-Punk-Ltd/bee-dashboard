@@ -230,8 +230,6 @@ export function Provider({ children }: Props) {
     setStatus(SwarmConnectionStatus.Connecting)
 
     try {
-      requireSignerPk()
-
       if (backend === SwarmBackend.BeeApi) {
         await connectBee()
       } else {
@@ -282,7 +280,7 @@ export function Provider({ children }: Props) {
     let cancelled = false
 
     const build = async (): Promise<void> => {
-      const adapter = new SwarmIdSwarmClient(client, requireSignerPk().toHex())
+      const adapter = new SwarmIdSwarmClient(client)
       await adapter.initialize()
 
       if (cancelled) {

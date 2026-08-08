@@ -1,5 +1,5 @@
-import { BeeModes, BZZ, DAI, Duration, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
-import { ReactElement, useContext, useEffect, useRef, useState } from 'react'
+import { BeeModes, BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
+import { ReactElement, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Context as BeeContext } from '../../../../providers/Bee'
 import { Context as FMContext } from '../../../../providers/FileManager'
@@ -8,10 +8,11 @@ import { getHumanReadableFileSize } from '../../../../utils/file'
 import { erasureCodeMarks } from '../../constants/common'
 import { desiredLifetimeOptions } from '../../constants/stamps'
 import { TOOLTIPS } from '../../constants/tooltips'
-import { fmFetchCost, handleCreateDrive } from '../../utils/bee'
-import { getExpiryDateByLifetime } from '../../utils/common'
+import { calculateStampCapacityMetrics, fmFetchCost, getUsableStamps, handleCreateDrive } from '../../utils/bee'
+import { getExpiryDateByLifetime, safeSetState } from '../../utils/common'
 import { Button } from '../Button/Button'
 import { CustomDropdown } from '../CustomDropdown/CustomDropdown'
+import { ProgressBar } from '../ProgressBar/ProgressBar'
 import { FMSlider } from '../Slider/Slider'
 import { Tooltip } from '../Tooltip/Tooltip'
 
@@ -20,6 +21,21 @@ import './CreateDriveModal.scss'
 const minMarkValue = Math.min(...erasureCodeMarks.map(mark => mark.value))
 const maxMarkValue = Math.max(...erasureCodeMarks.map(mark => mark.value))
 const maxDriveNameLength = 40
+
+const BATCH_ID_PLACEHOLDER = 'Purchase a new stamp, or reuse one you already own'
+
+const createBatchIdOptions = (stamps: PostageBatch[]) => [
+  { label: BATCH_ID_PLACEHOLDER, value: -1 },
+  ...stamps.map((stamp, index) => {
+    const batchId = stamp.batchID.toHex().slice(0, 8)
+    const label = `${batchId}${stamp.label ? ` - ${stamp.label}` : ''}`
+
+    return {
+      label,
+      value: index,
+    }
+  }),
+]
 
 interface CreateDriveModalProps {
   onCancelClick: () => void
@@ -45,6 +61,9 @@ export function CreateDriveModal({
   const [encryptionEnabled] = useState(false)
   const [erasureCodeLevel, setErasureCodeLevel] = useState(RedundancyLevel.OFF)
   const [cost, setCost] = useState('0')
+  const [usableStamps, setUsableStamps] = useState<PostageBatch[]>([])
+  const [selectedBatch, setSelectedBatch] = useState<PostageBatch | null>(null)
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState<number>(-1)
 
   const [sizeMarks, setSizeMarks] = useState<{ value: number; label: string }[]>([])
   const { walletBalance, nodeInfo } = useContext(BeeContext)
@@ -75,6 +94,46 @@ export function CreateDriveModal({
     }
   }, [duplicate, nameExists])
 
+  useEffect(() => {
+    const getStamps = async () => {
+      if (!beeApi) {
+        return
+      }
+
+      const stamps = await getUsableStamps(beeApi)
+
+      safeSetState(isMountedRef, setUsableStamps)([...stamps])
+    }
+
+    if (beeApi) {
+      getStamps()
+    }
+  }, [beeApi])
+
+  const nonFullStamps = useMemo(() => {
+    return usableStamps.filter(s => {
+      const { capacityPct } = calculateStampCapacityMetrics(s, [], erasureCodeLevel)
+
+      return capacityPct < 100
+    })
+  }, [usableStamps, erasureCodeLevel])
+
+  useEffect(() => {
+    if (selectedBatchIndex >= 0 && selectedBatchIndex < nonFullStamps.length) {
+      setSelectedBatch(nonFullStamps[selectedBatchIndex])
+    } else {
+      setSelectedBatch(null)
+    }
+  }, [nonFullStamps, selectedBatchIndex])
+
+  const { capacityPct, usedSize, stampSize } = useMemo(() => {
+    if (!selectedBatch) {
+      return { capacityPct: 0, usedSize: '—', stampSize: '—' }
+    }
+
+    return calculateStampCapacityMetrics(selectedBatch, [], erasureCodeLevel)
+  }, [selectedBatch, erasureCodeLevel])
+
   const handleCapacityChange = (_: number, index: number) => {
     setCapacityIndex(index)
   }
@@ -93,6 +152,15 @@ export function CreateDriveModal({
   }, [encryptionEnabled, erasureCodeLevel, capacityIndex])
 
   useEffect(() => {
+    if (selectedBatch) {
+      setCost('0')
+      setIsBalanceSufficient(true)
+      setIsxDaiBalanceSufficient(true)
+      setIsCreateEnabled(Boolean(trimmedName) && !nameExists)
+
+      return
+    }
+
     if (capacity > 0 && validityEndDate.getTime() > new Date().getTime()) {
       fmFetchCost(
         capacity,
@@ -126,7 +194,7 @@ export function CreateDriveModal({
       setCost('0')
       setIsCreateEnabled(false)
     }
-  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName])
+  }, [capacity, validityEndDate, beeApi, walletBalance, nameExists, erasureCodeLevel, trimmedName, selectedBatch])
 
   useEffect(() => {
     setValidityEndDate(getExpiryDateByLifetime(lifetimeIndex))
@@ -156,33 +224,65 @@ export function CreateDriveModal({
               />
               {validationError && <div className="fm-error-text">{validationError}</div>}
             </div>
-            <div className="fm-modal-window-input-container">
-              <label htmlFor="drive-initial-capacity" className="fm-input-label">
-                Initial capacity: <Tooltip label={TOOLTIPS.DRIVE_INITIAL_CAPACITY} />
-              </label>
-              <CustomDropdown
-                id="drive-initial-capacity"
-                options={sizeMarks}
-                value={capacity}
-                onChange={handleCapacityChange}
-                placeholder="Select a value"
-              />
-            </div>
-            <div className="fm-modal-info-warning">
-              Drive sizes are calculated automatically from your current stamp configuration.
-            </div>
-            <div className="fm-modal-window-input-container">
-              <label htmlFor="drive-desired-lifetime" className="fm-input-label">
-                Desired lifetime: <Tooltip label={TOOLTIPS.DRIVE_DESIRED_LIFETIME} />
-              </label>
-              <CustomDropdown
-                id="drive-desired-lifetime"
-                options={desiredLifetimeOptions}
-                value={lifetimeIndex}
-                onChange={setLifetimeIndex}
-                placeholder="Select a value"
-              />
-            </div>
+            {nonFullStamps.length > 0 && (
+              <div className="fm-modal-window-input-container">
+                <CustomDropdown
+                  id="drive-batch-id-selector"
+                  options={createBatchIdOptions(nonFullStamps)}
+                  value={selectedBatchIndex}
+                  label="Reuse an existing stamp (optional)"
+                  onChange={(index: number) => {
+                    setSelectedBatchIndex(index)
+
+                    if (index === -1) {
+                      setSelectedBatch(null)
+                    }
+                  }}
+                  placeholder={BATCH_ID_PLACEHOLDER}
+                />
+                {selectedBatch && (
+                  <div className="fm-drive-item-content">
+                    <div className="fm-drive-item-capacity">
+                      Capacity <ProgressBar value={capacityPct} width="64px" /> {usedSize} / {stampSize}
+                    </div>
+                    <div className="fm-drive-item-capacity">
+                      Expiry date: {selectedBatch.duration.toEndDate().toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {!selectedBatch && (
+              <>
+                <div className="fm-modal-window-input-container">
+                  <label htmlFor="drive-initial-capacity" className="fm-input-label">
+                    Initial capacity: <Tooltip label={TOOLTIPS.DRIVE_INITIAL_CAPACITY} />
+                  </label>
+                  <CustomDropdown
+                    id="drive-initial-capacity"
+                    options={sizeMarks}
+                    value={capacity}
+                    onChange={handleCapacityChange}
+                    placeholder="Select a value"
+                  />
+                </div>
+                <div className="fm-modal-info-warning">
+                  Drive sizes are calculated automatically from your current stamp configuration.
+                </div>
+                <div className="fm-modal-window-input-container">
+                  <label htmlFor="drive-desired-lifetime" className="fm-input-label">
+                    Desired lifetime: <Tooltip label={TOOLTIPS.DRIVE_DESIRED_LIFETIME} />
+                  </label>
+                  <CustomDropdown
+                    id="drive-desired-lifetime"
+                    options={desiredLifetimeOptions}
+                    value={lifetimeIndex}
+                    onChange={setLifetimeIndex}
+                    placeholder="Select a value"
+                  />
+                </div>
+              </>
+            )}
             <div className="fm-modal-window-input-container">
               <label htmlFor="drive-security-level" className="fm-input-label">
                 Security Level <Tooltip label={TOOLTIPS.DRIVE_SECURITY_LEVEL} />
@@ -198,35 +298,37 @@ export function CreateDriveModal({
               />
             </div>
 
-            <div>
-              <div className="fm-modal-estimated-cost-container">
-                <div className="fm-emphasized-text">Estimated Cost:</div>
-                <div>
-                  {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
-                  {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
+            {!selectedBatch && (
+              <div>
+                <div className="fm-modal-estimated-cost-container">
+                  <div className="fm-emphasized-text">Estimated Cost:</div>
+                  <div>
+                    {cost} BZZ {isBalanceSufficient ? '' : '(Insufficient balance)'}
+                    {isxDaiBalanceSufficient ? '' : ' (Insufficient xDAI balance)'}
+                  </div>
+                  <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} bottomTooltip={true} />
                 </div>
-                <Tooltip label={TOOLTIPS.DRIVE_ESTIMATED_COST} bottomTooltip={true} />
+                <div>(Based on current network conditions)</div>
               </div>
-              <div>(Based on current network conditions)</div>
-              {isUltraLightNode && (
-                <div>
-                  Creating a drive requires running a light node. Please{' '}
-                  <a
-                    href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    upgrade
-                  </a>{' '}
-                  to continue.
-                </div>
-              )}
-            </div>
+            )}
+            {isUltraLightNode && (
+              <div>
+                Creating a drive requires running a light node. Please{' '}
+                <a
+                  href="https://docs.ethswarm.org/docs/desktop/configuration/#upgrading-from-an-ultra-light-to-a-light-node"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  upgrade
+                </a>{' '}
+                to continue.
+              </div>
+            )}
           </div>
         </div>
         <div className="fm-modal-window-footer">
           <Button
-            label="Create drive"
+            label={selectedBatch ? 'Create drive' : 'Purchase Stamp & Create drive'}
             variant="primary"
             disabled={isCreateDriveDisabled}
             onClick={async () => {
@@ -236,7 +338,7 @@ export function CreateDriveModal({
                 return
               }
 
-              if (isCreateEnabled && walletBalance && adminDrive) {
+              if (isCreateEnabled && (selectedBatch || walletBalance) && adminDrive) {
                 onCreationStarted(driveName)
                 onCancelClick()
 
@@ -251,7 +353,7 @@ export function CreateDriveModal({
                   adminRedundancy: adminDrive?.redundancyLevel,
                   isAdmin: false,
                   resetState: false,
-                  existingBatch: null,
+                  existingBatch: selectedBatch,
                   onSuccess: () => onDriveCreated(),
                   onError: () => onCreationError(trimmedName),
                 })
