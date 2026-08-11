@@ -1,3 +1,4 @@
+import { FileManagerProvider, FileManagerWidget } from '@solarpunkltd/file-manager-widget'
 import { ReactElement, useContext } from 'react'
 import { Route, Routes } from 'react-router-dom'
 
@@ -9,7 +10,6 @@ import { AccountWallet } from './pages/account/wallet/AccountWallet'
 import CreateNewFeed from './pages/feeds/CreateNewFeed'
 import { FeedSubpage } from './pages/feeds/FeedSubpage'
 import UpdateFeed from './pages/feeds/UpdateFeed'
-import { FileManagerPage } from './pages/filemanager'
 import { Download } from './pages/files/Download'
 import { Share } from './pages/files/Share'
 import { Upload } from './pages/files/Upload'
@@ -29,6 +29,8 @@ import { GiftCardFund } from './pages/topUp/GiftCardFund'
 import { GiftCardTopUpIndex } from './pages/topUp/GiftCardTopUpIndex'
 import { Swap } from './pages/topUp/Swap'
 import { Context as SettingsContext } from './providers/Settings'
+
+import '@solarpunkltd/file-manager-widget/styles.css'
 
 export enum ROUTES {
   INFO = '/',
@@ -68,6 +70,17 @@ export const ACCOUNT_TABS = [
   ROUTES.ACCOUNT_FEEDS,
   ROUTES.ACCOUNT_STAKING,
 ]
+
+function FileManagerPage(): ReactElement {
+  const { apiUrl } = useContext(SettingsContext)
+
+  // pollInterval mirrors the widget's own DEFAULT_POLL_INTERVAL_MS, which isn't exported publicly
+  return (
+    <FileManagerProvider settings={{ apiUrl, pollInterval: 30_000 }}>
+      <FileManagerWidget />
+    </FileManagerProvider>
+  )
+}
 
 const BaseRouter = (): ReactElement => {
   const { isDesktop } = useContext(SettingsContext)

@@ -602,4 +602,4 @@ Each component has a single, clear responsibility:
 ---
 
 
-*This documentation provides a comprehensive functional overview of the File Manager module. For implementation details, refer to the source code in `src/modules/filemanager/` and `src/providers/FileManager.tsx`.*
+*This documentation provides a comprehensive functional overview of the File Manager module. File Manager is now integrated into bee-dashboard as the `@solarpunkltd/file-manager-widget` package (mounted at the `/filemanager` route via `src/routes.tsx`); for implementation details, refer to that package's source in `../file-manager-widget/src/`.*
