@@ -58,7 +58,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
   const rows = useMemo((): FileRecord[] => {
     if (!currentDrive) return []
 
-    const sameDrive = files.filter(fi => fi.driveId.toString() === currentDrive.id.toString())
+    const sameDrive = files.filter(fi => fi.driveId === currentDrive.id)
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
       acc[fi.path] = (acc[fi.path] || 0) + 1
@@ -115,10 +115,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
   const searchRows = useMemo((): FileRecord[] => {
     if (!isSearchMode) return []
 
-    const source =
-      scope === 'selected' && currentDrive
-        ? files.filter(f => f.driveId.toString() === currentDrive.id.toString())
-        : files
+    const source = scope === 'selected' && currentDrive ? files.filter(f => f.driveId === currentDrive.id) : files
 
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
 

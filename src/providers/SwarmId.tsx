@@ -12,7 +12,7 @@ import { Context as SettingsContext } from './Settings'
 
 export enum SwarmBackend {
   BeeApi = 'beeApi',
-  SwarmId = 'swarm-id',
+  SwarmId = 'swarmId',
 }
 
 export enum SwarmConnectionStatus {
@@ -180,6 +180,7 @@ export function Provider({ children }: Props) {
 
     const client = new SwarmIdClient({
       iframeOrigin: SWARM_ID_IFRAME_ORIGIN,
+      subsidisedGatewayUrl: apiUrl,
       metadata: {
         name: 'Bee Dashboard',
         description: 'Swarm Bee Dashboard file manager',
@@ -192,7 +193,7 @@ export function Provider({ children }: Props) {
     swarmIdClientRef.current = client
 
     return client
-  }, [handleConnectionChange])
+  }, [handleConnectionChange, apiUrl])
 
   const connectBee = useCallback(async (): Promise<void> => {
     if (!beeApi) {

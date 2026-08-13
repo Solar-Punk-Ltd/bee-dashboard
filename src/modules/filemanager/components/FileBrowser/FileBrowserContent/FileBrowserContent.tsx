@@ -81,7 +81,7 @@ function FileBrowserContentInner({
   const renderFileList = useCallback(
     (filesToRender: FileRecord[], showDriveColumn = false): ReactElement[] | ReactElement | null => {
       const renderFileItem = (fi: FileRecord, displayName?: string): ReactElement | null => {
-        const drive = drives.find(d => d.id.toString() === fi.driveId.toString())
+        const drive = drives.find(d => d.id === fi.driveId)
 
         if (!drive) return null
 

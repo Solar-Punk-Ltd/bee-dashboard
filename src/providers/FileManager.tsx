@@ -299,11 +299,6 @@ export function Provider({ children }: Props) {
       syncDrives(manager, driveInfo)
     }
 
-    const handleDriveDestroyed = ({ driveInfo }: { driveInfo: DriveInfo }) => {
-      syncDrives(manager, driveInfo, true)
-      syncFiles(manager)
-    }
-
     const handleDriveForgotten = ({ driveInfo }: { driveInfo: DriveInfo }) => {
       syncDrives(manager, driveInfo, true)
       syncFiles(manager)
@@ -328,7 +323,6 @@ export function Provider({ children }: Props) {
     manager.emitter.on(FileManagerEvents.STATE_INVALID, handleResetState)
     manager.emitter.on(FileManagerEvents.INITIALIZED, handleInitialized)
     manager.emitter.on(FileManagerEvents.DRIVE_CREATED, handleDriveCreated)
-    manager.emitter.on(FileManagerEvents.DRIVE_DESTROYED, handleDriveDestroyed)
     manager.emitter.on(FileManagerEvents.DRIVE_FORGOTTEN, handleDriveForgotten)
     manager.emitter.on(FileManagerEvents.FOLDER_CREATED, handleFolderCreated)
     manager.emitter.on(FileManagerEvents.FILE_UPLOADED, ({ record }: { record: FileRecord }) => {

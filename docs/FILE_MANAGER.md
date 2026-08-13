@@ -63,7 +63,7 @@ File Manager is built around several key principles:
 - Is created once per File Manager instance
 - Stores the list of all user drives
 - Must be initialized before any other operations
-- Uses a stamp labeled `ADMIN_STAMP_LABEL`
+- Uses a stamp labeled `ADMIN_DRIVE_NAME`
 - Cannot be deleted (only reset)
 
 **User Drives** are regular drives that:

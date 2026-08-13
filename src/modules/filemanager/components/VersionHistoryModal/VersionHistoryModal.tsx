@@ -240,7 +240,7 @@ export function VersionHistoryModal({ fileInfo, onCancelClick, onDownload }: Ver
       const headName = fileInfo.path
 
       const sameDrive = files.filter(fi => {
-        return fi.driveId === versionFi.driveId.toString()
+        return fi.driveId === versionFi.driveId
       })
 
       const nameConflicts = sameDrive.filter(fi => fi.path === targetName)

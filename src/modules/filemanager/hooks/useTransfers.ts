@@ -263,10 +263,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
     [clearAllFlagsFor],
   )
 
-  const collectSameDrive = useCallback(
-    (id: string): FileRecord[] => files.filter(fi => fi.driveId.toString() === id),
-    [files],
-  )
+  const collectSameDrive = useCallback((id: string): FileRecord[] => files.filter(fi => fi.driveId === id), [files])
 
   const resolveConflict = useCallback(
     async (originalName: string, sameDrive: FileRecord[], allTakenNames: Set<string>): Promise<ResolveResult> => {

@@ -232,7 +232,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const isSearchMode = q.length > 0
 
   const getDriveName = useCallback(
-    (driveId: string): string => {
+    (driveId?: string): string => {
       const match = drives.find(d => d.id.toString() === driveId)
 
       return match?.name ?? ''
@@ -537,7 +537,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
     return new Set(
       files
-        .filter(f => f.driveId.toString() === currentDrive?.id.toString())
+        .filter(f => f.driveId === currentDrive?.id.toString())
         .filter(f => f.path.startsWith(prefix) && !f.path.slice(prefix.length).includes('/'))
         .map(f => f.path.slice(prefix.length)),
     )

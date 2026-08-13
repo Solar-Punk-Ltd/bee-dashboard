@@ -410,7 +410,7 @@ export const startDownloadingQueue = async (
             return
           }
 
-          const drive = fm.driveList.find(d => d.id.toString() === fh.infoWithId.info.driveId.toString())
+          const drive = fm.driveList.find(d => d.id.toString() === fh.infoWithId.info.driveId)
 
           if (!drive) {
             tracker({ progress: 0, isDownloading: false, state: DownloadState.Error })
@@ -418,20 +418,13 @@ export const startDownloadingQueue = async (
             return
           }
           // TODO: do not pass fileinfo one-by-one as a one element array -> gather all the trackers and trigger async download with all the files
+          // TODO: track failed
           const downloadResults = await fm.downloadFiles([fh.infoWithId.info], undefined, { signal })
-
-          if (!downloadResults || downloadResults.length === 0) {
-            // eslint-disable-next-line no-console
-            console.error(`No data streams returned for ${fh.infoWithId.info.path}`)
-            tracker({ progress: 0, isDownloading: false, state: DownloadState.Error })
-
-            return
-          }
 
           let success = false
           let userCancelled = false
 
-          const streamResults = downloadResults.map(ds => ds.result)
+          const streamResults = downloadResults.succeeded.map(ds => ds.result)
 
           if (isOpenWindow || !fh.handle) {
             const { success: saved, cancelled } = await downloadToBlob(

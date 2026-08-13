@@ -21,7 +21,7 @@ type Options = {
   persist?: boolean
   defaultState?: SortState
   storageKey?: string
-  getDriveName?: (driveId: string) => string
+  getDriveName?: (driveId?: string) => string
 }
 
 const DEFAULT_STATE: SortState = { key: SortKey.Timestamp, dir: SortDir.Desc }
@@ -128,8 +128,8 @@ export function useSorting(
       }
 
       if (sort.key === SortKey.Drive) {
-        const ad = (getDriveName?.(a.driveId.toString()) ?? '').toLocaleLowerCase()
-        const bd = (getDriveName?.(b.driveId.toString()) ?? '').toLocaleLowerCase()
+        const ad = (getDriveName?.(a.driveId) ?? '').toLocaleLowerCase()
+        const bd = (getDriveName?.(b.driveId) ?? '').toLocaleLowerCase()
 
         if (ad < bd) return -1 * mul
 

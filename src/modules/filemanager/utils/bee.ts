@@ -275,6 +275,7 @@ export const handleDestroyAndForgetDrive = async (options: DestroyDriveOptions):
 
       return
     }
+
     // fm does not dilute the stamp it's the client's responsibility
     const halvings = Math.floor(Math.log2(ttlDays))
     await beeApi.diluteBatch(drive.batchId, driveStamp.depth + halvings)

@@ -60,7 +60,7 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
       }
 
       const stamps = await getUsableStamps(beeApi)
-      const stampList = stamps.filter(s => drives.some(d => d.batchId.toString() === s.batchID.toString()))
+      const stampList = stamps.filter(s => drives.some(d => d.batchId === s.batchID.toString()))
 
       safeSetState(isMountedRef, setDriveStamps)(stampList)
     }
@@ -118,7 +118,7 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
         const rawSize = fi.customMetadata?.size as string | number | undefined
         const prettySize = formatBytes(rawSize)
         const expected = rawSize ? Number(rawSize) : undefined
-        const driveName = drives.find(d => d.id.toString() === fi.driveId.toString())?.name ?? currentDrive?.name
+        const driveName = drives.find(d => d.id === fi.driveId)?.name ?? currentDrive?.name
         const uuid = uuidV4()
 
         infoListWitIDs[i] = { uuid, info: fi }
@@ -151,7 +151,7 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
           setShowError(true)
         },
         onFileComplete: file => {
-          refreshStamp(file.batchId.toString())
+          refreshStamp(file.batchId)
         },
       })
 
@@ -175,7 +175,7 @@ export function useBulkActions({ listToRender, trackDownload, setErrorMessage }:
           setShowError(true)
         },
         onFileComplete: file => {
-          refreshStamp(file.batchId.toString())
+          refreshStamp(file.batchId)
         },
       })
 

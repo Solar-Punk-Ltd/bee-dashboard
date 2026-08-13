@@ -1,10 +1,7 @@
 import type { Bee, PostageBatch, RedundancyLevel } from '@ethersphere/bee-js'
 import type { DriveInfo, FileManagerBase, FileRecord } from '@solarpunkltd/file-manager-lib'
 
-import { ActionTag } from '../constants/transfers'
-
 import { verifyDriveSpace } from './bee'
-import { capitalizeFirstLetter } from './common'
 
 export enum FileOperation {
   Trash = 'trash',
@@ -59,17 +56,7 @@ export async function performFileOperation({
 
     if (!ok) return false
 
-    const lifecycleTag = operation === FileOperation.Trash ? ActionTag.Trashed : ActionTag.Recovered
-    const withMeta: FileRecord = {
-      ...fi,
-      customMetadata: {
-        ...(fi.customMetadata ?? {}),
-        lifecycle: capitalizeFirstLetter(lifecycleTag),
-        lifecycleAt: new Date().toISOString(),
-      },
-    }
-
-    const drive = fm.driveList.find(d => d.id.toString() === fi.driveId.toString())
+    const drive = fm.driveList.find(d => d.id === fi.driveId)
 
     if (!drive) {
       throw new Error(`Drive for ${fi.path} not found`)
@@ -77,10 +64,10 @@ export async function performFileOperation({
 
     switch (operation) {
       case FileOperation.Trash:
-        await fm.trashFile(withMeta)
+        await fm.trash(drive.id, fi.path)
         break
       case FileOperation.Recover:
-        await fm.recoverFile(withMeta)
+        await fm.recover(drive.id, fi.path)
         break
       case FileOperation.Forget:
         await fm.forget(drive.id, fi.path)
@@ -131,6 +118,12 @@ export async function performBulkFileOperation({
 
       if (!currentStamp && operation !== FileOperation.Forget) {
         onError?.(`Stamp not found for file: ${fi.path}`)
+
+        return
+      }
+
+      if (!fi.driveId) {
+        onError?.(`Missing record drive ID for: ${fi.path}`)
 
         return
       }

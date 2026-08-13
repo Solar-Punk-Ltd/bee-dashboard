@@ -1846,7 +1846,7 @@ packages:
 
   '@solarpunkltd/file-manager-lib@file:../file-manager-lib':
     resolution: {directory: ../file-manager-lib, type: directory}
-    engines: {bee: 2.8.0, node: '>=22.13.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
+    engines: {bee: 2.8.1, node: '>=22.0.0', npm: '>=11.0.0', pnpm: '>=10.0.0'}
     peerDependencies:
       '@snaha/swarm-id': ^0.2.0
     peerDependenciesMeta:
@@ -2658,8 +2658,8 @@ packages:
   cafe-utility@34.0.0:
     resolution: {integrity: sha512-4gxiVyngFbRa1G10+DIDUjk/Qu8OMxgK5bnNXMj4y80Tc+RLdZlk+pE7scgediQS2cxn8L+3XauS8tE62EfsTg==}
 
-  cafe-utility@36.2.0:
-    resolution: {integrity: sha512-m7NH5dGX37lkFAfWjDHLY3/kVaCh5aq8X3CgRbMu/H21XRlw4vRu3ozi/MohttOEXfBjf3PM17ZaqXd2OsNYjA==}
+  cafe-utility@36.3.0:
+    resolution: {integrity: sha512-MdWLLT7K6klJBetvflNR/mSfmMSCINzbkambVxjJUSJcHxn8Y7zW7lj7RM0n2EMdtDrkLt/mdl+SdyD+7a37ng==}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -7631,7 +7631,7 @@ snapshots:
   '@solarpunkltd/file-manager-lib@file:../file-manager-lib(@snaha/swarm-id@0.2.0)':
     dependencies:
       '@ethersphere/bee-js': '@solarpunkltd/bee-js@0.0.0-fmv2.1'
-      cafe-utility: 36.2.0
+      cafe-utility: 36.3.0
       std-env: 3.10.0
     optionalDependencies:
       '@snaha/swarm-id': 0.2.0
@@ -8575,7 +8575,7 @@ snapshots:
 
   cafe-utility@34.0.0: {}
 
-  cafe-utility@36.2.0: {}
+  cafe-utility@36.3.0: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:

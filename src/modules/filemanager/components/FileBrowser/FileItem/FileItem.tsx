@@ -403,7 +403,7 @@ export function FileItem({
               onClick={() => {
                 handleCloseContext()
                 // TODO: isn't parentDrive === currentDrive?
-                const parentDrive = drives.find(d => d.id.toString() === fileInfo.driveId.toString())
+                const parentDrive = drives.find(d => d.id === fileInfo.driveId)
 
                 if (parentDrive) {
                   setDestroyDrive(parentDrive)
@@ -593,7 +593,7 @@ export function FileItem({
         <RenameFileModal
           currentName={fileInfo.path}
           takenNames={(() => {
-            const sameDrive = files.filter(fi => fi.driveId.toString() === currentDrive.id.toString())
+            const sameDrive = files.filter(fi => fi.driveId === currentDrive.id)
             const names = sameDrive.map(fi => fi.path).filter(n => n && n !== fileInfo.path)
 
             return new Set(names)

@@ -343,7 +343,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
 
                     if (fm) {
                       const initFolderList = async () => {
-                        await fm.listFolder(d.id, '/', ListDepth.Shallow)
+                        await fm.listTrash(d.id, ListDepth.Shallow)
                       }
                       initFolderList()
                     }

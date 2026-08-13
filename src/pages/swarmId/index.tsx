@@ -23,7 +23,7 @@ import {
 
 const BACKEND_LABELS: Record<SwarmBackend, string> = {
   beeApi: 'Bee API — dashboard node + local private key (BeeClient)',
-  'swarm-id': `Swarm ID — hosted identity at ${SWARM_ID_IFRAME_ORIGIN} (SwarmIdClient)`,
+  swarmId: `Swarm ID — hosted identity at ${SWARM_ID_IFRAME_ORIGIN} (SwarmIdClient)`,
 }
 
 function yesNo(value: boolean | undefined): string {

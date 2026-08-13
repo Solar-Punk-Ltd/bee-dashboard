@@ -1,5 +1,5 @@
 import { BeeModes, BZZ, DAI, Duration, PostageBatch, RedundancyLevel, Size, Utils } from '@ethersphere/bee-js'
-import { ADMIN_STAMP_LABEL } from '@solarpunkltd/file-manager-lib'
+import { ADMIN_DRIVE_NAME } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Context as BeeContext } from '../../../../providers/Bee'
@@ -137,7 +137,7 @@ export function InitialModal({
       fm,
       size: Size.fromBytes(capacity),
       duration: Duration.fromEndDate(validityEndDate),
-      label: ADMIN_STAMP_LABEL,
+      label: ADMIN_DRIVE_NAME,
       encryption: false,
       redundancyLevel: erasureCodeLevel,
       adminRedundancy: erasureCodeLevel,
