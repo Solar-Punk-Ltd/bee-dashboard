@@ -1,5 +1,5 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { DriveInfo, ListDepth } from '@solarpunkltd/file-manager-lib'
+import { DriveInfo } from '@solarpunkltd/file-manager-lib'
 import { ReactElement, useContext, useEffect, useState } from 'react'
 import Add from 'remixicon-react/AddLineIcon'
 import ArrowDown from 'remixicon-react/ArrowDownSLineIcon'
@@ -53,6 +53,7 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
     setCurrentStamp,
     setShowError,
     syncDrives,
+    reloadTrash,
   } = useContext(FMContext)
 
   useEffect(() => {
@@ -97,13 +98,6 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
       const firstDrive = drives[0]
       setCurrentDrive(firstDrive)
 
-      if (firstDrive) {
-        const initFolderList = async () => {
-          await fm.listFolder(firstDrive.id, '/', ListDepth.Shallow)
-        }
-
-        initFolderList()
-      }
       setView(ViewType.File)
       setViewFolders([])
       setFolderView(false)
@@ -236,13 +230,6 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setView(ViewType.File)
                     setViewFolders([])
                     setFolderView(false)
-
-                    if (fm) {
-                      const initFolderList = async () => {
-                        await fm.listFolder(d.id, '/', ListDepth.Shallow)
-                      }
-                      initFolderList()
-                    }
                   }}
                 >
                   <DriveItem drive={d} stamp={stamp} isSelected={isSelected} setErrorMessage={setErrorMessage} />
@@ -276,13 +263,6 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     onClick={() => {
                       setCurrentDrive(d)
                       setView(ViewType.Expired)
-
-                      if (fm) {
-                        const initFolderList = async () => {
-                          await fm.listFolder(d.id, '/', ListDepth.Shallow)
-                        }
-                        initFolderList()
-                      }
                     }}
                   >
                     <ExpiredDriveItem
@@ -292,14 +272,6 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
 
                         const firstDrive = drives.length > 0 ? drives[0] : undefined
                         setCurrentDrive(firstDrive)
-
-                        if (firstDrive && fm) {
-                          const initFolderList = async () => {
-                            await fm.listFolder(firstDrive.id, '/', ListDepth.Shallow)
-                          }
-                          initFolderList()
-                        }
-
                         setView(ViewType.File)
                       }}
                       setErrorMessage={setErrorMessage}
@@ -340,13 +312,9 @@ export function Sidebar({ setErrorMessage, loading }: SidebarProps): ReactElemen
                     setCurrentDrive(d)
                     setCurrentStamp(stamp)
                     setView(ViewType.Trash)
-
-                    if (fm) {
-                      const initFolderList = async () => {
-                        await fm.listTrash(d.id, ListDepth.Shallow)
-                      }
-                      initFolderList()
-                    }
+                    setViewFolders([])
+                    setFolderView(false)
+                    reloadTrash(d.id.toString())
                   }}
                   title={`${d.name} Trash`}
                 >

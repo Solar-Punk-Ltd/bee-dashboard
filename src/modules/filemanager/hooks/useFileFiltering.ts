@@ -1,13 +1,12 @@
 import { DriveInfo, FileRecord } from '@solarpunkltd/file-manager-lib'
 import { useCallback, useMemo } from 'react'
 
-import { ViewType } from '../constants/transfers'
 import { indexStrToBigint, isTrashed } from '../utils/common'
 
 interface UseFileFilteringProps {
-  files: FileRecord[]
+  rowSource: FileRecord[]
+  searchSource: FileRecord[]
   currentDrive: DriveInfo | null
-  view: ViewType
   isSearchMode: boolean
   query: string
   scope: string
@@ -22,9 +21,9 @@ interface UseFileFilteringReturn {
   statusIncluded: (fi: FileRecord) => boolean
   matchesQuery: (fi: FileRecord) => boolean
 }
-
+// TODO: how to handle queries - what if a file exists deep in a nested folder?
 export function useFileFiltering(props: UseFileFilteringProps): UseFileFilteringReturn {
-  const { files, currentDrive, view, isSearchMode, query, scope, includeActive, includeTrashed } = props
+  const { rowSource, searchSource, currentDrive, isSearchMode, query, scope, includeActive, includeTrashed } = props
 
   const q = query.trim().toLowerCase().normalize('NFC')
 
@@ -58,7 +57,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
   const rows = useMemo((): FileRecord[] => {
     if (!currentDrive) return []
 
-    const sameDrive = files.filter(fi => fi.driveId === currentDrive.id)
+    const sameDrive = rowSource
 
     const nameCount = sameDrive.reduce<Record<string, number>>((acc, fi) => {
       acc[fi.path] = (acc[fi.path] || 0) + 1
@@ -107,15 +106,14 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
       }
     })
 
-    const latest = Array.from(map.values())
-
-    return view === ViewType.Trash ? latest.filter(isTrashed) : latest.filter(fi => !isTrashed(fi))
-  }, [files, currentDrive, view])
+    return Array.from(map.values())
+  }, [rowSource, currentDrive])
 
   const searchRows = useMemo((): FileRecord[] => {
     if (!isSearchMode) return []
 
-    const source = scope === 'selected' && currentDrive ? files.filter(f => f.driveId === currentDrive.id) : files
+    const source =
+      scope === 'selected' && currentDrive ? searchSource.filter(f => f.driveId === currentDrive.id) : searchSource
 
     const filtered = source.filter(f => statusIncluded(f) && matchesQuery(f))
 
@@ -149,7 +147,7 @@ export function useFileFiltering(props: UseFileFilteringProps): UseFileFiltering
     }
 
     return Array.from(latest.values()).sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
-  }, [isSearchMode, scope, currentDrive, files, matchesQuery, statusIncluded])
+  }, [isSearchMode, scope, currentDrive, searchSource, matchesQuery, statusIncluded])
 
   const listToRender = isSearchMode ? searchRows : rows
 

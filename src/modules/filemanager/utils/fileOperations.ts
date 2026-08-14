@@ -9,10 +9,12 @@ export enum FileOperation {
   Forget = 'forget',
 }
 
+export type OperableNode = Pick<FileRecord, 'path' | 'driveId'>
+
 interface FileOperationOptions {
   fm: FileManagerBase
   bee: Bee | null
-  fi: FileRecord
+  fi: OperableNode
   redundancyLevel: RedundancyLevel
   driveId: string
   stamp: PostageBatch

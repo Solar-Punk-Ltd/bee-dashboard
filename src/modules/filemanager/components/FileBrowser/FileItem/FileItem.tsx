@@ -28,6 +28,7 @@ import { buildGetInfoGroups } from '../../../utils/infoGroups'
 import { computeContextMenuPosition } from '../../../utils/ui'
 import { ConfirmModal } from '../../ConfirmModal/ConfirmModal'
 import { ContextMenu } from '../../ContextMenu/ContextMenu'
+import { MenuItem } from '../../ContextMenu/MenuItem'
 import { DeleteFileModal } from '../../DeleteFileModal/DeleteFileModal'
 import { DestroyDriveModal } from '../../DestroyDriveModal/DestroyDriveModal'
 import { GetInfoModal } from '../../GetInfoModal/GetInfoModal'
@@ -37,27 +38,6 @@ import { VersionHistoryModal } from '../../VersionHistoryModal/VersionHistoryMod
 import { FileSystemItem } from '../FileBrowserContent/FileBrowserContent'
 
 import './FileItem.scss'
-
-const MenuItem = ({
-  disabled,
-  danger,
-  onClick,
-  children,
-}: {
-  disabled?: boolean
-  danger?: boolean
-  onClick?: () => void
-  children: React.ReactNode
-}) => (
-  <div
-    className={`fm-context-item${danger ? ' red' : ''}`}
-    aria-disabled={disabled ? 'true' : 'false'}
-    style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
-    onClick={disabled ? undefined : onClick}
-  >
-    {children}
-  </div>
-)
 
 interface FileItemProps {
   fileInfo: FileRecord
@@ -96,6 +76,8 @@ export function FileItem({
   const { fm, adminDrive, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
   const { view } = useView()
+
+  const label = displayName ?? fileInfo.path
 
   const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
   const [safePos, setSafePos] = useState(pos)
@@ -513,8 +495,8 @@ export function FileItem({
       </div>
 
       <div className="fm-file-item-content-item fm-name" onDoubleClick={() => handleOpen(true)}>
-        <GetIconElement name={fileInfo.path} metadata={fileInfo.customMetadata} />
-        {truncateNameMiddle(displayName ?? fileInfo.path)}
+        <GetIconElement name={label} metadata={fileInfo.customMetadata} />
+        {truncateNameMiddle(label)}
       </div>
 
       {showDriveColumn && (
@@ -622,7 +604,7 @@ export function FileItem({
           }
           message={
             <>
-              This removes <b title={fileInfo.path}>{fileInfo.path}</b> from your view.
+              This removes <b title={label}>{label}</b> from your view.
               <br />
               The data remains on Swarm until the drive expires.
             </>
@@ -650,7 +632,7 @@ export function FileItem({
           }
           message={
             <>
-              This will restore <b title={fileInfo.path}>{fileInfo.path}</b> from trash.
+              This will restore <b title={label}>{label}</b> from trash.
             </>
           }
           confirmLabel="Restore"

@@ -187,8 +187,23 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { view, setActualItemView, viewFolders } = useView()
   const { beeApi } = useContext(SettingsContext)
-  const { files, folders, adminDrive, currentDrive, resync, reloadCurrentDrive, drives, fm, showError, setShowError } =
-    useContext(FMContext)
+  const {
+    files,
+    driveFiles,
+    folders,
+    trashFiles,
+    trashFolders,
+    adminDrive,
+    currentDrive,
+    resync,
+    loadFolder,
+    reloadTrash,
+    isRecordLoading: isLoading,
+    drives,
+    fm,
+    showError,
+    setShowError,
+  } = useContext(FMContext)
   const {
     uploadFiles,
     isUploading,
@@ -255,10 +270,14 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     handleContextMenu(fakeEvt)
   }
 
+  const isTrashView = view === ViewType.Trash
+  const viewFiles = isTrashView ? trashFiles : driveFiles
+  const viewFoldersList = isTrashView ? trashFolders : folders
+
   const { listToRender } = useFileFiltering({
-    files,
+    rowSource: viewFiles,
+    searchSource: files,
     currentDrive: currentDrive || null,
-    view,
     isSearchMode,
     query: q,
     scope,
@@ -274,7 +293,7 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
   const sortedKey = sorted.map(f => getFileId(f)).join('|')
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stableSorted = useMemo(() => sorted, [sortedKey, files])
+  const stableSorted = useMemo(() => sorted, [sortedKey, viewFiles])
 
   const bulk = useBulkActions({
     listToRender,
@@ -493,6 +512,16 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchMode])
 
+  useEffect(() => {
+    if (!fm || !currentDrive || view !== ViewType.File || !currentPath) return
+
+    loadFolder(currentPath).catch(e => {
+      setErrorMessage?.(e instanceof Error ? e.message : String(e))
+      setShowError(true)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fm, currentDrive?.id, currentPath, view])
+
   const doRefresh = async () => {
     handleCloseContext()
 
@@ -502,6 +531,13 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
 
     try {
       await resync()
+
+      if (isTrashView) {
+        await reloadTrash()
+      } else if (currentPath) {
+        // resync() reloads the drive root only; a nested folder has to be pulled back in.
+        await loadFolder(currentPath)
+      }
     } finally {
       safeSetState(isMountedRef, setIsRefreshing)(false)
     }
@@ -532,16 +568,16 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
   }, [currentDrive, handleCloseContext, fm])
 
   // Names already used in the current folder (basenames of direct children) — prevents duplicates.
+  // Folders count as much as files: the manifest has one namespace per level.
   const currentFolderNames = useMemo(() => {
     const prefix = currentPath ? `${currentPath}/` : ''
-
-    return new Set(
-      files
-        .filter(f => f.driveId === currentDrive?.id.toString())
+    const directChildren = (paths: { path: string }[]): string[] =>
+      paths
         .filter(f => f.path.startsWith(prefix) && !f.path.slice(prefix.length).includes('/'))
-        .map(f => f.path.slice(prefix.length)),
-    )
-  }, [files, currentDrive, currentPath])
+        .map(f => f.path.slice(prefix.length))
+
+    return new Set([...directChildren(driveFiles), ...directChildren(folders)])
+  }, [driveFiles, folders, currentPath])
 
   const doCreateFolder = useCallback(
     async (name: string) => {
@@ -552,14 +588,13 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
       try {
         await fm.createFolder(currentDrive.id, currentPath || '/', name)
         setShowNewFolderModal(false)
-        await reloadCurrentDrive()
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         setShowError(true)
         setErrorMessage?.(errorMessage)
       }
     },
-    [currentDrive, fm, currentPath, reloadCurrentDrive, setErrorMessage, setShowError],
+    [currentDrive, fm, currentPath, setErrorMessage, setShowError],
   )
 
   const selectFolder = useCallback(async () => {
@@ -692,7 +727,8 @@ export function FileBrowser({ errorMessage, setErrorMessage }: FileBrowserProps)
             <FileBrowserContent
               key={isSearchMode ? `content-search` : `content-${currentDrive?.id.toString() ?? 'none'}`}
               listToRender={stableSorted}
-              folders={isSearchMode ? [] : folders}
+              folders={isSearchMode ? [] : viewFoldersList}
+              isLoading={isLoading}
               drives={drives}
               currentDrive={currentDrive || null}
               view={view}
