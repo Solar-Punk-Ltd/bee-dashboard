@@ -102,3 +102,24 @@
   bottom: -6px;
   top: auto;
 }
+
+/* Drag-to-move. Declared after the :hover rule above so an equal-specificity drop highlight wins. */
+.fm-file-item-content.fm-row-dragging {
+  opacity: 0.45;
+}
+
+/* Drop-only row, rendered inside a folder while a drag is in flight. Kept above the drop-target
+   rule so the highlight wins on equal specificity. */
+.fm-file-item-content.fm-move-up-row {
+  color: #6b7280;
+  font-style: italic;
+  outline: 1px dashed rgba(0, 0, 0, 0.25);
+  outline-offset: -2px;
+}
+
+.fm-file-item-content.fm-drop-target,
+.fm-file-item-content.fm-drop-target:hover {
+  background-color: rgba(237, 129, 49, 0.16);
+  outline: 2px dashed rgb(237, 129, 49);
+  outline-offset: -2px;
+}

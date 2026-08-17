@@ -5,7 +5,9 @@ import { ItemType } from '../../../../../pages/filemanager/ViewContext'
 import { Context as FMContext } from '../../../../../providers/FileManager'
 import { TOOLTIPS } from '../../../constants/tooltips'
 import { useContextMenu } from '../../../hooks/useContextMenu'
+import { DragProps, DropProps } from '../../../hooks/useNodeDragMove'
 import { useNodeOperations } from '../../../hooks/useNodeOperations'
+import { basename } from '../../../utils/common'
 import { FileOperation } from '../../../utils/fileOperations'
 import { GetIconElement } from '../../../utils/GetIconElement'
 import { buildFolderInfoGroups, FilePropertyGroup } from '../../../utils/infoGroups'
@@ -22,11 +24,24 @@ interface SubItemProps {
   trashInfo?: FolderInfo
   setErrorMessage?: (error: string) => void
   onDoubleClick?: () => void
+  dragProps?: DragProps
+  dropProps?: DropProps
+  isDragging?: boolean
+  isDropTarget?: boolean
 }
 
-const basename = (p: string): string | undefined => p.split('/').filter(Boolean).pop()
-
-export function SubItem({ name, path, type, trashInfo, setErrorMessage, onDoubleClick }: SubItemProps): ReactElement {
+export function SubItem({
+  name,
+  path,
+  type,
+  trashInfo,
+  setErrorMessage,
+  onDoubleClick,
+  dragProps,
+  dropProps,
+  isDragging,
+  isDropTarget,
+}: SubItemProps): ReactElement {
   const displayName = basename(name)
   const { fm, currentDrive, setShowError } = useContext(FMContext)
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
@@ -141,9 +156,15 @@ export function SubItem({ name, path, type, trashInfo, setErrorMessage, onDouble
 
   const pendingCopy = pendingOperation ? confirmCopy[pendingOperation] : null
 
+  const rowClass = ['fm-file-item-content', isDragging ? 'fm-row-dragging' : '', isDropTarget ? 'fm-drop-target' : '']
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <div
-      className="fm-file-item-content"
+      {...dragProps}
+      {...dropProps}
+      className={rowClass}
       onDoubleClick={onDoubleClick}
       onContextMenu={e => {
         if (e.shiftKey) return
@@ -223,7 +244,7 @@ export function SubItem({ name, path, type, trashInfo, setErrorMessage, onDouble
 
       {showGetInfoModal && infoGroups && (
         <GetInfoModal
-          name={displayName ?? name}
+          name={displayName}
           title="Folder Information"
           properties={infoGroups}
           onCancelClick={() => setShowGetInfoModal(false)}

@@ -75,6 +75,25 @@ export const formatBytes = (v?: string | number | File[]): string | undefined =>
 
 export const isTrashed = (fi: FileRecord): boolean => fi.status === NodeStatus.Trashed
 
+// --- manifest path helpers --------------------------------------------------
+// Paths are root-relative and '/'-separated; the drive root is the empty string.
+
+/** Last segment of a path — `'a/b/c'` → `'c'`. */
+export const basename = (path: string): string => path.split('/').filter(Boolean).pop() ?? path
+
+/** Parent of a path — `'a/b/c'` → `'a/b'`, a root-level entry → `''`. */
+export const parentOf = (path: string): string => {
+  const slash = path.lastIndexOf('/')
+
+  return slash === -1 ? '' : path.slice(0, slash)
+}
+
+/** True when `path` is `base` itself or lives somewhere under it. */
+export const isUnder = (path: string, base: string): boolean => path === base || path.startsWith(`${base}/`)
+
+/** Joins a parent folder and a name, treating `''` as the drive root. */
+export const joinPath = (parent: string, name: string): string => (parent ? `${parent}/${name}` : name)
+
 export type Point = { x: number; y: number }
 export enum Dir {
   Down = 'down',

@@ -1,11 +1,12 @@
 import { PostageBatch } from '@ethersphere/bee-js'
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext } from 'react'
 
 import { Context as FMContext } from '../../../providers/FileManager'
 import { Context as SettingsContext } from '../../../providers/Settings'
 import { getUsableStamps } from '../utils/bee'
-import { safeSetState } from '../utils/common'
 import { FileOperation, OperableNode, performFileOperation } from '../utils/fileOperations'
+
+import { useDriveStamp } from './useDriveStamp'
 
 interface UseNodeOperationsResult {
   run: (operation: FileOperation, node: OperableNode) => Promise<boolean>
@@ -16,33 +17,9 @@ export function useNodeOperations(driveId?: string, onError?: (msg: string) => v
   const { fm, adminDrive, currentDrive, refreshStamp } = useContext(FMContext)
   const { beeApi } = useContext(SettingsContext)
 
-  const [driveStamp, setDriveStamp] = useState<PostageBatch | undefined>(undefined)
-  const isMountedRef = useRef(true)
+  const driveStamp = useDriveStamp(driveId)
 
   const targetDriveId = driveId ?? currentDrive?.id.toString()
-
-  useEffect(() => {
-    isMountedRef.current = true
-
-    const resolve = async (): Promise<void> => {
-      if (!beeApi || !fm || !targetDriveId) return
-
-      const drive = fm.driveList.find(d => d.id.toString() === targetDriveId)
-
-      if (!drive) return
-
-      const stamps = await getUsableStamps(beeApi)
-      const found = stamps.find(s => s.batchID.toString() === drive.batchId.toString())
-
-      safeSetState(isMountedRef, setDriveStamp)(found)
-    }
-
-    resolve()
-
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [beeApi, fm, targetDriveId])
 
   const run = useCallback(
     async (operation: FileOperation, node: OperableNode): Promise<boolean> => {

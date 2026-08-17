@@ -1,9 +1,12 @@
 import { DriveInfo, FileRecord, FolderInfo } from '@solarpunkltd/file-manager-lib'
-import { memo, ReactElement, useCallback } from 'react'
+import { memo, ReactElement, useCallback, useContext } from 'react'
 
 import { ItemType, useView } from '../../../../../pages/filemanager/ViewContext'
+import { Context as FMContext } from '../../../../../providers/FileManager'
 import { DownloadProgress, TrackDownloadProps, ViewType } from '../../../constants/transfers'
-import { getFileId } from '../../../utils/common'
+import { useNodeDragMove } from '../../../hooks/useNodeDragMove'
+import { basename, getFileId, parentOf } from '../../../utils/common'
+import { GetIconElement } from '../../../utils/GetIconElement'
 import { FileItem } from '../FileItem/FileItem'
 
 import { SubItem } from './SubItem'
@@ -12,8 +15,6 @@ export type FileSystemItem = {
   path: string
   ref: string
 }
-
-const basename = (p: string): string => p.split('/').filter(Boolean).pop() ?? p
 
 const trashedLabel = (item: { path: string; trashedFrom?: string }): string => basename(item.trashedFrom ?? item.path)
 
@@ -55,6 +56,7 @@ function FileBrowserContentInner({
   setErrorMessage,
 }: FileBrowserContentProps): ReactElement {
   const { setFolderView, viewFolders, setViewFolders } = useView()
+  const { setShowError } = useContext(FMContext)
 
   const enterFolder = useCallback(
     (folderName: string) => {
@@ -62,6 +64,26 @@ function FileBrowserContentInner({
       setViewFolders([...viewFolders, { folderName }])
     },
     [setFolderView, setViewFolders, viewFolders],
+  )
+
+  const reportError = useCallback(
+    (msg: string) => {
+      setErrorMessage?.(msg)
+      setShowError(true)
+    },
+    [setErrorMessage, setShowError],
+  )
+
+  const canMove = !isSearchMode && view === ViewType.File && Boolean(currentDrive)
+  const { isMoving, draggedPaths, dropTarget, getDragProps, getDropProps } = useNodeDragMove(canMove, reportError)
+
+  const dragPathsFor = useCallback(
+    (fi: FileRecord): string[] => {
+      if (!selectedIds?.has(getFileId(fi)) || (bulkSelectedCount ?? 0) < 2) return [fi.path]
+
+      return listToRender.filter(f => selectedIds.has(getFileId(f))).map(f => f.path)
+    },
+    [selectedIds, bulkSelectedCount, listToRender],
   )
 
   const renderFileList = useCallback(
@@ -87,6 +109,8 @@ function FileBrowserContentInner({
             onBulk={onBulk}
             setErrorMessage={setErrorMessage}
             folderItemDoubleClick={() => undefined}
+            dragProps={getDragProps(dragPathsFor(fi))}
+            isDragging={draggedPaths.includes(fi.path)}
           />
         )
       }
@@ -144,20 +168,49 @@ function FileBrowserContentInner({
         folderNames.add(slash === -1 ? rest : rest.slice(0, slash))
       })
 
-      const folderRows = Array.from(folderNames).map(folderName => (
-        <SubItem
-          key={`folder::${prefix}${folderName}`}
-          name={folderName}
-          path={`${prefix}${folderName}`}
-          type={ItemType.Folder}
-          setErrorMessage={setErrorMessage}
-          onDoubleClick={() => enterFolder(folderName)}
-        />
-      ))
+      const folderRows = Array.from(folderNames).map(folderName => {
+        const folderPath = `${prefix}${folderName}`
+
+        return (
+          <SubItem
+            key={`folder::${folderPath}`}
+            name={folderName}
+            path={folderPath}
+            type={ItemType.Folder}
+            setErrorMessage={setErrorMessage}
+            onDoubleClick={() => enterFolder(folderName)}
+            dragProps={getDragProps([folderPath])}
+            dropProps={getDropProps(folderPath)}
+            isDragging={draggedPaths.includes(folderPath)}
+            isDropTarget={dropTarget === folderPath}
+          />
+        )
+      })
 
       const fileRows = fileChildren
         .map(({ fi, displayName }) => renderFileItem(fi, displayName))
         .filter((el): el is ReactElement => el !== null)
+
+      // Every other drop target moves items deeper. Without a target for the enclosing folder a drag
+      // could never bring anything back out, so one appears for the duration of the drag — the same
+      // role `..` plays in a file manager, minus a permanent row nobody asked for.
+      if (currentPath && draggedPaths.length > 0) {
+        const upRow = (
+          <div
+            key="move-up"
+            className={`fm-file-item-content fm-move-up-row${dropTarget === parentOf(currentPath) ? ' fm-drop-target' : ''}`}
+            {...getDropProps(parentOf(currentPath))}
+          >
+            <div className="fm-file-item-content-item fm-checkbox" />
+            <div className="fm-file-item-content-item fm-name">
+              <GetIconElement name=".." metadata={{ mime: ItemType.Folder }} />
+              .. (move out of {basename(currentPath)})
+            </div>
+          </div>
+        )
+
+        return [upRow, ...folderRows, ...fileRows]
+      }
 
       return [...folderRows, ...fileRows]
     },
@@ -174,6 +227,11 @@ function FileBrowserContentInner({
       setErrorMessage,
       viewFolders,
       enterFolder,
+      dragPathsFor,
+      getDragProps,
+      getDropProps,
+      draggedPaths,
+      dropTarget,
     ],
   )
 
@@ -196,7 +254,19 @@ function FileBrowserContentInner({
   const rows = renderFileList(listToRender, isSearchMode)
 
   if (rows.length > 0) {
-    return <>{rows}</>
+    return (
+      <>
+        {rows}
+        {isMoving && (
+          <div className="fm-refresh-overlay" aria-busy="true" aria-live="polite">
+            <div className="fm-refresh-content">
+              <div className="fm-mini-spinner" role="status" aria-label="Moving…" />
+              <span className="fm-refresh-text">Moving…</span>
+            </div>
+          </div>
+        )}
+      </>
+    )
   }
 
   if (isLoading) {

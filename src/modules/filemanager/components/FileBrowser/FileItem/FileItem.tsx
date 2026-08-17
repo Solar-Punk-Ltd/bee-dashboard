@@ -18,6 +18,7 @@ import { uuidV4 } from '../../../../../utils'
 import { TOOLTIPS } from '../../../constants/tooltips'
 import { DownloadProgress, FileAction, TrackDownloadProps, ViewType } from '../../../constants/transfers'
 import { useContextMenu } from '../../../hooks/useContextMenu'
+import { DragProps } from '../../../hooks/useNodeDragMove'
 import { getUsableStamps, handleDestroyAndForgetDrive, verifyDriveSpace } from '../../../utils/bee'
 import { Dir, formatBytes, isTrashed, safeSetState, truncateNameMiddle } from '../../../utils/common'
 import { startDownloadingQueue } from '../../../utils/download'
@@ -57,6 +58,8 @@ interface FileItemProps {
   }
   setErrorMessage?: (error: string) => void
   folderItemDoubleClick: (folderFileItems: FileSystemItem[] | null, fileName: string) => void
+  dragProps?: DragProps
+  isDragging?: boolean
 }
 
 export function FileItem({
@@ -71,6 +74,8 @@ export function FileItem({
   onBulk,
   setErrorMessage,
   folderItemDoubleClick,
+  dragProps,
+  isDragging,
 }: FileItemProps): ReactElement {
   const { showContext, pos, contextRef, handleContextMenu, handleCloseContext } = useContextMenu<HTMLDivElement>()
   const { fm, adminDrive, currentDrive, files, drives, setShowError, refreshStamp } = useContext(FMContext)
@@ -478,7 +483,8 @@ export function FileItem({
 
   return (
     <div
-      className="fm-file-item-content"
+      {...dragProps}
+      className={`fm-file-item-content${isDragging ? ' fm-row-dragging' : ''}`}
       onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
         if (e.shiftKey) return
         handleContextMenu(e)
