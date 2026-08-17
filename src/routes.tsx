@@ -1,4 +1,4 @@
-import { FileManagerProvider, FileManagerWidget } from '@solarpunkltd/file-manager-widget'
+import { FileManagerWidget } from '@solarpunkltd/file-manager-widget'
 import { ReactElement, useContext } from 'react'
 import { Route, Routes } from 'react-router-dom'
 
@@ -72,14 +72,7 @@ export const ACCOUNT_TABS = [
 ]
 
 function FileManagerPage(): ReactElement {
-  const { apiUrl } = useContext(SettingsContext)
-
-  // pollInterval mirrors the widget's own DEFAULT_POLL_INTERVAL_MS, which isn't exported publicly
-  return (
-    <FileManagerProvider settings={{ apiUrl, pollInterval: 30_000 }}>
-      <FileManagerWidget />
-    </FileManagerProvider>
-  )
+  return <FileManagerWidget />
 }
 
 const BaseRouter = (): ReactElement => {
