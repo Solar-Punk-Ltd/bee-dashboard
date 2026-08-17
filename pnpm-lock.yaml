@@ -18,8 +18,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)
       '@ethersphere/bee-js':
-        specifier: ^13.0.0-upcoming.gcfb9756
-        version: 13.0.0-upcoming.gcfb9756
+        specifier: 13.0.0-upcoming.g5647049
+        version: 13.0.0-upcoming.g5647049
       '@formbricks/js':
         specifier: ^4.3.0
         version: 4.4.0
@@ -1284,8 +1284,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ethersphere/bee-js@13.0.0-upcoming.gcfb9756':
-    resolution: {integrity: sha512-PBhYN0z2eC3cMOvqAK/lkRYZKcGMm5934jxroCRUt8TyAkHMQk9QcgAgcn8yDciJvnxvVeadQMx1k0DImVKB/A==}
+  '@ethersphere/bee-js@13.0.0-upcoming.g5647049':
+    resolution: {integrity: sha512-4O8rL1egonBRYt1MapwlkEF+iSbhdHmw3hWLSVu8XlSkWG69N7T68YaqQogchHbvt2XBnmotSHTSYEgPSCG6iA==}
     engines: {bee: 2.8.1-7cf53193, beeApiVersion: 8.1.0}
 
   '@formbricks/js@4.4.0':
@@ -1547,9 +1547,17 @@ packages:
   '@noble/curves@1.2.0':
     resolution: {integrity: sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==}
 
+  '@noble/curves@1.9.7':
+    resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
+    engines: {node: ^14.21.3 || >=16}
+
   '@noble/hashes@1.3.2':
     resolution: {integrity: sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==}
     engines: {node: '>= 16'}
+
+  '@noble/hashes@1.8.0':
+    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
+    engines: {node: ^14.21.3 || >=16}
 
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
@@ -2279,6 +2287,10 @@ packages:
     resolution: {integrity: sha512-nAB74NfSNKknqQ1RrYj6uz8FcXEomu/MATJZxh/x+BArzN2U3JbOYC0APYzUIGhVY3m5hRxA8VPNdPBoG8txlA==}
     cpu: [x64]
     os: [win32]
+
+  '@upcoming/swarm-core@0.0.9':
+    resolution: {integrity: sha512-G+87YUOzan5vdymthcm6ZCn9qiwda8rn9vJhrkD/BaCDe4+RBbtAA+2Zq26lHc6dbhVIjccPwd9bndX5zreHoA==}
+    engines: {node: '>=22'}
 
   '@vitejs/plugin-react@5.2.0':
     resolution: {integrity: sha512-YmKkfhOAi3wsB1PhJq5Scj3GXMn3WvtQ/JC0xoopuHoXSdmtdStOpFrYaT1kie2YgFBcIe64ROzMYRjCrYOdYw==}
@@ -6998,12 +7010,13 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@ethersphere/bee-js@13.0.0-upcoming.gcfb9756':
+  '@ethersphere/bee-js@13.0.0-upcoming.g5647049':
     dependencies:
       cafe-utility: 34.0.0
       debug: 4.4.3
       isomorphic-ws: 5.0.0(ws@8.21.0)
       semver: 7.8.5
+      swarm-core: '@upcoming/swarm-core@0.0.9'
       ws: 8.21.0
       zod: 4.4.3
     transitivePeerDependencies:
@@ -7394,7 +7407,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.3.2
 
+  '@noble/curves@1.9.7':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
   '@noble/hashes@1.3.2': {}
+
+  '@noble/hashes@1.8.0': {}
 
   '@parcel/watcher-android-arm64@2.5.6':
     optional: true
@@ -8066,6 +8085,11 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
+
+  '@upcoming/swarm-core@0.0.9':
+    dependencies:
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
 
   '@vitejs/plugin-react@5.2.0(vite@7.3.6(@types/node@26.1.1)(jiti@2.6.1)(sass@1.101.0))':
     dependencies:

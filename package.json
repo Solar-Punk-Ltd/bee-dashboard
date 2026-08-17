@@ -56,7 +56,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@ethersphere/bee-js": "^13.0.0-upcoming.gcfb9756",
+    "@ethersphere/bee-js": "13.0.0-upcoming.g5647049",
     "@formbricks/js": "^4.3.0",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
