@@ -18,8 +18,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.17)(react@19.2.7))(@types/react@19.2.17)(react@19.2.7)
       '@ethersphere/bee-js':
-        specifier: 13.0.0-upcoming.g5647049
-        version: 13.0.0-upcoming.g5647049
+        specifier: 13.0.0-upcoming.gf9d33e6
+        version: 13.0.0-upcoming.gf9d33e6
       '@formbricks/js':
         specifier: ^4.3.0
         version: 4.4.0
@@ -1284,9 +1284,14 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ethersphere/bee-js@13.0.0-upcoming.g5647049':
-    resolution: {integrity: sha512-4O8rL1egonBRYt1MapwlkEF+iSbhdHmw3hWLSVu8XlSkWG69N7T68YaqQogchHbvt2XBnmotSHTSYEgPSCG6iA==}
+  '@ethersphere/bee-js@13.0.0-upcoming.gf9d33e6':
+    resolution: {integrity: sha512-QVkRoG+Pil45Gk/CYH68u8hHd34eVVx4B8wNrxRJgVWiKDsPlY7aWs8Clu2VNCKKiaB1tnOVxg/av6eRuiTB7w==}
     engines: {bee: 2.8.1-7cf53193, beeApiVersion: 8.1.0}
+    hasBin: true
+
+  '@ethersphere/core-sdk@0.1.1':
+    resolution: {integrity: sha512-qnDZleD2YK3s5PN/tXc8LnEtzh6BdcPTBjv7baoKSPMQPLeZ9wN/9qH1Zr2FNwhMgAIhgsqV7fB65LlzQ/a7oQ==}
+    engines: {node: '>=22'}
 
   '@formbricks/js@4.4.0':
     resolution: {integrity: sha512-97nu0lOhsDXmymE2bwg+PJqCXD7gIl5YbUaXWnvEGdRwyKmPZ3hFPEmw05G3y5xqjjd2XkmfuIYNP8x6WVYwMw==}
@@ -2287,10 +2292,6 @@ packages:
     resolution: {integrity: sha512-nAB74NfSNKknqQ1RrYj6uz8FcXEomu/MATJZxh/x+BArzN2U3JbOYC0APYzUIGhVY3m5hRxA8VPNdPBoG8txlA==}
     cpu: [x64]
     os: [win32]
-
-  '@upcoming/swarm-core@0.0.9':
-    resolution: {integrity: sha512-G+87YUOzan5vdymthcm6ZCn9qiwda8rn9vJhrkD/BaCDe4+RBbtAA+2Zq26lHc6dbhVIjccPwd9bndX5zreHoA==}
-    engines: {node: '>=22'}
 
   '@vitejs/plugin-react@5.2.0':
     resolution: {integrity: sha512-YmKkfhOAi3wsB1PhJq5Scj3GXMn3WvtQ/JC0xoopuHoXSdmtdStOpFrYaT1kie2YgFBcIe64ROzMYRjCrYOdYw==}
@@ -7010,19 +7011,24 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@ethersphere/bee-js@13.0.0-upcoming.g5647049':
+  '@ethersphere/bee-js@13.0.0-upcoming.gf9d33e6':
     dependencies:
+      '@ethersphere/core-sdk': 0.1.1
       cafe-utility: 34.0.0
       debug: 4.4.3
       isomorphic-ws: 5.0.0(ws@8.21.0)
       semver: 7.8.5
-      swarm-core: '@upcoming/swarm-core@0.0.9'
       ws: 8.21.0
       zod: 4.4.3
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@ethersphere/core-sdk@0.1.1':
+    dependencies:
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
 
   '@formbricks/js@4.4.0': {}
 
@@ -8085,11 +8091,6 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
-
-  '@upcoming/swarm-core@0.0.9':
-    dependencies:
-      '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
 
   '@vitejs/plugin-react@5.2.0(vite@7.3.6(@types/node@26.1.1)(jiti@2.6.1)(sass@1.101.0))':
     dependencies:
