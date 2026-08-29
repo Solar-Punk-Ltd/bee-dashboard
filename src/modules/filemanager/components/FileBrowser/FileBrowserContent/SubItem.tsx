@@ -72,7 +72,11 @@ export function SubItem({
       const prefix = `${trashInfo.path}/`
 
       setInfoGroups(
-        buildFolderInfoGroups(trashInfo, currentDrive.name, trashed.filter(n => n.path.startsWith(prefix)).length),
+        buildFolderInfoGroups(
+          trashInfo,
+          currentDrive.name,
+          trashed.entries.filter(n => n.path.startsWith(prefix)).length,
+        ),
       )
       setShowGetInfoModal(true)
 
@@ -87,11 +91,13 @@ export function SubItem({
       fm.listFolder(currentDrive.id, path, ListDepth.Shallow),
     ])
 
-    const folder = siblings.find(n => n.type === NodeType.Folder && basename(n.path) === name) as FolderInfo | undefined
+    const folder = siblings.entries.find(n => n.type === NodeType.Folder && basename(n.path) === name) as
+      | FolderInfo
+      | undefined
 
     if (!folder) return
 
-    setInfoGroups(buildFolderInfoGroups(folder, currentDrive.name, children.length))
+    setInfoGroups(buildFolderInfoGroups(folder, currentDrive.name, children.entries.length))
     setShowGetInfoModal(true)
   }
 

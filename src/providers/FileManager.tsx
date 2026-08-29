@@ -337,7 +337,8 @@ export function Provider({ children }: Props) {
     (manager: FileManagerBase, driveId: string, path: string): Promise<void> =>
       tracked(async () => {
         const parent = normalizePath(path)
-        const { files, folders } = splitEntries(await manager.listFolder(driveId, parent || '/', ListDepth.Shallow))
+        const list = await manager.listFolder(driveId, parent || '/', ListDepth.Shallow)
+        const { files, folders } = splitEntries(list.entries)
 
         patchDrive(driveId, c => ({
           ...c,
@@ -351,7 +352,8 @@ export function Provider({ children }: Props) {
   const loadTrashContents = useCallback(
     (manager: FileManagerBase, driveId: string): Promise<void> =>
       tracked(async () => {
-        const { files, folders } = splitEntries(await manager.listTrash(driveId, ListDepth.Shallow))
+        const trashList = await manager.listTrash(driveId, ListDepth.Shallow)
+        const { files, folders } = splitEntries(trashList.entries)
         patchDrive(driveId, c => ({ ...c, trashFiles: files, trashFolders: folders }))
       }),
     [patchDrive, tracked],

@@ -28,7 +28,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
     let tagsBatch: Tag[]
 
     do {
-      tagsBatch = await beeApi.getAllTags({ limit, offset })
+      tagsBatch = await beeApi.tag.getAll({ limit, offset })
       allTags = allTags.concat(tagsBatch)
       offset += limit
     } while (tagsBatch.length === limit) // Continue if the batch is full, stop if fewer than the limit
@@ -69,7 +69,7 @@ export function AssetSyncing({ reference }: Props): ReactElement {
       // It's a long running task make sure only one run occurs at a time.
       setIsRetrieveChecking(true)
 
-      beeApi.isReferenceRetrievable(reference).then(isRetriavable => {
+      beeApi.data.isRetrievable(reference).then(isRetriavable => {
         if (isRetriavable) {
           setSyncProgress(100)
         }

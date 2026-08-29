@@ -114,7 +114,7 @@ export function FileItem({
 
     const list = await fm.listFolder(currentDrive.id, fileInfo.path, ListDepth.Shallow)
 
-    const result: FileSystemItem[] = list.map(node => ({
+    const result: FileSystemItem[] = list.entries.map(node => ({
       path: node.path,
       ref: 'content' in node ? node.content.reference : (node.manifestRef?.reference ?? ''),
     }))

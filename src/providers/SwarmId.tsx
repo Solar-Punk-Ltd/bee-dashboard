@@ -2,7 +2,7 @@ import type { PrivateKey } from '@ethersphere/bee-js'
 import type { ConnectionInfo } from '@snaha/swarm-id'
 import { SwarmIdClient } from '@snaha/swarm-id'
 import type { SwarmClient } from '@solarpunkltd/file-manager-lib'
-import { BeeClient, SwarmIdSwarmClient } from '@solarpunkltd/file-manager-lib'
+import { BeeClient, SnahaClient } from '@solarpunkltd/file-manager-lib'
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getSignerPk } from '../modules/filemanager/utils/common'
@@ -281,7 +281,7 @@ export function Provider({ children }: Props) {
     let cancelled = false
 
     const build = async (): Promise<void> => {
-      const adapter = new SwarmIdSwarmClient(client)
+      const adapter = new SnahaClient(client)
       await adapter.initialize()
 
       if (cancelled) {
