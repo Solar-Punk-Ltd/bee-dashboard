@@ -1,0 +1,71 @@
+# SPDV-1524: standalone QA preview, independent of check.yaml.
+# Solar-Punk-Ltd only. Must never run if this file is ever synced upstream.
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+    branches:
+      - '**'
+
+concurrency:
+  group: preview-${{ github.event.number }}
+
+jobs:
+  deploy-preview:
+    if: github.repository == 'Solar-Punk-Ltd/bee-dashboard'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    env:
+      VITE_BEE_HOST: https://api.test-node.staging.ethswarm.org/
+      VITE_FORMBRICKS_ENV_ID: ${{ secrets.VITE_FORMBRICKS_ENV_ID }}
+      VITE_FORMBRICKS_APP_URL: ${{ secrets.VITE_FORMBRICKS_APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        if: github.event.action != 'closed'
+        with:
+          version: 10
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        if: github.event.action != 'closed'
+        with:
+          node-version: 24
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        if: github.event.action != 'closed'
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        if: github.event.action != 'closed'
+        run: pnpm install --frozen-lockfile
+
+      - name: Compute build ID
+        if: github.event.action != 'closed'
+        id: buildid
+        run: echo "id=${GITHUB_HEAD_REF}-${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        if: github.event.action != 'closed'
+        run: pnpm run build -- --base=/bee-dashboard/pr-preview/pr-${{ github.event.number }}/
+        env:
+          VITE_BUILD_ID: ${{ steps.buildid.outputs.id }}
+
+      - name: Deploy preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./build
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
