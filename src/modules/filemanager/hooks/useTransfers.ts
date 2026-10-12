@@ -22,7 +22,7 @@ import { ConflictAction, useUploadConflictDialog } from './useUploadConflictDial
 const SAMPLE_WINDOW_MS = 500
 const ETA_SMOOTHING = 0.3
 const MAX_UPLOAD_FILES = 10
-const MAX_PARALLEL_UPLOAD_FILES = 1 // parallel fm.upload calls race on the lib's drive-list feed index (saveDriveList)
+const MAX_PARALLEL_UPLOAD_FILES = 1
 const ABORT_EVENT = 'abort'
 
 type ResolveResult = {
