@@ -642,7 +642,9 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       }
 
       const tasks: UploadTask[] = []
-      const inFlightTasks = [...uploadTaskQueueRef.current, ...activeUploadsRef.current.values()]
+      const inFlightTasks = [...uploadTaskQueueRef.current, ...activeUploadsRef.current.values()].filter(
+        task => task.driveId === currentDrive.id.toString(),
+      )
       const inFlightSize = inFlightTasks.reduce((sum, t) => sum + t.file.size, 0)
       const inFlightCount = inFlightTasks.length
       let currentFileSizeSum = inFlightSize
