@@ -407,6 +407,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
       const signal = uploadAbortsRef.current.getSignal(task.uuid)
 
       const { promise: checkCancellation, cleanup: cleanupCancelPromise } = getUploadCancelPromise(signal)
+      let uploadPromise: Promise<void> | undefined
 
       try {
         if (signal?.aborted) {
@@ -421,7 +422,7 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
           taskDrive.name,
         )
 
-        const uploadPromise = fm.upload(
+        uploadPromise = fm.upload(
           taskDrive,
           { ...info, onUploadProgress },
           { actHistoryAddress: task.isReplace ? task.replaceHistory : undefined },
@@ -448,6 +449,8 @@ export function useTransfers({ setErrorMessage }: TransferProps) {
         )
       } finally {
         cleanupCancelPromise()
+        // On cancel the race settles first; wait for fm.upload too, so the next upload can't overlap it
+        await uploadPromise?.catch(() => undefined)
 
         const wasCancelled = cancelledUploadingRef.current.has(task.uuid) || signal?.aborted
 
