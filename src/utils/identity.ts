@@ -49,6 +49,15 @@ export async function convertWalletToIdentity(
   }
 }
 
+export function exportIdentity(identity: Identity): string {
+  return JSON.stringify({
+    type: identity.type,
+    identity: identity.identity,
+    address: identity.address,
+    feedHash: identity.feedHash,
+  })
+}
+
 export async function importIdentity(name: string, data: string): Promise<Identity | null> {
   if (data.length === 64) {
     const wallet = await getWallet(IdentityType.PrivateKey, data)
@@ -68,7 +77,20 @@ export async function importIdentity(name: string, data: string): Promise<Identi
     return { uuid: uuidV4(), name, type: IdentityType.PrivateKey, identity: data, address: wallet.address }
   }
   try {
-    const { address } = JSON.parse(data)
+    const parsed = JSON.parse(data)
+
+    if (typeof parsed.identity === 'string' && typeof parsed.type === 'string' && typeof parsed.address === 'string') {
+      return {
+        uuid: uuidV4(),
+        name,
+        type: parsed.type,
+        identity: parsed.identity,
+        address: parsed.address,
+        feedHash: typeof parsed.feedHash === 'string' ? parsed.feedHash : undefined,
+      }
+    }
+
+    const { address } = parsed
 
     return { uuid: uuidV4(), name, type: IdentityType.V3, identity: data, address }
   } catch {

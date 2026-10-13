@@ -11,7 +11,8 @@ import ExpandableListItemActions from '../../components/ExpandableListItemAction
 import { SwarmButton } from '../../components/SwarmButton'
 import { SwarmDialog } from '../../components/SwarmDialog'
 import { TitleWithClose } from '../../components/TitleWithClose'
-import { Identity, IdentityType } from '../../providers/Feeds'
+import { Identity } from '../../providers/Feeds'
+import { exportIdentity } from '../../utils/identity'
 
 interface Props {
   identity: Identity
@@ -29,23 +30,19 @@ export function ExportFeedDialog({ identity, onClose }: Props): ReactElement {
 
   const { classes } = useStyles()
 
+  const exportData = exportIdentity(identity)
+
   function onDownload() {
     saveAs(
-      new Blob([identity.identity], {
+      new Blob([exportData], {
         type: 'application/json',
       }),
       identity.name + '.json',
     )
   }
 
-  function getExportText() {
-    return identity.type === IdentityType.V3 ? 'JSON file' : 'the private key string'
-  }
-
   function onCopy() {
-    navigator.clipboard
-      .writeText(identity.identity)
-      .then(() => enqueueSnackbar('Copied to Clipboard', { variant: 'success' }))
+    navigator.clipboard.writeText(exportData).then(() => enqueueSnackbar('Copied to Clipboard', { variant: 'success' }))
   }
 
   return (
@@ -54,10 +51,12 @@ export function ExportFeedDialog({ identity, onClose }: Props): ReactElement {
         <TitleWithClose onClose={onClose}>Export</TitleWithClose>
       </Box>
       <Box mb={2}>
-        <Typography align="center">{`We exported the identity associated with this feed as ${getExportText()}.`}</Typography>
+        <Typography align="center">
+          We exported the identity and feed reference associated with this feed as a JSON file.
+        </Typography>
       </Box>
       <Box mb={4} className={classes.wrapper}>
-        <Code prettify>{identity.identity}</Code>
+        <Code prettify>{exportData}</Code>
       </Box>
       <ExpandableListItemActions>
         <SwarmButton iconType={Download} onClick={onDownload}>
